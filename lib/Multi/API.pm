@@ -13,6 +13,7 @@ use AnyEvent::Socket;
 use AnyEvent::Handle;
 use POE::Filter::VNDBAPI 'encode_filters';
 use Encode 'encode_utf8', 'decode_utf8';
+use Crypt::URandom 'urandom';
 use Crypt::ScryptKDF 'scrypt_raw';;
 use VNDBUtil 'normalize_query', 'norm_ip';
 use JSON::XS;
@@ -287,7 +288,7 @@ sub login_auth {
       if $tm-AE::time() > $VNDB::S{login_throttle}[1];
 
     # Fetch user info
-    cpg $c, 'SELECT id, encode(passwd, \'hex\') FROM users WHERE username = $1', [ $arg->{username} ], sub {
+    cpg $c, 'SELECT id, encode(user_getscryptargs(id), \'hex\') FROM users WHERE username = $1', [ $arg->{username} ], sub {
       login_verify($c, $arg, $tm, $_[0]);
     };
   };
@@ -298,31 +299,29 @@ sub login_verify {
   my($c, $arg, $tm, $res) = @_;
 
   return cerr $c, auth => "No user with the name '$arg->{username}'" if $res->nRows == 0;
-
-  my $passwd = pack 'H*', $res->value(0,1);
   my $uid = $res->value(0,0);
-  my $accepted = 0;
+  my $sargs = $res->value(0,1);
+  return cerr $c, auth => "Account disabled" if !$sargs || length($sargs) != 14*2;
 
-  if(length $passwd == 46) { # scrypt
-    my($N, $r, $p, $salt, $hash) = unpack 'NCCa8a*', $passwd;
-    $accepted = $hash eq scrypt_raw($arg->{password}, $VNDB::S{scrypt_salt} . $salt, $N, $r, $p, 32);
-  } else {
-    return cerr $c, auth => "Account disabled";
-  }
+  my $token = urandom(20);
+  my($N, $r, $p, $salt) = unpack 'NCCa8', pack 'H*', $sargs;
+  my $passwd = pack 'NCCa8a*', $N, $r, $p, $salt, scrypt_raw($arg->{password}, $VNDB::S{scrypt_salt} . $salt, $N, $r, $p, 32);
 
-  if($accepted) {
-    $c->{uid} = $uid;
-    $c->{username} = $arg->{username};
-    $c->{client} = $arg->{client};
-    $c->{clientver} = $arg->{clientver};
-    cres $c, ['ok'], 'Successful login by %s (%s) using client "%s" ver. %s', $arg->{username}, $c->{uid}, $c->{client}, $c->{clientver};
-
-  } else {
-    my @a = ( $tm + $VNDB::S{login_throttle}[0], norm_ip($c->{ip}) );
-    pg_cmd 'UPDATE login_throttle SET timeout = to_timestamp($1) WHERE ip = $2', \@a;
-    pg_cmd 'INSERT INTO login_throttle (ip, timeout) SELECT $2, to_timestamp($1) WHERE NOT EXISTS(SELECT 1 FROM login_throttle WHERE ip = $2)', \@a;
-    cerr $c, auth => "Wrong password for user '$arg->{username}'";
-  }
+  cpg $c, 'SELECT user_login($1, decode($2, \'hex\'), decode($3, \'hex\'))', [ $uid, unpack('H*', $passwd), unpack('H*', $token) ], sub {
+    if($_[0]->nRows == 1 && ($_[0]->value(0,0)||'') =~ /t/) {
+      $c->{uid} = $uid;
+      $c->{username} = $arg->{username};
+      $c->{client} = $arg->{client};
+      $c->{clientver} = $arg->{clientver};
+      pg_cmd 'SELECT user_logout($1, decode($2, \'hex\'))', [ $uid, unpack('H*', $token) ];
+      cres $c, ['ok'], 'Successful login by %s (%s) using client "%s" ver. %s', $arg->{username}, $c->{uid}, $c->{client}, $c->{clientver};
+    } else {
+      my @a = ( $tm + $VNDB::S{login_throttle}[0], norm_ip($c->{ip}) );
+      pg_cmd 'UPDATE login_throttle SET timeout = to_timestamp($1) WHERE ip = $2', \@a;
+      pg_cmd 'INSERT INTO login_throttle (ip, timeout) SELECT $2, to_timestamp($1) WHERE NOT EXISTS(SELECT 1 FROM login_throttle WHERE ip = $2)', \@a;
+      cerr $c, auth => "Wrong password for user '$arg->{username}'";
+    }
+  };
 }
 
 
