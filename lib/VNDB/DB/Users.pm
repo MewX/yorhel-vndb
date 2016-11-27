@@ -6,15 +6,16 @@ use warnings;
 use Exporter 'import';
 
 our @EXPORT = qw|
-  dbUserGet dbUserEdit dbUserAdd dbUserDel dbUserPrefSet
-  dbSessionAdd dbSessionDel dbSessionUpdateLastUsed
+  dbUserGet dbUserEdit dbUserAdd dbUserDel dbUserPrefSet dbUserLogin dbUserLogout
+  dbUserUpdateLastUsed dbUserEmailExists dbUserGetMail dbUserSetMail dbUserSetPerm dbUserAdminSetPass
+  dbUserResetPass dbUserIsValidToken dbUserSetPass
   dbNotifyGet dbNotifyMarkRead dbNotifyRemove
   dbThrottleGet dbThrottleSet
 |;
 
 
-# %options->{ username passwd mail session uid ip registered search results page what sort reverse notperm }
-# what: notifycount stats extended prefs hide_list
+# %options->{ username session uid ip registered search results page what sort reverse notperm }
+# what: notifycount stats scryptargs extended prefs hide_list
 # sort: username registered votes changes tags
 sub dbUserGet {
   my $s = shift;
@@ -26,6 +27,7 @@ sub dbUserGet {
     @_
   );
 
+  my $token = unpack 'H*', $o{session}||'';
   $o{search} =~ s/%// if $o{search};
   my %where = (
     $o{username} ? (
@@ -34,8 +36,6 @@ sub dbUserGet {
       'SUBSTRING(username from 1 for 1) = ?' => $o{firstchar} ) : (),
     !$o{firstchar} && defined $o{firstchar} ? (
       'ASCII(username) < 97 OR ASCII(username) > 122' => 1 ) : (),
-    $o{mail} ? (
-      'LOWER(mail) = LOWER(?)' => $o{mail} ) : (),
     $o{uid} && !ref($o{uid}) ? (
       'id = ?' => $o{uid} ) : (),
     $o{uid} && ref($o{uid}) ? (
@@ -48,8 +48,8 @@ sub dbUserGet {
       'registered > to_timestamp(?)' => $o{registered} ) : (),
     $o{search} ? (
       'username ILIKE ?' => "%$o{search}%") : (),
-    $o{session} ? (
-      q|s.token = decode(?, 'hex')| => unpack 'H*', $o{session} ) : (),
+    $token ? (
+      q|user_isloggedin(id, decode(?, 'hex')) IS NOT NULL| => $token ) : (),
     $o{notperm} ? (
       'perm & ~(?::smallint) > 0' => $o{notperm} ) : (),
   );
@@ -57,8 +57,9 @@ sub dbUserGet {
   my @select = (
     qw|id username c_votes c_changes c_tags|,
     q|extract('epoch' from registered) as registered|,
-    $o{what} =~ /extended/ ? qw|mail perm ign_votes passwd| : (),
+    $o{what} =~ /extended/ ? qw|perm ign_votes| : (), # mail
     $o{what} =~ /hide_list/ ? 'up.value AS hide_list' : (),
+    $o{what} =~ /scryptargs/ ? 'user_getscryptargs(id) AS scryptargs' : (),
     $o{what} =~ /notifycount/ ?
       '(SELECT COUNT(*) FROM notifications WHERE uid = u.id AND read IS NULL) AS notifycount' : (),
     $o{what} =~ /stats/ ? (
@@ -69,11 +70,10 @@ sub dbUserGet {
       '(SELECT COUNT(DISTINCT tag) FROM tags_vn WHERE uid = u.id) AS tagcount',
       '(SELECT COUNT(DISTINCT vid) FROM tags_vn WHERE uid = u.id) AS tagvncount',
     ) : (),
-    $o{session} ? q|extract('epoch' from s.lastused) as session_lastused| : (),
+    $token ? qq|extract('epoch' from user_isloggedin(id, decode('$token', 'hex'))) as session_lastused| : (),
   );
 
   my @join = (
-    $o{session} ? 'JOIN sessions s ON s.uid = u.id' : (),
     $o{what} =~ /hide_list/ || $o{sort} eq 'votes' ?
       "LEFT JOIN users_prefs up ON up.uid = u.id AND up.key = 'hide_list'" : (),
   );
@@ -119,10 +119,7 @@ sub dbUserEdit {
 
   my %h;
   defined $o{$_} && ($h{$_.' = ?'} = $o{$_})
-    for (qw| username mail perm ign_votes email_confirmed |);
-  $h{'passwd = decode(?, \'hex\')'} = unpack 'H*', $o{passwd}
-    if defined $o{passwd};
-
+    for (qw| username ign_votes email_confirmed |);
 
   return if scalar keys %h <= 0;
   return $s->dbExec(q|
@@ -133,11 +130,9 @@ sub dbUserEdit {
 }
 
 
-# username, pass(ecrypted), mail, [ip]
+# username, mail, [ip]
 sub dbUserAdd {
-  my($s, @o) = @_;
-  $s->dbRow(q|INSERT INTO users (username, passwd, mail, ip) VALUES(?, decode(?, 'hex'), ?, ?) RETURNING id|,
-    $o[0], unpack('H*', $o[1]), $o[2], $o[3]||$s->reqIP)->{id};
+  $_[0]->dbRow(q|INSERT INTO users (username, mail, ip) VALUES(?, ?, ?) RETURNING id|, $_[1], $_[2], $_[3]||$_[0]->reqIP)->{id};
 }
 
 
@@ -156,27 +151,64 @@ sub dbUserPrefSet {
 }
 
 
-# Adds a session to the database
-# uid, 40 character session token
-sub dbSessionAdd {
-  $_[0]->dbExec(q|INSERT INTO sessions (uid, token) VALUES(?, decode(?, 'hex'))|, $_[1], unpack 'H*', $_[2]);
-}
-
-
-# Deletes session(s) from the database
-# If no token is supplied, all sessions for the uid are destroyed
-# uid, token (optional)
-sub dbSessionDel {
-  my($s, @o) = @_;
-  my %where = ('uid = ?' => $o[0]);
-  $where{"token = decode(?, 'hex')"} = unpack 'H*', $o[1] if $o[1];
-  $s->dbExec('DELETE FROM sessions !W', \%where);
+# uid, encpass, token
+sub dbUserLogin {
+  $_[0]->dbRow(
+    q|SELECT user_login(?, decode(?, 'hex'), decode(?, 'hex')) AS r|,
+    $_[1], unpack('H*', $_[2]), unpack('H*', $_[3])
+  )->{r}||0;
 }
 
 
 # uid, token
-sub dbSessionUpdateLastUsed {
-  $_[0]->dbExec(q|UPDATE sessions SET lastused = NOW() WHERE uid = ? AND token = decode(?, 'hex')|, $_[1], unpack 'H*', $_[2]);
+sub dbUserLogout {
+  $_[0]->dbExec(q|SELECT user_logout(?, decode(?, 'hex'))|, $_[1], unpack 'H*', $_[2]);
+}
+
+
+# uid, token
+sub dbUserUpdateLastUsed {
+  $_[0]->dbExec(q|SELECT user_update_lastused(?, decode(?, 'hex'))|, $_[1], unpack 'H*', $_[2]);
+}
+
+
+sub dbUserEmailExists {
+  $_[0]->dbRow(q|SELECT user_emailexists(?) AS r|, $_[1])->{r};
+}
+
+
+sub dbUserIsValidToken {
+  $_[0]->dbRow(q|SELECT user_isvalidtoken(?, decode(?, 'hex')) AS r|, $_[1], unpack 'H*', $_[2])->{r};
+}
+
+
+sub dbUserResetPass {
+  $_[0]->dbRow(q|SELECT user_resetpass(?, decode(?, 'hex')) AS r|, $_[1], unpack 'H*', $_[2])->{r};
+}
+
+
+sub dbUserSetPass {
+  $_[0]->dbRow(q|SELECT user_setpass(?, decode(?, 'hex'), decode(?, 'hex')) AS r|, $_[1], unpack('H*', $_[2]), unpack('H*', $_[3]))->{r};
+}
+
+
+sub dbUserGetMail {
+  $_[0]->dbRow(q|SELECT user_getmail(?, ?, decode(?, 'hex')) AS r|, $_[1], $_[2], unpack 'H*', $_[3])->{r};
+}
+
+
+sub dbUserSetMail {
+  $_[0]->dbExec(q|SELECT user_setmail(?, ?, decode(?, 'hex'), ?)|, $_[1], $_[2], unpack('H*', $_[3]), $_[4]);
+}
+
+
+sub dbUserSetPerm {
+  $_[0]->dbExec(q|SELECT user_setperm(?, ?, decode(?, 'hex'), ?)|, $_[1], $_[2], unpack('H*', $_[3]), $_[4]);
+}
+
+
+sub dbUserAdminSetPass {
+  $_[0]->dbExec(q|SELECT user_admin_setpass(?, ?, decode(?, 'hex'), decode(?, 'hex'))|, $_[1], $_[2], unpack('H*', $_[3]), unpack('H*', $_[4]));
 }
 
 

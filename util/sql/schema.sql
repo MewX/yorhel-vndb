@@ -569,10 +569,7 @@ CREATE TABLE users (
   mail varchar(100) NOT NULL,
   perm smallint NOT NULL DEFAULT 1+4+16,
   -- Interpretation of the passwd column depends on its length:
-  -- * 29 bytes: Password reset token
-  --   First 9 bytes: salt (ASCII)
-  --   Latter 20 bytes: sha1(hex(token) + salt)
-  --   'token' is a sha1 digest obtained from random data.
+  -- * 20 bytes: Password reset token (sha1(lower_hex(20 bytes of random data)))
   -- * 46 bytes: scrypt password
   --   4 bytes: N (big endian)
   --   1 byte: r

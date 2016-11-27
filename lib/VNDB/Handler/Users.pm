@@ -145,7 +145,7 @@ sub userpage {
 sub login {
   my $self = shift;
 
-  return $self->resRedirect('/') if $self->authInfo->{id};
+  return $self->resRedirect('/', 'temp') if $self->authInfo->{id};
 
   my $tm = $self->dbThrottleGet(norm_ip($self->reqIP));
   if($tm-time() > $self->{login_throttle}[1]) {
@@ -209,21 +209,18 @@ sub logout {
 sub newpass {
   my $self = shift;
 
-  return $self->resRedirect('/') if $self->authInfo->{id};
+  return $self->resRedirect('/', 'temp') if $self->authInfo->{id};
 
-  my($frm, $u);
+  my($frm, $uid, $token);
   if($self->reqMethod eq 'POST') {
     return if !$self->authCheckCode;
     $frm = $self->formValidate({ post => 'mail', template => 'email' });
     if(!$frm->{_err}) {
-      $u = $self->dbUserGet(mail => $frm->{mail})->[0];
-      $frm->{_err} = [ 'No user found with that email address' ] if !$u || !$u->{id};
+      ($uid, $token) = $self->authResetPass($frm->{mail});
+      $frm->{_err} = [ 'No user found with that email address' ] if !$uid;
     }
     if(!$frm->{_err}) {
-      my %o;
-      my $token;
-      ($token, $o{passwd}) = $self->authPrepareReset();
-      $self->dbUserEdit($u->{id}, %o);
+      my $u = $self->dbUserGet(uid => $uid)->[0];
       my $body = sprintf
          "Hello %s,\n\nYour VNDB.org login has been disabled, you can now set a new password by following the link below:\n\n"
         ."%s\n\nNow don't forget your password again! :-)\n\nvndb.org",
@@ -253,7 +250,7 @@ sub newpass {
 
 sub newpass_sent {
   my $self = shift;
-  return $self->resRedirect('/') if $self->authInfo->{id};
+  return $self->resRedirect('/', 'temp') if $self->authInfo->{id};
   $self->htmlHeader(title => 'New password', noindex => 1);
   div class => 'mainbox';
    h1 'New password';
@@ -267,14 +264,14 @@ sub newpass_sent {
 
 sub setpass {
   my($self, $uid) = @_;
-  return $self->resRedirect('/') if $self->authInfo->{id};
+  return $self->resRedirect('/', 'temp') if $self->authInfo->{id};
 
   my $t = $self->formValidate({get => 't', regex => qr/^[a-f0-9]{40}$/i });
   return $self->resNotFound if $t->{_err};
   $t = $t->{t};
 
-  my $u = $self->dbUserGet(uid => $uid, what => 'extended')->[0];
-  return $self->resNotFound if !$u || !$self->authValidateReset($u->{passwd}, $t);
+  my $u = $self->dbUserGet(uid => $uid)->[0];
+  return $self->resNotFound if !$u || !$self->authIsValidToken($u->{id}, $t);
 
   my $frm;
   if($self->reqMethod eq 'POST') {
@@ -286,10 +283,8 @@ sub setpass {
     push @{$frm->{_err}}, 'Passwords do not match' if $frm->{usrpass} ne $frm->{usrpass2};
 
     if(!$frm->{_err}) {
-      my %o = (email_confirmed => 1);
-      $o{passwd} = $self->authPreparePass($frm->{usrpass});
-      $self->dbUserEdit($uid, %o);
-      return $self->authCreateSession($u->{username}, "/u$uid");
+      $self->dbUserEdit($uid, email_confirmed => 1);
+      return $self->authSetPass($uid, $frm->{usrpass}, "/u$uid", token => $t)
     }
   }
 
@@ -306,7 +301,7 @@ sub setpass {
 
 sub register {
   my $self = shift;
-  return $self->resRedirect('/') if $self->authInfo->{id};
+  return $self->resRedirect('/', 'temp') if $self->authInfo->{id};
 
   my $frm;
   if($self->reqMethod eq 'POST') {
@@ -323,7 +318,7 @@ sub register {
     push @{$frm->{_err}}, 'Someone already has this username, please choose another name'
       if $frm->{usrname} eq 'anonymous' || !$frm->{_err} && $self->dbUserGet(username => $frm->{usrname})->[0]{id};
     push @{$frm->{_err}}, 'Someone already registered with that email address'
-      if !$frm->{_err} && $self->dbUserGet(mail => $frm->{mail})->[0]{id};
+      if !$frm->{_err} && $self->dbUserEmailExists($frm->{mail});
 
     # Use /32 match for IPv4 and /48 for IPv6. The /48 is fairly broad, so some
     # users may have to wait a bit before they can register...
@@ -332,8 +327,8 @@ sub register {
       if !$frm->{_err} && $self->dbUserGet(ip => $ip =~ /:/ ? "$ip/48" : $ip, registered => time-24*3600)->[0]{id};
 
     if(!$frm->{_err}) {
-      my($token, $pass) = $self->authPrepareReset();
-      my $uid = $self->dbUserAdd($frm->{usrname}, $pass, $frm->{mail});
+      my $uid = $self->dbUserAdd($frm->{usrname}, $frm->{mail});
+      my(undef, $token) = $self->authResetPass($frm->{mail});
       my $body = sprintf "Hello %s,\n\n"
         ."Someone has registered an account on VNDB.org with your email address. To confirm your registration, follow the link below.\n\n"
         ."%s\n\n"
@@ -369,7 +364,7 @@ sub register {
 
 sub register_done {
   my $self = shift;
-  return $self->resRedirect('/') if $self->authInfo->{id};
+  return $self->resRedirect('/', 'temp') if $self->authInfo->{id};
   $self->htmlHeader(title => 'Account created', noindex => 1);
   div class => 'mainbox';
    h1 'Account created';
@@ -416,9 +411,6 @@ sub edit {
     );
     push @{$frm->{_err}}, 'Passwords do not match'
       if ($frm->{usrpass} || $frm->{usrpass2}) && (!$frm->{usrpass} || !$frm->{usrpass2} || $frm->{usrpass} ne $frm->{usrpass2});
-    push @{$frm->{_err}}, 'Invalid password'
-      if !($self->authInfo->{id} != $u->{id} && $self->authCan('usermod'))
-          && ($frm->{usrpass} || $frm->{usrpass2}) && !$self->authCheck($u->{username}, $frm->{curpass});
 
     if(!$frm->{_err}) {
       $frm->{skin} = '' if $frm->{skin} eq $self->{skin_default};
@@ -426,23 +418,34 @@ sub edit {
 
       my $tags_cat = join(',', sort @{$frm->{tags_cat}}) || 'none';
       $self->dbUserPrefSet($uid, tags_cat => $tags_cat eq $self->{default_tags_cat} ? '' : $tags_cat);
+
       my %o;
       if($self->authCan('usermod')) {
         $o{username} = $frm->{usrname} if $frm->{usrname};
-        $o{perm} = 0;
-        $o{perm} |= $self->{permissions}{$_} for(@{ delete $frm->{perms} });
+        $o{ign_votes} = $frm->{ign_votes} ? 1 : 0;
+
+        my $perm = 0;
+        $perm |= $self->{permissions}{$_} for(@{ delete $frm->{perms} });
+        $self->dbUserSetPerm($u->{id}, $self->authInfo->{id}, $self->authInfo->{token}, $perm);
       }
-      $o{mail} = $frm->{mail};
-      $o{passwd} = $self->authPreparePass($frm->{usrpass}) if $frm->{usrpass};
-      $o{ign_votes} = $frm->{ign_votes} ? 1 : 0 if $self->authCan('usermod');
+      $self->dbUserSetMail($u->{id}, $self->authInfo->{id}, $self->authInfo->{token}, $frm->{mail});
       $self->dbUserEdit($uid, %o);
-      return $self->resRedirect("/u$uid/edit?d=1", 'post');
+      $self->authAdminSetPass($u->{id}, $frm->{usrpass}) if $frm->{usrpass} && $self->authInfo->{id} != $u->{id};
+
+      if($frm->{usrpass} && $self->authInfo->{id} == $u->{id}) {
+        # Bit ugly: On incorrect password, all other changes are still saved.
+        my $ok = $self->authSetPass($u->{id}, $frm->{usrpass}, "/u$uid/edit?d=1", pass => $frm->{curpass});
+        return if $ok;
+        push @{$frm->{_err}}, 'Invalid password';
+      } else {
+        return $self->resRedirect("/u$uid/edit?d=1", 'post');
+      }
     }
   }
 
   # fill out default values
   $frm->{usrname} ||= $u->{username};
-  $frm->{mail}    ||= $u->{mail};
+  $frm->{mail}    ||= $self->dbUserGetMail($u->{id}, $self->authInfo->{id}, $self->authInfo->{token});
   $frm->{perms}   ||= [ grep $u->{perm} & $self->{permissions}{$_}, keys %{$self->{permissions}} ];
   $frm->{$_} //= $u->{prefs}{$_} for(qw|skin customcss show_nsfw traits_sexual tags_all hide_list spoilers|);
   $frm->{tags_cat} ||= [ split /,/, $u->{prefs}{tags_cat}||$self->{default_tags_cat} ];

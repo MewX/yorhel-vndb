@@ -2,6 +2,7 @@
 --   edit_*      -> revision insertion abstraction functions
 --   *_notify    -> functions issuing a PgSQL NOTIFY statement
 --   notify_*    -> functions creating entries in the notifications table
+--   user_*      -> functions to manage users and sessions
 --   update_*    -> functions to update a cache
 --   *_update    ^  (I should probably rename these to
 --   *_calc      ^   the update_* scheme for consistency)
@@ -687,3 +688,110 @@ END;
 $$ LANGUAGE plpgsql;
 
 
+
+
+----------------------------------------------------------
+--                    user management                   --
+----------------------------------------------------------
+-- XXX: These functions run with the permissions of the 'vndb' user.
+
+
+-- Returns the raw scrypt parameters (N, r, p and salt) for this user, in order
+-- to create an encrypted pass. Returns NULL if this user does not have a valid
+-- password.
+CREATE OR REPLACE FUNCTION user_getscryptargs(integer) RETURNS bytea AS $$
+  SELECT
+    CASE WHEN length(passwd) = 46 THEN substring(passwd from 1 for 14) ELSE NULL END
+  FROM users WHERE id = $1
+$$ LANGUAGE SQL SECURITY DEFINER;
+
+
+-- Create a new session for this user (uid, scryptpass, token)
+CREATE OR REPLACE FUNCTION user_login(integer, bytea, bytea) RETURNS boolean AS $$
+  INSERT INTO sessions (uid, token) SELECT $1, $3 FROM users
+   WHERE length($2) = 46 AND length($3) = 20
+     AND id = $1 AND passwd = $2
+  RETURNING true
+$$ LANGUAGE SQL SECURITY DEFINER;
+
+
+CREATE OR REPLACE FUNCTION user_logout(integer, bytea) RETURNS void AS $$
+  DELETE FROM sessions WHERE uid = $1 AND token = $2
+$$ LANGUAGE SQL SECURITY DEFINER;
+
+
+CREATE OR REPLACE FUNCTION user_update_lastused(integer, bytea) RETURNS void AS $$
+  UPDATE sessions SET lastused = NOW() WHERE uid = $1 AND token = $2
+$$ LANGUAGE SQL SECURITY DEFINER;
+
+
+CREATE OR REPLACE FUNCTION user_isloggedin(integer, bytea) RETURNS timestamptz AS $$
+  SELECT lastused FROM sessions WHERE uid = $1 AND token = $2
+$$ LANGUAGE SQL SECURITY DEFINER;
+
+
+CREATE OR REPLACE FUNCTION user_emailexists(text) RETURNS boolean AS $$
+  SELECT true FROM users WHERE lower(mail) = lower($1) LIMIT 1
+$$ LANGUAGE SQL SECURITY DEFINER;
+
+
+CREATE OR REPLACE FUNCTION user_isvalidtoken(integer, bytea) RETURNS boolean AS $$
+  SELECT true FROM users WHERE id = $1 AND passwd = $2 AND length($2) = 20
+$$ LANGUAGE SQL SECURITY DEFINER;
+
+
+-- Replace password with a reset token. args: email, token. Returns: user id.
+-- Doesn't work for usermods, otherwise an attacker could use this function to
+-- gain access to all user's emails by obtaining a reset token of a usermod.
+-- Ideally Postgres itself would send the user an email so that the application
+-- calling this function doesn't even get the token, and thus can't get access
+-- to someone's account. But alas, that'd require a separate process.
+CREATE OR REPLACE FUNCTION user_resetpass(text, bytea) RETURNS integer AS $$
+  UPDATE users SET passwd = $2 WHERE lower(mail) = lower($1) AND length($2) = 20 AND perm & 128 = 0 RETURNING id;
+$$ LANGUAGE SQL SECURITY DEFINER;
+
+
+-- Changes the user's password and invalidates all existing sessions. args: uid, old_pass_or_token, new_pass
+CREATE OR REPLACE FUNCTION user_setpass(integer, bytea, bytea) RETURNS boolean AS $$
+  WITH upd(id) AS (
+    UPDATE users SET passwd = $3 WHERE id = $1 AND passwd = $2 AND length($2) IN(20,46) AND length($3) = 46 RETURNING id
+  ), del AS( -- Not referenced, but still guaranteed to run
+    DELETE FROM sessions WHERE uid IN(SELECT id FROM upd)
+  )
+  SELECT true FROM upd
+$$ LANGUAGE SQL SECURITY DEFINER;
+
+
+-- Internal function, used to verify whether user ($2 with session $3) is
+-- allowed to access data from user $1.
+CREATE OR REPLACE FUNCTION user_isauth(integer, integer, bytea) RETURNS boolean AS $$
+  SELECT true FROM users
+   WHERE id = $2
+     AND EXISTS(SELECT 1 FROM sessions WHERE uid = $2 AND token = $3)
+     AND ($2 = $1 OR perm & 128 = 128)
+$$ LANGUAGE SQL;
+
+
+-- uid of user email to get, uid currently logged in, session token of currently logged in.
+-- Ensures that only the user itself or a useradmin can get someone's email address.
+CREATE OR REPLACE FUNCTION user_getmail(integer, integer, bytea) RETURNS text AS $$
+  SELECT mail FROM users WHERE id = $1 AND user_isauth($1, $2, $3)
+$$ LANGUAGE SQL SECURITY DEFINER;
+
+
+CREATE OR REPLACE FUNCTION user_setmail(integer, integer, bytea, text) RETURNS void AS $$
+  UPDATE users SET mail = $4 WHERE id = $1 AND user_isauth($1, $2, $3)
+$$ LANGUAGE SQL SECURITY DEFINER;
+
+
+CREATE OR REPLACE FUNCTION user_setperm(integer, integer, bytea, integer) RETURNS void AS $$
+  UPDATE users SET perm = $4 WHERE id = $1 AND user_isauth(-1, $2, $3)
+$$ LANGUAGE SQL SECURITY DEFINER;
+
+
+CREATE OR REPLACE FUNCTION user_admin_setpass(integer, integer, bytea, bytea) RETURNS void AS $$
+  WITH upd(id) AS (
+    UPDATE users SET passwd = $4 WHERE id = $1 AND user_isauth(-1, $2, $3) AND length($4) = 46 RETURNING id
+  )
+  DELETE FROM sessions WHERE uid IN(SELECT id FROM upd)
+$$ LANGUAGE SQL SECURITY DEFINER;
