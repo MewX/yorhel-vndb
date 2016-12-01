@@ -110,6 +110,7 @@ GRANT SELECT                         ON releases_platforms       TO vndb_multi;
 GRANT SELECT                         ON releases_producers       TO vndb_multi;
 GRANT SELECT                         ON releases_vn              TO vndb_multi;
 GRANT SELECT, INSERT, UPDATE, DELETE ON relgraphs                TO vndb_multi;
+GRANT SELECT, INSERT, UPDATE, DELETE ON rlists                   TO vndb_multi;
 GRANT SELECT                         ON screenshots              TO vndb_multi;
 GRANT SELECT (lastused)              ON sessions                 TO vndb_multi;
 GRANT                         DELETE ON sessions                 TO vndb_multi;
