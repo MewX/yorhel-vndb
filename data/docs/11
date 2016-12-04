@@ -12,6 +12,14 @@
  <br /><br />
 </p>
 
+<b>Usage terms</b>
+<p>
+ This service is free for non-commercial use. The API is provided on a
+ best-effort basis, no guarantees are made about the stability or applicability
+ of this service.
+</p>
+<br />
+
 <b>Design goals</b>
 <ul>
  <li>
@@ -69,63 +77,6 @@ server resources and prevent abuse of this service.</p>
  <dt>Port (plain tcp)</dt><dd>19534 ('VN')</dd>
  <dt>Port (TLS)</dt><dd>19535<br />For improved security, make sure to verify that the certificate is valid for 'api.vndb.org' and is signed by a trusted root (in particular, by <a href="https://letsencrypt.org/certificates/">Let's Encrypt</a>).</dd>
 </dl>
-
-<br />
-<b>Disclaimer</b>
-<p>These notes should be obvious, but I'll point it out anyway.</p>
-<ul>
- <li>
-  This service is still experimental and is provided for free. No guarantees
-  are given about the stability and uptime of this service. It may disappear
-  at any time, and access to it can be restricted without prior notice.
- </li>
- <li>
-  Changes to this API can be made without prior notice. Backwards compatibility
-  is provided when feasable, but non-compatible changes may be made at some
-  point.  It is the responsibility of the application developers to keep their
-  applications up-to-date.
- </li>
- <li>
-  This service does not grant anyone the right to copy or republish the
-  information fetched using the API. VNDB does not have a clear copyright
-  statement, and in general we're not very strict about other people copying
-  our information, but this API is not intended to be used for fetching and
-  publishing more than half of our database. When in doubt, ask.
- </li>
- <li>
-  Lastly, this API is not complete. If you have any specific features you'd
-  like to see, don't hesitate to ask.
- </li>
-</ul>
-
-<br />
-<b>Implementation tips</b>
-<p>Like the disclaimer, these notes should be obvious, but it can't hurt to state them anyway.</p>
-<ul>
- <li>
-  Cache as much as you can, the data on VNDB doesn't change very often. Even if
-  you only refresh the cached information once every month, you can be sure
-  that most of the data hasn't changed within that time.
- </li>
- <li>
-  Program defensively. Even when the documentation says that a string will be
-  returned, it may very well happen that this is later changed into an array.
-  Make sure your application doesn't completely crash in such an event. Also keep
-  in mind that for every command you send, the server can reply with an error, or
-  can immediately close the connection (but this should be rare).
- </li>
- <li>
-  Regularly check this page to see if anything has changed to the API, and
-  update your client when necessary. A change log can be found on the bottom of
-  this page. It is recommended to subscribe to the <a
-  href="/feeds/announcements.atom">announcements Atom feed</a>.
- </li>
- <li>
-  Use a JSON library for both encoding and decoding JSON data. While the format
-  is relatively easy to use, you're much more likely to introduce bugs when you're
-  writing your own parser.
- </li>
-</ul>
 
 
 
@@ -1216,12 +1167,15 @@ however still required.<br />
   <td>id</td>
   <td>integer<br />array of integers</td>
   <td>=</td>
-  <td>This filter must be present. The special value '0' is recognized as the currently logged in user.</td>
+  <td>The special value '0' is recognized as the currently logged in user.</td>
+ </tr>
+ <tr>
+  <td>username</td>
+  <td>string<br />array of strings</td>
+  <td>= != ~<br />=</td>
+  <td></td>
  </tr>
 </table>
-<p>
- Note: Internally, the user with id '0' is reserved for the "deleted" user.
-</p>
 
 
 :SUBSUB:get votelist
@@ -1554,6 +1508,10 @@ however still required.<br />
  This section lists the changes made in each version of the VNDB code.
  Check out the <a href="/t/an">announcements board</a> for more information about updates.
 </p>
+<b>2.27</b>
+<ul>
+ <li>Add "username" filter to "get user"</li>
+</ul>
 <b>2.25</b>
 <ul>
  <li>Add "tags" filter to "get vn"</li>

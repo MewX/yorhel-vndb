@@ -848,6 +848,11 @@ my %GET_USER = (
       [ 'int' => 'u.id :op: :value:', {qw|= =|}, range => [0,1e6], process => \&subst_user_id ],
       [ inta  => 'u.id IN(:value:)', {'=',1}, range => [0,1e6], join => ',', process => \&subst_user_id ],
     ],
+    username => [
+      [ str   => 'u.username :op: :value:', {qw|= =  != <>|} ],
+      [ str   => 'u.username ILIKE :value:', {'~',1}, process => \'like' ],
+      [ stra  => 'u.username IN(:value:)', {'=',1}, join => ',' ],
+    ],
   },
 );
 
