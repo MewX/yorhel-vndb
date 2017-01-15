@@ -50,7 +50,12 @@ sub page {
   )->[0];
   return $self->resNotFound if !$p->{id};
 
-  $self->htmlHeader(title => $p->{name}, noindex => $rev);
+  my $metadata = {
+    'og:title' => $p->{name},
+    'og:description' => $p->{desc},
+  };
+
+  $self->htmlHeader(title => $p->{name}, noindex => $rev, metadata => $metadata);
   $self->htmlMainTabs(p => $p);
   return if $self->htmlHiddenMessage('p', $p);
 

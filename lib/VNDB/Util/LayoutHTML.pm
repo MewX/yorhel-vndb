@@ -11,7 +11,7 @@ use VNDB::Func;
 our @EXPORT = qw|htmlHeader htmlFooter|;
 
 
-sub htmlHeader { # %options->{ title, noindex, search, feeds, svg }
+sub htmlHeader { # %options->{ title, noindex, search, feeds, svg, metadata }
   my($self, %o) = @_;
   my $skin = $self->reqGet('skin') || $self->authPref('skin') || $self->{skin_default};
   $skin = $self->{skin_default} if !$self->{skins}{$skin} || !-d "$VNDB::ROOT/static/s/$skin";
@@ -19,7 +19,7 @@ sub htmlHeader { # %options->{ title, noindex, search, feeds, svg }
   # heading
   lit '<!DOCTYPE HTML>';
   tag 'html', lang => 'en';
-   head;
+   head prefix => 'og: http://ogp.me/ns#';
     title $o{title};
     Link rel => 'shortcut icon', href => '/favicon.ico', type => 'image/x-icon';
     Link rel => 'stylesheet', href => $self->{url_static}.'/s/'.$skin.'/style.css?'.$self->{version}, type => 'text/css', media => 'all';
@@ -30,6 +30,24 @@ sub htmlHeader { # %options->{ title, noindex, search, feeds, svg }
     }
     Link rel => 'alternate', type => 'application/atom+xml', href => "/feeds/$_.atom", title => $self->{atom_feeds}{$_}[1]
       for ($o{feeds} ? @{$o{feeds}} : ());
+
+    if(exists $o{metadata}) {
+      # Required fields as per http://op.me/#metadata: og:title, og:type, og:image, og:url
+      if(exists $o{metadata}{'og:title'}) {
+        $o{metadata}{'og:site_name'} = 'The Visual Novel Database';
+        $o{metadata}{'og:type'}    ||= 'object';
+        $o{metadata}{'og:image'}   ||= $self->{placeholder_img};
+        $o{metadata}{'og:url'}     ||= $self->reqURI();
+      }
+
+      for my $k (keys %{$o{metadata}}) {
+        next unless $o{metadata}{$k};
+        $o{metadata}{$k} =~ s/\R/ /g;
+
+        meta property => "$k", content => $o{metadata}->{$k}, undef;
+      }
+    }
+
     meta name => 'robots', content => 'noindex, follow', undef if $o{noindex};
    end;
    body;

@@ -32,6 +32,7 @@ our %S;
   url             => 'http://vndb.org',   # Only used by Multi, web pages infer their own address
   url_static      => 'http://s.vndb.org',
   skin_default    => 'angel',
+  placeholder_img => 'http://s.vndb.org/s/angel/bg.jpg', # Used in the og:image meta tag
   form_salt       => 'a-private-string-here',
   scrypt_args     => [ 65536, 8, 1 ], # N, r, p
   scrypt_salt     => 'another-random-string',

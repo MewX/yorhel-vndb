@@ -28,7 +28,13 @@ sub page {
   )->[0];
   return $self->resNotFound if !$r->{id};
 
-  $self->htmlHeader(title => $r->{name}, noindex => $rev);
+  my $metadata = {
+    'og:title' => $r->{name},
+    'og:description' => $r->{desc},
+    'og:image' => $r->{image} && imgurl(ch => $r->{image}),
+  };
+
+  $self->htmlHeader(title => $r->{name}, noindex => $rev, metadata => $metadata);
   $self->htmlMainTabs(c => $r);
   return if $self->htmlHiddenMessage('c', $r);
 

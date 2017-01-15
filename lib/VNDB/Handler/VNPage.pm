@@ -341,7 +341,18 @@ sub page {
 
   my $r = $self->dbReleaseGet(vid => $vid, what => 'producers platforms', results => 200);
 
-  $self->htmlHeader(title => $v->{title}, noindex => $rev);
+  my $metadata = {
+    'og:title' => $v->{title},
+    'og:description' => $v->{desc},
+  };
+
+  if($v->{image} && !$v->{img_nsfw}) {
+    $metadata->{'og:image'} = imgurl(cv => $v->{image});
+  } elsif(my ($ss) = grep !$_->{nsfw}, @{$v->{screenshots}}) {
+    $metadata->{'og:image'} = imgurl(st => $ss->{id});
+  }
+
+  $self->htmlHeader(title => $v->{title}, noindex => $rev, metadata => $metadata);
   $self->htmlMainTabs('v', $v);
   return if $self->htmlHiddenMessage('v', $v);
 

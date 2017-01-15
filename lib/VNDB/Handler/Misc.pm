@@ -35,12 +35,22 @@ TUWF::register(
 
 sub homepage {
   my $self = shift;
-  $self->htmlHeader(title => 'The Visual Novel Database', feeds => [ keys %{$self->{atom_feeds}} ]);
+
+  my $title = 'The Visual Novel Database';
+  my $desc = 'VNDB.org strives to be a comprehensive database for information about visual novels.';
+
+  my $metadata = {
+    'og:type' => 'website',
+    'og:title' => $title,
+    'og:description' => $desc,
+  };
+
+  $self->htmlHeader(title => $title, feeds => [ keys %{$self->{atom_feeds}} ], metadata => $metadata);
 
   div class => 'mainbox';
-   h1 'The Visual Novel Database';
+   h1 $title;
    p class => 'description';
-    txt 'VNDB.org strives to be a comprehensive database for information about visual novels.';
+    txt $desc;
     br;
     txt 'This website is built as a wiki, meaning that anyone can freely add'
       .' and contribute information to the database, allowing us to create the'
