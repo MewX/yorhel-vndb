@@ -14,7 +14,7 @@ sub ordhash { my %x; tie %x, 'Tie::IxHash', @_; \%x }
 
 # options for TUWF
 our %O = (
-  db_login  => [ 'dbi:Pg:dbname=vndb', 'vndb', 'passwd' ],
+  db_login  => [ 'dbi:Pg:dbname=vndb', 'vndb_site', 'passwd' ],
   debug     => 1,
   logfile   => $ROOT.'/data/log/vndb.log',
   cookie_prefix   => 'vndb_',
