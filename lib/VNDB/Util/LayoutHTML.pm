@@ -41,7 +41,7 @@ sub htmlHeader { # %options->{ title, noindex, search, feeds, svg, metadata }
       }
 
       for my $k (keys %{$o{metadata}}) {
-        next unless $o{metadata}{$k};
+        next if !$o{metadata}{$k} and $o{metadata}{$k} ne '0';
         $o{metadata}{$k} =~ s/\R/ /g;
 
         meta property => "$k", content => $o{metadata}->{$k}, undef;
