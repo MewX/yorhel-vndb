@@ -655,10 +655,11 @@ sub _anime {
         b;
          txt '[';
          a href => "http://anidb.net/a$_->{id}", title => 'AniDB', 'DB';
-         if($_->{nfo_id}) {
-           txt '-';
-           a href => "http://animenfo.com/animetitle,$_->{nfo_id},a.html", title => 'AnimeNFO', 'NFO';
-         }
+         # AnimeNFO links seem to be broken at the moment. TODO: Completely remove?
+         #if($_->{nfo_id}) {
+         #  txt '-';
+         #  a href => "http://animenfo.com/animetitle,$_->{nfo_id},a.html", title => 'AnimeNFO', 'NFO';
+         #}
          if($_->{ann_id}) {
            txt '-';
            a href => "http://www.animenewsnetwork.com/encyclopedia/anime.php?id=$_->{ann_id}", title => 'Anime News Network', 'ANN';
