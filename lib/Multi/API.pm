@@ -177,7 +177,7 @@ sub cmd_read {
   # this code wouldn't require a few protocol specific chunks.
   $c->{h}->push_read(line => "\x04", sub {
     my $cmd = $c->{filt}->get([$_[1], "\x04"]);
-    die "No or too many commands in a single message" if @$cmd != 1;
+    die "None or too many commands in a single message" if @$cmd != 1;
 
     my @arg;
     ($cmd, @arg) = @{$cmd->[0]};
@@ -228,7 +228,7 @@ sub cmd_handle {
 
   # dbstats
   if($cmd eq 'dbstats') {
-    return cerr $c, parse => 'Invalid arguments to get command' if @arg > 0;
+    return cerr $c, parse => 'Too many arguments to dbstats command' if @arg > 0;
     return dbstats($c);
   }
 
@@ -305,7 +305,7 @@ sub login_verify {
 
   my $token = urandom(20);
   my($N, $r, $p, $salt) = unpack 'NCCa8', pack 'H*', $sargs;
-  my $passwd = pack 'NCCa8a*', $N, $r, $p, $salt, scrypt_raw($arg->{password}, $VNDB::S{scrypt_salt} . $salt, $N, $r, $p, 32);
+  my $passwd = pack 'NCCa8a*', $N, $r, $p, $salt, scrypt_raw(encode_utf8($arg->{password}), $VNDB::S{scrypt_salt} . $salt, $N, $r, $p, 32);
 
   cpg $c, 'SELECT user_login($1, decode($2, \'hex\'), decode($3, \'hex\'))', [ $uid, unpack('H*', $passwd), unpack('H*', $token) ], sub {
     if($_[0]->nRows == 1 && ($_[0]->value(0,0)||'') =~ /t/) {
