@@ -206,7 +206,7 @@ sub edit {
     if(!$frm->{_err} && $frm->{boards}) {
       for (split /[ ,]/, $frm->{boards}) {
         my($ty, $id) = ($1, $2) if /^([a-z]{1,2})([0-9]*)$/;
-        push @boards, [ $ty, $id ];
+        push @boards, [ $ty, $id ] if !grep $_->[0].$_->[1] eq $ty.$id, @boards;
         push @{$frm->{_err}}, "Wrong board: $_" if
              !$ty || !$self->{discussion_boards}{$ty}
           || $ty eq 'an' && ($id || !$self->authCan('boardmod'))
