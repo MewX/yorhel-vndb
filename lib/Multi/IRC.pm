@@ -482,15 +482,6 @@ scr => [ 0, 0, sub {
   };
 }],
 
-eval => [ 1, 1, sub {
-  my @l = split /\r?\n/, eval($_[2])||$@;
-  if(@l > 5 || length(join ' ', @l) > 400) {
-    $irc->send_msg(PRIVMSG => $_[1], 'Output too large, refusing to spam chat (and too lazy to use a pastebin).');
-  } else {
-    $irc->send_msg(PRIVMSG => $_[1], encode_utf8("eval: ".$_)) for @l;
-  }
-}],
-
 die => [ 1, 1, sub {
   kill 'TERM', 0;
 }],
