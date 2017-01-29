@@ -476,7 +476,8 @@ however still required.<br />
    "rid", integer, release ID<br />
    "nsfw", boolean<br />
    "height", integer, height of the full-size screenshot<br />
-   "width", integer, width of the full-size screenshot<br />
+   "width", integer, width of the full-size screenshot
+  </td>
  </tr>
 </table>
 <p>Sorting is possible on the following fields: id, title, released, popularity, rating, votecount.</p><br />
