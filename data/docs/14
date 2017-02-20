@@ -4,8 +4,8 @@
 :SUB:Introduction
 <p>
  This page lists and documents any provided database dumps. These dumps are
- complimentary to the <a href="/d11">real-time API</a>, and the disclaimers
- that apply to the API apply here, too.
+ complimentary to the <a href="/d11">real-time API</a>, and the usage terms
+ that apply to the API apply here as well.
 </p>
 
 
@@ -13,7 +13,7 @@
 <p>
  <b>URL:</b> <a href="https://vndb.org/api/tags.json.gz">https://vndb.org/api/tags.json.gz</a><br />
  <b>Updated:</b> Every 24 hours.<br />
- <b>Size:</b> ~190 KiB compressed, ~650 KiB uncompressed.<br />
+ <b>Size:</b> ~240 KiB compressed, ~800 KiB uncompressed.<br />
  This dump includes information about all (approved) VN tags in the JSON
  format. The top-level type is an array of tags, and each tag is represented as
  an object with the following members:
@@ -84,7 +84,7 @@
 <p>
  <b>URL:</b> <a href="https://vndb.org/api/traits.json.gz">https://vndb.org/api/traits.json.gz</a><br />
  <b>Updated:</b> Every 24 hours.<br />
- <b>Size:</b> ~220 KiB compressed, ~680 KiB uncompressed.<br />
+ <b>Size:</b> ~340 KiB compressed, ~1 MiB uncompressed.<br />
  This dump includes information about all (approved) character traits in the
  JSON format. The top-level type is an array of traits, and each trait is
  represented as an object with the following members:
@@ -150,13 +150,13 @@
 
 :SUB:Votes
 <p>
- <b>URL:</b> <a href="https://vndb.org/api/votes.gz">https://vndb.org/api/votes.gz</a><br />
+ <b>URL:</b> <a href="https://vndb.org/api/votes2.gz">https://vndb.org/api/votes2.gz</a><br />
  <b>Updated:</b> Every 24 hours.<br />
- <b>Size:</b> ~1.2 MiB compressed, ~3.5 MiB uncompressed.<br />
+ <b>Size:</b> ~2.8 MiB compressed, ~11.6 MiB uncompressed.<br />
  This dump contains the VN votes of all users who did not mark their vote list
  as private. Votes from known duplicate accounts or from users who voted on
  unreleased VNs are also not included.<br />
  Each line in the file represents a single vote. Each line contains the VN id,
- user ID and vote, separated by a space. Votes are as listed on the site,
- multiplied by 10 (i.e. in the range of 10 - 100).
+ user ID, vote, and date that the vote was cast, separated by a space. Votes
+ are as listed on the site, multiplied by 10 (i.e. in the range of 10 - 100).
 </p>

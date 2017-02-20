@@ -79,7 +79,7 @@ sub writejson {
 
 sub votes_gen {
   pg_cmd q{
-    SELECT vv.vid||' '||vv.uid||' '||vv.vote as l
+    SELECT vv.vid||' '||vv.uid||' '||vv.vote as l, to_char(vv.date, 'YYYY-MM-DD') as d
       FROM votes vv
       JOIN users u ON u.id = vv.uid
       JOIN vn v ON v.id = vv.vid
@@ -91,9 +91,17 @@ sub votes_gen {
     return if pg_expect $res, 1;
     my $ws = AE::time;
 
+    # legacy votes v1 file, without date
     my $file = "$VNDB::ROOT/www/api/votes.gz";
     open my $f, '>:gzip:utf8', "$file~" or die "Writing $file: $!";
     printf $f "%s\n", $res->value($_,0) for (0 .. $res->rows-1);
+    close $f;
+    rename "$file~", $file or die "Renaming $file: $!";
+
+    # v2 file with date
+    $file = "$VNDB::ROOT/www/api/votes2.gz";
+    open $f, '>:gzip:utf8', "$file~" or die "Writing $file: $!";
+    printf $f "%s %s\n", $res->value($_,0), $res->value($_,1) for (0 .. $res->rows-1);
     close $f;
     rename "$file~", $file or die "Renaming $file: $!";
 
