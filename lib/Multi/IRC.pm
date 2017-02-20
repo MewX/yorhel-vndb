@@ -283,7 +283,7 @@ sub handleid {
   my($chan, $t, $id, $rev) = @_;
 
   # Some common exceptions
-  return if grep "$t$id$rev" eq $_, qw|v1 v2 v3 v4 u2 i3 i5 i7|;
+  return if grep "$t$id$rev" eq $_, qw|v1 v2 v3 v4 u2 i3 i5 i7 c64|;
 
   return if throttle $O{throt_vndbid}, 'irc_vndbid';
   return if throttle $O{throt_sameid}, "irc_sameid_$t$id$rev";
