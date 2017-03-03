@@ -108,8 +108,8 @@ sub list {
      lit '<i>&#9656;</i> Release filters<i></i>';
     end;
    end;
-   input type => 'hidden', class => 'hidden', name => 'fil', id => 'fil', value => $f->{fil};
-   input type => 'hidden', class => 'hidden', name => 'rfil', id => 'rfil', value => $f->{rfil};
+   input type => 'hidden', class => 'hidden', name => $_, id => $_, value => $f->{$_}
+     for (qw{fil rfil s o});
   end;
   end 'form';
 
