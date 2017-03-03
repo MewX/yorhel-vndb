@@ -571,6 +571,7 @@ however still required.<br />
    need.<br />
    This filter may used cached data, it may take up to 24 hours
    before a VN will have its tag updated with respect to this filter.<br />
+   VNs that are linked to childs of the given tag are also included.<br />
    Be warned that this filter ignores spoiler settings, fetch the tags
    associated with the returned VN to verify the spoiler level.
   </td>
@@ -1126,6 +1127,23 @@ however still required.<br />
     may also include characters that are normally hidden by spoiler settings.
   </td>
  </tr>
+ <tr>
+  <td>traits</td>
+  <td>int<br />array of ints</td>
+  <td>= !=</td>
+  <td>
+   Find chars by traits. When providing an array of ints, the '=' filter will return
+   chars that are linked to any (not all) of the given traits, the '!=' filter will
+   return chars that are not linked to any of the given traits. You can combine
+   multiple trait filters with 'and' and 'or' to get the exact behavior you
+   need.<br />
+   This filter may used cached data, it may take up to 24 hours
+   before a char entry will have its traits updated with respect to this filter.<br />
+   Chars that are linked to childs of the given trait are also included.<br />
+   Be warned that this filter ignores spoiler settings, fetch the traits
+   associated with the returned char to verify the spoiler level.
+  </td>
+ </tr>
 </table>
 
 
@@ -1512,6 +1530,7 @@ however still required.<br />
 <b>2.27</b>
 <ul>
  <li>Add "username" filter to "get user"</li>
+ <li>Add "traits" filter to "get character"</li>
 </ul>
 <b>2.25</b>
 <ul>

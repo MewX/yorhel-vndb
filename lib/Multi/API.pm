@@ -827,6 +827,10 @@ my %GET_CHARACTER = (
       [ 'int' => 'c.id IN(SELECT cv.id FROM chars_vns cv WHERE cv.vid = :value:)', {'=',1}, range => [1,1e6] ],
       [ inta  => 'c.id IN(SELECT cv.id FROM chars_vns cv WHERE cv.vid IN(:value:))', {'=',1}, range => [1,1e6], join => ',' ],
     ],
+    traits => [
+      [ int   => 'c.id :op:(SELECT tc.cid FROM traits_chars tc WHERE tc.tid = :value:)',   {'=' => 'IN', '!=' => 'NOT IN'}, range => [1,1e6] ],
+      [ inta  => 'c.id :op:(SELECT tc.cid FROM traits_chars tc WHERE tc.tid IN(:value:))', {'=' => 'IN', '!=' => 'NOT IN'}, join => ',', range => [1,1e6] ],
+    ],
   },
 );
 
