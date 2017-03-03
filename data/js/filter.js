@@ -574,7 +574,10 @@ function filVN() {
     [ 'General',
       filFSelect( 'length', 'Length', 6, VARS.vn_lengths),
       filFOptions('hasani', 'Anime',       [[1, 'Has anime'],     [0, 'Does not have anime']]),
-      filFOptions('hasshot','Screenshots', [[1, 'Has screenshot'],[0, 'Does not have a screenshot']])
+      filFOptions('hasshot','Screenshots', [[1, 'Has screenshot'],[0, 'Does not have a screenshot']]),
+      [ 'date_after',  'Released after',  dateLoad(null, selectField), function (c) { return [c.date_val] }, function(o,v) { o.dateSet(v) } ],
+      [ 'date_before', 'Released before', dateLoad(null, selectField), function (c) { return [c.date_val] }, function(o,v) { o.dateSet(v) } ],
+      filFOptions('released', 'Release date',    [ [1, 'Past (already released)'], [0, 'Future (to be released)'] ])
     ],
     ontagpage ? [ 'Tags',
       [ '', ' ', tag('Additional tag filters are not available on this page. Use the visual novel browser instead (available from the main menu -> visual novels).') ],

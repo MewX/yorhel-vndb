@@ -4,6 +4,7 @@ package VNDB::DB::VN;
 use strict;
 use warnings;
 use TUWF 'sqlprint';
+use POSIX 'strftime';
 use Exporter 'import';
 use VNDB::Func 'gtintype', 'normalize_query';
 
@@ -11,7 +12,8 @@ our @EXPORT = qw|dbVNGet dbVNGetRev dbVNRevisionInsert dbVNImageId dbScreenshotA
 
 
 # Options: id, char, search, length, lang, olang, plat, tag_inc, tag_exc, tagspoil,
-#   hasani, hasshot, ul_notblack, ul_onwish, results, page, what, sort, reverse, inc_hidden, release
+#   hasani, hasshot, ul_notblack, ul_onwish, results, page, what, sort,
+#   reverse, inc_hidden, date_before, date_after, released, release
 # What: extended anime staff seiyuu relations screenshots relgraph rating ranking wishlist vnlist
 #  Note: wishlist and vnlist are ignored (no db search) unless a user is logged in
 # Sort: id rel pop rating title tagscore rand
@@ -69,6 +71,9 @@ sub dbVNGet {
     # optimize fetching random entries (only when there are no other filters present, otherwise this won't work well)
     $o{sort} eq 'rand' && $o{results} <= 10 && !grep(!/^(?:results|page|what|sort|tagspoil)$/, keys %o) ? (
       'v.id IN(SELECT floor(random() * last_value)::integer FROM generate_series(1,20), (SELECT MAX(id) AS last_value FROM vn) s1 LIMIT 20)' ) : (),
+    defined $o{date_before} ? ( 'v.c_released <= ?'  => $o{date_before} ) : (),
+    defined $o{date_after}  ? ( 'v.c_released >= ?'  => $o{date_after} ) : (),
+    defined $o{released}    ? ( 'v.c_released !s ?'  => [ $o{released} ? '<=' : '>', strftime('%Y%m%d', gmtime) ] ) : (),
   );
 
   if($o{release}) {
