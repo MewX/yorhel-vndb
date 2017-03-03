@@ -413,6 +413,7 @@ sub traitxml {
     results => $f->{r},
     page => 1,
     sort => 'group',
+    state => 2,
     !$f->{q} ? () : $f->{q} =~ /^i([1-9]\d*)/ ? (id => $1) : (search => $f->{q}, sort => 'search'),
     $f->{id} && $f->{id}[0] ? (id => $f->{id}) : (),
   );

@@ -339,6 +339,9 @@ sub edit {
       $frm->{desc}   = $self->bbSubstLinks($frm->{desc});
       $frm->{main_spoil} = 0 if !$frm->{main};
 
+      my %traits = map +($_->{id}, 1), @{$self->dbTraitGet(results => 500, state => 2, id => [ map $_->[0], @traits ])};
+      @traits = grep $traits{$_->[0]}, @traits;
+
       # check for changes
       my $same = $id && !grep $frm->{$_} ne $b4{$_}, keys %b4;
       return $self->resRedirect("/c$id", 'post') if !$copy && $same;
