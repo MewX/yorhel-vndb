@@ -339,7 +339,7 @@ sub edit {
       $frm->{desc}   = $self->bbSubstLinks($frm->{desc});
       $frm->{main_spoil} = 0 if !$frm->{main};
 
-      my %traits = map +($_->{id}, 1), @{$self->dbTraitGet(results => 500, state => 2, id => [ map $_->[0], @traits ])};
+      my %traits = @traits ? map +($_->{id}, 1), @{$self->dbTraitGet(results => 500, state => 2, id => [ map $_->[0], @traits ])} : ();
       @traits = grep $traits{$_->[0]}, @traits;
 
       # check for changes
