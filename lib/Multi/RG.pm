@@ -112,7 +112,7 @@ sub getrel { # id, res, time
   # - How well does this work together with the current caching mechanism? It's
   #   possible that a distant VN doesn't get its relation graph updated because
   #   it's being excluded here.
-  if($C{type} eq 'v' && scalar keys %{$C{nodes}} > 30 && grep $_->[1], values %{$C{rels}}) {
+  if($C{type} eq 'v' && scalar keys %{$C{nodes}} > 30 && grep !$_->[1], values %{$C{rels}}) {
     AE::log info => "Graph for $C{type}$C{id} is too large, re-creating graph without unofficial links";
     return creategraph v => $C{id}, 1, $C{sqlt};
   }
