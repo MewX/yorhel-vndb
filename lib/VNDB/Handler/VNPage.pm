@@ -36,6 +36,7 @@ sub rg {
 
   div class => 'mainbox';
    h1 $title;
+   p 'Note: Unofficial relations are excluded if the graph would otherwise be too large.';
    p class => 'center';
     lit $v->{svg};
    end;

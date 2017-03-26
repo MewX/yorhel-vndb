@@ -43,19 +43,23 @@ sub check_rg {
       SELECT 'v', v.id FROM vn v JOIN vn_relations vr ON vr.id = v.id WHERE v.rgraph IS NULL AND v.hidden = FALSE
     UNION
       SELECT 'p', p.id FROM producers p JOIN producers_relations pr ON pr.id = p.id WHERE p.rgraph IS NULL AND p.hidden = FALSE
-    LIMIT 1|, undef, \&creategraph;
+    LIMIT 1|, undef, sub {
+      my($res, $time) = @_;
+      return if pg_expect $res, 1 or !$res->rows;
+      creategraph(scalar $res->value(0, 0), scalar $res->value(0, 1), 0, $time);
+    }
 }
 
 
 sub creategraph {
-  my($res, $time) = @_;
-  return if pg_expect $res, 1 or !$res->rows;
+  my($type, $id, $official, $sqlt) = @_;
 
   %C = (
     start => scalar AE::time(),
-    type  => scalar $res->value(0, 0),
-    id    => scalar $res->value(0, 1),
-    sqlt  => $time,
+    type  => $type,
+    id    => $id,
+    sqlt  => $sqlt,
+    offi  => $official,
     rels  => {}, # relations (key=id1-id2, value=[relation,official])
     nodes => {}, # nodes (key=id, value= 0:found, 1:processed)
   );
@@ -68,9 +72,10 @@ sub creategraph {
 sub getrelid {
   my $id = shift;
   AE::log debug => "Fetching relations for $C{type}$id";
-  pg_cmd $C{type} eq 'v'
-    ? 'SELECT vid, relation, official FROM vn_relations WHERE id = $1'
-    : 'SELECT pid, relation FROM producers_relations WHERE id = $1',
+  pg_cmd $C{type} eq 'p'
+    ? 'SELECT pid, relation FROM producers_relations WHERE id = $1'
+    : $C{offi} ? 'SELECT vid, relation, official FROM vn_relations WHERE id = $1 AND official'
+               : 'SELECT vid, relation, official FROM vn_relations WHERE id = $1',
     [ $id ], sub { getrel($id, @_) };
 }
 
@@ -98,6 +103,19 @@ sub getrel { # id, res, time
 
   # Wait for other node relations to come in.
   return if grep !$_, values %{$C{nodes}};
+
+  # For VNs: If the graph has more than 30 nodes and there are unofficial
+  # links, start again, this time throwing away the unofficial links.
+  # XXX: This is an ugly hack.
+  # - This would remove unofficial links between VNs that are in the graph anyway.
+  # - It can result in graphs with just a single VN node and no links.
+  # - How well does this work together with the current caching mechanism? It's
+  #   possible that a distant VN doesn't get its relation graph updated because
+  #   it's being excluded here.
+  if($C{type} eq 'v' && scalar keys %{$C{nodes}} > 30 && grep $_->[1], values %{$C{rels}}) {
+    AE::log info => "Graph for $C{type}$C{id} is too large, re-creating graph without unofficial links";
+    return creategraph v => $C{id}, 1, $C{sqlt};
+  }
 
   # do we have all relations now? get node info
   my @ids = keys %{$C{nodes}};
