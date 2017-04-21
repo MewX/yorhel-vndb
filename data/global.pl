@@ -209,6 +209,7 @@ our %S;
     [ '1024x640',     'widescreen' ],
     [ '1280x720',     'widescreen' ],
     [ '1280x800',     'widescreen' ],
+    [ '1366x768',     'widescreen' ],
     [ '1920x1080',    'widescreen' ],
   ],
   tag_categories  => ordhash(
