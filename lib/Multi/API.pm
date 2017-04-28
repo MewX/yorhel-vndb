@@ -496,6 +496,23 @@ my %GET_VN = (
         },
       ]]
     },
+    staff => {
+      fetch => [[ 'id', 'SELECT vs.id, vs.aid, vs.role, vs.note, sa.id AS sid, sa.name, sa.original
+                      FROM vn_staff vs JOIN staff_alias sa ON sa.aid = vs.aid WHERE vs.id IN(%s)',
+        sub { my($r, $n) = @_;
+          for my $i (@$r) {
+            $i->{staff} = [ grep $i->{id} == $_->{id}, @$n ];
+          }
+          for (@$n) {
+            $_->{aid} *= 1;
+            $_->{sid} *= 1;
+            $_->{original} ||= undef;
+            $_->{note} ||= undef;
+            delete $_->{id};
+          }
+        }
+      ]],
+    },
   },
   filters => {
     id => [
@@ -835,6 +852,63 @@ my %GET_CHARACTER = (
 );
 
 
+my %GET_STAFF = (
+  sql     => 'SELECT %s FROM staff s JOIN staff_alias sa ON sa.aid = s.aid WHERE NOT s.hidden AND (%s) %s',
+  select  => 's.id',
+  proc    => sub {
+    $_[0]{id} *= 1
+  },
+  sortdef => 'id',
+  sorts   => {
+    id => 's.id %s'
+  },
+  flags  => {
+    basic => {
+      select => 'sa.name, sa.original, s.gender, s.lang AS language',
+      proc => sub {
+        $_[0]{original} ||= undef;
+        $_[0]{gender}   = undef if $_[0]{gender} eq 'unknown';
+      },
+    },
+    details => {
+      select => 's."desc" AS description, s.l_wp, s.l_site, s.l_twitter, s.l_anidb',
+      proc => sub {
+        $_[0]{description} ||= undef;
+        $_[0]{links} = {
+          wikipedia => delete($_[0]{l_wp})     ||undef,
+          homepage  => delete($_[0]{l_site})   ||undef,
+          twitter   => delete($_[0]{l_twitter})||undef,
+          anidb     => (delete($_[0]{l_anidb})||0)*1||undef
+        };
+      },
+    },
+    aliases => {
+      select => 's.aid',
+      proc => sub {
+        $_[0]{main_alias} = delete($_[0]{aid})*1;
+      },
+      fetch => [[ 'id', 'SELECT id, aid, name, original FROM staff_alias WHERE id IN(%s)',
+        sub { my($n, $r) = @_;
+          for my $i (@$n) {
+            $i->{aliases} = [ map [ $_->{aid}*1, $_->{name}, $_->{original}||undef ], grep $i->{id} == $_->{id}, @$r ];
+          }
+        },
+      ]],
+    },
+  },
+  filters => {
+    id => [
+      [ 'int' => 's.id :op: :value:', {qw|= =  != <>  > >  < <  <= <=  >= >=|}, range => [1,1e6] ],
+      [ inta  => 's.id :op:(:value:)', {'=' => 'IN', '!=' => 'NOT IN'}, range => [1,1e6], join => ',' ],
+    ],
+    aid => [
+      [ 'int' => 's.id IN(SELECT sa.id FROM staff_alias sa WHERE sa.aid = :value:)', {'=',1}, range => [1,1e6] ],
+      [ inta  => 's.id IN(SELECT sa.id FROM staff_alias sa WHERE sa.aid IN(:value:))', {'=',1}, range => [1,1e6], join => ',' ],
+    ],
+  },
+);
+
+
 # All user ID filters consider uid=0 to be the logged in user. Needs a special processing function to handle that.
 sub subst_user_id { my($id, $c) = @_; !$id && !$c->{uid} ? \'Not logged in.' : $id || $c->{uid} }
 
@@ -919,6 +993,7 @@ my %GET = (
   release   => \%GET_RELEASE,
   producer  => \%GET_PRODUCER,
   character => \%GET_CHARACTER,
+  staff     => \%GET_STAFF,
   user      => \%GET_USER,
   votelist  => \%GET_VOTELIST,
   vnlist    => \%GET_VNLIST,
