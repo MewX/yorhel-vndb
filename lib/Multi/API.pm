@@ -822,6 +822,22 @@ my %GET_CHARACTER = (
         },
       ]],
     },
+    voiced => {
+      fetch => [[ 'id', 'SELECT vs.cid, sa.id, sa.aid, vs.id AS vid, vs.note FROM vn_seiyuu vs JOIN staff_alias sa ON sa.aid = vs.aid WHERE vs.cid IN(%s)',
+        sub { my($n, $r) = @_;
+          for my $i (@$n) {
+            $i->{voiced} = [ grep $i->{id} == $_->{cid}, @$r ];
+          }
+          for (@$r) {
+            $_->{id}*=1;
+            $_->{aid}*=1;
+            $_->{vid}*=1;
+            $_->{note} ||= undef;
+            delete $_->{cid};
+          }
+        },
+      ]]
+    }
   },
   filters => {
     id => [
@@ -895,6 +911,37 @@ my %GET_STAFF = (
         },
       ]],
     },
+    vns => {
+      fetch => [[ 'id', 'SELECT sa.id AS sid, sa.aid, vs.id, vs.role, vs.note FROM staff_alias sa JOIN vn_staff vs ON vs.aid = sa.aid WHERE sa.id IN(%s)',
+        sub { my($n, $r) = @_;
+          for my $i (@$n) {
+            $i->{vns} = [ grep $i->{id} == $_->{sid}, @$r ];
+          }
+          for (@$r) {
+            $_->{id}*=1;
+            $_->{aid}*=1;
+            $_->{note} ||= undef;
+            delete $_->{sid};
+          }
+        },
+      ]]
+    },
+    voiced => {
+      fetch => [[ 'id', 'SELECT sa.id AS sid, sa.aid, vs.id, vs.cid, vs.note FROM staff_alias sa JOIN vn_seiyuu vs ON vs.aid = sa.aid WHERE sa.id IN(%s)',
+        sub { my($n, $r) = @_;
+          for my $i (@$n) {
+            $i->{voiced} = [ grep $i->{id} == $_->{sid}, @$r ];
+          }
+          for (@$r) {
+            $_->{id}*=1;
+            $_->{aid}*=1;
+            $_->{cid}*=1;
+            $_->{note} ||= undef;
+            delete $_->{sid};
+          }
+        },
+      ]]
+    }
   },
   filters => {
     id => [

@@ -1099,6 +1099,23 @@ however still required.<br />
     (string).<br />
     Available roles: "main", "primary", "side" and "appears".</td>
  </tr>
+ <tr class="odd">
+  <td>voiced</td>
+  <td>voiced</td>
+  <td>array of objects</td>
+  <td>no</td>
+  <td>List of voice actresses (staff) that voiced this character, per VN. Each
+    staff/VN is represented as a object with the following members:<br />
+    "id", integer, staff ID<br />
+    "aid", integer, the staff alias ID being used<br />
+    "vid", integer, VN id<br />
+    "note", string<br />
+    The same voice actor may be listed multiple times if this entry is
+    character to multiple visual novels. Similarly, the same visual novel may
+    be listed multiple times if this character has multiple voice actors in the
+    same VN.
+  </td>
+ </tr>
 </table>
 <p>Sorting is possible on the 'id' and 'name' fields.</p><br />
 
@@ -1255,6 +1272,40 @@ Returned members:</p>
   <td>integer</td>
   <td>no</td>
   <td>ID of the alias that is the "primary" name of the entry</td>
+ </tr>
+ <tr>
+  <td>vns</td>
+  <td>vns</td>
+  <td>array of objects</td>
+  <td>no</td>
+  <td>
+   List of visual novels that this staff entry has been credited in (excluding
+   character voicing). Each vn is represented as an object with the following
+   members:<br />
+   "id", integer, visual novel id<br />
+   "aid", integer, alias ID of this staff entry<br />
+   "role", string<br />
+   "note", string, may be null if unset<br />
+   The same VN entry may appear multiple times if the staff has been credited
+   for multiple roles.
+  </td>
+ </tr>
+ <tr class="odd">
+  <td>voiced</td>
+  <td>voiced</td>
+  <td>array of objects</td>
+  <td>no</td>
+  <td>
+   List of characters that this staff entry has voiced. Each object has the
+   following members:<br />
+   "id", integer, visual novel id<br />
+   "aid", integer, alias ID of this staff entry<br />
+   "cid", integer, character ID<br />
+   "note", string, may be null if unset<br />
+   The same VN entry may appear multiple times if the staff has been credited
+   for multiple characters. Similarly, the same character may appear multiple
+   times if it has been linked to multiple VNs.
+  </td>
  </tr>
 </table>
 <p>Sorting is possible on the 'id' field.</p><br />
@@ -1663,6 +1714,11 @@ Returned members:</p>
  Check out the <a href="/t/an">announcements board</a> for more information about updates.
  <br /><br />
 </p>
+<b>2017-05-22</b>
+<ul>
+ <li>Add "vns" and "voiced" flags to "get staff" command</li>
+ <li>Add "voiced" flag to "get character" command</li>
+</ul>
 <b>2017-04-28</b> <b class="grayedout">because screw version numbers</b>
 <ul>
  <li>Add "get staff" command</li>
