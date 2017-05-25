@@ -498,7 +498,8 @@ my %GET_VN = (
     },
     staff => {
       fetch => [[ 'id', 'SELECT vs.id, vs.aid, vs.role, vs.note, sa.id AS sid, sa.name, sa.original
-                      FROM vn_staff vs JOIN staff_alias sa ON sa.aid = vs.aid WHERE vs.id IN(%s)',
+                      FROM vn_staff vs JOIN staff_alias sa ON sa.aid = vs.aid JOIN staff s ON s.id = sa.id
+                      WHERE vs.id IN(%s) AND NOT s.hidden',
         sub { my($r, $n) = @_;
           for my $i (@$r) {
             $i->{staff} = [ grep $i->{id} == $_->{id}, @$n ];
@@ -823,7 +824,9 @@ my %GET_CHARACTER = (
       ]],
     },
     voiced => {
-      fetch => [[ 'id', 'SELECT vs.cid, sa.id, sa.aid, vs.id AS vid, vs.note FROM vn_seiyuu vs JOIN staff_alias sa ON sa.aid = vs.aid WHERE vs.cid IN(%s)',
+      fetch => [[ 'id', 'SELECT vs.cid, sa.id, sa.aid, vs.id AS vid, vs.note
+          FROM vn_seiyuu vs JOIN staff_alias sa ON sa.aid = vs.aid JOIN vn v ON v.id = vs.id JOIN staff s ON s.id = sa.id
+          WHERE vs.cid IN(%s) AND NOT v.hidden AND NOT s.hidden',
         sub { my($n, $r) = @_;
           for my $i (@$n) {
             $i->{voiced} = [ grep $i->{id} == $_->{cid}, @$r ];
@@ -912,7 +915,9 @@ my %GET_STAFF = (
       ]],
     },
     vns => {
-      fetch => [[ 'id', 'SELECT sa.id AS sid, sa.aid, vs.id, vs.role, vs.note FROM staff_alias sa JOIN vn_staff vs ON vs.aid = sa.aid WHERE sa.id IN(%s)',
+      fetch => [[ 'id', 'SELECT sa.id AS sid, sa.aid, vs.id, vs.role, vs.note
+          FROM staff_alias sa JOIN vn_staff vs ON vs.aid = sa.aid JOIN vn v ON v.id = vs.id
+          WHERE sa.id IN(%s) AND NOT v.hidden',
         sub { my($n, $r) = @_;
           for my $i (@$n) {
             $i->{vns} = [ grep $i->{id} == $_->{sid}, @$r ];
@@ -927,7 +932,9 @@ my %GET_STAFF = (
       ]]
     },
     voiced => {
-      fetch => [[ 'id', 'SELECT sa.id AS sid, sa.aid, vs.id, vs.cid, vs.note FROM staff_alias sa JOIN vn_seiyuu vs ON vs.aid = sa.aid WHERE sa.id IN(%s)',
+      fetch => [[ 'id', 'SELECT sa.id AS sid, sa.aid, vs.id, vs.cid, vs.note
+          FROM staff_alias sa JOIN vn_seiyuu vs ON vs.aid = sa.aid JOIN vn v ON v.id = vs.id
+          WHERE sa.id IN(%s) AND NOT v.hidden',
         sub { my($n, $r) = @_;
           for my $i (@$n) {
             $i->{voiced} = [ grep $i->{id} == $_->{sid}, @$r ];
