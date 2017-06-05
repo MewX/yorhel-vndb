@@ -226,7 +226,7 @@ sub history {
   my($list, $np) = $self->dbRevisionGet(
     $type && $type ne 'u' ? ( type => $type, itemid => $id ) : (),
     $type eq 'u' ? ( uid => $id ) : (),
-    $f->{t} ? ( type => $f->{t} eq 'a' ? [qw|v r p|] : $f->{t} ) : (),
+    $f->{t} ? ( type => $f->{t} eq 'a' ? [qw|v r p s|] : $f->{t} ) : (),
     page => $f->{p},
     results => 50,
     auto => $f->{m},
