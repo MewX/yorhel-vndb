@@ -90,10 +90,10 @@ sub page {
   }
   if(@$inst) {
     my $spoil = sub { local $_=shift; !$r->{main} ? $_->{main_spoil} : $_->{main_spoil} > $r->{main_spoil} ? $_->{main_spoil} : $r->{main_spoil} };
-    my $minspoil = min map $isspoil->($_), @$inst;
+    my $minspoil = min map $spoil->($_), @$inst;
     div class => 'mainbox '.charspoil($minspoil);
      h1 'Other instances';
-     $self->charTable($_, 1, $_ != $inst->[0], 0, $isspoil->($_)) for @$inst;
+     $self->charTable($_, 1, $_ != $inst->[0], 0, $spoil->($_)) for @$inst;
     end;
   }
 
