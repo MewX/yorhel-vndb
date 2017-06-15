@@ -6,6 +6,7 @@ use warnings;
 use TUWF ':html', 'uri_escape';
 use Exporter 'import';
 use VNDB::Func;
+use List::Util 'min';
 
 our @EXPORT = ('charOps', 'charTable', 'charBrowseTable');
 
@@ -88,9 +89,11 @@ sub page {
     push @$inst, $self->dbCharGet(id => $r->{main}, what => 'extended traits vns seiyuu')->[0];
   }
   if(@$inst) {
-    div class => 'mainbox';
+    my $spoil = sub { local $_=shift; !$r->{main} ? $_->{main_spoil} : $_->{main_spoil} > $r->{main_spoil} ? $_->{main_spoil} : $r->{main_spoil} };
+    my $minspoil = min map $isspoil->($_), @$inst;
+    div class => 'mainbox '.charspoil($minspoil);
      h1 'Other instances';
-     $self->charTable($_, 1, $_ != $inst->[0], 0, !$r->{main} ? $_->{main_spoil} : $_->{main_spoil} > $r->{main_spoil} ? $_->{main_spoil} : $r->{main_spoil}) for @$inst;
+     $self->charTable($_, 1, $_ != $inst->[0], 0, $isspoil->($_)) for @$inst;
     end;
   }
 
