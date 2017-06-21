@@ -721,6 +721,35 @@ however still required.<br />
   </td>
  </tr>
  <tr class="odd">
+  <td>resolution</td>
+  <td>details</td>
+  <td>string</td>
+  <td>yes</td>
+  <td></td>
+ </tr>
+ <tr>
+  <td>voiced</td>
+  <td>details</td>
+  <td>integer</td>
+  <td>yes</td>
+  <td>1 = Not voiced, 2 = Only ero scenes voiced, 3 = Partially voiced, 4 = Fully voiced</td>
+ </tr>
+ <tr class="odd">
+  <td>animated</td>
+  <td>details</td>
+  <td>array of integers</td>
+  <td>no</td>
+  <td>
+    The array has two integer members, the first one indicating the story
+    animations, the second the ero scene animations. Both members can be null
+    if unknown or not applicable.<br />
+    <br />
+    When not null, the number indicates the following: 1 = No animations, 2 =
+    Simple animations, 3 = Some fully animated scenes, 4 = All scenes fully
+    animated.
+  </td>
+ </tr>
+ <tr>
   <td>vn</td>
   <td>vn</td>
   <td>array of objects</td>
@@ -730,7 +759,7 @@ however still required.<br />
    id, title and original. These are the same as the members of the "get vn" command.
   </td>
  </tr>
- <tr>
+ <tr class="odd">
   <td>producers</td>
   <td>producers</td>
   <td>array of objects</td>
@@ -764,8 +793,8 @@ however still required.<br />
  </tr>
  <tr>
   <td>vn</td>
-  <td>integer</td>
-  <td>=</td>
+  <td>integer<br />array of integers</td>
+  <td>= !=</td>
   <td>Find releases linked to the given visual novel ID.</td>
  </tr>
  <tr class="odd">
@@ -830,6 +859,12 @@ however still required.<br />
  </tr>
  <tr class="odd">
   <td>languages</td>
+  <td>string<br />array of strings</td>
+  <td>= !=</td>
+  <td>&nbsp;</td>
+ </tr>
+ <tr class="odd">
+  <td>platforms</td>
   <td>string<br />array of strings</td>
   <td>= !=</td>
   <td>&nbsp;</td>
@@ -1330,6 +1365,12 @@ Returned members:</p>
   <td>=<br />=</td>
   <td>&nbsp;</td>
  </tr>
+ <tr>
+  <td>search</td>
+  <td>string</td>
+  <td>~</td>
+  <td>Searched through all aliases, both the romanized and original names.</td>
+ </tr>
 </table>
 
 
@@ -1714,6 +1755,13 @@ Returned members:</p>
  Check out the <a href="/t/an">announcements board</a> for more information about updates.
  <br /><br />
 </p>
+<b>2017-06-21</b>
+<ul>
+ <li>Add "resolution", "voiced", "animation" members to "get release" command</li>
+ <li>Add "platforms" filter to "get release" command</li>
+ <li>Accept arrays for the "vn" filter to the "get release" command</li>
+ <li>Add "search" filter to "get staff"</li>
+</ul>
 <b>2017-05-22</b>
 <ul>
  <li>Add "vns" and "voiced" flags to "get staff" command</li>

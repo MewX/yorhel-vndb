@@ -593,13 +593,21 @@ my %GET_RELEASE = (
       ]],
     },
     details => {
-      select => 'r.website, r.notes, r.minage, r.gtin, r.catalog',
+      select => 'r.website, r.notes, r.minage, r.gtin, r.catalog, r.resolution, r.voiced, r.ani_story, r.ani_ero',
       proc   => sub {
         $_[0]{website}  ||= undef;
         $_[0]{notes}    ||= undef;
         $_[0]{minage}   = $_[0]{minage} < 0 ? undef : $_[0]{minage}*1;
         $_[0]{gtin}     ||= undef;
         $_[0]{catalog}  ||= undef;
+        $_[0]{resolution} = $_[0]{resolution} ? $VNDB::S{resolutions}[ $_[0]{resolution} ][0] : undef;
+        $_[0]{voiced}     = $_[0]{voiced}     ? $_[0]{voiced}*1    : undef;
+        $_[0]{animation}  = [
+          $_[0]{ani_story} ? $_[0]{ani_story}*1 : undef,
+          $_[0]{ani_ero}   ? $_[0]{ani_ero}*1   : undef
+        ];
+        delete($_[0]{ani_story});
+        delete($_[0]{ani_ero});
       },
       fetch => [
         [ 'id', 'SELECT id, platform FROM releases_platforms WHERE id IN(%s)',
@@ -659,7 +667,8 @@ my %GET_RELEASE = (
       [ inta  => 'r.id :op:(:value:)', {'=' => 'IN', '!=' => 'NOT IN'}, join => ',', range => [1,1e6] ],
     ],
     vn => [
-      [ 'int' => 'r.id IN(SELECT rv.id FROM releases_vn rv WHERE rv.vid = :value:)', {'=',1}, range => [1,1e6] ],
+      [ 'int' => 'r.id :op:(SELECT rv.id FROM releases_vn rv WHERE rv.vid = :value:)', {'=' => 'IN', '!=' => 'NOT IN'}, range => [1,1e6] ],
+      [ inta  => 'r.id :op:(SELECT rv.id FROM releases_vn rv WHERE rv.vid IN(:value:))', {'=' => 'IN', '!=' => 'NOT IN'}, join => ',', range => [1,1e6] ],
     ],
     producer => [
       [ 'int' => 'r.id IN(SELECT rp.id FROM releases_producers rp WHERE rp.pid = :value:)', {'=',1}, range => [1,1e6] ],
@@ -693,6 +702,10 @@ my %GET_RELEASE = (
     languages => [
       [ str   => 'r.id :op:(SELECT rl.id FROM releases_lang rl WHERE rl.lang = :value:)', {'=' => 'IN', '!=' => 'NOT IN'}, process => \'lang' ],
       [ stra  => 'r.id :op:(SELECT rl.id FROM releases_lang rl WHERE rl.lang IN(:value:))', {'=' => 'IN', '!=' => 'NOT IN'}, join => ',', process => \'lang' ],
+    ],
+    platforms => [
+      [ str   => 'r.id :op:(SELECT rp.id FROM releases_platforms rp WHERE rp.platform = :value:)', {'=' => 'IN', '!=' => 'NOT IN'}, process => \'plat' ],
+      [ stra  => 'r.id :op:(SELECT rp.id FROM releases_platforms rp WHERE rp.platform IN(:value:))', {'=' => 'IN', '!=' => 'NOT IN'}, join => ',', process => \'plat' ],
     ],
   },
 );
@@ -958,6 +971,9 @@ my %GET_STAFF = (
     aid => [
       [ 'int' => 's.id IN(SELECT sa.id FROM staff_alias sa WHERE sa.aid = :value:)', {'=',1}, range => [1,1e6] ],
       [ inta  => 's.id IN(SELECT sa.id FROM staff_alias sa WHERE sa.aid IN(:value:))', {'=',1}, range => [1,1e6], join => ',' ],
+    ],
+    search => [
+      [ str   => 's.id IN(SELECT sa.id FROM staff_alias sa WHERE sa.name ILIKE :value: OR sa.original ILIKE :value:)', {'~',1}, process => \'like' ],
     ],
   },
 );
