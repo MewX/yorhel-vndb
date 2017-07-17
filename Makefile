@@ -47,7 +47,7 @@
 
 all: dirs js skins robots data/config.pl util/sql/editfunc.sql
 
-dirs: static/ch static/cv static/sf static/st data/log www www/feeds www/api
+dirs: static/ch static/f static/cv static/sf static/st data/log www www/feeds www/api
 
 js: static/f/vndb.js
 
@@ -61,16 +61,16 @@ util/sql/editfunc.sql: util/sqleditfunc.pl util/sql/schema.sql
 	util/sqleditfunc.pl
 
 static/ch static/cv static/sf static/st:
-	mkdir $@;
-	for i in $$(seq -w 0 1 99); do mkdir "$@/$$i"; done
+	mkdir -p $@;
+	for i in $$(seq -w 0 1 99); do mkdir -p "$@/$$i"; done
 
-data/log www www/feeds www/api:
-	mkdir $@
+data/log www www/feeds www/api static/f:
+	mkdir -p $@
 
-static/f/vndb.js: data/js/*.js util/jsgen.pl data/config.pl data/global.pl
+static/f/vndb.js: data/js/*.js util/jsgen.pl data/config.pl data/global.pl static/f
 	util/jsgen.pl
 
-data/icons/icons.css: data/icons/*.png data/icons/*/*.png util/spritegen.pl
+data/icons/icons.css: data/icons/*.png data/icons/*/*.png util/spritegen.pl static/f
 	util/spritegen.pl
 
 static/s/%/style.css: static/s/%/conf util/skingen.pl data/style.css data/icons/icons.css
