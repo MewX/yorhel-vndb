@@ -165,7 +165,7 @@ CREATE TABLE login_throttle (
 
 -- notifications
 CREATE TABLE notifications (
-  id serial PRIMARY KEY NOT NULL,
+  id serial PRIMARY KEY,
   uid integer NOT NULL,
   date timestamptz NOT NULL DEFAULT NOW(),
   read timestamptz,
