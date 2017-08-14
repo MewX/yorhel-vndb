@@ -1435,20 +1435,27 @@ Returned members:</p>
   <td>Description</td>
  </tr></thead>
  <tr class="odd">
+  <td>uid</td>
+  <td>basic</td>
+  <td>integer</td>
+  <td>no</td>
+  <td>User ID</td>
+ </tr>
+ <tr>
   <td>vn</td>
   <td>basic</td>
   <td>integer</td>
   <td>no</td>
   <td>Visual Novel ID</td>
  </tr>
- <tr>
+ <tr class="odd">
   <td>vote</td>
   <td>basic</td>
   <td>integer</td>
   <td>no</td>
   <td>In the range of 10 (lowest) to 100 (highest). These are displayed on the site as a fractional number between 1 and 10.</td>
  </tr>
- <tr class="odd">
+ <tr>
   <td>added</td>
   <td>basic</td>
   <td>integer</td>
@@ -1470,7 +1477,13 @@ Returned members:</p>
   <td>uid</td>
   <td>integer</td>
   <td>=</td>
-  <td>This filter must be present. The special value '0' is recognized as the currently logged in user.</td>
+  <td>The special value '0' is recognized as the currently logged in user.</td>
+ </tr>
+ <tr>
+  <td>vid</td>
+  <td>integer<br />array of integers</td>
+  <td>= != &gt; &lt; &gt;= &lt;=<br />= !=</td>
+  <td>Visual novel ID.</td>
  </tr>
 </table>
 <p>
@@ -1493,27 +1506,34 @@ Returned members:</p>
   <td>Description</td>
  </tr></thead>
  <tr class="odd">
+  <td>uid</td>
+  <td>basic</td>
+  <td>integer</td>
+  <td>no</td>
+  <td>User ID</td>
+ </tr>
+ <tr>
   <td>vn</td>
   <td>basic</td>
   <td>integer</td>
   <td>no</td>
   <td>Visual Novel ID</td>
  </tr>
- <tr>
+ <tr class="odd">
   <td>status</td>
   <td>basic</td>
   <td>integer</td>
   <td>no</td>
   <td>0=Unknown, 1=playing, 2=finished, 3=stalled, 4=dropped.</td>
  </tr>
- <tr class="odd">
+ <tr>
   <td>added</td>
   <td>basic</td>
   <td>integer</td>
   <td>no</td>
   <td>Unix timestamp of when this item has been added.</td>
  </tr>
- <tr>
+ <tr class="odd">
   <td>notes</td>
   <td>basic</td>
   <td>string</td>
@@ -1535,7 +1555,13 @@ Returned members:</p>
   <td>uid</td>
   <td>integer</td>
   <td>=</td>
-  <td>This filter must be present. The special value '0' is recognized as the currently logged in user.</td>
+  <td>The special value '0' is recognized as the currently logged in user.</td>
+ </tr>
+ <tr>
+  <td>vid</td>
+  <td>integer<br />array of integers</td>
+  <td>= != &gt; &lt; &gt;= &lt;=<br />= !=</td>
+  <td>Visual novel ID.</td>
  </tr>
 </table>
 <p>The notes mentioned under 'get votelist' also apply here.</p>
@@ -1551,20 +1577,27 @@ Returned members:</p>
   <td>Description</td>
  </tr></thead>
  <tr class="odd">
+  <td>uid</td>
+  <td>basic</td>
+  <td>integer</td>
+  <td>no</td>
+  <td>User ID</td>
+ </tr>
+ <tr>
   <td>vn</td>
   <td>basic</td>
   <td>integer</td>
   <td>no</td>
   <td>Visual Novel ID</td>
  </tr>
- <tr>
+ <tr class="odd">
   <td>priority</td>
   <td>basic</td>
   <td>integer</td>
   <td>no</td>
   <td>0=high, 1=medium, 2=low, 3=blacklist.</td>
  </tr>
- <tr class="odd">
+ <tr>
   <td>added</td>
   <td>basic</td>
   <td>integer</td>
@@ -1586,7 +1619,13 @@ Returned members:</p>
   <td>uid</td>
   <td>integer</td>
   <td>=</td>
-  <td>This filter must be present. The special value '0' is recognized as the currently logged in user.</td>
+  <td>The special value '0' is recognized as the currently logged in user.</td>
+ </tr>
+ <tr>
+  <td>vid</td>
+  <td>integer<br />array of integers</td>
+  <td>= != &gt; &lt; &gt;= &lt;=<br />= !=</td>
+  <td>Visual novel ID.</td>
  </tr>
 </table>
 <p>The notes mentioned under 'get votelist' also apply here.</p>
@@ -1755,6 +1794,12 @@ Returned members:</p>
  Check out the <a href="/t/an">announcements board</a> for more information about updates.
  <br /><br />
 </p>
+<b>2017-08-14</b>
+<ul>
+ <li>Add 'uid' field to "get votelist/vnlist/wishlist" commands</li>
+ <li>Add 'vn' filter to the same commands</li>
+ <li>The 'uid' filter for these commands is now optional, making it possible to find all list entries for a particular VN</li>
+</ul>
 <b>2017-06-21</b>
 <ul>
  <li>Add "resolution", "voiced", "animation" members to "get release" command</li>

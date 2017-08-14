@@ -1008,12 +1008,20 @@ my %GET_USER = (
 # the uid filter for votelist/vnlist/wishlist
 my $UID_FILTER = [ 'int' => 'uid :op: :value:', {qw|= =|}, range => [0,1e6], process => \&subst_user_id ];
 
+# Similarly, a filter for 'vid'
+my $VN_FILTER = [
+  [ 'int' => 'vid :op: :value:', {qw|= =  != <>  > >  < <  <= <=  >= >=|}, range => [1,1e6] ],
+  [ inta  => 'vid :op:(:value:)', {'=' => 'IN', '!=' => 'NOT IN'}, range => [1,1e6], join => ',' ],
+];
+
+
 my %GET_VOTELIST = (
   islist  => 1,
   sql     => "SELECT %s FROM votes v WHERE (%s) AND NOT EXISTS(SELECT 1 FROM users_prefs WHERE uid = v.uid AND key = 'hide_list') %s",
   sqluser => q{SELECT %1$s FROM votes v WHERE (%2$s) AND (uid = %4$d OR NOT EXISTS(SELECT 1 FROM users_prefs WHERE uid = v.uid AND key = 'hide_list')) %3$s},
-  select  => "vid as vn, vote, extract('epoch' from date) AS added",
+  select  => "uid, vid as vn, vote, extract('epoch' from date) AS added",
   proc    => sub {
+    $_[0]{uid}*=1;
     $_[0]{vn}*=1;
     $_[0]{vote}*=1;
     $_[0]{added} = int $_[0]{added};
@@ -1021,15 +1029,16 @@ my %GET_VOTELIST = (
   sortdef => 'vn',
   sorts   => { vn => 'vid %s' },
   flags   => { basic => {} },
-  filters => { uid => [ $UID_FILTER ] }
+  filters => { uid => [ $UID_FILTER ], vn => $VN_FILTER }
 );
 
 my %GET_VNLIST = (
   islist  => 1,
   sql     => "SELECT %s FROM vnlists v WHERE (%s) AND NOT EXISTS(SELECT 1 FROM users_prefs WHERE uid = v.uid AND key = 'hide_list') %s",
   sqluser => q{SELECT %1$s FROM vnlists v WHERE (%2$s) AND (uid = %4$d OR NOT EXISTS(SELECT 1 FROM users_prefs WHERE uid = v.uid AND key = 'hide_list')) %3$s},
-  select  => "vid as vn, status, extract('epoch' from added) AS added, notes",
+  select  => "uid, vid as vn, status, extract('epoch' from added) AS added, notes",
   proc    => sub {
+    $_[0]{uid}*=1;
     $_[0]{vn}*=1;
     $_[0]{status}*=1;
     $_[0]{added} = int $_[0]{added};
@@ -1038,15 +1047,16 @@ my %GET_VNLIST = (
   sortdef => 'vn',
   sorts   => { vn => 'vid %s' },
   flags   => { basic => {} },
-  filters => { uid => [ $UID_FILTER ] }
+  filters => { uid => [ $UID_FILTER ], vn => $VN_FILTER }
 );
 
 my %GET_WISHLIST = (
   islist  => 1,
   sql     => "SELECT %s FROM wlists w WHERE (%s) AND NOT EXISTS(SELECT 1 FROM users_prefs WHERE uid = w.uid AND key = 'hide_list') %s",
   sqluser => q{SELECT %1$s FROM wlists w WHERE (%2$s) AND (uid = %4$d OR NOT EXISTS(SELECT 1 FROM users_prefs WHERE uid = w.uid AND key = 'hide_list')) %3$s},
-  select  => "vid AS vn, wstat AS priority, extract('epoch' from added) AS added",
+  select  => "uid, vid AS vn, wstat AS priority, extract('epoch' from added) AS added",
   proc    => sub {
+    $_[0]{uid}*=1;
     $_[0]{vn}*=1;
     $_[0]{priority}*=1;
     $_[0]{added} = int $_[0]{added};
@@ -1054,7 +1064,7 @@ my %GET_WISHLIST = (
   sortdef => 'vn',
   sorts   => { vn => 'vid %s' },
   flags   => { basic => {} },
-  filters => { uid => [ $UID_FILTER ] }
+  filters => { uid => [ $UID_FILTER ], vn => $VN_FILTER }
 );
 
 
