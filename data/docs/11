@@ -735,7 +735,7 @@ however still required.<br />
   <td>1 = Not voiced, 2 = Only ero scenes voiced, 3 = Partially voiced, 4 = Fully voiced</td>
  </tr>
  <tr class="odd">
-  <td>animated</td>
+  <td>animation</td>
   <td>details</td>
   <td>array of integers</td>
   <td>no</td>
@@ -1776,7 +1776,7 @@ Returned members:</p>
   "type" member, and the "minwait" and "fullwait" members tell you how long you
   need to wait before sending the next command and when you can start bursting
   again (this is the recommended waiting time), respectively.  Both values are in
-  seconds, with one decimal after the point.
+  seconds, with a precision of 0.1 seconds.
  </dd>
  <dt>auth</dt><dd>(login) Incorrect username/password combination.</dd>
  <dt>loggedin</dt><dd>(login) Already logged in. Only one successful login command can be issues on one connection.</dd>
