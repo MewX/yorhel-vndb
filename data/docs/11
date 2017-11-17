@@ -1480,7 +1480,7 @@ Returned members:</p>
   <td>The special value '0' is recognized as the currently logged in user.</td>
  </tr>
  <tr>
-  <td>vid</td>
+  <td>vn</td>
   <td>integer<br />array of integers</td>
   <td>= != &gt; &lt; &gt;= &lt;=<br />= !=</td>
   <td>Visual novel ID.</td>
@@ -1558,7 +1558,7 @@ Returned members:</p>
   <td>The special value '0' is recognized as the currently logged in user.</td>
  </tr>
  <tr>
-  <td>vid</td>
+  <td>vn</td>
   <td>integer<br />array of integers</td>
   <td>= != &gt; &lt; &gt;= &lt;=<br />= !=</td>
   <td>Visual novel ID.</td>
@@ -1622,7 +1622,7 @@ Returned members:</p>
   <td>The special value '0' is recognized as the currently logged in user.</td>
  </tr>
  <tr>
-  <td>vid</td>
+  <td>vn</td>
   <td>integer<br />array of integers</td>
   <td>= != &gt; &lt; &gt;= &lt;=<br />= !=</td>
   <td>Visual novel ID.</td>
