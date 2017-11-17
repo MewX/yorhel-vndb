@@ -152,7 +152,7 @@ sub charTable {
        td $r->{alias};
       end;
     }
-    if($r->{height} || $r->{s_bust} || $r->{s_waist} || $r->{s_hip}) {
+    if($r->{weight} || $r->{height} || $r->{s_bust} || $r->{s_waist} || $r->{s_hip}) {
       Tr;
        td class => 'key', 'Measurements';
        td join ', ',
