@@ -1,18 +1,6 @@
 The VNDB.org Source Code
 ------------------------
 
-
-Installation & documentation
-
-  Documentation is lacking, you're pretty much on your own if you want to
-  get things running. :-(
-
-  Development notes for specific features or ideas can be found in data/notes/.
-  Keep in mind, however, that these notes are often mostly technical and may
-  not reflect the actual (current) implementation. They do elaborate on various
-  design decisions and may be useful for understanding how certain things work.
-
-
 Requirements
 
   global requirements:
@@ -61,6 +49,58 @@ Requirements
 
   util/spritegen.pl
     pngcrush             (optional)
+
+
+Setup
+
+  - Make sure all the required dependencies (see above) are installed
+  - Create a suitable data/config.pl, using data/config_example.pl as base.
+  - Run the build system:
+
+      make
+
+  - Setup a PostgreSQL server and make sure you can login with some admin user
+  - Initialize the VNDB database (assuming 'postgres' is a superuser):
+
+      # Create the database & roles
+      psql -U postgres -f util/sql/superuser_init.sql
+
+      # Set a password for each database role:
+      echo "ALTER ROLE vndb       LOGIN UNENCRYPTED PASSWORD 'pwd1'" | psql -U postgres
+      echo "ALTER ROLE vndb_site  LOGIN UNENCRYPTED PASSWORD 'pwd2'" | psql -U postgres
+      echo "ALTER ROLE vndb_multi LOGIN UNENCRYPTED PASSWORD 'pwd3'" | psql -U postgres
+
+      # Now import the rest
+      psql -U vndb -f util/sql/all.sql
+
+  - Update the vndb_site password in data/config.pl to whatever you set it in
+    the previous step.
+  - Configure a web server. To use a single subdomain for both static files
+    and the dynamic Perl code, here's a simple trick:
+
+      mv www/* static/
+      rmdir www
+      ln -s static www
+      ln -s ../util/vndb.pl www/cgi.pl
+
+    Then use the following Apache 2.4 config:
+
+      <Directory /path/to/vndb>
+        Options +ExecCGI +FollowSymLinks
+        AllowOverride None
+        Require all granted
+      </Directory>
+
+      <VirtualHost *:*>
+        ServerName your-test-vndb
+        DocumentRoot "/path/to/vndb/www"
+
+        RewriteEngine On
+        RewriteCond "%{DOCUMENT_ROOT}/%{REQUEST_URI}" !-s
+        RewriteRule ^/ /cgi.pl
+
+        AddHandler cgi-script .pl
+      </VirtualHost>
 
 
 Contact

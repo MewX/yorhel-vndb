@@ -5,7 +5,7 @@ package VNDB;
 
 %O = (
   %O,
-  db_login      => [ 'dbi:Pg:dbname=<database>', '<user>', '<password>' ],
+  db_login      => [ 'dbi:Pg:dbname=vndb', 'vndb_site', '<password>' ],
   logfile       => $ROOT.'/err.log',
   xml_pretty    => 0,
   log_queries   => 0,
@@ -16,7 +16,7 @@ package VNDB;
 %S = (
   %S,
   url          => 'http://your.site.root/',
-  url_static   => 'http://your.static.site.root/',
+  url_static   => 'http://your.static.site.root/', # Can be the same as the main url
   form_salt    => '<some unique string>',
   scrypt_salt  => '<another unique string>',
 );
