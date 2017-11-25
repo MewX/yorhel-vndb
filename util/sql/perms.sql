@@ -1,5 +1,6 @@
 -- vndb_site
 
+DROP OWNED BY vndb_site;
 GRANT CONNECT, TEMP ON DATABASE :DBNAME TO vndb_site;
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO vndb_site;
 GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO vndb_site;
@@ -85,6 +86,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON wlists                   TO vndb_site;
 -- vndb_multi
 -- (Assuming all modules are loaded)
 
+DROP OWNED BY vndb_multi;
 GRANT CONNECT, TEMP ON DATABASE :DBNAME TO vndb_multi;
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO vndb_multi;
 GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO vndb_multi;
