@@ -50,6 +50,7 @@ our %S;
   default_tags_cat=> 'cont,tech',
   languages       => ordhash(grep !/^ *$/, split /[\s\r\n]*([^ ]+) +(.+)/, q{
     ar Arabic
+    bg Bulgarian
     ca Catalan
     cs Czech
     da Danish
@@ -171,7 +172,9 @@ our %S;
     drc Dreamcast
     sat Sega Saturn
     sfc Super Nintendo
+    swi Nintendo Switch
     wii Nintendo Wii
+    wiu Nintendo Wii U
     n3d Nintendo 3DS
     x68 X68000
     xb1 Xbox
