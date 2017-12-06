@@ -50,6 +50,14 @@ TUWF::run();
 sub reqinit {
   my $self = shift;
 
+  # If we're running standalone, serve www/ and static/ too.
+  if($TUWF::OBJ->{_TUWF}{http}) {
+    if($self->resFile("$ROOT/www", $self->reqPath) || $self->resFile("$ROOT/static", $self->reqPath)) {
+      $self->resHeader('Cache-Control' => 'max-age=31536000');
+      return 0;
+    }
+  }
+
   # check authentication cookies
   $self->authInit;
 

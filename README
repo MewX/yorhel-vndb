@@ -23,6 +23,7 @@ Requirements
   util/vndb.pl:
     Algorithm::Diff::XS
     TUWF
+    HTTP::Server::Simple (optional, but greatly simplifies development setup)
     FCGI                 (optional, for running as a FastCGI script)
     PerlIO::gzip         (optional, for output compression)
 
@@ -75,32 +76,13 @@ Setup
 
   - Update the vndb_site password in data/config.pl to whatever you set it in
     the previous step.
-  - Configure a web server. To use a single subdomain for both static files
-    and the dynamic Perl code, here's a simple trick:
+  - Now simply run:
 
-      mv www/* static/
-      rmdir www
-      ln -s static www
-      ln -s ../util/vndb.pl www/cgi.pl
+      util/vndb.pl
 
-    Then use the following Apache 2.4 config:
-
-      <Directory /path/to/vndb>
-        Options +ExecCGI +FollowSymLinks
-        AllowOverride None
-        Require all granted
-      </Directory>
-
-      <VirtualHost *:*>
-        ServerName your-test-vndb
-        DocumentRoot "/path/to/vndb/www"
-
-        RewriteEngine On
-        RewriteCond "%{DOCUMENT_ROOT}/%{REQUEST_URI}" !-s
-        RewriteRule ^/ /cgi.pl
-
-        AddHandler cgi-script .pl
-      </VirtualHost>
+    (Note: At the time of writing, the above command will require the git
+    version of TUWF installed, but I intent to upload a new version to CPAN
+    after a bit more testing).
 
 
 Contact

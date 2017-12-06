@@ -10,13 +10,13 @@ package VNDB;
   xml_pretty    => 0,
   log_queries   => 0,
   debug         => 1,
-  cookie_defaults => { path => '/' },
+  cookie_defaults => { domain => 'localhost', path => '/' },
 );
 
 %S = (
   %S,
-  url          => 'http://your.site.root/',
-  url_static   => 'http://your.static.site.root/', # Can be the same as the main url
+  url          => 'http://localhost:3000',
+  url_static   => 'http://localhost:3000',
   form_salt    => '<some unique string>',
   scrypt_salt  => '<another unique string>',
 );
