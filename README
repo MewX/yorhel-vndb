@@ -94,7 +94,7 @@ Setup
     the previous step.
   - Now simply run:
 
-      util/vndb.pl
+      util/vndb-dev-server.pl
 
     (Note: At the time of writing, the above command will require the git
     version of TUWF installed, but I intent to upload a new version to CPAN

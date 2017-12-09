@@ -11,6 +11,7 @@ use Cwd 'abs_path';
 our $ROOT;
 BEGIN { ($ROOT = abs_path $0) =~ s{/util/vndb\.pl$}{}; }
 
+$|=1; # Disable buffering on STDOUT, otherwise vndb-dev-server.pl won't pick up our readyness notification.
 
 use lib $ROOT.'/lib';
 

@@ -35,9 +35,11 @@ pg_start() {
 
 pg_init() {
     if test -f /var/lib/postgresql/vndb-init-done; then
+        echo
         echo "Database initialization already done."
         echo "Run the following as root to bypass this check:"
         echo "  rm /var/lib/postgresql/vndb-init-done"
+        echo
         return
     fi
     su postgres -c '/var/www/util/docker-init.sh pg_load_superuser'
@@ -63,7 +65,7 @@ pg_load_vndb() {
 # Should run as devuser
 devshell() {
     cd /var/www
-    make && util/vndb.pl
+    util/vndb-dev-server.pl
     bash
 }
 

@@ -1,0 +1,153 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use AE;
+use AnyEvent::Util;
+use AnyEvent::Socket;
+use AnyEvent::Handle;
+use File::Find;
+use Time::HiRes 'time';
+
+use Cwd 'abs_path';
+(my $ROOT = abs_path $0) =~ s{/util/vndb-dev-server\.pl$}{};
+
+my $listen_port = $ENV{TUWF_HTTP_SERVER_PORT} || 3000;
+$ENV{TUWF_HTTP_SERVER_PORT} = $listen_port+1;
+
+my($pid, $prog, $killed);
+
+sub prog_start {
+    $killed = AE::cv;
+    my $started = AE::cv;
+    my $output = sub {
+        my $d = shift || return;
+        if($started && $d =~ /^TUWF::http: You can connect to your server at/) {
+            $started->send;
+            return;
+        }
+        print $d;
+    };
+    $prog = run_cmd "$ROOT/util/vndb.pl",
+        '$$' => \$pid,
+        '>'  => $output,
+        '2>' => $output;
+    $prog->cb(sub {
+        $started->send if $started;
+        $killed->send;
+        $prog = undef;
+        $pid = undef;
+    });
+    $started->recv;
+}
+
+sub prog_stop {
+    kill 'TERM', $pid if $pid;
+    $killed->recv if $killed;
+    $prog = undef;
+    $pid = undef;
+    $killed = undef;
+}
+
+
+sub make_run {
+    my $cb = run_cmd "make -C $ROOT",
+        '>', sub {
+            my $d = shift||'';
+            return if $d =~ /(Entering|Leaving) directory '\Q$ROOT\E'/;
+            return if $d =~ /Nothing to be done for 'all'/;
+            print $d;
+        };
+    $cb->recv;
+}
+
+
+sub pipe_fhs {
+    my($a_fh, $b_fh) = @_;
+    my($a, $b);
+    my $done = AE::cv;
+    $done->begin;
+    $a = AnyEvent::Handle->new(
+        fh => $a_fh,
+        on_read => sub { $b->push_write($a->{rbuf}); $a->{rbuf} = '' },
+        on_error => sub { $done->end if $_[1] },
+    );
+    $done->begin;
+    $b = AnyEvent::Handle->new(
+        fh => $b_fh,
+        on_read => sub { $a->push_write($b->{rbuf}); $b->{rbuf} = '' },
+        on_error => sub { $done->end if $_[1] },
+    );
+    $done->recv;
+}
+
+
+END { prog_stop; }
+
+
+my $lastmod = time;
+sub checkmod {
+    my $newlastmod = 0;
+    my $check = sub {
+        my $mtime = (stat($_[0]))[9];
+        $newlastmod = $mtime if $mtime > $newlastmod;
+    };
+
+    find sub {
+        $check->($_) if /\.pm$/ && $_ ne 'Multi';
+    }, "$ROOT/lib";
+
+    chdir $ROOT;
+    $check->($_) for (qw{
+        util/vndb.pl
+        data/config.pl
+        data/global.pl
+    });
+
+    my $ismod = $newlastmod > $lastmod;
+    $lastmod = $newlastmod;
+    return $ismod;
+}
+
+
+my $conn = AE::cv;
+my @conn;
+tcp_server undef, $listen_port,
+    sub { push @conn, shift; $conn->send },
+    sub {
+        print "VNDB development server running at http://localhost:$listen_port/\n";
+        print "\n";
+        print "This server will automatically regenerate static assets and\n";
+        print "reload itself whenever the VNDB source code has been edited.\n";
+        print "Errors and debugging information will be shown in this console.\n";
+        print "\n";
+    };
+
+
+my $needcheck = 0;
+
+while(1) {
+    $conn->recv;
+    my $serv_fh = shift @conn;
+    $conn = AE::cv if !@conn;
+
+    # Only check for modifications at most once every 2 seconds, so that assets
+    # beloning to the same page view don't cause expensive checks and reloads.
+    if($needcheck+2 < time) {
+        make_run;
+        if(checkmod) {
+            print "File has been modified, restarting server.\n";
+            prog_stop;
+            prog_start;
+        } elsif(!$prog) {
+            prog_start;
+        }
+        $needcheck = time;
+    }
+    next if !$prog;
+
+    my $prog_conn = AE::cv;
+    tcp_connect '127.0.0.1', $ENV{TUWF_HTTP_SERVER_PORT}, sub { $prog_conn->send(shift); };
+    my $prog_fh = $prog_conn->recv || die "Unable to connect to vndb.pl? $!";
+    pipe_fhs($serv_fh, $prog_fh);
+}
