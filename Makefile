@@ -59,6 +59,9 @@ static/ch static/cv static/sf static/st:
 data/log www www/feeds www/api static/f:
 	mkdir -p $@
 
+data/config.pl:
+	cp -n data/config_example.pl data/config.pl
+
 static/f/vndb.js: data/js/*.js util/jsgen.pl data/config.pl data/global.pl | static/f
 	util/jsgen.pl
 

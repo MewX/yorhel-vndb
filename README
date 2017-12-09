@@ -1,7 +1,23 @@
 The VNDB.org Source Code
 ------------------------
 
-Requirements
+Quick and dirty setup using Docker
+
+  # Setup
+  docker build -t vndb .
+  docker volume create --name vndb-data
+
+  # Run (will run on the foreground)
+  docker run -ti --name vndb -p 3000:3000 -v vndb-data:/var/lib/postgresql -v "`pwd`":/var/www --rm vndb
+
+  # While running, if you need another terminal into the container
+  docker exec -ti vndb bash                           # root shell
+  docker exec -ti vndb su -l devuser                  # development shell
+  docker exec -ti vndb su postgres -c psql            # postgres superuser shell
+  docker exec -ti vndb su devuser -c 'psql -U vndb'   # postgres vndb shell
+
+
+Requirements (when not using Docker)
 
   global requirements:
     Linux, or an OS that resembles Linux. Chances are VNDB won't run on Windows.
