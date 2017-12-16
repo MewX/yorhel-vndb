@@ -189,10 +189,12 @@ sub htmlFooter { # %options => { pref_code => 1 }
   if($self->debug) {
     lit "\n<!--\n SQL Queries:\n";
     for (@{$self->{_TUWF}{DB}{queries}}) {
-      my $q = !ref $_->[0] ? $_->[0] :
-        $_->[0][0].(exists $_->[0][1] ? ' | "'.join('", "', map defined()?$_:'NULL', @{$_->[0]}[1..$#{$_->[0]}]).'"' : '');
-      $q =~ s/^\s//g;
-      lit sprintf "  [%6.2fms] %s\n", $_->[1]*1000, $q;
+      my($sql, $params, $time) = @$_;
+      lit sprintf "  [%6.2fms] %s | %s\n", $time*1000, $sql,
+          join ', ',
+          map "$_:".DBI::neat($params->{$_}),
+          sort { $a =~ /^[0-9]+$/ && $b =~ /^[0-9]+$/ ? $a <=> $b : $a cmp $b }
+          keys %$params
     }
     lit "-->\n";
   }
