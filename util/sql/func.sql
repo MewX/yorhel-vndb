@@ -130,7 +130,8 @@ BEGIN
   TRUNCATE tags_vn_inherit;
   -- populate tags_vn_inherit
   INSERT INTO tags_vn_inherit
-    -- all votes for all tags, including votes inherited by child tags
+    -- All votes for all tags, including votes inherited by child tags if the
+    -- parent tag itself does not have any votes.
     -- (also includes meta tags, because they could have a normal tag as parent)
     WITH RECURSIVE tags_vn_all(lvl, tag, vid, uid, vote, spoiler, meta) AS (
         SELECT 15, tag, vid, uid, vote, spoiler, false
@@ -143,6 +144,7 @@ BEGIN
         JOIN tags t ON t.id = tp.parent
         WHERE t.state = 2
           AND ta.lvl > 0
+          AND NOT EXISTS(SELECT 1 FROM tags_vn tv WHERE tv.tag = tp.parent AND tv.vid = ta.vid)
     )
     -- grouped by (tag, vid)
     SELECT tag, vid, COUNT(uid) AS users, AVG(vote)::real AS rating,
@@ -171,7 +173,9 @@ CREATE OR REPLACE FUNCTION traits_chars_calc() RETURNS void AS $$
 BEGIN
   TRUNCATE traits_chars;
   INSERT INTO traits_chars (tid, cid, spoil)
-    -- all char<->trait links of the latest revisions, including chars inherited from child traits
+    -- all char<->trait links of the latest revisions, including chars
+    -- inherited from child traits if the parent trait was not mentioned
+    -- directly.
     -- (also includes meta traits, because they could have a normal trait as parent)
     WITH RECURSIVE traits_chars_all(lvl, tid, cid, spoiler, meta) AS (
         SELECT 15, tid, ct.id, spoil, false
@@ -185,6 +189,7 @@ BEGIN
         JOIN traits t ON t.id = tp.parent
         WHERE t.state = 2
           AND tc.lvl > 0
+          AND NOT EXISTS(SELECT 1 FROM chars_traits cti WHERE cti.tid = tp.parent AND cti.id = tc.cid)
     )
     -- now grouped by (tid, cid) and with meta traits filtered out
     SELECT tid, cid, (CASE WHEN AVG(spoiler) > 1.3 THEN 2 WHEN AVG(spoiler) > 0.7 THEN 1 ELSE 0 END)::smallint AS spoiler
