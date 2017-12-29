@@ -50,9 +50,9 @@ pg_init() {
 # Should run as the postgres user
 pg_load_superuser() {
     psql -f /var/www/util/sql/superuser_init.sql
-    echo "ALTER ROLE vndb       LOGIN UNENCRYPTED PASSWORD 'vndb'"       | psql -U postgres
-    echo "ALTER ROLE vndb_site  LOGIN UNENCRYPTED PASSWORD 'vndb_site'"  | psql -U postgres
-    echo "ALTER ROLE vndb_multi LOGIN UNENCRYPTED PASSWORD 'vndb_multi'" | psql -U postgres
+    echo "ALTER ROLE vndb       LOGIN PASSWORD 'vndb'"       | psql -U postgres
+    echo "ALTER ROLE vndb_site  LOGIN PASSWORD 'vndb_site'"  | psql -U postgres
+    echo "ALTER ROLE vndb_multi LOGIN PASSWORD 'vndb_multi'" | psql -U postgres
 }
 
 # Should run as devuser

@@ -83,9 +83,9 @@ Setup
       psql -U postgres -f util/sql/superuser_init.sql
 
       # Set a password for each database role:
-      echo "ALTER ROLE vndb       LOGIN UNENCRYPTED PASSWORD 'pwd1'" | psql -U postgres
-      echo "ALTER ROLE vndb_site  LOGIN UNENCRYPTED PASSWORD 'pwd2'" | psql -U postgres
-      echo "ALTER ROLE vndb_multi LOGIN UNENCRYPTED PASSWORD 'pwd3'" | psql -U postgres
+      echo "ALTER ROLE vndb       LOGIN PASSWORD 'pwd1'" | psql -U postgres
+      echo "ALTER ROLE vndb_site  LOGIN PASSWORD 'pwd2'" | psql -U postgres
+      echo "ALTER ROLE vndb_multi LOGIN PASSWORD 'pwd3'" | psql -U postgres
 
       # Now import the rest
       psql -U vndb -f util/sql/all.sql
