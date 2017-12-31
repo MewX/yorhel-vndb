@@ -64,16 +64,16 @@ my %dailies = (
            AND r.released <= TO_CHAR(NOW(), 'YYYYMMDD')::integer
       ) AS r(id)|,
 
-  # takes about 9 seconds max, still OK
+  # takes about 15 seconds max, still OK
   tagcache => 'SELECT tag_vn_calc()',
 
-  # takes about 90 seconds, might want to optimize or split up
+  # takes about 25 seconds, OK
   traitcache => 'SELECT traits_chars_calc()',
 
-  # takes about 30 seconds
+  # takes about 140 seconds, not really OK
   vnpopularity => 'SELECT update_vnpopularity()',
 
-  # takes about 1 second, can be performed in ranges as well when necessary
+  # takes about 3 seconds, can be performed in ranges as well when necessary
   vnrating => q|
     UPDATE vn SET
       c_rating = (SELECT (
