@@ -248,6 +248,11 @@ our %S;
     staff      => 'Staff',
   ),
   poll_options    => 20, # max number of options in discussion board polls
+
+  # Maps from db codes to icon names
+  icons_voiced          => [ "unknown", "not_voiced", "ero_voiced", "partially_voiced", "fully_voiced" ],
+  icons_story_animated  => [ "unknown", "story_not_animated", "story_simple_animated", "story_some_fully_animated", "story_all_fully_animated" ],
+  icons_ero_animated    => [ "unknown", "ero_not_animated", "ero_simple_animated", "ero_some_fully_animated", "ero_all_fully_animated" ],
 );
 
 

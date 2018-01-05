@@ -913,6 +913,14 @@ a .icons { cursor: pointer }
 $iconcss$
 
 
+.release_icons_container { width: 18px; height: 18px; float: right; margin-left: 4px; }
+.release_icons { width: 18px; height: 18px; }
+.release_icons.not_voiced, .story_not_animated, .ero_not_animated { }
+.release_icons.ero_voiced, .story_simple_animated, .ero_simple_animated { filter: hue-rotate(30deg); }
+.release_icons.partially_voiced, .story_some_fully_animated, .ero_some_fully_animated { filter: invert(100%) hue-rotate(240deg) }
+.release_icons.fully_voiced, .story_all_fully_animated, .ero_all_fully_animated  { filter: hue-rotate(80deg) }
+.release_icons.notes, .unknown, .freeware, .nonfree, .commercial, .doujin, .res16-9, .res4-3, .disk, .cartridge, .download {  }
+
 /* Relation graph colors */
 svg .border { fill: none; stroke: $border$ }
 svg .edge polygon.border { fill: $border$ }

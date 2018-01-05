@@ -340,7 +340,7 @@ sub page {
   )->[0];
   return $self->resNotFound if !$v->{id};
 
-  my $r = $self->dbReleaseGet(vid => $vid, what => 'producers platforms', results => 200);
+  my $r = $self->dbReleaseGet(vid => $vid, what => 'extended producers platforms media', results => 200);
 
   my $metadata = {
     'og:title' => $v->{title},
@@ -803,6 +803,11 @@ sub _releases {
           a href => "/r$rel->{id}", title => $rel->{original}||$rel->{title}, $rel->{title};
           b class => 'grayedout', ' (patch)' if $rel->{patch};
          end;
+
+         td class => 'tc_icons';
+           add_release_info_icons($self, $rel);
+         end;
+
          td class => 'tc5';
           if($self->authInfo->{id}) {
             a href => "/r$rel->{id}", id => "rlsel_$rel->{id}", class => 'vnrlsel',
@@ -977,6 +982,64 @@ sub _staff {
   end;
 }
 
+
+# Creates an small sized img inside an abbr tag. Used for per-release information icons.
+sub release_info_icon {
+  abbr class => 'release_icons_container', title => "$_[1]";
+    img src=> "/f/".$_[2], class => "$_[0]", alt => "$_[1]";
+  end;
+}
+
+sub add_release_info_icons {
+    my($self, $releases_data) = @_;
+
+    # Voice column
+    my $voice_code = $releases_data->{voiced};
+    if($voice_code > 0) {
+        release_info_icon("release_icons " . $self->{icons_voiced}[$voice_code], $self->{voiced}[$releases_data->{voiced}], 'voiced.svg');
+    }
+
+    # Animations columns
+    my $story_anim_code = $releases_data->{ani_story};
+    if($story_anim_code > 0) {
+        release_info_icon("release_icons ".$self->{icons_story_animated}[$story_anim_code], "Story: $self->{animated}[$story_anim_code]", "story_animated.svg");
+    }
+
+    my $ero_anim_code = $releases_data->{ani_ero};
+    if($ero_anim_code > 0) {
+        release_info_icon("release_icons ".$self->{icons_ero_animated}[$ero_anim_code], "Story: $self->{animated}[$ero_anim_code]", "ero_animated.svg");
+    }
+
+    # Cost column
+    $releases_data->{freeware} ? release_info_icon "release_icons freeware", "Freeware", "free.svg"
+                               : release_info_icon "release_icons nonfree", "Non-free", "nonfree.svg";
+
+    # Publisher type column
+    $releases_data->{patch} ? () : ($releases_data->{doujin} ? release_info_icon "release_icons doujin", "Doujin", "doujin.svg"
+                                                             : release_info_icon "release_icons commercial", "Commercial", "commercial.svg");
+
+    # Resolution column
+    my $resolution = $releases_data->{resolution};
+    if ($resolution > 0) {
+        my $resolution_type = ($resolution == 1) ? "custom" : ($self->{resolutions}[$resolution][1] eq 'widescreen') ? '16-9' : '4-3';
+        my $computed_svg = "resolution_".$resolution_type.".svg";
+        release_info_icon("release_icons res".$resolution_type, $self->{resolutions}[$resolution][0], $computed_svg);
+    }
+
+    # Media column
+    if (length($releases_data->{media}) > 0 and length($releases_data->{media}[0]->{medium}) > 0) {
+        my $first_medium = $releases_data->{media}[0]->{medium};
+        my $media_type = $first_medium eq "in" ? "download" :
+            $first_medium eq "cd" || $first_medium eq "dvd" || $first_medium eq "gdr" || $first_medium eq "blr" ? 'disk' : 'cartridge';
+        my $media_detail = join ', ', map fmtmedia($_->{medium}, $_->{qty}), @{$releases_data->{media}};
+        release_info_icon("release_icons ".$media_type, $media_detail, $media_type.".svg");
+    }
+
+    # Notes column
+    if (defined $releases_data->{notes} and length $releases_data->{notes}) {
+        release_info_icon "release_icons notes", $releases_data->{notes}, "notes.svg";
+    }
+}
 
 1;
 
