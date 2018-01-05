@@ -805,7 +805,7 @@ sub _releases {
          end;
 
          td class => 'tc_icons';
-           add_release_info_icons($self, $rel);
+          _release_icons($self, $rel);
          end;
 
          td class => 'tc5';
@@ -831,6 +831,60 @@ sub _releases {
     }
    end 'table';
   end 'div';
+}
+
+
+# Creates an small sized img inside an abbr tag. Used for per-release information icons.
+sub _release_icon {
+  my($class, $title, $img) = @_;
+  abbr class => 'release_icons_container', title => $title;
+   img src=> "/f/$img.svg", class => "release_icons $class", alt => $title;
+  end;
+}
+
+sub _release_icons {
+  my($self, $rel) = @_;
+
+  # Voice column
+  my $voice = $rel->{voiced};
+  _release_icon $self->{icons_voiced}[$voice], $self->{voiced}[$voice], 'voiced' if $voice;
+
+  # Animations columns
+  my $story_anim = $rel->{ani_story};
+  _release_icon $self->{icons_story_animated}[$story_anim], "Story: $self->{animated}[$story_anim]", 'story_animated' if $story_anim;
+
+  my $ero_anim = $rel->{ani_ero};
+  _release_icon $self->{icons_ero_animated}[$ero_anim], "Ero: $self->{animated}[$ero_anim]", 'ero_animated' if $ero_anim;
+
+  # Cost column
+  _release_icon 'freeware', 'Freeware', 'free' if $rel->{freeware};
+  _release_icon 'nonfree', 'Non-free', 'nonfree' unless $rel->{freeware};
+
+  # Publisher type column
+  if(!$rel->{patch}) {
+    _release_icon 'doujin', 'Doujin', 'doujin' if $rel->{doujin};
+    _release_icon 'commercial', 'Commercial', 'commercial' unless $rel->{doujin};
+  }
+
+  # Resolution column
+  my $resolution = $rel->{resolution};
+  if($resolution) {
+    my $resolution_type = $resolution == 1 ? 'custom' : $self->{resolutions}[$resolution][1] eq 'widescreen' ? '16-9' : '4-3';
+    _release_icon "res$resolution_type", $self->{resolutions}[$resolution][0], "resolution_$resolution_type";
+  }
+
+  # Media column
+  if(@{$rel->{media}}) {
+    my $icon = $self->{media}{ $rel->{media}[0]{medium} }[3];
+    my $media_detail = join ', ', map fmtmedia($_->{medium}, $_->{qty}), @{$rel->{media}};
+    _release_icon $icon, $media_detail, $icon;
+  }
+
+  # Notes column
+  # TODO: The notes text should to through a bb2html() to strip the tags. But
+  # showing HTML inside a 'title' attribute won't work, and bb2html() doesn't
+  # have a plain text output option.
+  _release_icon 'notes', $rel->{notes}, 'notes' if $rel->{notes};
 }
 
 
@@ -980,68 +1034,6 @@ sub _staff {
    }
    clearfloat;
   end;
-}
-
-
-# Creates an small sized img inside an abbr tag. Used for per-release information icons.
-sub release_info_icon {
-  abbr class => 'release_icons_container', title => "$_[1]";
-    img src=> "/f/".$_[2], class => "$_[0]", alt => "$_[1]";
-  end;
-}
-
-sub add_release_info_icons {
-    my($self, $releases_data) = @_;
-
-    # Voice column
-    my $voice_code = $releases_data->{voiced};
-    if($voice_code > 0) {
-        release_info_icon("release_icons " . $self->{icons_voiced}[$voice_code], $self->{voiced}[$releases_data->{voiced}], 'voiced.svg');
-    }
-
-    # Animations columns
-    my $story_anim_code = $releases_data->{ani_story};
-    if($story_anim_code > 0) {
-        release_info_icon("release_icons ".$self->{icons_story_animated}[$story_anim_code], "Story: $self->{animated}[$story_anim_code]", "story_animated.svg");
-    }
-
-    my $ero_anim_code = $releases_data->{ani_ero};
-    if($ero_anim_code > 0) {
-        release_info_icon("release_icons ".$self->{icons_ero_animated}[$ero_anim_code], "Ero: $self->{animated}[$ero_anim_code]", "ero_animated.svg");
-    }
-
-    # Cost column
-    $releases_data->{freeware} ? release_info_icon "release_icons freeware", "Freeware", "free.svg"
-                               : release_info_icon "release_icons nonfree", "Non-free", "nonfree.svg";
-
-    # Publisher type column
-    $releases_data->{patch} ? () : ($releases_data->{doujin} ? release_info_icon "release_icons doujin", "Doujin", "doujin.svg"
-                                                             : release_info_icon "release_icons commercial", "Commercial", "commercial.svg");
-
-    # Resolution column
-    my $resolution = $releases_data->{resolution};
-    if ($resolution > 0) {
-        my $resolution_type = ($resolution == 1) ? "custom" : ($self->{resolutions}[$resolution][1] eq 'widescreen') ? '16-9' : '4-3';
-        my $computed_svg = "resolution_".$resolution_type.".svg";
-        release_info_icon("release_icons res".$resolution_type, $self->{resolutions}[$resolution][0], $computed_svg);
-    }
-
-    # Media column
-    if (@{$releases_data->{media}}) {
-        my $first_medium = $releases_data->{media}[0]->{medium};
-        my $media_type = $first_medium eq "in" ? "download" :
-            $first_medium eq "cd" || $first_medium eq "dvd" || $first_medium eq "gdr" || $first_medium eq "blr" ? 'disk' : 'cartridge';
-        my $media_detail = join ', ', map fmtmedia($_->{medium}, $_->{qty}), @{$releases_data->{media}};
-        release_info_icon("release_icons ".$media_type, $media_detail, $media_type.".svg");
-    }
-
-    # Notes column
-    # TODO: The notes text should to through a bb2html() to strip the tags. But
-    # showing HTML inside a 'title' attribute won't work, and bb2html() doesn't
-    # have a plain text output option.
-    if (defined $releases_data->{notes} and length $releases_data->{notes}) {
-        release_info_icon "release_icons notes", $releases_data->{notes}, "notes.svg";
-    }
 }
 
 1;

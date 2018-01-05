@@ -184,22 +184,22 @@ our %S;
     oth Other
   }),
   media           => ordhash(
-   #DB     qty  txt                      plural (if qty)
-    cd  => [ 1, 'CD',                    'CDs'                    ],
-    dvd => [ 1, 'DVD',                   'DVDs'                   ],
-    gdr => [ 1, 'GD-ROM',                'GD-ROMs'                ],
-    blr => [ 1, 'Blu-ray disc',          'Blu-ray discs'          ],
-    flp => [ 1, 'Floppy',                'Floppies'               ],
-    mrt => [ 1, 'Cartridge',             'Cartridges'             ],
-    mem => [ 1, 'Memory card',           'Memory cards'           ],
-    umd => [ 1, 'UMD',                   'UMDs'                   ],
-    nod => [ 1, 'Nintendo Optical Disc', 'Nintendo Optical Discs' ],
-    in  => [ 0, 'Internet download',     ''                       ],
-    otc => [ 0, 'Other',                 ''                       ],
+   #DB     qty  txt                      plural (if qty)           icon
+    cd  => [ 1, 'CD',                    'CDs',                    'disk'     ],
+    dvd => [ 1, 'DVD',                   'DVDs',                   'disk'     ],
+    gdr => [ 1, 'GD-ROM',                'GD-ROMs',                'disk'     ],
+    blr => [ 1, 'Blu-ray disc',          'Blu-ray discs',          'disk'     ],
+    flp => [ 1, 'Floppy',                'Floppies',               'cartridge'],
+    mrt => [ 1, 'Cartridge',             'Cartridges',             'cartridge'],
+    mem => [ 1, 'Memory card',           'Memory cards',           'cartridge'],
+    umd => [ 1, 'UMD',                   'UMDs',                   'cartridge'],
+    nod => [ 1, 'Nintendo Optical Disc', 'Nintendo Optical Discs', 'disk'     ],
+    in  => [ 0, 'Internet download',     '',                       'download' ],
+    otc => [ 0, 'Other',                 '',                                  ],
   ),
   resolutions     => [
-    [ 'Unknown / console / handheld', '' ],
-    [ 'Non-standard', '' ],
+    [ 'Unknown / console / handheld', '' ], # hardcoded to 0 in many places
+    [ 'Non-standard', '' ],                 # hardcoded to 1 in VNPage.pm
     [ '640x480',      '4:3' ],
     [ '800x600',      '4:3' ],
     [ '1024x768',     '4:3' ],
@@ -220,8 +220,11 @@ our %S;
     ero  => 'Sexual content',
     tech => 'Technical',
   ),
+  animated              => [ 'Unknown', 'No animations',      'Simple animations',     'Some fully animated scenes', 'All scenes fully animated' ],
+  icons_story_animated  => [ 'unknown', 'story_not_animated', 'story_simple_animated', 'story_some_fully_animated',  'story_all_fully_animated'  ],
+  icons_ero_animated    => [ 'unknown', 'ero_not_animated',   'ero_simple_animated',   'ero_some_fully_animated',    'ero_all_fully_animated'    ],
   voiced          => [ 'Unknown', 'Not voiced', 'Only ero scenes voiced', 'Partially voiced', 'Fully voiced' ],
-  animated        => [ 'Unknown', 'No animations', 'Simple animations', 'Some fully animated scenes', 'All scenes fully animated' ],
+  icons_voiced    => [ 'unknown', 'not_voiced', 'ero_voiced',             'partially_voiced', 'fully_voiced' ],
   wishlist_status => [ 'high', 'medium', 'low', 'blacklist' ],
   rlist_status    => [ 'Unknown', 'Pending', 'Obtained', 'On loan', 'Deleted' ], # 0 = hardcoded "unknown", 2 = hardcoded 'OK'
   vnlist_status   => [ 'Unknown', 'Playing', 'Finished', 'Stalled', 'Dropped' ],
@@ -248,11 +251,6 @@ our %S;
     staff      => 'Staff',
   ),
   poll_options    => 20, # max number of options in discussion board polls
-
-  # Maps from db codes to icon names
-  icons_voiced          => [ "unknown", "not_voiced", "ero_voiced", "partially_voiced", "fully_voiced" ],
-  icons_story_animated  => [ "unknown", "story_not_animated", "story_simple_animated", "story_some_fully_animated", "story_all_fully_animated" ],
-  icons_ero_animated    => [ "unknown", "ero_not_animated", "ero_simple_animated", "ero_some_fully_animated", "ero_all_fully_animated" ],
 );
 
 
