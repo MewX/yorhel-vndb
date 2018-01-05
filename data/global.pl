@@ -195,7 +195,7 @@ our %S;
     umd => [ 1, 'UMD',                   'UMDs',                   'cartridge'],
     nod => [ 1, 'Nintendo Optical Disc', 'Nintendo Optical Discs', 'disk'     ],
     in  => [ 0, 'Internet download',     '',                       'download' ],
-    otc => [ 0, 'Other',                 '',                                  ],
+    otc => [ 0, 'Other',                 '',                       'cartridge'],
   ),
   resolutions     => [
     [ 'Unknown / console / handheld', '' ], # hardcoded to 0 in many places
