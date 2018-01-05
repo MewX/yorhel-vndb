@@ -838,7 +838,7 @@ sub _releases {
 sub _release_icon {
   my($class, $title, $img) = @_;
   abbr class => 'release_icons_container', title => $title;
-   img src=> "/f/$img.svg", class => "release_icons $class", alt => $title;
+   img src=> "$TUWF::OBJ->{url_static}/f/$img.svg", class => "release_icons $class", alt => $title;
   end;
 }
 
