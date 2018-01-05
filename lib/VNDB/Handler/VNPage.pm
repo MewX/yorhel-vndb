@@ -783,7 +783,7 @@ sub _releases {
    table;
     for my $l (@lang) {
       Tr class => 'lang';
-       td colspan => 6;
+       td colspan => 7;
         cssicon "lang $l", $self->{languages}{$l};
         txt $self->{languages}{$l};
        end;
@@ -1007,7 +1007,7 @@ sub add_release_info_icons {
 
     my $ero_anim_code = $releases_data->{ani_ero};
     if($ero_anim_code > 0) {
-        release_info_icon("release_icons ".$self->{icons_ero_animated}[$ero_anim_code], "Story: $self->{animated}[$ero_anim_code]", "ero_animated.svg");
+        release_info_icon("release_icons ".$self->{icons_ero_animated}[$ero_anim_code], "Ero: $self->{animated}[$ero_anim_code]", "ero_animated.svg");
     }
 
     # Cost column
@@ -1027,7 +1027,7 @@ sub add_release_info_icons {
     }
 
     # Media column
-    if (length($releases_data->{media}) > 0 and length($releases_data->{media}[0]->{medium}) > 0) {
+    if (@{$releases_data->{media}}) {
         my $first_medium = $releases_data->{media}[0]->{medium};
         my $media_type = $first_medium eq "in" ? "download" :
             $first_medium eq "cd" || $first_medium eq "dvd" || $first_medium eq "gdr" || $first_medium eq "blr" ? 'disk' : 'cartridge';
@@ -1036,6 +1036,9 @@ sub add_release_info_icons {
     }
 
     # Notes column
+    # TODO: The notes text should to through a bb2html() to strip the tags. But
+    # showing HTML inside a 'title' attribute won't work, and bb2html() doesn't
+    # have a plain text output option.
     if (defined $releases_data->{notes} and length $releases_data->{notes}) {
         release_info_icon "release_icons notes", $releases_data->{notes}, "notes.svg";
     }
