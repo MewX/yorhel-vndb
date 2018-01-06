@@ -192,7 +192,7 @@ our %S;
     flp => [ 1, 'Floppy',                'Floppies',               'cartridge'],
     mrt => [ 1, 'Cartridge',             'Cartridges',             'cartridge'],
     mem => [ 1, 'Memory card',           'Memory cards',           'cartridge'],
-    umd => [ 1, 'UMD',                   'UMDs',                   'cartridge'],
+    umd => [ 1, 'UMD',                   'UMDs',                   'disk'     ],
     nod => [ 1, 'Nintendo Optical Disc', 'Nintendo Optical Discs', 'disk'     ],
     in  => [ 0, 'Internet download',     '',                       'download' ],
     otc => [ 0, 'Other',                 '',                       'cartridge'],
