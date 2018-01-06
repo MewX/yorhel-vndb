@@ -6,6 +6,7 @@ use warnings;
 use Exporter 'import';
 use TUWF ':html';
 use VNDB::Func;
+use VNDB::BBCode ();
 
 our @EXPORT = qw|filFetchDB bbSubstLinks|;
 
@@ -102,14 +103,19 @@ sub _fil_vn_compat {
 sub bbSubstLinks {
   my ($self, $msg) = @_;
 
-  # pre-parse vndb links within message body
-  my (%lookup, %links);
-  while ($msg =~ m/(?:^|\s)\K([vcpgis])([1-9][0-9]*)\b/g) {
-    $lookup{$1}{$2} = 1;
-  }
+  # Parse a message and create an index of links to resolve
+  my %lookup;
+  VNDB::BBCode::parse $msg, sub {
+    my($code, $tag) = @_;
+    $lookup{$1}{$2} = 1 if $tag eq 'dblink' && $code =~ /^(.)(\d+)/;
+    1;
+  };
   return $msg unless %lookup;
+
+  # Now resolve the links
+  my %links;
   my @opt = (results => 50);
-  # lookup parsed links
+
   if ($lookup{v}) {
     $links{"v$_->{id}"} = $_->{title} for (@{$self->dbVNGet(id => [keys %{$lookup{v}}], @opt)});
   }
@@ -129,45 +135,16 @@ sub bbSubstLinks {
     $links{"s$_->{id}"} = $_->{name} for (@{$self->dbStaffGet(id => [keys %{$lookup{s}}], @opt)});
   }
   return $msg unless %links;
-  my($result, @open) = ('', 'first');
 
-  while($msg =~ m{
-    (?:\b([tdvprcugis][1-9]\d*)(?:\.[1-9]\d*)?\b) | # 1. id
-    (\[[^\s\]]+\])                                | # 2. tag
-    ((?:https?|ftp)://[^><"\n\s\]\[]+[\d\w=/-])     # 3. url
-  }x) {
-    my($match, $id, $tag) = ($&, $1, $2);
-    $result .= $`;
-    $msg = $';
-
-    if($open[$#open] ne 'raw' && $open[$#open] ne 'code') {
-      # handle tags
-      if($tag) {
-        $tag = lc $tag;
-        if($tag eq '[raw]') {
-          push @open, 'raw';
-        } elsif($tag eq '[quote]') {
-          push @open, 'quote';
-        } elsif($tag eq '[code]') {
-          push @open, 'code';
-        } elsif($tag eq '[/quote]' && $open[$#open] eq 'quote') {
-          pop @open;
-        } elsif($match =~ m{\[url=((https?://|/)[^\]>]+)\]}i) {
-          push @open, 'url';
-        } elsif($tag eq '[/url]' && $open[$#open] eq 'url') {
-          pop @open;
-        }
-      } elsif($id && !grep(/^(?:quote|url)/, @open) && $links{$id}) {
-        $match = sprintf '[url=/%s]%s[/url]', $match, $links{$id};
-      }
-    }
-    pop @open if($tag && $open[$#open] eq 'raw'  && lc$tag eq '[/raw]');
-    pop @open if($tag && $open[$#open] eq 'code' && lc$tag eq '[/code]');
-
-    $result .= $match;
-  }
-  $result .= $msg;
-
+  # Now substitute
+  my $result = '';
+  VNDB::BBCode::parse $msg, sub {
+    my($code, $tag) = @_;
+    $result .= $tag eq 'dblink' && $links{$code}
+      ? sprintf '[url=/%s]%s[/url]', $code, $links{$code}
+      : $code;
+    1;
+  };
   return $result;
 }
 
