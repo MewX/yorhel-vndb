@@ -344,7 +344,7 @@ sub page {
 
   my $metadata = {
     'og:title' => $v->{title},
-    'og:description' => $v->{desc},
+    'og:description' => bb2text $v->{desc},
   };
 
   if($v->{image} && !$v->{img_nsfw}) {
@@ -881,10 +881,7 @@ sub _release_icons {
   }
 
   # Notes column
-  # TODO: The notes text should to through a bb2html() to strip the tags. But
-  # showing HTML inside a 'title' attribute won't work, and bb2html() doesn't
-  # have a plain text output option.
-  _release_icon 'notes', $rel->{notes}, 'notes' if $rel->{notes};
+  _release_icon 'notes', bb2text($rel->{notes}), 'notes' if $rel->{notes};
 }
 
 

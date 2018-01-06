@@ -5,7 +5,7 @@ use warnings;
 use Exporter 'import';
 use TUWF::XML 'xml_escape';
 
-our @EXPORT = qw/bb2html/;
+our @EXPORT = qw/bb2html bb2text/;
 
 # Supported BBCode:
 #  [spoiler] .. [/spoiler]
@@ -225,5 +225,28 @@ sub bb2html {
   };
   $ret;
 }
+
+
+# Convert bbcode into plain text, stripping all tags and spoilers. [url] tags
+# only display the title.
+sub bb2text {
+  my $input = shift;
+
+  my $inspoil = 0;
+  my $ret = '';
+  parse $input, sub {
+    my($raw, $tag, @arg) = @_;
+    if($tag eq 'spoiler_start') {
+      $inspoil = 1;
+    } elsif($tag eq 'spoiler_end') {
+      $inspoil = 0;
+    } else {
+      $ret .= $raw if !$inspoil && $tag !~ /_(start|end)$/;
+    }
+    1;
+  };
+  $ret;
+}
+
 
 1;

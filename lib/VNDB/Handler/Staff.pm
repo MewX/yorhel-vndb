@@ -29,7 +29,7 @@ sub page {
 
   my $metadata = {
     'og:title' => $s->{name},
-    'og:description' => $s->{desc},
+    'og:description' => bb2text $s->{desc},
   };
 
   $self->htmlHeader(title => $s->{name}, noindex => $rev, metadata => $metadata);

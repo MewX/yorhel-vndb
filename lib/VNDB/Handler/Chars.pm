@@ -31,7 +31,7 @@ sub page {
 
   my $metadata = {
     'og:title' => $r->{name},
-    'og:description' => $r->{desc},
+    'og:description' => bb2text $r->{desc},
     'og:image' => $r->{image} && imgurl(ch => $r->{image}),
   };
 

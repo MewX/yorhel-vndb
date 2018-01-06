@@ -12,79 +12,102 @@ use Benchmark 'timethese';
 our($ROOT, %S);
 BEGIN { ($ROOT = abs_path $0) =~ s{/util/bbcode-test\.pl$}{}; }
 use lib "$ROOT/lib";
-use VNDB::BBCode;
+use VNDB::BBCode qw/bb2html bb2text/;
 
 
 my @tests = (
   '',
   '',
+  '',
 
   '[From [url=http://www.dlSITE.com/eng/]DLsite English[/url]]',
   '[From <a href="http://www.dlSITE.com/eng/" rel="nofollow">DLsite English</a>]',
+  '[From DLsite English]',
 
   '[url=http://example.com/]some url[/url]',
   '<a href="http://example.com/" rel="nofollow">some url</a>',
+  'some url',
 
   '[quote]some quote[/quote]',
   '<div class="quote">some quote</div>',
+  'some quote',
 
   "[code]some code\n\nalso newlines;[/code]",
   '<pre>some code<br><br>also newlines;</pre>',
+  "some code\n\nalso newlines;",
 
   '[spoiler]some spoiler[/spoiler]',
   '<b class="spoiler">some spoiler</b>',
+  '',
 
   "[raw][quote]not parsed\n[url=https://vndb.org/]valid url[/url]\n[url=asdf]invalid url[/url][/quote][/raw]",
   "[quote]not parsed<br>[url=https://vndb.org/]valid url[/url]<br>[url=asdf]invalid url[/url][/quote]",
+  "[quote]not parsed\n[url=https://vndb.org/]valid url[/url]\n[url=asdf]invalid url[/url][/quote]",
 
   '[quote]basic [spoiler]single[/spoiler]-line [spoiler][url=/g]tag[/url] nesting [raw](without [url=/v3333]special[/url] cases)[/raw][/spoiler][/quote]',
   '<div class="quote">basic <b class="spoiler">single</b>-line <b class="spoiler"><a href="/g" rel="nofollow">tag</a> nesting (without [url=/v3333]special[/url] cases)</b></div>',
+  'basic -line ',
 
   "[quote]rmnewline after closing tag[/quote]\n",
   '<div class="quote">rmnewline after closing tag</div>',
+  "rmnewline after closing tag\n",
 
   '[url=/v19]some vndb url[/url]',
   '<a href="/v19" rel="nofollow">some vndb url</a>',
+  'some vndb url',
 
   "quite\n\n\n\n\n\n\na\n\n\n\n\n            lot             of\n\n\n\nunneeded             whitespace",
   'quite<br><br>a<br><br> lot of<br><br><br><br>unneeded whitespace',
+  "quite\n\n\n\n\n\n\na\n\n\n\n\n            lot             of\n\n\n\nunneeded             whitespace",
 
   "[quote]\nsimple\nrmnewline\ntest\n[/quote]",
   '<div class="quote">simple<br>rmnewline<br>test<br></div>',
+  "\nsimple\nrmnewline\ntest\n",
 
   # the new implementation doesn't special-case [code], as the first newline shouldn't matter either way
   "[quote]\n\nhello, rmnewline test[code]\n#!/bin/sh\n\nfunction random_username() {\n    </dev/urandom tr -cd 'a-zA-Z0-9' | dd bs=1 count=16 2>/dev/null\n}\n[/code]\nsome text after the code tag\n[/quote]\n\n[spoiler]\nsome newlined spoiler\n[/spoiler]",
   '<div class="quote"><br>hello, rmnewline test<pre>#!/bin/sh<br><br>function random_username() {<br>    &lt;/dev/urandom tr -cd \'a-zA-Z0-9\' | dd bs=1 count=16 2&gt;/dev/null<br>}<br></pre>some text after the code tag<br></div><br><b class="spoiler"><br>some newlined spoiler<br></b>',
+  "\n\nhello, rmnewline test\n#!/bin/sh\n\nfunction random_username() {\n    </dev/urandom tr -cd 'a-zA-Z0-9' | dd bs=1 count=16 2>/dev/null\n}\n\nsome text after the code tag\n\n\n",
 
   "[quote]\n[raw]\nrmnewline test with made-up elements\n[/raw]\nwelp\n[dumbtag]\nnone\n[/dumbtag]\n[/quote]",
   '<div class="quote"><br>rmnewline test with made-up elements<br><br>welp<br>[dumbtag]<br>none<br>[/dumbtag]<br></div>',
+  "\n\nrmnewline test with made-up elements\n\nwelp\n[dumbtag]\nnone\n[/dumbtag]\n",
 
   '[url=http://example.com/]markup in [raw][url][/raw][/url]',
   '<a href="http://example.com/" rel="nofollow">markup in [url]</a>',
+  "markup in [url]",
 
   '[url=http://192.168.1.1/some/path]ipv4 address in [url][/url]',
   '<a href="http://192.168.1.1/some/path" rel="nofollow">ipv4 address in [url]</a>',
+  'ipv4 address in [url]',
 
   'http://192.168.1.1/some/path (literal ipv4 address)',
   '<a href="http://192.168.1.1/some/path" rel="nofollow">link</a> (literal ipv4 address)',
+  'http://192.168.1.1/some/path (literal ipv4 address)',
 
   '[url=http://192.168.1.1:8080/some/path]ipv4 address (port included) in [url][/url]',
   '<a href="http://192.168.1.1:8080/some/path" rel="nofollow">ipv4 address (port included) in [url]</a>',
+  'ipv4 address (port included) in [url]',
 
   'http://192.168.1.1:8080/some/path (literal ipv4 address, port included)',
   '<a href="http://192.168.1.1:8080/some/path" rel="nofollow">link</a> (literal ipv4 address, port included)',
+  'http://192.168.1.1:8080/some/path (literal ipv4 address, port included)',
 
   '[Quote]non-lowercase tags [SpOILER]here[/sPOilER][/qUOTe]',
   '<div class="quote">non-lowercase tags <b class="spoiler">here</b></div>',
+  'non-lowercase tags ',
 
   'some text [spoiler]with (v17) tags[/spoiler] and internal ids such as s1',
   'some text <b class="spoiler">with (<a href="/v17">v17</a>) tags</b> and internal ids such as <a href="/s1">s1</a>',
+  'some text  and internal ids such as s1',
 
   'r12.1 v6.3 s1.2',
   '<a href="/r12.1">r12.1</a> <a href="/v6.3">v6.3</a> <a href="/s1.2">s1.2</a>',
+  'r12.1 v6.3 s1.2',
 
   'v17 text dds16v21 more text1 v9',
   '<a href="/v17">v17</a> text dds16v21 more text1 <a href="/v9">v9</a>',
+  'v17 text dds16v21 more text1 v9',
 
   # Not sure what to do here
   #'http://some[raw].pointlessly[/raw].unusual.domain/',
@@ -95,19 +118,24 @@ my @tests = (
 
   '<tag>html escapes (&)</tag>',
   '&lt;tag&gt;html escapes (&amp;)&lt;/tag&gt;',
+  '<tag>html escapes (&)</tag>',
 
   '[spoiler]stray open tag',
   '<b class="spoiler">stray open tag</b>',
+  '',
 
   # TODO: This isn't ideal
   '[quote][spoiler]stray open tag (nested)[/quote]',
   '<div class="quote"><b class="spoiler">stray open tag (nested)[/quote]</b></div>',
+  '',
 
   '[quote][spoiler]two stray open tags',
   '<div class="quote"><b class="spoiler">two stray open tags</b></div>',
+  '',
 
   "[url=https://cat.xyz/]that's [spoiler]some [quote]uncommon[/quote][/spoiler] combination[/url]",
   '<a href="https://cat.xyz/" rel="nofollow">that\'s [spoiler]some [quote]uncommon[/quote][/spoiler] combination</a>',
+  "that's [spoiler]some [quote]uncommon[/quote][/spoiler] combination",
 
   # > I don't see anyone using IPv6 URLs anytime soon, so I'm not worried too either way.
   #'[url=http://[fedc:ba98:7654:3210:fedc:ba98:7654:3210]/some/path]ipv6 address in [url][/url]',
@@ -119,9 +147,11 @@ my @tests = (
   # test shortening
   [ "[url=https://cat.xyz/]that's [spoiler]some [quote]uncommon[/quote][/spoiler] combination[/url]", 10 ],
   '<a href="https://cat.xyz/" rel="nofollow">that\'s </a>',
+  "that's [spoiler]some [quote]uncommon[/quote][/spoiler] combination",
 
   [ "A https://blicky.net/ only takes 4 characters", 8 ],
   'A <a href="https://blicky.net/" rel="nofollow">link</a>',
+  "A https://blicky.net/ only takes 4 characters",
 );
 
 
@@ -145,17 +175,18 @@ sub identity {
 
 
 sub test {
-  push @tests, map +($_,$_), @invalid_syntax;
+  push @tests, map +($_,$_,$_), @invalid_syntax;
   plan tests => scalar @tests;
 
-  my @t = @tests;
-  while(@t) {
-    my $input  = shift @t;
-    my $html = shift @t;
+  while(@tests) {
+    my $input = shift @tests;
+    my $html  = shift @tests;
+    my $plain = shift @tests;
     my @arg = ref $input ? @$input : ($input);
     (my $msg = $arg[0]) =~ s/\n/\\n/g;
-    is identity($arg[0]), $arg[0], $msg;
-    is bb2html(@arg), $html, $msg;
+    is identity($arg[0]), $arg[0], "id: $msg";
+    is bb2html(@arg),     $html,   "html: $msg";
+    is bb2text($arg[0]),  $plain,  "plain: $msg";
   }
 }
 
