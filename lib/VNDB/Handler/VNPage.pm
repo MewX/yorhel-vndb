@@ -870,6 +870,8 @@ sub _release_icons {
   my $resolution = $rel->{resolution};
   if($resolution) {
     my $resolution_type = $resolution == 1 ? 'custom' : $self->{resolutions}[$resolution][1] eq 'widescreen' ? '16-9' : '4-3';
+    # Ugly workaround: PC-98 has non-square pixels, thus not widescreen
+    $resolution_type = '4-3' if $resolution_type eq '16-9' && grep $_ eq 'p98', @{$rel->{platforms}};
     _release_icon "res$resolution_type", $self->{resolutions}[$resolution][0], "resolution_$resolution_type";
   }
 
