@@ -8,7 +8,8 @@ use Exporter 'import';
 use POSIX 'strftime', 'ceil', 'floor';
 use JSON::XS;
 use VNDBUtil;
-our @EXPORT = (@VNDBUtil::EXPORT, qw|
+use VNDB::BBCode;
+our @EXPORT = (@VNDBUtil::EXPORT, 'bb2html', qw|
   clearfloat cssicon tagscore mt minage fil_parse fil_serialize parenttags
   childtags charspoil imgpath imgurl
   fmtvote fmtmedia fmtvnlen fmtage fmtdatestr fmtdate fmtuser fmtrating fmtspoil

@@ -10,7 +10,7 @@ use warnings;
 use TUWF::XML;
 use Multi::Core;
 use POSIX 'strftime';
-use VNDBUtil 'bb2html';
+use VNDB::BBCode;
 
 my %stats; # key = feed, value = [ count, total, max ]
 
