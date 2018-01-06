@@ -118,8 +118,8 @@ sub parse {
     (?:https?|ftp)://[^><"\n\s\]\[]+[\d\w=/-]  # link
   )}xg) {
     my $token = $&;
-    my $pre = substr $raw, $last, (pos($raw)-length($&))-$last;
-    my $char_pre = $last ? substr $raw, pos($raw)-length($&)-1, 1 : '';
+    my $pre = substr $raw, $last, $-[0]-$last;
+    my $char_pre = $-[0] ? substr $raw, $-[0]-1, 1 : '';
     $last = pos $raw;
     my $char_post = substr $raw, $last, 1;
 

@@ -109,6 +109,11 @@ my @tests = (
   '<a href="/v17">v17</a> text dds16v21 more text1 <a href="/v9">v9</a>',
   'v17 text dds16v21 more text1 v9',
 
+  # https://vndb.org/t2520.231
+  'pov1',
+  'pov1',
+  'pov1',
+
   # Not sure what to do here
   #'http://some[raw].pointlessly[/raw].unusual.domain/',
   #'<a href="http://some.pointlessly.unusual.domain/" rel="nofollow">link</a>',
