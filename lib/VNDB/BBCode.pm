@@ -111,11 +111,11 @@ sub parse {
   my @stack;
 
   while($raw =~ m{(?:
-    \[[^\s\]]+\]                            |  # tag
-    d[1-9][0-9]*\.[1-9][0-9]*\.[1-9][0-9]*  |  # d#.#.#
-    [tdvprcs][1-9][0-9]*\.[1-9][0-9]*       |  # v#.#
-    [tdvprcsugi][1-9][0-9]*                 |  # v#
-    (?:https?|ftp)://[^><"\n\s\]\[]+[\d\w=/-]  # link
+    \[ \/? (?i: spoiler|quote|code|url|raw ) [^\s\]]* \] |  # tag
+    d[1-9][0-9]*\.[1-9][0-9]*\.[1-9][0-9]*               |  # d#.#.#
+    [tdvprcs][1-9][0-9]*\.[1-9][0-9]*                    |  # v#.#
+    [tdvprcsugi][1-9][0-9]*                              |  # v#
+    (?:https?|ftp)://[^><"\n\s\]\[]+[\d\w=/-]               # link
   )}xg) {
     my $token = $&;
     my $pre = substr $raw, $last, $-[0]-$last;

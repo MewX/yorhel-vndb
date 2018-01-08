@@ -109,10 +109,10 @@ my @tests = (
   '<a href="/v17">v17</a> text dds16v21 more text1 <a href="/v9">v9</a>',
   'v17 text dds16v21 more text1 v9',
 
-  # https://vndb.org/t2520.231
-  'pov1',
-  'pov1',
-  'pov1',
+  # https://vndb.org/t2520.233
+  '[From[url=http://densetsu.com/display.php?id=468&style=alphabetical] Anime Densetsu[/url]]',
+  '[From<a href="http://densetsu.com/display.php?id=468&amp;style=alphabetical" rel="nofollow"> Anime Densetsu</a>]',
+  '[From Anime Densetsu]',
 
   # Not sure what to do here
   #'http://some[raw].pointlessly[/raw].unusual.domain/',
@@ -166,6 +166,8 @@ my @invalid_syntax = (
   '[url=nicetext]simpler invalid param[/url]',
   '[url]empty "url" tag[/url]',
   '[tag]custom tag[/tag]',
+  # https://vndb.org/t2520.231
+  'pov1',
 );
 
 
