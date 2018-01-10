@@ -837,8 +837,8 @@ sub _releases {
 # Creates an small sized img inside an abbr tag. Used for per-release information icons.
 sub _release_icon {
   my($class, $title, $img) = @_;
-  abbr class => 'release_icons_container', title => $title;
-   img src=> "$TUWF::OBJ->{url_static}/f/$img.svg", class => "release_icons $class", alt => $title;
+  abbr class => "release_icons_container release_icon_$class", title => $title;
+   img src=> "$TUWF::OBJ->{url_static}/f/$img.svg", class => "release_icons", alt => $title;
   end;
 }
 

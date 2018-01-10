@@ -916,11 +916,13 @@ $iconcss$
 
 .release_icons_container { width: 16px; height: 16px; float: right; margin-left: 4px; }
 .release_icons { width: 16px; height: 16px; }
-.release_icons.not_voiced, .story_not_animated, .ero_not_animated { }
-.release_icons.ero_voiced, .story_simple_animated, .ero_simple_animated { filter: hue-rotate(30deg); }
-.release_icons.partially_voiced, .story_some_fully_animated, .ero_some_fully_animated { filter: invert(100%) hue-rotate(240deg) }
-.release_icons.fully_voiced, .story_all_fully_animated, .ero_all_fully_animated  { filter: hue-rotate(80deg) }
-.release_icons.notes, .unknown, .freeware, .nonfree, .commercial, .doujin, .res16-9, .res4-3, .disk, .cartridge, .download {  }
+.release_icon_not_voiced, .release_icon_story_not_animated, .release_icon_ero_not_animated { }
+.release_icon_ero_voiced, .release_icon_story_simple_animated, .release_icon_ero_simple_animated { filter: hue-rotate(30deg); }
+.release_icon_partially_voiced, .release_icon_story_some_fully_animated, .release_icon_ero_some_fully_animated { filter: invert(100%) hue-rotate(240deg); }
+.release_icon_fully_voiced, .release_icon_story_all_fully_animated, .release_icon_ero_all_fully_animated { filter: hue-rotate(80deg); }
+.release_icon_notes, .release_icon_unknown, .release_icon_freeware, .release_icon_nonfree,
+  .release_icon_commercial, .release_icon_doujin, .release_icon_res16-9, .release_icon_res4-3,
+  .release_icon_disk, .release_icon_cartridge, .release_icon_download {  }
 
 /* Relation graph colors */
 svg .border { fill: none; stroke: $border$ }
