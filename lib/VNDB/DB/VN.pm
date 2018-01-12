@@ -6,7 +6,7 @@ use warnings;
 use TUWF 'sqlprint';
 use POSIX 'strftime';
 use Exporter 'import';
-use VNDB::Func 'gtintype', 'normalize_query';
+use VNDB::Func 'normalize_query';
 
 our @EXPORT = qw|dbVNGet dbVNGetRev dbVNRevisionInsert dbVNImageId dbScreenshotAdd dbScreenshotGet dbScreenshotRandom dbVNImportSeiyuu|;
 

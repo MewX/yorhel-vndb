@@ -217,7 +217,7 @@ sub _infotable {
 
    if($r->{gtin}) {
      Tr;
-      td gtintype $r->{gtin};
+      td gtintype($r->{gtin}) || 'GTIN';
       td $r->{gtin};
      end;
    }
