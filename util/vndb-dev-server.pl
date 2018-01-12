@@ -70,13 +70,13 @@ sub pipe_fhs {
     $a = AnyEvent::Handle->new(
         fh => $a_fh,
         on_read => sub { $b->push_write($a->{rbuf}); $a->{rbuf} = '' },
-        on_error => sub { $done->end if $_[1] },
+        on_error => sub { if($_[1]) { $b->push_shutdown; $done->end } },
     );
     $done->begin;
     $b = AnyEvent::Handle->new(
         fh => $b_fh,
         on_read => sub { $a->push_write($b->{rbuf}); $b->{rbuf} = '' },
-        on_error => sub { $done->end if $_[1] },
+        on_error => sub { if($_[1]) { $a->push_shutdown; $done->end } },
     );
     $done->recv;
 }
