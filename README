@@ -17,6 +17,24 @@ Quick and dirty setup using Docker
   docker exec -ti vndb su devuser -c 'psql -U vndb'   # postgres vndb shell
 
 
+Development database
+
+  There's a small database with a few pre-filled entries for testing purposes.
+  It is automatically imported in the Docker image, but you can also manually
+  import it as follows (requires an initialized DB and needs to be run with a
+  superuser account. WARNING: This throws away anything in the current DB):
+
+    psql -U postgres vndb -1f util/sql/devdb.sql
+
+  This database includes two user accounts with the following login:
+
+    admin / hunter2
+    user  / hunter1
+
+  (The development database is still very minimal, feel free to upload an
+  improved DB dump to the forums if you have more data)
+
+
 Requirements (when not using Docker)
 
   global requirements:
@@ -92,6 +110,7 @@ Setup
 
   - Update the vndb_site password in data/config.pl to whatever you set it in
     the previous step.
+  - (Optional) Import the "Development database" as explained above.
   - Now simply run:
 
       util/vndb-dev-server.pl

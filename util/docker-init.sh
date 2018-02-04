@@ -44,6 +44,7 @@ pg_init() {
     fi
     su postgres -c '/var/www/util/docker-init.sh pg_load_superuser'
     su devuser -c '/var/www/util/docker-init.sh pg_load_vndb'
+    su postgres -c '/var/www/util/docker-init.sh pg_load_devdb'
     touch /var/lib/postgresql/vndb-init-done
 }
 
@@ -58,7 +59,13 @@ pg_load_superuser() {
 # Should run as devuser
 pg_load_vndb() {
     cd /var/www
+    make util/sql/editfunc.sql
     psql -U vndb -f util/sql/all.sql
+}
+
+# Should be run as the postgres user
+pg_load_devdb() {
+    psql vndb -1f /var/www/util/sql/devdb.sql
 }
 
 
@@ -82,6 +89,9 @@ case "$1" in
         ;;
     pg_load_vndb)
         pg_load_vndb
+        ;;
+    pg_load_devdb)
+        pg_load_devdb
         ;;
     devshell)
         devshell
