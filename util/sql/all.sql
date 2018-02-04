@@ -45,13 +45,13 @@ CREATE TYPE vn_relation       AS ENUM ('seq', 'preq', 'set', 'alt', 'char', 'sid
 
 \i util/sql/triggers.sql
 
--- permissions
-
-\i util/sql/perms.sql
-
 -- Sequences used for ID generation of items not in the DB
 CREATE SEQUENCE covers_seq;
 CREATE SEQUENCE charimg_seq;
+
+-- permissions
+
+\i util/sql/perms.sql
 
 
 -- Rows that are assumed to be available
