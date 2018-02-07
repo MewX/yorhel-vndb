@@ -933,7 +933,7 @@ however still required.<br />
   <td>details</td>
   <td>string</td>
   <td>yes</td>
-  <td>Comma separated list of alternative names</td>
+  <td>List of alternative names, separated by a newline</td>
  </tr>
  <tr>
   <td>description</td>
@@ -1794,6 +1794,10 @@ Returned members:</p>
  Check out the <a href="/t/an">announcements board</a> for more information about updates.
  <br /><br />
 </p>
+<b>2018-02-07</b>
+<ul>
+ <li>The 'aliases' member for "get producer" is now uses newline as separation rather than a comma</li>
+</ul>
 <b>2017-08-14</b>
 <ul>
  <li>Add 'uid' field to "get votelist/vnlist/wishlist" commands</li>

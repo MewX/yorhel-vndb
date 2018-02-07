@@ -87,7 +87,11 @@ sub page {
    h2 class => 'alttitle', $p->{original} if $p->{original};
    p class => 'center';
     txt "$self->{languages}{$p->{lang}} $self->{producer_types}{$p->{type}}";
-    lit '<br />a.k.a. '.html_escape $p->{alias} if $p->{alias};
+    if($p->{alias}) {
+      (my $alias = $p->{alias}) =~ s/\n/, /g;
+      br;
+      txt "a.k.a. $alias";
+    }
 
     my @links = (
       $p->{website} ? [ 'Homepage',  $p->{website} ] : (),
@@ -219,7 +223,7 @@ sub addform {
     if(!$frm->{_err} && !$frm->{continue_ign}) {
       $l = $self->dbProducerGet(search => $frm->{name}, what => 'extended', results => 50, inc_hidden => 1);
       push @$l, @{$self->dbProducerGet(search => $frm->{original}, what => 'extended', results => 50, inc_hidden => 1)} if $frm->{original};
-      $_ && push @$l, @{$self->dbProducerGet(search => $_, what => 'extended', results => 50, inc_hidden => 1)} for(split /\s*,\s*/, $frm->{alias});
+      $_ && push @$l, @{$self->dbProducerGet(search => $_, what => 'extended', results => 50, inc_hidden => 1)} for(split /\n/, $frm->{alias});
       my %ids = map +($_->{id}, $_), @$l;
       $l = [ map $ids{$_}, sort { $ids{$a}{name} cmp $ids{$b}{name} } keys %ids ];
     }
@@ -256,8 +260,8 @@ sub addform {
     [ input  => name => 'Name (romaji)', short => 'name' ],
     [ input  => name => 'Original name', short => 'original' ],
     [ static => content => 'The original name of the producer, leave blank if it is already in the Latin alphabet.' ],
-    [ input  => name => 'Aliases', short => 'alias', width => 400 ],
-    [ static => content => '(Un)official aliases, separated by a comma.' ],
+    [ textarea => short => 'alias', name => 'Aliases', rows => 4 ],
+    [ static => content => '(Un)official aliases, separated by a newline.' ],
   ]);
   $self->htmlFooter;
 }
@@ -342,8 +346,8 @@ sub edit {
     [ input  => name => 'Name (romaji)', short => 'name' ],
     [ input  => name => 'Original name', short => 'original' ],
     [ static => content => 'The original name of the producer, leave blank if it is already in the Latin alphabet.' ],
-    [ input  => name => 'Aliases', short => 'alias', width => 400 ],
-    [ static => content => '(Un)official aliases, separated by a comma.' ],
+    [ textarea => short => 'alias', name => 'Aliases', rows => 4 ],
+    [ static => content => '(Un)official aliases, separated by a newline.' ],
     [ select => name => 'Primary language', short => 'lang',
       options => [ map [ $_, "$_ ($self->{languages}{$_})" ], keys %{$self->{languages}} ] ],
     [ input  => name => 'Website', short => 'website' ],
