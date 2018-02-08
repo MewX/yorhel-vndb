@@ -258,6 +258,7 @@ BEGIN
       WHEN 'p' THEN INSERT INTO producers DEFAULT VALUES RETURNING id INTO ret.itemid;
       WHEN 'c' THEN INSERT INTO chars     DEFAULT VALUES RETURNING id INTO ret.itemid;
       WHEN 's' THEN INSERT INTO staff     DEFAULT VALUES RETURNING id INTO ret.itemid;
+      WHEN 'd' THEN INSERT INTO docs      DEFAULT VALUES RETURNING id INTO ret.itemid;
     END CASE;
   END IF;
   -- insert change
@@ -624,6 +625,7 @@ CREATE OR REPLACE FUNCTION notify_dbdel(xtype dbentry_type, xedit edit_rettype) 
         UNION SELECT r.title FROM releases r WHERE xtype = 'r' AND r.id = xedit.itemid
         UNION SELECT p.name  FROM producers p WHERE xtype = 'p' AND p.id = xedit.itemid
         UNION SELECT c.name  FROM chars c WHERE xtype = 'c' AND c.id = xedit.itemid
+        UNION SELECT d.title FROM docs d WHERE xtype = 'd' AND d.id = xedit.itemid
         UNION SELECT sa.name FROM staff s JOIN staff_alias sa ON sa.aid = s.aid WHERE xtype = 's' AND s.id = xedit.itemid
       ) x(title) ON true
      WHERE h.type = xtype AND h.itemid = xedit.itemid
@@ -645,6 +647,7 @@ CREATE OR REPLACE FUNCTION notify_dbedit(xtype dbentry_type, xedit edit_rettype)
         UNION SELECT r.title FROM releases r WHERE xtype = 'r' AND r.id = xedit.itemid
         UNION SELECT p.name  FROM producers p WHERE xtype = 'p' AND p.id = xedit.itemid
         UNION SELECT c.name  FROM chars c WHERE xtype = 'c' AND c.id = xedit.itemid
+        UNION SELECT d.title FROM docs d WHERE xtype = 'd' AND d.id = xedit.itemid
         UNION SELECT sa.name FROM staff s JOIN staff_alias sa ON sa.aid = s.aid WHERE xtype = 's' AND s.id = xedit.itemid
       ) x(title) ON true
      WHERE h.type = xtype AND h.itemid = xedit.itemid

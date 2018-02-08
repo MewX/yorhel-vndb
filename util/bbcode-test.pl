@@ -105,6 +105,10 @@ my @tests = (
   '<a href="/r12.1">r12.1</a> <a href="/v6.3">v6.3</a> <a href="/s1.2">s1.2</a>',
   'r12.1 v6.3 s1.2',
 
+  'd3 d1.3 d2#4 d5#6.7',
+  '<a href="/d3">d3</a> <a href="/d1.3">d1.3</a> <a href="/d2#4">d2#4</a> <a href="/d5#6.7">d5#6.7</a>',
+  'd3 d1.3 d2#4 d5#6.7',
+
   'v17 text dds16v21 more text1 v9',
   '<a href="/v17">v17</a> text dds16v21 more text1 <a href="/v9">v9</a>',
   'v17 text dds16v21 more text1 v9',

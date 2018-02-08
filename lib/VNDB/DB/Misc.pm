@@ -21,7 +21,7 @@ sub dbStats {
 
 
 # Inserts a new revision into the database
-# Arguments: type [vrp], itemid, rev, %options->{ editsum uid ihid ilock + db[item]RevisionInsert }
+# Arguments: type [vrpcsd], itemid, rev, %options->{ editsum uid ihid ilock + db[item]RevisionInsert }
 #  rev = changes.rev of the revision this edit is based on, undef to create a new DB item
 # Returns: { itemid, chid, rev }
 sub dbItemEdit {
@@ -41,6 +41,7 @@ sub dbItemEdit {
   $self->dbReleaseRevisionInsert( \%o) if $type eq 'r';
   $self->dbCharRevisionInsert(    \%o) if $type eq 'c';
   $self->dbStaffRevisionInsert(   \%o) if $type eq 's';
+  $self->dbDocRevisionInsert(     \%o) if $type eq 'd';
 
   return $self->dbRow('SELECT * FROM edit_!s_commit()', $type);
 }
@@ -98,6 +99,7 @@ sub dbRevisionGet {
           UNION ALL SELECT 'r'::dbentry_type, chid, title, original FROM releases_hist
           UNION ALL SELECT 'p'::dbentry_type, chid, name,  original FROM producers_hist
           UNION ALL SELECT 'c'::dbentry_type, chid, name,  original FROM chars_hist
+          UNION ALL SELECT 'd'::dbentry_type, chid, title, '' AS original FROM docs_hist
           UNION ALL SELECT 's'::dbentry_type, sh.chid, name, original FROM staff_hist sh JOIN staff_alias_hist sah ON sah.chid = sh.chid AND sah.aid = sh.aid
         ) x(type, id, title, original)
         WHERE $w

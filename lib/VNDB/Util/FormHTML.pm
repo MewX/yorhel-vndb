@@ -54,7 +54,7 @@ sub htmlFormError {
         li "$field: Malformed data or invalid input" if $rule eq 'json';
         li 'Invalid release date' if $rule eq 'rdate';
         if($rule eq 'editsum') {
-          li; lit 'Please read <a href="/d5.4">the guidelines</a> on how to use the edit summary.'; end;
+          li; lit 'Please read <a href="/d5#4">the guidelines</a> on how to use the edit summary.'; end;
         }
       }
     }
@@ -187,6 +187,7 @@ sub htmlFormPart {
 #   nosubmit  => 1/0, hides the submit button
 #   editsum   => 1/0, adds an edit summary field before the submit button
 #   continue  => 2/1/0, replace submit button with continue buttons
+#   preview   => 1/0, add preview button
 #   noformcode=> 1/0, remove the formcode field
 # The other arguments are a list of subforms in the form
 # of (subform-name => [form parts]). Each subform is shown as a
@@ -265,6 +266,7 @@ sub htmlForm {
         input type => 'submit', name => 'continue_ign', value => 'Continue and ignore duplicates',
           class => 'submit', style => 'width: auto', tabindex => 10 if $options->{continue} == 2;
       }
+      input type => 'submit', value => 'Preview', id => 'preview', name => 'preview', class => 'submit', tabindex => 10 if $options->{preview};
      end;
     end 'div';
   }

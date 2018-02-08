@@ -4,18 +4,16 @@ package VNDB::Handler::Misc;
 
 use strict;
 use warnings;
-use TUWF ':html', ':xml', 'xml_escape', 'uri_escape';
+use TUWF ':html', ':xml', 'uri_escape';
 use VNDB::Func;
-use POSIX 'strftime';
 
 
 TUWF::register(
-  qr{},                              \&homepage,
-  qr{(?:([upvrcs])([1-9]\d*)/)?hist},\&history,
-  qr{d([1-9]\d*)},                   \&docpage,
-  qr{nospam},                        \&nospam,
-  qr{xml/prefs\.xml},                \&prefs,
-  qr{opensearch\.xml},               \&opensearch,
+  qr{},                               \&homepage,
+  qr{(?:([upvrcsd])([1-9]\d*)/)?hist},\&history,
+  qr{nospam},                         \&nospam,
+  qr{xml/prefs\.xml},                 \&prefs,
+  qr{opensearch\.xml},                \&opensearch,
 
   # redirects for old URLs
   qr{u([1-9]\d*)/tags}, sub { $_[0]->resRedirect("/g/links?u=$_[1]", 'perm') },
@@ -28,8 +26,6 @@ TUWF::register(
     sub { $_[0]->resRedirect("/v$_[1]", 'perm') },
   qr{u/list(/[a-z0]|/all)?},
     sub { my $l = defined $_[1] ? $_[1] : '/all'; $_[0]->resRedirect("/u$l", 'perm') },
-  qr{d([1-9]\d*)\.([1-9]\d*)},
-    sub { $_[0]->resRedirect("/d$_[1]#$_[2]", 'perm') }
 );
 
 
@@ -206,7 +202,7 @@ sub history {
     { get => 'p', required => 0, default => 1, template => 'page' },
     { get => 'm', required => 0, default => !$type, enum => [ 0, 1 ] },
     { get => 'h', required => 0, default => 0, enum => [ -1..1 ] },
-    { get => 't', required => 0, default => '', enum => [qw|v r p c s a|] },
+    { get => 't', required => 0, default => '', enum => [qw|v r p c s d a|] },
     { get => 'e', required => 0, default => 0, enum => [ -1..1 ] },
     { get => 'r', required => 0, default => 0, enum => [ 0, 1 ] },
   );
@@ -218,6 +214,7 @@ sub history {
             $type eq 'r' ? $self->dbReleaseGet(id => $id)->[0] :
             $type eq 'c' ? $self->dbCharGet(id => $id)->[0] :
             $type eq 's' ? $self->dbStaffGet(id => $id)->[0] :
+            $type eq 'd' ? $self->dbDocGet(id => $id)->[0] :
             $type eq 'v' ? $self->dbVNGet(id => $id)->[0] : undef;
   return $self->resNotFound if $type && !$obj->{id};
   my $title = $type ? 'Edit history of '.($obj->{title} || $obj->{name} || $obj->{username}) : 'Recent changes';
@@ -226,7 +223,7 @@ sub history {
   my($list, $np) = $self->dbRevisionGet(
     $type && $type ne 'u' ? ( type => $type, itemid => $id ) : (),
     $type eq 'u' ? ( uid => $id ) : (),
-    $f->{t} ? ( type => $f->{t} eq 'a' ? [qw|v r p s|] : $f->{t} ) : (),
+    $f->{t} ? ( type => $f->{t} eq 'a' ? [qw|v r p s d|] : $f->{t} ) : (),
     page => $f->{p},
     results => 50,
     auto => $f->{m},
@@ -273,6 +270,7 @@ sub history {
       a  $f->{t} eq 'p' ? (class => 'optselected') : (), href => $u->(t => 'p'), 'Only producers';
       a  $f->{t} eq 's' ? (class => 'optselected') : (), href => $u->(t => 's'), 'Only staff';
       a  $f->{t} eq 'c' ? (class => 'optselected') : (), href => $u->(t => 'c'), 'Only characters';
+      a  $f->{t} eq 'd' ? (class => 'optselected') : (), href => $u->(t => 'd'), 'Only docs';
       a  $f->{t} eq 'a' ? (class => 'optselected') : (), href => $u->(t => 'a'), 'All except characters';
      end;
      p class => 'browseopts';
@@ -290,68 +288,6 @@ sub history {
   end 'div';
 
   $self->htmlBrowseHist($list, $f, $np, $u->());
-  $self->htmlFooter;
-}
-
-
-sub docpage {
-  my($self, $did) = @_;
-
-  my $f = sprintf('%s/data/docs/%d', $VNDB::ROOT, $did);
-  my $F;
-  open($F, '<:utf8', $f) or return $self->resNotFound;
-  my @c = <$F>;
-  close $F;
-
-  (my $title = shift @c) =~ s/^:TITLE://;
-  chomp $title;
-
-  my($sec, $subsec) = (0,0);
-  for (@c) {
-    s{^:SUB:(.+)\r?\n$}{
-      $sec++;
-      $subsec = 0;
-      qq|<h3><a href="#$sec" name="$sec">$sec. $1</a></h3>\n|
-    }e;
-    s{^:SUBSUB:(.+)\r?\n$}{
-      $subsec++;
-      qq|<h4><a href="#$sec.$subsec" name="$sec.$subsec">$sec.$subsec. $1</a></h4>\n|
-    }e;
-    s{^:INC:(.+)\r?\n$}{
-      $f = sprintf('%s/data/docs/%s', $VNDB::ROOT, $1);
-      open($F, '<:utf8', $f) or die $!;
-      my $ii = join('', <$F>);
-      close $F;
-      $ii;
-    }e;
-    s{^:MODERATORS:$}{
-      my $l = $self->dbUserGet(results => 100, sort => 'id', notperm => $self->{default_perm}, what => 'extended');
-      my $admin = 0;
-      $admin |= $_ for values %{$self->{permissions}};
-      '<dl>'.join('', map {
-        my $u = $_;
-        my $p = $u->{perm} >= $admin ? 'admin' : join ', ', sort map +($u->{perm} &~ $self->{default_perm}) & $self->{permissions}{$_} ? $_ : (), keys %{$self->{permissions}};
-        $p ? sprintf('<dt><a href="/u%d">%s</a></dt><dd>%s</dd>', $_->{id}, $_->{username}, $p) : ()
-      } @$l).'</dl>';
-    }e;
-    s{^:SKINCONTRIB:$}{
-      my %users;
-      push @{$users{ $self->{skins}{$_}[1] }}, [ $_, $self->{skins}{$_}[0] ]
-        for sort { $self->{skins}{$a}[0] cmp $self->{skins}{$b}[0] } keys %{$self->{skins}};
-      my $u = $self->dbUserGet(uid => [ keys %users ]);
-      '<dl>'.join('', map sprintf('<dt><a href="/u%d">%s</a></dt><dd>%s</dd>',
-        $_->{id}, $_->{username}, join(', ', map sprintf('<a href="?skin=%s">%s</a>', $_->[0], $_->[1]), @{$users{$_->{id}}})
-      ), @$u).'</dl>';
-    }e;
-  }
-
-  $self->htmlHeader(title => $title);
-  div class => 'mainbox';
-   h1 $title;
-   div class => 'docs';
-    lit join '', @c;
-   end;
-  end;
   $self->htmlFooter;
 }
 

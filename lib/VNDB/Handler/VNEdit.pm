@@ -319,7 +319,7 @@ sub _form {
          @alist ? @{$self->dbStaffGet(aid => \@alist, results => 200)} : ()
       };
       div class => 'warning';
-       lit 'Please check the <a href="/d2.3">staff editing guidelines</a>. You can'
+       lit 'Please check the <a href="/d2#3">staff editing guidelines</a>. You can'
          .' <a href="/s/new">create a new staff entry</a> if it is not in the database yet,'
          .' but please <a href="/s/all">check for aliasses first</a>.';
       end;

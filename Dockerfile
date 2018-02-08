@@ -23,6 +23,7 @@ RUN apt-get install -y --no-install-recommends \
     libjson-xs-perl \
     libperlio-gzip-perl \
     libpq-dev \
+    libtext-multimarkdown-perl \
     libtie-ixhash-perl \
     libxml-parser-perl \
     postgresql

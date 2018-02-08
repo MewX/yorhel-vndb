@@ -14,7 +14,7 @@ our @EXPORT = qw/bb2html bb2text/;
 #  [url=..] [/url]
 #  [raw] .. [/raw]
 #  link: http://../
-#  dblink: v#, v#.#, d#.#.#
+#  dblink: v+, v+.+, d+#+, d+#+.+
 #
 # Permitted nesting of formatting codes:
 #  spoiler -> url, raw, link, dblink
@@ -112,9 +112,9 @@ sub parse {
 
   while($raw =~ m{(?:
     \[ \/? (?i: spoiler|quote|code|url|raw ) [^\s\]]* \] |  # tag
-    d[1-9][0-9]*\.[1-9][0-9]*\.[1-9][0-9]*               |  # d#.#.#
-    [tdvprcs][1-9][0-9]*\.[1-9][0-9]*                    |  # v#.#
-    [tdvprcsugi][1-9][0-9]*                              |  # v#
+    d[1-9][0-9]* \# [1-9][0-9]* (?: \.[1-9][0-9]* )?     |  # d+#+[.+]
+    [tdvprcs][1-9][0-9]*\.[1-9][0-9]*                    |  # v+.+
+    [tdvprcsugi][1-9][0-9]*                              |  # v+
     (?:https?|ftp)://[^><"\n\s\]\[]+[\d\w=/-]               # link
   )}xg) {
     my $token = $&;

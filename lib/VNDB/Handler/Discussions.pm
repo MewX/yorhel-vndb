@@ -304,7 +304,7 @@ sub edit {
     !$tid || $num == 1 ? (
       [ input  => short => 'title', name => 'Thread title' ],
       [ input  => short => 'boards',  name => 'Board(s)' ],
-      [ static => content => 'Read <a href="/d9.2">d9.2</a> for information about how to specify boards.' ],
+      [ static => content => 'Read <a href="/d9#2">d9#2</a> for information about how to specify boards.' ],
       $self->authCan('boardmod') ? (
         [ check => name => 'Locked', short => 'locked' ],
       ) : (),
@@ -318,7 +318,7 @@ sub edit {
       ) : (),
     ) : (),
     [ text   => name => 'Message<br /><b class="standout">English please!</b>', short => 'msg', rows => 25, cols => 75 ],
-    [ static => content => 'See <a href="/d9.3">d9.3</a> for the allowed formatting codes' ],
+    [ static => content => 'See <a href="/d9#3">d9#3</a> for the allowed formatting codes' ],
     (!$tid || $num == 1) ? (
       [ static => content => '<br />' ],
       [ check => short => 'poll', name => 'Add poll' ],

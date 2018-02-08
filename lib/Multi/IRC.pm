@@ -218,9 +218,8 @@ sub set_notify {
 #   type      database item in [dvprtug]
 #   id        database id
 #   title     main name or title of the DB entry
-#   rev       (optional) revision, post number or section number
+#   rev       (optional) revision, post number
 #   username  (optional) relevant username
-#   section   (optional, for d+.+) section title
 #   boards    (optional) board titles the thread has been posted in
 #   comments  (optional) edit summary
 sub formatid {
@@ -238,6 +237,7 @@ sub formatid {
     g => 'tag',
     i => 'trait',
     t => 'thread',
+    d => 'doc',
   );
 
   for (@$res) {
@@ -266,9 +266,6 @@ sub formatid {
     push @msg, $c."Summary:$NORMAL ".(
       length $_->{comments} > 40 ? substr($_->{comments}, 0, 37).'...' : $_->{comments}
     ) if defined $_->{comments};
-
-    # (for d+.+) -> section title
-    push @msg, $c."->$NORMAL $_->{section}" if $_->{section};
 
     # (always) @ URL
     push @msg, $c."@ $NORMAL$LIGHT_GREY$VNDB::S{url}/$id$NORMAL";
@@ -303,8 +300,9 @@ sub handleid {
     $t eq 't' ? 'title, '.$GETBOARDS.' FROM threads t WHERE id = $2' :
     $t eq 'g' ? 'name AS title FROM tags WHERE id = $2' :
     $t eq 'i' ? 'name AS title FROM traits WHERE id = $2' :
+    $t eq 'd' ? 'title FROM docs WHERE id = $2' :
                 'r.title FROM releases r WHERE r.id = $2'),
-    [ $t, $id ], $c if !$rev && $t =~ /[vprtugics]/;
+    [ $t, $id ], $c if !$rev && $t =~ /[dvprtugics]/;
 
   # edit/insert of vn/release/producer or discussion board post
   pg_cmd 'SELECT $1::text AS type, $2::integer AS id, $3::integer AS rev, '.(
@@ -313,23 +311,9 @@ sub handleid {
     $t eq 'p' ? 'ph.name AS title, u.username, c.comments FROM changes c JOIN producers_hist ph ON c.id = ph.chid JOIN users u ON u.id = c.requester WHERE c.type = \'p\' AND c.itemid = $2 AND c.rev = $3' :
     $t eq 'c' ? 'ch.name AS title, u.username, c.comments FROM changes c JOIN chars_hist ch ON c.id = ch.chid JOIN users u ON u.id = c.requester WHERE c.type = \'c\' AND c.itemid = $2 AND c.rev = $3' :
     $t eq 's' ? 'sah.name AS title, u.username, c.comments FROM changes c JOIN staff_hist sh ON c.id = sh.chid JOIN users u ON u.id = c.requester JOIN staff_alias_hist sah ON sah.chid = c.id AND sah.aid = sh.aid WHERE c.type = \'s\' AND c.itemid = $2 AND c.rev = $3' :
+    $t eq 'd' ? 'dh.title, u.username, c.comments FROM changes c JOIN docs_hist dh ON c.id = dh.chid JOIN users u ON u.id = c.requester WHERE c.type = \'d\' AND c.itemid = $2 AND c.rev = $3' :
                 't.title, u.username, '.$GETBOARDS.' FROM threads t JOIN threads_posts tp ON tp.tid = t.id JOIN users u ON u.id = tp.uid WHERE t.id = $2 AND tp.num = $3'),
-    [ $t, $id, $rev], $c if $rev && $t =~ /[vprtcs]/;
-
-  # documentation page (need to parse the doc pages manually here)
-  if($t eq 'd') {
-    my $f = sprintf $VNDB::ROOT.'/data/docs/%d', $id;
-    my($title, $sec, $sub) = (undef, 0);
-    open my $F, '<', $f or next;
-    while(<$F>) {
-      chomp;
-      $title = $1 if /^:TITLE:(.+)$/;
-      $sub = $1 if $rev && /^:SUB:(.+)$/ && ++$sec == $rev;
-    }
-    close $F;
-    next if $rev && !$sub;
-    formatid([{type => 'd', id => $id, title => $title, rev => $rev, section => $sub}], $chan, 0);
-  }
+    [ $t, $id, $rev], $c if $rev && $t =~ /[dvprtcs]/;
 }
 
 
@@ -358,7 +342,7 @@ sub notify {
   my $q = {
   rev => q{
     SELECT c.type, c.rev, c.comments, c.id AS lastid, c.itemid AS id,
-      COALESCE(vh.title, rh.title, ph.name, ch.name, sah.name) AS title, u.username
+      COALESCE(vh.title, rh.title, ph.name, ch.name, sah.name, dh.title) AS title, u.username
     FROM changes c
     LEFT JOIN vn_hist vh ON c.type = 'v' AND c.id = vh.chid
     LEFT JOIN releases_hist rh ON c.type = 'r' AND c.id = rh.chid
@@ -366,6 +350,7 @@ sub notify {
     LEFT JOIN chars_hist ch ON c.type = 'c' AND c.id = ch.chid
     LEFT JOIN staff_hist sh ON c.type = 's' AND c.id = sh.chid
     LEFT JOIN staff_alias_hist sah ON c.type = 's' AND sah.aid = sh.aid AND sah.chid = c.id
+    LEFT JOIN docs_hist dh ON c.type = 'd' AND c.id = dh.chid
     JOIN users u ON u.id = c.requester
     WHERE c.id > $1 AND c.requester <> 1
     ORDER BY c.id},

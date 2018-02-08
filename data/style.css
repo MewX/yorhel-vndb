@@ -4,11 +4,13 @@ body         { $_bodybg$; color: $maintext$ }
 a            { color: $link$; text-decoration: none; }
 a:hover      { border-bottom: 1px dotted $maintext$; }
 table        { border-collapse: collapse; }
-table td     { vertical-align: top; padding: 3px; }
+table td,
+table th     { vertical-align: top; padding: 3px; }
 img          { border: none; }
 
 table tr.odd,
-table.stripe tbody tr:nth-child(odd):not(.nostripe) { background: url($_boxbg$) repeat; }
+table.stripe tbody tr:nth-child(odd):not(.nostripe),
+.docs table tbody tr:nth-child(odd) { background: url($_boxbg$) repeat; }
 
 #bgright { position: absolute; top: 0px; right: 0px; $_bgright$ }
 #header  { position: absolute; top: 80px; left: 400px; }
@@ -264,7 +266,8 @@ p.browseopts a:hover            { border: 0; padding: 2px 4px; }
 div.mainbox.browse              { padding: 0; }
 div.mainbox.browse table        { width: 100%; }
 div.mainbox.browse table td.tc1 { padding-left: 25px; }
-table thead td                  { font-weight: bold; background-color: $secbg$; }
+table thead td, table thead th  { font-weight: bold; background-color: $secbg$; }
+table thead th                  { text-align: left }
 fieldset.search                 { display: block; width: 100%; text-align: center; margin: 0 0 10px 0; }
 fieldset.search .submit         { padding: 0 1px; }
 p#searchtabs                    { height: 12px; padding-right: 70px; }
@@ -661,16 +664,25 @@ div.charsum_list .charsum_bubble {
 
 /***** Documentation pages *****/
 
-.docs               { padding: 0 15% 20px 15%; }
-.docs h3            { margin-top: 30px; font-size: 14px }
+.docs               { padding: 0 15% 20px 15%; line-height: 1.4 }
+.docs h3            { margin: 30px 0 5px; font-size: 14px }
 .docs h4            { margin-top: 15px; font-size: 12px }
-.docs dd            { padding-bottom: 5px; margin-left: 120px; }
+.docs dd            { margin: 5px 0 5px 120px }
 .docs dt            { float: left }
+.docs ul, .docs ol  { margin: 5px 0 5px 20px }
+.docs table         { margin: 10px; width: 95% }
+.docs td            { white-space: nowrap }
+.docs td            { white-space: nowrap }
+.docs td+td+td+td,
+.docs td[colspan],
+.docs td[colspan]+td,
+.docs td[colspan]+td+td { white-space: normal }
+.docs p + p         { padding-top: 10px }
 .docs ul.index      { display: block; float: right; width: 150px; padding: 2px; margin: 0 0 10px 5px; background: url($_boxbg$) repeat; border: 1px solid $border$; }
 .docs ul.index li   { list-style-type: none; }
 .docs ul.index li a { margin: 0 0 0 10px; }
-.docs .retired      { text-decoration: line-through; }
 .docs dt b          { color: $grayedout$; font-weight: normal; font-style: normal; font-size: 12px; }
+.docs img           { margin: 5px }
 
 
 

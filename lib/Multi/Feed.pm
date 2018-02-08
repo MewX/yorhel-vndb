@@ -44,14 +44,15 @@ sub generate {
 
   # changes
   pg_cmd q{
-      SELECT '/'||c.type||COALESCE(v.id, r.id, p.id, c.id, s.id)||'.'||c.rev AS id,
-         COALESCE(v.title, r.title, p.name, ca.name, sa.name) AS title, extract('epoch' from c.added) AS updated,
+      SELECT '/'||c.type||COALESCE(v.id, r.id, p.id, ca.id, s.id, d.id)||'.'||c.rev AS id,
+         COALESCE(v.title, r.title, p.name, ca.name, sa.name, d.title) AS title, extract('epoch' from c.added) AS updated,
          u.username, u.id AS uid, c.comments AS summary
       FROM changes c
        LEFT JOIN vn v ON c.type = 'v' AND c.itemid = v.id
        LEFT JOIN releases r ON c.type = 'r' AND c.itemid = r.id
        LEFT JOIN producers p ON c.type = 'p' AND c.itemid = p.id
        LEFT JOIN chars ca ON c.type = 'c' AND c.itemid = ca.id
+       LEFT JOIN docs d ON c.type = 'd' AND c.itemid = d.id
        LEFT JOIN staff s ON c.type = 's' AND c.itemid = s.id
        LEFT JOIN staff_alias sa ON sa.id = s.id AND sa.aid = s.aid
        JOIN users u ON u.id = c.requester

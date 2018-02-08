@@ -18,7 +18,7 @@ our @EXPORT = qw|
 
 # generates the "main tabs". These are the commonly used tabs for
 # 'objects', i.e. VN/producer/release entries and users
-# Arguments: u/v/r/p/g/i/c, object, currently selected item (empty=main)
+# Arguments: u/v/r/p/g/i/c/d, object, currently selected item (empty=main)
 sub htmlMainTabs {
   my($self, $type, $obj, $sel) = @_;
   $sel ||= '';
@@ -27,7 +27,7 @@ sub htmlMainTabs {
   return if $type eq 'g' && !$self->authCan('tagmod');
 
   ul class => 'maintabs';
-   if($type =~ /[uvrpcs]/) {
+   if($type =~ /[uvrpcsd]/) {
      li $sel eq 'hist' ? (class => 'tabselected') : ();
       a href => "/$id/hist", 'history';
      end;
@@ -75,6 +75,7 @@ sub htmlMainTabs {
    if(   $type eq 'u'      && ($self->authInfo->{id} && $obj->{id} == $self->authInfo->{id} || $self->authCan('usermod'))
       || $type =~ /[vrpcs]/ && $self->authCan('edit') && ((!$obj->{locked} && !$obj->{hidden}) || $self->authCan('dbmod'))
       || $type =~ /[gi]/   && $self->authCan('tagmod')
+      || $type eq 'd'      && $self->authCan('dbmod')
    ) {
      li $sel eq 'edit' ? (class => 'tabselected') : ();
       a href => "/$id/edit", 'edit';
@@ -132,12 +133,13 @@ sub htmlDenied {
 sub htmlHiddenMessage {
   my($self, $type, $obj) = @_;
   return 0 if !$obj->{hidden};
-  my $board = $type =~ /[cs]/ ? 'db' : $type eq 'r' ? 'v'.$obj->{vn}[0]{vid} : $type.$obj->{id};
+  my $board = $type =~ /[csd]/ ? 'db' : $type eq 'r' ? 'v'.$obj->{vn}[0]{vid} : $type.$obj->{id};
   # fetch edit summary (not present in $obj, requires the db*GetRev() methods)
   my $editsum = $type eq 'v' ? $self->dbVNGetRev(id => $obj->{id})->[0]{comments}
               : $type eq 'r' ? $self->dbReleaseGetRev(id => $obj->{id})->[0]{comments}
               : $type eq 'c' ? $self->dbCharGetRev(id => $obj->{id})->[0]{comments}
               : $type eq 's' ? $self->dbStaffGetRev(id => $obj->{id})->[0]{comments}
+              : $type eq 'd' ? $self->dbDocGetRev(id => $obj->{id})->[0]{comments}
                              : $self->dbProducerGetRev(id => $obj->{id})->[0]{comments};
   div class => 'mainbox';
    h1 $obj->{title}||$obj->{name};
@@ -156,7 +158,7 @@ sub htmlHiddenMessage {
 
 
 # Shows a revision, including diff if there is a previous revision.
-# Arguments: v|p|r|c, old revision, new revision, @fields
+# Arguments: v|p|r|c|d, old revision, new revision, @fields
 # Where @fields is a list of fields as arrayrefs with:
 #  [ shortname, displayname, %options ],
 #  Where %options:

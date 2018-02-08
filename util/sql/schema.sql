@@ -157,6 +157,22 @@ CREATE TABLE chars_vns_hist (
   role       char_role NOT NULL DEFAULT 'main'
 );
 
+-- docs
+CREATE TABLE docs ( -- dbentry_type=d
+  id         SERIAL PRIMARY KEY,
+  locked     boolean NOT NULL DEFAULT FALSE,
+  hidden     boolean NOT NULL DEFAULT FALSE,
+  title      varchar(200) NOT NULL DEFAULT '',
+  content    text NOT NULL DEFAULT ''
+);
+
+-- docs_hist
+CREATE TABLE docs_hist (
+  chid       integer  NOT NULL PRIMARY KEY,
+  title      varchar(200) NOT NULL DEFAULT '',
+  content    text NOT NULL DEFAULT ''
+);
+
 -- login_throttle
 CREATE TABLE login_throttle (
   ip inet NOT NULL PRIMARY KEY,

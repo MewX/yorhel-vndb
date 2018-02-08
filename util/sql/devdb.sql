@@ -4,7 +4,7 @@
 SET CONSTRAINTS ALL DEFERRED;
 -- Hack to disable triggers
 SET session_replication_role = replica;
-TRUNCATE TABLE chars_vns, chars_traits_hist, staff_hist, tags_vn, vn_anime_hist, sessions, releases_lang_hist, releases_lang, rlists, releases_producers_hist, releases_platforms, releases_producers, releases_vn_hist, tags_parents, screenshots, stats_cache, threads_poll_options, threads_poll_votes, traits_parents, votes, vn_relations_hist, vn_screenshots_hist, vn_hist, vn_relations, releases_vn, releases_media, releases_hist, vn_seiyuu_hist, vn_screenshots, vn_seiyuu, vn_staff_hist, traits, producers_hist, releases_platforms_hist, producers_relations, releases_media_hist, chars_hist, chars, staff, users_prefs, vn, tags_aliases, affiliate_links, vn_anime, releases, login_throttle, relgraphs, tags, staff_alias, traits_chars, threads_posts, threads, threads_boards, tags_vn_inherit, users, vn_staff, vnlists, notifications, chars_traits, producers, anime, staff_alias_hist, wlists, chars_vns_hist, quotes, changes, producers_relations_hist CASCADE;
+TRUNCATE TABLE chars_traits_hist, chars_vns_hist, releases_media_hist, releases_lang_hist, releases_platforms_hist, releases_producers_hist, releases_vn_hist, threads_poll_options, threads_poll_votes, vn_relations_hist, vn_seiyuu_hist, vn_anime_hist, affiliate_links, anime, changes, chars, chars_hist, chars_traits, chars_vns, docs, docs_hist, login_throttle, notifications, producers, producers_hist, producers_relations, quotes, releases, releases_hist, releases_lang, releases_media, releases_platforms, releases_producers, releases_vn, relgraphs, rlists, screenshots, staff, staff_alias, staff_alias_hist, staff_hist, stats_cache, tags, tags_aliases, tags_parents, tags_vn, tags_vn_inherit, threads, threads_boards, threads_posts, traits, traits_chars, traits_parents, users, users_prefs, vn, vn_anime, vn_hist, vn_relations, vn_screenshots, vn_screenshots_hist, vn_seiyuu, vn_staff, vn_staff_hist, vnlists, producers_relations_hist, votes, wlists, sessions CASCADE;
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
@@ -28,8 +28,8 @@ COPY anime (id, year, ann_id, nfo_id, type, title_romaji, title_kanji, lastfetch
 COPY users (id, username, mail, perm, passwd, registered, c_votes, c_changes, ip, c_tags, ign_votes, email_confirmed) FROM stdin;
 0	deleted	del@vndb.org	0	\\x	2018-01-04 19:13:32.823908+00	0	0	0.0.0.0	0	f	f
 6	user	user@vndb.org	21	\\x0001000008013fb73157f3cdcd27990198726e7e083007b307adcc70a4705170acd69e307f5e764e031d28d39eb4	2018-01-04 22:25:42.054632+00	0	3	0.0.0.0	0	f	f
-1	multi	multi@vndb.org	0	\\x	2018-01-04 19:13:32.82486+00	0	3	0.0.0.0	0	f	f
 4	admin	admin@vndb.org	503	\\x000100000801ec4185fed438752d6b3b968e2b2cd045f70005cb7e10cafdbb694a82246bd34a065b6e977e0c3dcc	2018-01-04 19:26:10.731713+00	6	48	0.0.0.0	3	f	f
+1	multi	multi@vndb.org	0	\\x	2018-01-04 19:13:32.82486+00	0	17	0.0.0.0	0	f	f
 \.
 COPY changes (id, type, itemid, rev, added, requester, ip, comments, ihid, ilock) FROM stdin;
 1	v	1	1	2018-01-04 22:30:48.928438+00	4	0.0.0.0	add	f	f
@@ -50,8 +50,22 @@ COPY changes (id, type, itemid, rev, added, requester, ip, comments, ihid, ilock
 16	v	2	4	2018-02-03 22:01:48.939799+00	4	0.0.0.0	relation	f	f
 17	v	3	2	2018-02-03 22:01:48.939799+00	1	0.0.0.0	Reverse relation update caused by revision v2.4	f	f
 18	v	1	3	2018-02-03 22:02:58.404134+00	4	0.0.0.0	more info	f	f
+19	d	2	1	2018-02-08 14:54:17.489737+00	1	0.0.0.0	Empty page	f	f
+20	d	3	1	2018-02-08 14:54:17.502614+00	1	0.0.0.0	Empty page	f	f
+21	d	4	1	2018-02-08 14:54:17.511867+00	1	0.0.0.0	Empty page	f	f
+22	d	5	1	2018-02-08 14:54:17.528422+00	1	0.0.0.0	Empty page	f	f
+23	d	6	1	2018-02-08 14:54:17.531662+00	1	0.0.0.0	Empty page	f	f
+24	d	7	1	2018-02-08 14:54:17.54061+00	1	0.0.0.0	Empty page	f	f
+25	d	9	1	2018-02-08 14:54:17.5497+00	1	0.0.0.0	Empty page	f	f
+26	d	10	1	2018-02-08 14:54:17.553128+00	1	0.0.0.0	Empty page	f	f
+27	d	11	1	2018-02-08 14:54:17.564129+00	1	0.0.0.0	Empty page	f	f
+28	d	12	1	2018-02-08 14:54:17.57348+00	1	0.0.0.0	Empty page	f	f
+29	d	13	1	2018-02-08 14:54:17.582157+00	1	0.0.0.0	Empty page	f	f
+30	d	14	1	2018-02-08 14:54:17.590882+00	1	0.0.0.0	Empty page	f	f
+31	d	15	1	2018-02-08 14:54:17.599512+00	1	0.0.0.0	Empty page	f	f
+32	d	16	1	2018-02-08 14:54:17.608296+00	1	0.0.0.0	Empty page	f	f
 \.
-SELECT pg_catalog.setval('changes_id_seq', 18, true);
+SELECT pg_catalog.setval('changes_id_seq', 32, true);
 SELECT pg_catalog.setval('charimg_seq', 1, false);
 COPY chars (id, locked, hidden, name, original, alias, image, "desc", gender, s_bust, s_waist, s_hip, b_month, b_day, height, weight, bloodt, main, main_spoil) FROM stdin;
 1	f	f	Celica A. Mercury	セリカ゠アヤツキ゠マーキュリー	Antenna Girl, Celica Ayatsuki Mercury	0	Hobbies: Strolls\nLikes: Sister, family\nDislikes: Nothing\n\nCelica Ayatsuki Mercury is the younger sister of Nine, Jubei's sister-in-law and aunt of Kokonoe. She is a playable character in Chronophantasma Extend and Centralfiction. After the Dark War, she watched over the Black Beast's remains and built a church. She was also the previous owner of the Nox Nyctores, Deus Machina: Nirvana, but both she and Trinity sealed Nirvana at some point.\n<hidden by spoiler settings>\n\nCelica is a kind, generous, and sociable person who deeply loves her sister and friends. She is a sentimental individual who maintains a firm stance that all life is precious and will use her healing magic to assist those in need of it, regardless of who or what they are. She is also shown to be selfless to the point that she will shield a person with her own body without any hesitation and is willing to sacrifice herself, believing that her sacrifice will be a small price to pay for the chance to defeat the Black Beast and save the world.\nIt has also been noted by people that she has no sense of direction, which usually ends with her getting lost. She is also shown to be very stubborn, such as when she ignores her sister's warnings and heads to Japan by herself to search for her missing father and is also unwilling to admit that she has a poor sense of direction.\n\nCelica has the rare ability to use healing Magic. She has been shown to heal most wounds, although she cannot use her magic to remove illnesses such as seithr poisoning. She has also exhibited the latent ability to suppress seithr, and it is for this reason that Celica is the key to Kushinada's Lynchpin, a device created to seal the seithr within the Gate, and thus disrupt the source of the Black Beast's power, although at the cost of her life. This also makes her the ultimate weakness of the Azure Grimoire as Ragna was unable to see through his right eye and move or use his Grimoire as long as he was near her.	f	0	0	0	9	8	160	51	a	\N	0
@@ -86,6 +100,39 @@ COPY chars_vns_hist (chid, vid, rid, spoil, role) FROM stdin;
 13	2	\N	0	primary
 \.
 SELECT pg_catalog.setval('covers_seq', 1, false);
+COPY docs (id, locked, hidden, title, content) FROM stdin;
+2	f	f	Adding/Editing a Visual Novel	
+3	f	f	Adding/Editing a Release	
+4	f	f	Adding/Editing a Producer	
+5	f	f	Editing guidelines	
+6	f	f	Frequently Asked Questions	
+7	f	f	About us	
+9	f	f	Discussion board	
+10	f	f	Tags & traits	
+11	f	f	Public Database API	
+12	f	f	Adding/Editing Characters	
+13	f	f	How to Capture Screenshots	
+14	f	f	Database Dumps	
+15	f	f	Special Games	
+16	f	f	Adding/Editing Staff Members	
+\.
+COPY docs_hist (chid, title, content) FROM stdin;
+19	Adding/Editing a Visual Novel	
+20	Adding/Editing a Release	
+21	Adding/Editing a Producer	
+22	Editing guidelines	
+23	Frequently Asked Questions	
+24	About us	
+25	Discussion board	
+26	Tags & traits	
+27	Public Database API	
+28	Adding/Editing Characters	
+29	How to Capture Screenshots	
+30	Database Dumps	
+31	Special Games	
+32	Adding/Editing Staff Members	
+\.
+SELECT pg_catalog.setval('docs_id_seq', 16, true);
 COPY login_throttle (ip, timeout) FROM stdin;
 127.0.0.0	2018-02-04 14:45:01+00
 \.
