@@ -134,12 +134,12 @@ sub votelist {
     return if !$self->authCheckCode;
     my $frm = $self->formValidate(
       { post => 'vid', required => 1, multi => 1, template => 'id' },
-      { post => 'batchedit', required => 1, enum => [ -2, -1, 1..10 ] },
+      { post => 'batchvotes', required => 1, regex => qr/^(-1|([1-9]|10)(\.[0-9])?)$/ },
     );
     my @vid = grep $_ && $_ > 0, @{$frm->{vid}};
-    if(!$frm->{_err} && @vid && $frm->{batchedit} > -2) {
-      $self->dbVoteDel($id, \@vid) if $frm->{batchedit} == -1;
-      $self->dbVoteAdd(\@vid, $id, $frm->{batchedit}*10) if $frm->{batchedit} > 0;
+    if(!$frm->{_err} && @vid && $frm->{batchvotes} > -2) {
+      $self->dbVoteDel($id, \@vid) if $frm->{batchvotes} == -1;
+      $self->dbVoteAdd(\@vid, $id, $frm->{batchvotes}*10) if $frm->{batchvotes} > 0;
     }
   }
 
@@ -203,10 +203,11 @@ sub votelist {
        td colspan => 3, class => 'tc1';
         input type => 'checkbox', class => 'checkall', name => 'vid', value => 0;
         txt ' ';
-        Select name => 'batchedit', id => 'batchedit';
+        Select name => 'batchvotes', id => 'batchvotes';
          option value => -2, '-- with selected --';
          optgroup label => 'Change vote';
           option value => $_, sprintf '%d (%s)', $_, fmtrating $_ for (reverse 1..10);
+          option value => -3, 'Other';
          end;
          option value => -1, 'revoke';
         end;

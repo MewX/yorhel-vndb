@@ -7,30 +7,60 @@ function ulist_redirect(type, path, formcode, args) {
 }
 
 
+function vote_validate(s) {
+  if(s < 1)
+    s = prompt('Please input your vote as a number between 1 and 10. One digit after the decimal is allowed, for example: 8.6 or 7.3.', '');
+  if(!s)
+    return 0;
+  s = s.replace(',', '.');
+  if(!s.match(/^([1-9]|10)([\.,][0-9])?$/) || s > 10 || s < 1) {
+    alert('Invalid number.');
+    return 0;
+  }
+  if(s == 1 && !confirm('You are about to give this visual novel a 1 out of 10.'+
+      ' This is a rather extreme rating, meaning this game has absolutely nothing to offer, and that it\'s the worst game you have ever played.'+
+      ' Are you really sure this visual novel matches that description?'))
+    return 0;
+  if(s == 10 && !confirm('You are about to give this visual novel a 10 out of 10.'+
+      ' This is a rather extreme rating, meaning this is one of the best visual novels you\'ve ever played and it\'s unlikely that any other game could ever be better than this one.'+
+      ' It is generally a bad idea to have more than three games in your vote list with this rating, choose carefully!'))
+    return 0;
+  return s;
+}
+
+
 // VN Voting (/v+)
 if(byId('votesel'))
   byId('votesel').onchange = function() {
     var s = this.options[this.selectedIndex].value;
-    if(s == -2)
-      s = prompt('Please input your vote as a number between 1 and 10. One digit after the decimal is allowed, for example: 8.6 or 7.3.', '');
-    if(!s || s == -3)
+    if(s == -3)
       return;
-    if(s != -1 && (!s.match(/^([1-9]|10)([\.,][0-9])?$/) || s > 10 || s < 1)) {
-      alert('Invalid number.');
+    if(s != -1)
+      s = vote_validate(s);
+    if(!s)
+      this.selectedIndex = 0;
+    else
+      ulist_redirect('v', '/vote', this.name, 'v='+s);
+  };
+
+
+// VN voting from list (/u+/votes)
+if(byId('batchvotes'))
+  byId('batchvotes').onchange = function() {
+    var s = this.options[this.selectedIndex].value;
+    if(s == -2)
+      return;
+    if(s != -1)
+      s = vote_validate(s);
+    if(!s) {
       this.selectedIndex = 0;
       return;
     }
-    s = s.replace(',', '.');
-    if(s == 1 && !confirm('You are about to give this visual novel a 1 out of 10.'+
-        ' This is a rather extreme rating, meaning this game has absolutely nothing to offer, and that it\'s the worst game you have ever played.'+
-        ' Are you really sure this visual novel matches that description?'))
-      return;
-    if(s == 10 && !confirm('You are about to give this visual novel a 10 out of 10.'+
-        ' This is a rather extreme rating, meaning this is one of the best visual novels you\'ve ever played and it\'s unlikely that any other game could ever be better than this one.'+
-        ' It is generally a bad idea to have more than three games in your vote list with this rating, choose carefully!'))
-      return;
-    if(s > 0 || s == -1)
-      ulist_redirect('v', '/vote', this.name, 'v='+s);
+    this.options[this.selectedIndex].value = s;
+    var frm = this;
+    while(frm.nodeName.toLowerCase() != 'form')
+      frm = frm.parentNode;
+    frm.submit();
   };
 
 
@@ -166,7 +196,7 @@ if(location.hostname != 'vndb.org') {
 })();
 
 
-// Batch edit dropdown box (/u+/wish and /u+/votes)
+// Batch edit dropdown box (/u+/wish)
 if(byId('batchedit'))
   byId('batchedit').onchange = function() {
     if(this.selectedIndex == 0)
