@@ -110,9 +110,9 @@ sub tagpage {
      h1 'Visual novels';
 
      p class => 'browseopts';
-      a href => "/g$t->{id}?fil=$f->{fil};m=0", $f->{m} == 0 ? (class => 'optselected') : (), 'Hide spoilers';
-      a href => "/g$t->{id}?fil=$f->{fil};m=1", $f->{m} == 1 ? (class => 'optselected') : (), 'Show minor spoilers';
-      a href => "/g$t->{id}?fil=$f->{fil};m=2", $f->{m} == 2 ? (class => 'optselected') : (), 'Spoil me!';
+      a href => "/g$t->{id}?fil=$f->{fil};s=$f->{s};o=$f->{o};m=0", $f->{m} == 0 ? (class => 'optselected') : (), 'Hide spoilers';
+      a href => "/g$t->{id}?fil=$f->{fil};s=$f->{s};o=$f->{o};m=1", $f->{m} == 1 ? (class => 'optselected') : (), 'Show minor spoilers';
+      a href => "/g$t->{id}?fil=$f->{fil};s=$f->{s};o=$f->{o};m=2", $f->{m} == 2 ? (class => 'optselected') : (), 'Spoil me!';
      end;
 
      p class => 'filselect';
