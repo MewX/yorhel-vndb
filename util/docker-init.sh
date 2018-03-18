@@ -11,10 +11,18 @@ mkdevuser() {
     # Create a new user with the same UID and GID as the owner of the VNDB
     # directory. This allows for convenient exchange of files without worrying
     # about permission stuff.
+    # If the owner is root, we're probably running under Docker for Mac or
+    # similar and don't need to match UID/GID. See https://vndb.org/t9959 #38
+    # to #44.
     USER_UID=`stat -c '%u' /var/www`
     USER_GID=`stat -c '%g' /var/www`
-    groupadd -g $USER_GID devgroup
-    useradd -u $USER_UID -g $USER_GID -m -s /bin/bash devuser
+    if test $USER_UID -eq 0; then
+        groupadd devgroup
+        useradd -m -s /bin/bash devuser
+    else
+        groupadd -g $USER_GID devgroup
+        useradd -u $USER_UID -g $USER_GID -m -s /bin/bash devuser
+    fi
 
     # So you can easily do a 'psql -U vndb'
     echo '*:*:*:vndb:vndb'              >/home/devuser/.pgpass

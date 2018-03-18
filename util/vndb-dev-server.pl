@@ -51,14 +51,16 @@ sub prog_stop {
 
 
 sub make_run {
-    my $cb = run_cmd "make -C $ROOT",
-        '>', sub {
-            my $d = shift||'';
-            return if $d =~ /(Entering|Leaving) directory '\Q$ROOT\E'/;
-            return if $d =~ /Nothing to be done for 'all'/;
-            print $d;
-        };
+    my $newline = 0;
+    my $out = sub {
+        my $d = shift||'';
+        return if !$d || $d =~ /Nothing to be done for 'all'/;
+        print "\n" if !$newline++;
+        print $d;
+    };
+    my $cb = run_cmd "cd $ROOT && make", '>', $out, '2>', $out;
     $cb->recv;
+    print "\n" if $newline;
 }
 
 
@@ -136,7 +138,7 @@ while(1) {
     if($needcheck+2 < time) {
         make_run;
         if(checkmod) {
-            print "File has been modified, restarting server.\n";
+            print "\nFile has been modified, restarting server.\n\n";
             prog_stop;
             prog_start;
         } elsif(!$prog) {
