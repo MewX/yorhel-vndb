@@ -907,6 +907,7 @@ sub _screenshots {
      next if !@scr;
      p class => 'rel';
       cssicon "lang $_", $self->{languages}{$_} for (@{$rel->{languages}});
+      cssicon $_, $TUWF::OBJ->{platforms}{$_} for (@{$rel->{platforms}});
       a href => "/r$rel->{id}", $rel->{title};
      end;
      div class => 'scr';
