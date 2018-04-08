@@ -626,25 +626,16 @@ sub relxml {
   );
   return $self->resNotFound if $f->{_err};
 
-  my $list = $self->dbReleaseGet(vid => $f->{v}, results => 100, what => 'vn');
-  my %vns = map +($_,0), @{$f->{v}};
-  for my $r (@$list) {
-    for my $v (@{$r->{vn}}) {
-      next if !exists $vns{$v->{vid}};
-      $vns{$v->{vid}} = [ $v ] if !$vns{$v->{vid}};
-      push @{$vns{$v->{vid}}}, $r;
-    }
-  }
-  !$vns{$_} && delete $vns{$_} for(keys %vns);
+  my $vns = $self->dbVNGet(id => $f->{v}, order => 'title', results => 100);
+  my $rel = $self->dbReleaseGet(vid => $f->{v}, results => 100, what => 'vn');
+
   $self->resHeader('Content-type' => 'text/xml; charset=UTF-8');
   xml;
   tag 'vns';
-   for (sort { $a->[0]{title} cmp $b->[0]{title} } values %vns) {
-     next if !$_;
-     my $v = shift @$_;
-     tag 'vn', id => $v->{vid}, title => $v->{title};
+   for my $v (@$vns) {
+     tag 'vn', id => $v->{id}, title => $v->{title};
       tag 'release', id => $_->{id}, lang => join(',', @{$_->{languages}}), $_->{title}
-        for (@$_);
+        for (grep (grep $_->{vid} == $v->{id}, @{$_->{vn}}), @$rel);
      end;
    }
   end;
