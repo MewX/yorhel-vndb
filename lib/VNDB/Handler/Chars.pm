@@ -46,7 +46,7 @@ sub page {
       [ original  => 'Original name', diff => 1 ],
       [ alias     => 'Aliases',       diff => qr/[ ,\n\.]/ ],
       [ desc      => 'Description',   diff => qr/[ ,\n\.]/ ],
-      [ gender    => 'Gender',        serialize => sub { $self->{genders}{$_[0]} } ],
+      [ gender    => 'Sex',           serialize => sub { $self->{genders}{$_[0]} } ],
       [ b_month   => 'Birthday/month',serialize => sub { $_[0]||'[empty]' } ],
       [ b_day     => 'Birthday/day',  serialize => sub { $_[0]||'[empty]' } ],
       [ s_bust    => 'Bust',          serialize => sub { $_[0]||'[empty]' } ],
@@ -384,7 +384,7 @@ sub edit {
     [ text   => name => 'Aliases', short => 'alias', rows => 3 ],
     [ static => content => '(Un)official aliases, separated by a newline.' ],
     [ text   => name => 'Description<br /><b class="standout">English please!</b>', short => 'desc', rows => 6 ],
-    [ select => name => 'Gender',short => 'gender', options => [
+    [ select => name => 'Sex',       short => 'gender', options => [
        map [ $_, $self->{genders}{$_} ], keys %{$self->{genders}} ] ],
     [ input  => name => 'Birthday',  short => 'bday',   width => 100,post => ' MM-DD (e.g. "01-26" for the 26th of January)'  ],
     [ input  => name => 'Bust',      short => 's_bust', width => 50, post => ' cm' ],
