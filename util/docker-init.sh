@@ -34,9 +34,9 @@ mkdevuser() {
 
 
 pg_start() {
-    echo 'local all postgres peer' >/etc/postgresql/9.6/main/pg_hba.conf
-    echo 'local all all md5'      >>/etc/postgresql/9.6/main/pg_hba.conf
-    # I'm glad Ubuntu 17.10 still has an init script for this
+    echo 'local all postgres peer' >/etc/postgresql/10/main/pg_hba.conf
+    echo 'local all all md5'      >>/etc/postgresql/10/main/pg_hba.conf
+    # I'm glad Ubuntu 18.04 still has an init script for this
     /etc/init.d/postgresql start
 }
 

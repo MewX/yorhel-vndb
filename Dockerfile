@@ -1,4 +1,4 @@
-FROM ubuntu:rolling
+FROM ubuntu:bionic
 MAINTAINER Yoran Heling <contact@vndb.org>
 
 RUN apt-get update
@@ -6,7 +6,7 @@ RUN apt-get update
 RUN apt-get install -y locales && localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8
 ENV LANG en_US.utf8
 
-RUN apt-get install -y --no-install-recommends \
+RUN apt-get install -y tzdata && apt-get install -y --no-install-recommends \
     build-essential \
     cpanminus \
     git \
