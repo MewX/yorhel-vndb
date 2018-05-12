@@ -272,6 +272,8 @@ sub login {
     $c->{clientver} = $arg->{clientver};
     cres $c, ['ok'], 'Login using client "%s" ver. %s', $c->{client}, $c->{clientver};
     return;
+  } else {
+    $arg->{username} = lc $arg->{username};
   }
 
   login_auth($c, $arg);
