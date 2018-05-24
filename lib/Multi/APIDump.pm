@@ -31,7 +31,7 @@ sub tags_gen {
     my @res = $res->rowsAsHashes;
     for(@res) {
       $_->{id} *= 1;
-      $_->{meta} = $_->{meta} ? JSON::XS::true : JSON::XS::false;
+      $_->{meta} = $_->{meta} eq 't' ? JSON::XS::true : JSON::XS::false;
       $_->{vns} *= 1;
       $_->{aliases} = [ split /\$\$\$-\$\$\$/, ($_->{aliases}||'') ];
       $_->{parents} = [ map $_*1, split /,/, ($_->{parents}||'') ];
@@ -53,7 +53,7 @@ sub traits_gen {
     my @res = $res->rowsAsHashes;
     for(@res) {
       $_->{id} *= 1;
-      $_->{meta} = $_->{meta} ? JSON::XS::true : JSON::XS::false;
+      $_->{meta} = $_->{meta} eq 't' ? JSON::XS::true : JSON::XS::false;
       $_->{chars} *= 1;
       $_->{aliases} = [ split /\r?\n/, ($_->{aliases}||'') ];
       $_->{parents} = [ map $_*1, split /,/, ($_->{parents}||'') ];
