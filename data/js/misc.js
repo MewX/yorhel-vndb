@@ -179,7 +179,8 @@ if(location.hostname != 'vndb.org') {
 })();
 
 
-// make some fields readonly when patch flag is set (/r+/edit)
+// make some fields readonly when patch flag is set and hide uncensored
+// checkbox when age rating isn't 18+ (/r+/edit)
 (function(){
   function sync() {
     byId('doujin').disabled =
@@ -188,10 +189,16 @@ if(location.hostname != 'vndb.org') {
       byId('ani_story').disabled =
       byId('ani_ero').disabled =
       byId('patch').checked;
+
+    setClass(
+      byId('uncensored').parentNode.parentNode,
+      'hidden',
+      byId('minage').options[byId('minage').selectedIndex].value != 18
+    );
   };
   if(byId('jt_box_rel_geninfo')) {
     sync();
-    byId('patch').onclick = sync;
+    byId('patch').onclick = byId('minage').onclick = sync;
   }
 })();
 

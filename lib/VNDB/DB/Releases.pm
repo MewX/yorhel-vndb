@@ -16,8 +16,9 @@ sub dbReleaseFilters {
   $o{plat} = [ $o{plat} ] if $o{plat} && !ref $o{plat};
   $o{med}  = [ $o{med}  ] if $o{med}  && !ref $o{med};
   return (
-    defined $o{patch}       ? ( 'r.patch = ?'      => $o{patch}    == 1 ? 1 : 0) : (),
-    defined $o{freeware}    ? ( 'r.freeware = ?'   => $o{freeware} == 1 ? 1 : 0) : (),
+    defined $o{patch}       ? ( 'r.patch = ?'      => $o{patch}      == 1 ? 1 : 0) : (),
+    defined $o{freeware}    ? ( 'r.freeware = ?'   => $o{freeware}   == 1 ? 1 : 0) : (),
+    defined $o{uncensored}  ? ( 'r.uncensored = ?' => $o{uncensored} == 1 ? 1 : 0) : (),
     defined $o{type}        ? ( 'r.type = ?'       => $o{type} ) : (),
     defined $o{date_before} ? ( 'r.released <= ?'  => $o{date_before} ) : (),
     defined $o{date_after}  ? ( 'r.released >= ?'  => $o{date_after} ) : (),
@@ -45,7 +46,7 @@ sub dbReleaseFilters {
 
 
 # Options: id vid pid released page results what med sort reverse date_before date_after
-#   plat lang olang type minage search resolution freeware doujin voiced ani_story ani_ero hidden_only
+#   plat lang olang type minage search resolution freeware doujin voiced uncensored ani_story ani_ero hidden_only
 # What: extended vn producers platforms media affiliates
 # Sort: title released minage
 sub dbReleaseGet {
@@ -83,7 +84,7 @@ sub dbReleaseGet {
 
   my @select = (
     qw|r.id r.title r.original r.website r.released r.minage r.type r.patch|,
-    $o{what} =~ /extended/ ? qw|r.notes r.catalog r.gtin r.resolution r.voiced r.freeware r.doujin r.ani_story r.ani_ero r.hidden r.locked| : (),
+    $o{what} =~ /extended/ ? qw|r.notes r.catalog r.gtin r.resolution r.voiced r.freeware r.doujin r.uncensored r.ani_story r.ani_ero r.hidden r.locked| : (),
     $o{pid} ? ('rp.developer', 'rp.publisher') : (),
   );
 
@@ -121,7 +122,7 @@ sub dbReleaseGetRev {
   $o{rev} ||= $self->dbRow('SELECT MAX(rev) AS rev FROM changes WHERE type = \'r\' AND itemid = ?', $o{id})->{rev};
 
   my $select = 'c.itemid AS id, r.title, r.original, r.website, r.released, r.minage, r.type, r.patch';
-  $select .= ', r.notes, r.catalog, r.gtin, r.resolution, r.voiced, r.freeware, r.doujin, r.ani_story, r.ani_ero, ro.hidden, ro.locked' if $o{what} =~ /extended/;
+  $select .= ', r.notes, r.catalog, r.gtin, r.resolution, r.voiced, r.freeware, r.doujin, r.uncensored, r.ani_story, r.ani_ero, ro.hidden, ro.locked' if $o{what} =~ /extended/;
   $select .= ', extract(\'epoch\' from c.added) as added, c.requester, c.comments, u.username, c.rev, c.ihid, c.ilock';
   $select .= ', c.id AS cid, NOT EXISTS(SELECT 1 FROM changes c2 WHERE c2.type = c.type AND c2.itemid = c.itemid AND c2.rev = c.rev+1) AS lastrev';
 
@@ -212,7 +213,7 @@ sub dbReleaseRevisionInsert {
 
   my %set = map exists($o->{$_}) ? ("$_ = ?", $o->{$_}) : (),
     qw|title original gtin catalog website released notes minage type
-       patch resolution voiced freeware doujin ani_story ani_ero|;
+       patch resolution voiced freeware doujin uncensored ani_story ani_ero|;
   $self->dbExec('UPDATE edit_releases !H', \%set) if keys %set;
 
   if($o->{languages}) {

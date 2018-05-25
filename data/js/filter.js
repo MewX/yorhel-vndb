@@ -547,6 +547,7 @@ function filReleases() {
       filFOptions('patch',    'Patch status',    [ [1, 'Patch'], [0, 'Standalone'] ]),
       filFOptions('freeware', 'Freeware',        [ [1, 'Only freeware'], [0, 'Only non-free releases'] ]),
       filFOptions('doujin',   'Doujin',          [ [1, 'Only doujin releases'], [0, 'Only commercial releases'] ]),
+      filFOptions('uncensored','Censoring',      [ [1, 'Only uncensored releases'], [0, 'Censored or non-erotic releases'] ]),
       [ 'date_after',  'Released after',  dateLoad(null, selectField), function (c) { return [c.date_val] }, function(o,v) { o.dateSet(v) } ],
       [ 'date_before', 'Released before', dateLoad(null, selectField), function (c) { return [c.date_val] }, function(o,v) { o.dateSet(v) } ],
       filFOptions('released', 'Release date',    [ [1, 'Past (already released)'], [0, 'Future (to be released)'] ])

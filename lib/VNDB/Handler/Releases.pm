@@ -50,6 +50,7 @@ sub page {
       [ patch      => 'Patch',           serialize => sub { $_[0] ? 'Yes' : 'No' } ],
       [ freeware   => 'Freeware',        serialize => sub { $_[0] ? 'Yes' : 'No' } ],
       [ doujin     => 'Doujin',          serialize => sub { $_[0] ? 'Yes' : 'No' } ],
+      [ uncensored => 'Uncensored',      serialize => sub { $_[0] ? 'Yes' : 'No' } ],
       [ title      => 'Title (romaji)',  diff => 1 ],
       [ original   => 'Original title',  diff => 1 ],
       [ gtin       => 'JAN/UPC/EAN',     serialize => sub { $_[0]||'[empty]' } ],
@@ -200,6 +201,13 @@ sub _infotable {
      end;
    }
 
+   if($r->{minage} == 18) {
+     Tr;
+      td 'Censoring';
+      td $r->{uncensored} ? 'No optical censoring (e.g. mosaics)' : 'May include optical censoring (e.g. mosaics)';
+     end;
+   }
+
    for my $t (qw|developer publisher|) {
      my @prod = grep $_->{$t}, @{$r->{producers}};
      if(@prod) {
@@ -286,7 +294,7 @@ sub edit {
   my $vn = $rid ? $r->{vn} : [{ vid => $vid, title => $v->{title} }];
   my %b4 = !$rid ? () : (
     (map { $_ => $r->{$_} } qw|type title original gtin catalog languages website released minage
-      notes platforms patch resolution voiced freeware doujin ani_story ani_ero ihid ilock|),
+      notes platforms patch resolution voiced freeware doujin uncensored ani_story ani_ero ihid ilock|),
     media     => join(',',   sort map "$_->{medium} $_->{qty}", @{$r->{media}}),
     producers => join('|||', map
       sprintf('%d,%d,%s', $_->{id}, ($_->{developer}?1:0)+($_->{publisher}?2:0), $_->{name}),
@@ -304,6 +312,7 @@ sub edit {
       { post => 'patch',     required => 0, default => 0 },
       { post => 'freeware',  required => 0, default => 0 },
       { post => 'doujin',    required => 0, default => 0 },
+      { post => 'uncensored',required => 0, default => 0 },
       { post => 'title',     maxlength => 250 },
       { post => 'original',  required => 0, default => '', maxlength => 250 },
       { post => 'gtin',      required => 0, default => '0', template => 'gtin' },
@@ -335,10 +344,11 @@ sub edit {
       $producers = [ map { /^([0-9]+),([1-3])/ ? [ $1, $2&1?1:0, $2&2?1:0] : () } split /\|\|\|/, $frm->{producers} ];
       $new_vn    = [ map { /^([0-9]+)/ ? $1 : () } split /\|\|\|/, $frm->{vn} ];
       $frm->{platforms} = [ grep $_, @{$frm->{platforms}} ];
-      $frm->{$_} = $frm->{$_} ? 1 : 0 for (qw|patch freeware doujin ihid ilock|);
+      $frm->{$_} = $frm->{$_} ? 1 : 0 for (qw|patch freeware doujin uncensored ihid ilock|);
 
       # reset some fields when the patch flag is set
       $frm->{doujin} = $frm->{resolution} = $frm->{voiced} = $frm->{ani_story} = $frm->{ani_ero} = 0 if $frm->{patch};
+      $frm->{uncensored} = 0 if $frm->{minage} != 18;
 
       my $same = $rid &&
           (join(',', sort @{$b4{platforms}}) eq join(',', sort @{$frm->{platforms}})) &&
@@ -353,7 +363,7 @@ sub edit {
     if(!$frm->{_err}) {
       my $nrev = $self->dbItemEdit(r => !$copy && $rid ? ($r->{id}, $r->{rev}) : (undef, undef),
         (map { $_ => $frm->{$_} } qw| type title original gtin catalog languages website released minage
-          notes platforms resolution editsum patch voiced freeware doujin ani_story ani_ero ihid ilock|),
+          notes platforms resolution editsum patch voiced freeware doujin uncensored ani_story ani_ero ihid ilock|),
         vn        => $new_vn,
         producers => $producers,
         media     => $media,
@@ -403,10 +413,11 @@ sub _form {
     [ static => content => 'Leave month or day blank if they are unknown' ],
     [ select => short => 'minage', name => 'Age rating',
       options => [ map [ $_, minage $_, 1 ], @{$self->{age_ratings}} ] ],
+    [ check  => short => 'uncensored',name => 'No mosaic or other optical censoring (only check if this release has erotic content)' ],
     [ textarea => short => 'notes', name => 'Notes<br /><b class="standout">English please!</b>' ],
     [ static => content =>
        'Miscellaneous notes/comments, information that does not fit in the above fields.'
-      .' E.g.: Censored/uncensored or for which releases this patch applies.' ],
+      .' E.g.: Types of censoring or for which releases this patch applies.' ],
   ],
 
   rel_format => [ 'Format',
