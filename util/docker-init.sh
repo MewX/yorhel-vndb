@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 if ! test -f /var/vndb-docker-image; then
     echo "This script should only be run from within the VNDB docker container."
@@ -45,15 +45,16 @@ pg_init() {
     if test -f /var/lib/postgresql/vndb-init-done; then
         echo
         echo "Database initialization already done."
-        echo "Run the following as root to bypass this check:"
-        echo "  rm /var/lib/postgresql/vndb-init-done"
         echo
         return
     fi
     su postgres -c '/var/www/util/docker-init.sh pg_load_superuser'
     su devuser -c '/var/www/util/docker-init.sh pg_load_vndb'
-    su postgres -c '/var/www/util/docker-init.sh pg_load_devdb'
     touch /var/lib/postgresql/vndb-init-done
+
+    echo
+    echo "Database initialization done!"
+    echo
 }
 
 # Should run as the postgres user
@@ -69,11 +70,21 @@ pg_load_vndb() {
     cd /var/www
     make util/sql/editfunc.sql
     psql -U vndb -f util/sql/all.sql
-}
 
-# Should be run as the postgres user
-pg_load_devdb() {
-    psql vndb -1f /var/www/util/sql/devdb.sql
+    echo
+    echo "You now have a functional, but empty, database."
+    echo "If you want to have some data to play around with,"
+    echo "I can download and install a development database for you."
+    echo "For information, see https://vndb.org/d8#3"
+    echo "(Warning: This will also write images to static/)"
+    echo
+    echo "Enter n to keep an empty database, y to download the dev database."
+    read -p "Choice: " opt
+    if [[ $opt =~ ^[Yy] ]]
+    then
+        curl https://s.vndb.org/devdump.tar.gz | tar -xzf-
+        psql -U vndb -f dump.sql
+    fi
 }
 
 
@@ -97,9 +108,6 @@ case "$1" in
         ;;
     pg_load_vndb)
         pg_load_vndb
-        ;;
-    pg_load_devdb)
-        pg_load_devdb
         ;;
     devshell)
         devshell

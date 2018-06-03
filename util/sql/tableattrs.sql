@@ -8,11 +8,11 @@ ALTER TABLE chars_traits             ADD CONSTRAINT chars_traits_tid_fkey       
 ALTER TABLE chars_traits_hist        ADD CONSTRAINT chars_traits_hist_chid_fkey        FOREIGN KEY (chid)      REFERENCES changes       (id);
 ALTER TABLE chars_traits_hist        ADD CONSTRAINT chars_traits_hist_tid_fkey         FOREIGN KEY (tid)       REFERENCES traits        (id);
 ALTER TABLE chars_vns                ADD CONSTRAINT chars_vns_id_fkey                  FOREIGN KEY (id)        REFERENCES chars         (id);
-ALTER TABLE chars_vns                ADD CONSTRAINT chars_vns_vid_fkey                 FOREIGN KEY (vid)       REFERENCES vn            (id);
-ALTER TABLE chars_vns                ADD CONSTRAINT chars_vns_rid_fkey                 FOREIGN KEY (rid)       REFERENCES releases      (id);
+ALTER TABLE chars_vns                ADD CONSTRAINT chars_vns_vid_fkey                 FOREIGN KEY (vid)       REFERENCES vn            (id) DEFERRABLE;
+ALTER TABLE chars_vns                ADD CONSTRAINT chars_vns_rid_fkey                 FOREIGN KEY (rid)       REFERENCES releases      (id) DEFERRABLE;
 ALTER TABLE chars_vns_hist           ADD CONSTRAINT chars_vns_hist_chid_fkey           FOREIGN KEY (chid)      REFERENCES changes       (id);
-ALTER TABLE chars_vns_hist           ADD CONSTRAINT chars_vns_hist_vid_fkey            FOREIGN KEY (vid)       REFERENCES vn            (id);
-ALTER TABLE chars_vns_hist           ADD CONSTRAINT chars_vns_hist_rid_fkey            FOREIGN KEY (rid)       REFERENCES releases      (id);
+ALTER TABLE chars_vns_hist           ADD CONSTRAINT chars_vns_hist_vid_fkey            FOREIGN KEY (vid)       REFERENCES vn            (id) DEFERRABLE;
+ALTER TABLE chars_vns_hist           ADD CONSTRAINT chars_vns_hist_rid_fkey            FOREIGN KEY (rid)       REFERENCES releases      (id) DEFERRABLE;
 ALTER TABLE notifications            ADD CONSTRAINT notifications_uid_fkey             FOREIGN KEY (uid)       REFERENCES users         (id) ON DELETE CASCADE;
 ALTER TABLE notifications            ADD CONSTRAINT notifications_c_byuser_fkey        FOREIGN KEY (c_byuser)  REFERENCES users         (id) ON DELETE SET DEFAULT;
 ALTER TABLE producers                ADD CONSTRAINT producers_rgraph_fkey              FOREIGN KEY (rgraph)    REFERENCES relgraphs     (id);
@@ -75,10 +75,10 @@ ALTER TABLE vn_relations_hist        ADD CONSTRAINT vn_relations_chid_fkey      
 ALTER TABLE vn_relations_hist        ADD CONSTRAINT vn_relations_vid_fkey              FOREIGN KEY (vid)       REFERENCES vn            (id);
 ALTER TABLE vn_screenshots           ADD CONSTRAINT vn_screenshots_id_fkey             FOREIGN KEY (id)        REFERENCES vn            (id);
 ALTER TABLE vn_screenshots           ADD CONSTRAINT vn_screenshots_scr_fkey            FOREIGN KEY (scr)       REFERENCES screenshots   (id);
-ALTER TABLE vn_screenshots           ADD CONSTRAINT vn_screenshots_rid_fkey            FOREIGN KEY (rid)       REFERENCES releases      (id);
+ALTER TABLE vn_screenshots           ADD CONSTRAINT vn_screenshots_rid_fkey            FOREIGN KEY (rid)       REFERENCES releases      (id) DEFERRABLE;
 ALTER TABLE vn_screenshots_hist      ADD CONSTRAINT vn_screenshots_hist_chid_fkey      FOREIGN KEY (chid)      REFERENCES changes       (id);
 ALTER TABLE vn_screenshots_hist      ADD CONSTRAINT vn_screenshots_hist_scr_fkey       FOREIGN KEY (scr)       REFERENCES screenshots   (id);
-ALTER TABLE vn_screenshots_hist      ADD CONSTRAINT vn_screenshots_hist_rid_fkey       FOREIGN KEY (rid)       REFERENCES releases      (id);
+ALTER TABLE vn_screenshots_hist      ADD CONSTRAINT vn_screenshots_hist_rid_fkey       FOREIGN KEY (rid)       REFERENCES releases      (id) DEFERRABLE;
 ALTER TABLE vn_seiyuu                ADD CONSTRAINT vn_seiyuu_id_fkey                  FOREIGN KEY (id)        REFERENCES vn            (id);
 ALTER TABLE vn_seiyuu                ADD CONSTRAINT vn_seiyuu_aid_fkey                 FOREIGN KEY (aid)       REFERENCES staff_alias   (aid) DEFERRABLE INITIALLY DEFERRED;
 ALTER TABLE vn_seiyuu                ADD CONSTRAINT vn_seiyuu_cid_fkey                 FOREIGN KEY (cid)       REFERENCES chars         (id);

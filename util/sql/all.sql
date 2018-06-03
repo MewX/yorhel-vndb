@@ -55,20 +55,5 @@ CREATE SEQUENCE charimg_seq;
 
 
 -- Rows that are assumed to be available
-INSERT INTO users (id, username, mail, perm) VALUES (0, 'deleted', 'del@vndb.org', 0);
-INSERT INTO users (username, mail, perm)     VALUES ('multi', 'multi@vndb.org', 0);
-INSERT INTO users_prefs (uid, key, value)    VALUES (0, 'notify_nodbedit', '1');
-INSERT INTO users_prefs (uid, key, value)    VALUES (1, 'notify_nodbedit', '1');
 
-INSERT INTO stats_cache (section, count) VALUES
-  ('users',         1),
-  ('vn',            0),
-  ('producers',     0),
-  ('releases',      0),
-  ('chars',         0),
-  ('staff',         0),
-  ('tags',          0),
-  ('traits',        0),
-  ('threads',       0),
-  ('threads_posts', 0);
-
+\i util/sql/data.sql
