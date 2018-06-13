@@ -855,7 +855,23 @@ my %GET_CHARACTER = (
           }
         },
       ]]
-    }
+    },
+    instances => {
+      fetch => [[ 'id', 'SELECT c2.id AS cid, c.id, c.name, c.original, c2.main_spoil AS spoiler FROM chars c2 JOIN chars c ON c.id = c2.main OR c.main = c2.main WHERE c2.id IN(%s)
+                  UNION SELECT c.main AS cid, c.id, c.name, c.original,  c.main_spoil AS spoiler FROM chars c WHERE c.main IN(%1$s)',
+        sub { my($n, $r) = @_;
+          for my $i (@$n) {
+            $i->{instances} = [ grep $i->{id} == $_->{cid} && $_->{id} != $i->{id}, @$r ];
+          }
+          for (@$r) {
+            $_->{id}*=1;
+            $_->{original} ||= undef;
+            $_->{spoiler}*=1;
+            delete $_->{cid};
+          }
+        }
+      ]]
+    },
   },
   filters => {
     id => [
