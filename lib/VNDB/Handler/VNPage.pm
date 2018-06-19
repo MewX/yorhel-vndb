@@ -882,6 +882,8 @@ sub _release_icons {
     _release_icon $icon, $media_detail, $icon;
   }
 
+  _release_icon 'uncensor', 'Uncensored', 'uncensor' if $rel->{uncensored};
+
   # Notes column
   _release_icon 'notes', bb2text($rel->{notes}), 'notes' if $rel->{notes};
 }
