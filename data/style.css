@@ -337,7 +337,7 @@ h1.boxtitle, h1.boxtitle a {
 
 /***** VN page *******/
 
-div.vndetails                 { margin: 0 auto; max-width: 770px; }
+div.vndetails                 { margin: 0 auto; max-width: 820px; }
 div.vnimg                     { float: left; width: 250px; margin: 0 10px; }
 div.vnimg i                   { display: block; width: 100%; text-align: center; font-size: 11px; }
 div.vnimg p                   { text-align: center; padding: 0px; margin: 0; }
@@ -345,7 +345,7 @@ div.vnimg p                   { text-align: center; padding: 0px; margin: 0; }
 .vndesc p                     { padding: 0 0 0 5px; }
 p#nsfw_hid                    { display: block; cursor: pointer; }
 div.vndetails table           { float: left; width: 500px; }
-div.vndetails table td.key    { width: 80px; }
+div.vndetails table td.key    { width: 90px; }
 div.vndetails table dt        { float: left; font-style: italic; }
 div.vndetails table dd        { margin-left: 90px; }
 div.vndetails td.relations dt { float: none; font-style: normal; }
@@ -513,7 +513,7 @@ div.producerbrowse    { padding-bottom: 10px }
 /***** Release page *****/
 
 .release table { width: 400px; margin: 0 auto; }
-.release .key  { width: 70px; }
+.release .key  { width: 90px; }
 
 
 /* Release edit */
@@ -687,7 +687,7 @@ div.charsum_list .charsum_bubble {
 
 /* vote lists */
 
-div.votelist td.tc1 { width: 80px; padding-top: 0; padding-bottom: 0 }
+div.votelist td.tc1 { width: 100px; padding-top: 0; padding-bottom: 0 }
 div.votelist td.tc2 { width: 50px; text-align: right; padding-right: 10px }
 
 
