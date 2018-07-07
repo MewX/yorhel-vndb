@@ -162,7 +162,7 @@ sub traitedit {
     if(!$frm->{_err}) {
       my @dups = @{$self->dbTraitGet(name => $frm->{name}, noid => $trait, group => $group)};
       push @dups, @{$self->dbTraitGet(name => $_, noid => $trait, group => $group)} for split /[\t\s]*\n[\t\s]*/, $frm->{alias};
-      push @{$frm->{_err}}, \sprintf 'Trait <a href="/c%d">%s</a> already exists within the same group.', $_->{id}, xml_escape $_->{name} for @dups;
+      push @{$frm->{_err}}, \sprintf 'Trait <a href="/i%d">%s</a> already exists within the same group.', $_->{id}, xml_escape $_->{name} for @dups;
     }
 
     if(!$frm->{_err}) {
