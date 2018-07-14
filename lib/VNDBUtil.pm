@@ -6,10 +6,10 @@ use strict;
 use warnings;
 use Exporter 'import';
 use Encode 'encode_utf8';
-use Unicode::Normalize 'NFKD';
+use Unicode::Normalize 'NFKD', 'compose';
 use Socket 'inet_pton', 'inet_ntop', 'AF_INET', 'AF_INET6';
 
-our @EXPORT = qw|shorten gtintype normalize normalize_titles normalize_query imgsize norm_ip|;
+our @EXPORT = qw|shorten gtintype normalize_titles normalize_query imgsize norm_ip|;
 
 
 sub shorten {
@@ -50,12 +50,12 @@ sub gtintype {
 # a rather aggressive normalization
 sub normalize {
   local $_ = lc shift;
-  # remove combining markings. assuming the string is in NFD or NFKD,
-  #  this effectively removes all accents from the characters (e.g. é -> e)
-  s/\pM//g;
-  # remove some characters that have no significance when searching
   use utf8;
-  tr/\r\n\t,_\-.~～〜∼῀:[]()%+!?#$"'`♥★☆♪†「」『』【】・‟”‛’‘‚„«‹»›//d;
+  # Remove combining markings, except for kana.
+  # This effectively removes all accents from the characters (e.g. é -> e)
+  $_ = compose(NFKD($_) =~ s/(?<=[^ア-ンあ-ん])\pM//rg);
+  # remove some characters that have no significance when searching
+  tr/\r\n\t,_\-.~～〜∼ー῀:[]()%+!?#$"'`♥★☆♪†「」『』【】・‟”‛’‘‚„«‹»›//d;
   tr/@/a/;
   s/&/and/;
   # Consider wo and o the same thing (when used as separate word)
@@ -82,13 +82,13 @@ sub normalize {
 
 # normalizes each title and returns a concatenated string of unique titles
 sub normalize_titles {
-  my %t = map +(normalize(NFKD($_)), 1), @_;
+  my %t = map +(normalize($_), 1), @_;
   return join ' ', grep $_, keys %t;
 }
 
 
 sub normalize_query {
-  my $q = NFKD shift;
+  my $q = shift;
   # Consider wo and o the same thing (when used as separate word). Has to be
   # done here (in addition to normalize()) to make it work in combination with
   # double quote search.
