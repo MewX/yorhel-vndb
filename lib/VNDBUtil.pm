@@ -57,6 +57,7 @@ sub normalize {
   # remove some characters that have no significance when searching
   tr/\r\n\t,_\-.~～〜∼ー῀:[]()%+!?#$"'`♥★☆♪†「」『』【】・‟”‛’‘‚„«‹»›//d;
   tr/@/a/;
+  tr/ı/i/; # Turkish lowercase i
   s/&/and/;
   # Consider wo and o the same thing (when used as separate word)
   s/(?:^| )o(?:$| )/wo/g;
