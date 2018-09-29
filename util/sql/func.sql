@@ -133,12 +133,13 @@ BEGIN
     -- All votes for all tags, including votes inherited by child tags if the
     -- parent tag itself does not have any votes.
     -- (also includes meta tags, because they could have a normal tag as parent)
-    WITH RECURSIVE tags_vn_all(lvl, tag, vid, uid, vote, spoiler, meta) AS (
-        SELECT 15, tag, vid, uid, vote, spoiler, false
-        FROM tags_vn
-       WHERE NOT ignore
+    WITH RECURSIVE tags_vn_all(lvl, tag, vid, uid, vote, spoiler, defaultspoil, meta) AS (
+        SELECT 15, tv.tag, tv.vid, tv.uid, tv.vote, tv.spoiler, t.defaultspoil, false
+        FROM tags_vn tv
+        JOIN tags t ON t.id = tv.tag
+       WHERE NOT tv.ignore
       UNION ALL
-        SELECT lvl-1, tp.parent, ta.vid, ta.uid, ta.vote, ta.spoiler, t.meta
+        SELECT lvl-1, tp.parent, ta.vid, ta.uid, ta.vote, ta.spoiler, t.defaultspoil, t.meta
         FROM tags_vn_all ta
         JOIN tags_parents tp ON tp.tag = ta.tag
         JOIN tags t ON t.id = tp.parent
@@ -148,15 +149,18 @@ BEGIN
     )
     -- grouped by (tag, vid)
     SELECT tag, vid, COUNT(uid) AS users, AVG(vote)::real AS rating,
-           (CASE WHEN AVG(spoiler) > 1.3 THEN 2 WHEN AVG(spoiler) > 0.7 THEN 1 ELSE 0 END)::smallint AS spoiler
+           (CASE WHEN COUNT(spoiler) = 0 THEN defaultspoil
+                 WHEN AVG(spoiler) > 1.3 THEN 2
+                 WHEN AVG(spoiler) > 0.7 THEN 1 ELSE 0
+            END)::smallint AS spoiler
     FROM (
       -- grouped by (tag, vid, uid), so only one user votes on one parent tag per VN entry (also removing meta tags)
-      SELECT tag, vid, uid, MAX(vote)::real, AVG(spoiler)::real
+      SELECT tag, vid, uid, MAX(vote)::real, AVG(spoiler)::real, defaultspoil
       FROM tags_vn_all
       WHERE NOT meta
-      GROUP BY tag, vid, uid
-    ) AS t(tag, vid, uid, vote, spoiler)
-    GROUP BY tag, vid
+      GROUP BY tag, vid, uid, defaultspoil
+    ) AS t(tag, vid, uid, vote, spoiler, defaultspoil)
+    GROUP BY tag, vid, defaultspoil
     HAVING AVG(vote) > 0;
   -- recreate index
   CREATE INDEX tags_vn_inherit_tag_vid ON tags_vn_inherit (tag, vid);

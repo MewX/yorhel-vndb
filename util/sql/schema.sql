@@ -461,7 +461,8 @@ CREATE TABLE tags (
   state smallint NOT NULL DEFAULT 0,
   c_items integer NOT NULL DEFAULT 0,
   addedby integer NOT NULL DEFAULT 0,
-  cat tag_category NOT NULL DEFAULT 'cont'
+  cat tag_category NOT NULL DEFAULT 'cont',
+  defaultspoil smallint NOT NULL DEFAULT 0
 );
 
 -- tags_aliases

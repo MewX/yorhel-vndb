@@ -162,6 +162,7 @@ sub tagedit {
       { post => 'meta',        required => 0, default => 0 },
       { post => 'alias',       required => 0, maxlength => 1024, default => '', regex => [ qr/^[^,]+$/s, 'No comma allowed in aliases' ]  },
       { post => 'description', required => 0, maxlength => 10240, default => '' },
+      { post => 'defaultspoil',required => 0, default => 0, enum => [ 0..2 ] },
       { post => 'parents',     required => !$self->authCan('tagmod'), default => '' },
       { post => 'merge',       required => 0, default => '' },
     );
@@ -187,6 +188,7 @@ sub tagedit {
         cat => $frm->{cat},
         description => $frm->{description},
         meta => $frm->{meta}?1:0,
+        defaultspoil => $frm->{defaultspoil},
         aliases => \@aliases,
         parents => \@parents,
       );
@@ -203,7 +205,7 @@ sub tagedit {
   }
 
   if($tag) {
-    $frm->{$_} ||= $t->{$_} for (qw|name meta description state cat|);
+    $frm->{$_} ||= $t->{$_} for (qw|name meta description state cat defaultspoil|);
     $frm->{alias} ||= join "\n", @{$t->{aliases}};
     $frm->{parents} ||= join ', ', map $_->{name}, @{$t->{parents}};
   }
@@ -249,6 +251,8 @@ sub tagedit {
     [ textarea => short => 'alias',    name => "Aliases\n(separated by newlines)", cols => 30, rows => 4 ],
     [ textarea => short => 'description', name => 'Description' ],
     [ static   => content => 'What should the tag be used for? Having a good description helps users choose which tags to link to a VN.' ],
+    [ select   => short => 'defaultspoil', name => 'Default spoiler level', options => [ map [$_, fmtspoil $_], 0..2 ] ],
+    [ static   => content => 'This is the spoiler level that will be used by default when everyone has voted "neutral".' ],
     [ input    => short => 'parents',  name => 'Parent tags' ],
     [ static   => content => 'Comma separated list of tag names to be used as parent for this tag.' ],
     $self->authCan('tagmod') ? (
