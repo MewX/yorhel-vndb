@@ -11,6 +11,7 @@ package VNDB;
   log_queries   => 0,
   debug         => 1,
   cookie_defaults => { domain => 'localhost', path => '/' },
+  mail_sendmail => 'log',
 );
 
 %S = (

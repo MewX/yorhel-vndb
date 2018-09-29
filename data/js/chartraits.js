@@ -70,7 +70,7 @@ function ctrFormAdd(item) {
   else if(item.getAttribute('meta') == 'yes')
     alert('Meta traits can\'t be used here.');
   else
-    ctrAdd(item, 0);
+    ctrAdd(item, Math.floor(item.getAttribute('defaultspoil')));
   return '';
 }
 

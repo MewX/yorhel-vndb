@@ -43,7 +43,7 @@ this database manually as follows:
 Global requirements:
 
 - Linux, or an OS that resembles Linux. Chances are VNDB won't run on Windows.
-- PostgreSQL 9.10 (older versions may work)
+- PostgreSQL 10 (older versions may work)
 - perl 5.24 recommended, 5.10+ may also work
 
 **Perl modules** (core modules are not listed):

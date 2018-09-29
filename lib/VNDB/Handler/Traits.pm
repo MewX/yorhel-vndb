@@ -149,6 +149,7 @@ sub traitedit {
       { post => 'description', required => 0, maxlength => 10240, default => '' },
       { post => 'parents',     required => !$self->authCan('tagmod'), default => '', regex => [ qr/^(?:$|(?:[1-9]\d*)(?: +[1-9]\d*)*)$/, 'Parent traits must be a space-separated list of trait IDs' ] },
       { post => 'order',       required => 0, default => 0, template => 'uint' },
+      { post => 'defaultspoil',required => 0, default => 0, enum => [0..2] },
     );
     my @parents = split /[\t ]+/, $frm->{parents};
     my $group = undef;
@@ -175,6 +176,7 @@ sub traitedit {
         sexual => $frm->{sexual}?1:0,
         alias => $frm->{alias},
         order => $frm->{order},
+        defaultspoil => $frm->{defaultspoil},
         parents => \@parents,
         group => $group,
       );
@@ -190,7 +192,7 @@ sub traitedit {
   }
 
   if($t) {
-    $frm->{$_} ||= $t->{$_} for (qw|name meta sexual description state alias order|);
+    $frm->{$_} ||= $t->{$_} for (qw|name meta sexual description state alias order defaultspoil|);
     $frm->{parents} ||= join ' ', map $_->{id}, @{$t->{parents}};
   }
 
@@ -222,6 +224,8 @@ sub traitedit {
     [ checkbox => short => 'sexual',   name => 'Indicates sexual content' ],
     [ textarea => short => 'alias',    name => "Aliases\n(Separated by newlines)", cols => 30, rows => 4 ],
     [ textarea => short => 'description', name => 'Description' ],
+    [ select   => short => 'defaultspoil', name => 'Default spoiler level', options => [ map [$_, fmtspoil $_], 0..2 ] ],
+    [ static   => content => 'This is the spoiler level that will be selected by default when adding this trait to a character.' ],
     [ input    => short => 'parents',  name => 'Parent traits' ],
     [ static   => content => 'List of trait IDs to be used as parent for this trait, separated by a space.' ],
     $self->authCan('tagmod') ? (
@@ -422,7 +426,8 @@ sub traitxml {
   xml;
   tag 'traits', more => $np ? 'yes' : 'no';
    for(@$list) {
-     tag 'item', id => $_->{id}, meta => $_->{meta} ? 'yes' : 'no', group => $_->{group}||'', groupname => $_->{groupname}||'', state => $_->{state}, $_->{name};
+     tag 'item', id => $_->{id}, meta => $_->{meta} ? 'yes' : 'no', group => $_->{group}||'',
+       groupname => $_->{groupname}||'', state => $_->{state}, defaultspoil => $_->{defaultspoil}, $_->{name};
    }
   end;
 }

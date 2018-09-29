@@ -42,7 +42,7 @@ sub dbTraitGet {
   );
 
   my @select = (
-    qw|t.id t.meta t.name t.description t.state t.alias t."group" t."order" t.sexual t.c_items|,
+    qw|t.id t.meta t.name t.description t.state t.alias t."group" t."order" t.sexual t.c_items t.defaultspoil|,
     'tg.name AS groupname', 'tg."order" AS grouporder', q|extract('epoch' from t.added) as added|,
     $o{what} =~ /addedby/ ? ('t.addedby', 'u.username') : (),
   );
@@ -86,7 +86,7 @@ sub dbTraitEdit {
 
   $self->dbExec('UPDATE traits !H WHERE id = ?', {
     $o{upddate} ? ('added = NOW()' => 1) : (),
-    map exists($o{$_}) ? ("\"$_\" = ?" => $o{$_}) : (), qw|name meta description state alias group order sexual|
+    map exists($o{$_}) ? ("\"$_\" = ?" => $o{$_}) : (), qw|name meta description state alias group order sexual defaultspoil|
   }, $id);
   if($o{parents}) {
     $self->dbExec('DELETE FROM traits_parents WHERE trait = ?', $id);
@@ -99,8 +99,8 @@ sub dbTraitEdit {
 # returns the id of the new trait
 sub dbTraitAdd {
   my($self, %o) = @_;
-  my $id = $self->dbRow('INSERT INTO traits (name, meta, description, state, alias, "group", "order", sexual, addedby) VALUES (!l, ?) RETURNING id',
-    [ map $o{$_}, qw|name meta description state alias group order sexual| ], $o{addedby}||$self->authInfo->{id}
+  my $id = $self->dbRow('INSERT INTO traits (name, meta, description, state, alias, "group", "order", sexual, defaultspoil, addedby) VALUES (!l, ?) RETURNING id',
+    [ map $o{$_}, qw|name meta description state alias group order sexual defaultspoil| ], $o{addedby}||$self->authInfo->{id}
   )->{id};
   $self->dbExec('INSERT INTO traits_parents (trait, parent) VALUES (?, ?)', $id, $_) for(@{$o{parents}});
   return $id;

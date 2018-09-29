@@ -559,7 +559,8 @@ CREATE TABLE traits (
   "group" integer,
   "order" smallint NOT NULL DEFAULT 0,
   sexual boolean NOT NULL DEFAULT false,
-  c_items integer NOT NULL DEFAULT 0
+  c_items integer NOT NULL DEFAULT 0,
+  defaultspoil smallint NOT NULL DEFAULT 0
 );
 
 -- traits_chars
