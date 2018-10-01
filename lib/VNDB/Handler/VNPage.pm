@@ -464,7 +464,8 @@ sub page {
      end;
      div id => 'vntags';
       for (@$t) {
-        span class => sprintf 'tagspl%.0f cat_%s %s', $_->{spoiler}, $_->{cat}, $_->{spoiler} > 0 ? 'hidden' : '';
+        my $spoil = $_->{spoiler} > 1.3 ? 2 : $_->{spoiler} > 0.4 ? 1 : 0;
+        span class => sprintf 'tagspl%d cat_%s %s', $spoil, $_->{cat}, $spoil > 0 ? 'hidden' : '';
          a href => "/g$_->{id}", style => sprintf('font-size: %dpx', $_->{rating}*3.5+6), $_->{name};
          b class => 'grayedout', sprintf ' %.1f', $_->{rating};
         end;

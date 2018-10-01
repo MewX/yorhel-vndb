@@ -151,7 +151,7 @@ BEGIN
     SELECT tag, vid, COUNT(uid) AS users, AVG(vote)::real AS rating,
            (CASE WHEN COUNT(spoiler) = 0 THEN defaultspoil
                  WHEN AVG(spoiler) > 1.3 THEN 2
-                 WHEN AVG(spoiler) > 0.7 THEN 1 ELSE 0
+                 WHEN AVG(spoiler) > 0.4 THEN 1 ELSE 0
             END)::smallint AS spoiler
     FROM (
       -- grouped by (tag, vid, uid), so only one user votes on one parent tag per VN entry (also removing meta tags)
