@@ -52,6 +52,7 @@ sub list {
   $f->{o} = $f->{s} eq 'tagscore' ? 'd' : 'a' if !$f->{o};
 
   my $rfil = fil_parse $f->{rfil}, @{$VNDB::Util::Misc::filfields{release}};
+  $self->filCompat(release => $rfil);
   $f->{rfil} = fil_serialize $rfil, @{$VNDB::Util::Misc::filfields{release}};
 
   my($list, $np) = $self->filFetchDB(vn => $f->{fil}, {

@@ -8,7 +8,7 @@ use TUWF ':html';
 use VNDB::Func;
 use VNDB::BBCode ();
 
-our @EXPORT = qw|filFetchDB bbSubstLinks|;
+our @EXPORT = qw|filFetchDB filCompat bbSubstLinks|;
 
 
 our %filfields = (
@@ -40,8 +40,7 @@ sub filFetchDB {
   my $filters = fil_parse $overwrite // $pref, @{$filfields{$type}};
 
   # compatibility
-  my $compat = ($type eq 'vn' && _fil_vn_compat($self, $filters))
-           || ($type eq 'release' && _fil_release_compat($self, $filters));
+  my $compat = $self->filCompat($type, $filters);
   $self->authPref($prefname => fil_serialize $filters) if $compat && !defined $overwrite;
 
   # write the definite filter string in $overwrite
@@ -81,11 +80,13 @@ sub filFetchDB {
 }
 
 
-sub _fil_vn_compat {
-  my($self, $fil) = @_;
+# Compatibility with old filters. Modifies the filter in-place and returns the number of changes made.
+sub filCompat {
+  my($self, $type, $fil) = @_;
+  my $mod = 0;
 
   # older tag specification (by name rather than ID)
-  if($fil->{taginc} || $fil->{tagexc}) {
+  if($type eq 'vn' && ($fil->{taginc} || $fil->{tagexc})) {
     my $tagfind = sub {
       return map {
         my $i = $self->dbTagGet(name => $_)->[0];
@@ -94,20 +95,15 @@ sub _fil_vn_compat {
     };
     $fil->{tag_inc} //= [ $tagfind->(delete $fil->{taginc}) ] if $fil->{taginc};
     $fil->{tag_exc} //= [ $tagfind->(delete $fil->{tagexc}) ] if $fil->{tagexc};
-    return 1;
+    $mod++;
   }
 
-  return 0;
-}
-
-
-sub _fil_release_compat {
-  my($self, $fil) = @_;
-  if($fil->{resolution} && $fil->{resolution} =~ /^[0-9]+$/) {
+  if($type eq 'release' && $fil->{resolution} && $fil->{resolution} =~ /^[0-9]+$/) {
     $fil->{resolution} = (keys %{$self->{resolutions}})[$fil->{resolution}] || 'unknown';
-    return 1;
+    $mod++;
   }
-  return 0;
+
+  $mod;
 }
 
 
