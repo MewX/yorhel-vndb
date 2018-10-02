@@ -122,13 +122,9 @@ my @rel_cols = (
     na_for_patch  => 1,
     default       => 1,
     what          => 'extended',
-    has_data      => sub { !!$_[0]{resolution} },
+    has_data      => sub { $_[0]{resolution} ne 'unknown' },
     draw          => sub {
-      if($_[0]{resolution}) {
-        txt $TUWF::OBJ->{resolutions}[$_[0]{resolution}][0];
-      } else {
-        txt 'Unknown';
-      }
+      txt $_[0]{resolution} eq 'unknown' ? 'Unknown' : $TUWF::OBJ->{resolutions}{$_[0]{resolution}}[0];
     },
   }, { # Voiced
     id            => 'voi',
@@ -869,11 +865,11 @@ sub _release_icons {
 
   # Resolution column
   my $resolution = $rel->{resolution};
-  if($resolution) {
-    my $resolution_type = $resolution == 1 ? 'custom' : $self->{resolutions}[$resolution][1] eq 'widescreen' ? '16-9' : '4-3';
+  if($resolution ne 'unknown') {
+    my $resolution_type = $resolution eq 'nonstandard' ? 'custom' : $self->{resolutions}{$resolution}[1] eq 'widescreen' ? '16-9' : '4-3';
     # Ugly workaround: PC-98 has non-square pixels, thus not widescreen
     $resolution_type = '4-3' if $resolution_type eq '16-9' && grep $_ eq 'p98', @{$rel->{platforms}};
-    _release_icon "res$resolution_type", $self->{resolutions}[$resolution][0], "resolution_$resolution_type";
+    _release_icon "res$resolution_type", $self->{resolutions}{$resolution}[0], "resolution_$resolution_type";
   }
 
   # Media column

@@ -40,8 +40,9 @@ sub filFetchDB {
   my $filters = fil_parse $overwrite // $pref, @{$filfields{$type}};
 
   # compatibility
-  $self->authPref($prefname => fil_serialize $filters)
-    if $type eq 'vn' && _fil_vn_compat($self, $filters) && !defined $overwrite;
+  my $compat = ($type eq 'vn' && _fil_vn_compat($self, $filters))
+           || ($type eq 'release' && _fil_release_compat($self, $filters));
+  $self->authPref($prefname => fil_serialize $filters) if $compat && !defined $overwrite;
 
   # write the definite filter string in $overwrite
   $_[2] = fil_serialize({map +(
@@ -98,6 +99,17 @@ sub _fil_vn_compat {
 
   return 0;
 }
+
+
+sub _fil_release_compat {
+  my($self, $fil) = @_;
+  if($fil->{resolution} && $fil->{resolution} =~ /^[0-9]+$/) {
+    $fil->{resolution} = (keys %{$self->{resolutions}})[$fil->{resolution}] || 'unknown';
+    return 1;
+  }
+  return 0;
+}
+
 
 
 sub bbSubstLinks {

@@ -18,8 +18,8 @@ sub resolutions {
   my $cat = '';
   my @r;
   my $push = \@r;
-  for my $i (0..$#{$S{resolutions}}) {
-    my $r = $S{resolutions}[$i];
+  for my $i (keys %{$S{resolutions}}) {
+    my $r = $S{resolutions}{$i};
     if($cat ne $r->[1]) {
       push @r, [$r->[1]];
       $cat = $r->[1];

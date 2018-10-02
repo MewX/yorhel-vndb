@@ -602,7 +602,7 @@ my %GET_RELEASE = (
         $_[0]{minage}   = $_[0]{minage} < 0 ? undef : $_[0]{minage}*1;
         $_[0]{gtin}     ||= undef;
         $_[0]{catalog}  ||= undef;
-        $_[0]{resolution} = $_[0]{resolution} ? $VNDB::S{resolutions}[ $_[0]{resolution} ][0] : undef;
+        $_[0]{resolution} = $_[0]{resolution} eq 'unknown' ? undef : $VNDB::S{resolutions}{ $_[0]{resolution} }[0];
         $_[0]{voiced}     = $_[0]{voiced}     ? $_[0]{voiced}*1    : undef;
         $_[0]{animation}  = [
           $_[0]{ani_story} ? $_[0]{ani_story}*1 : undef,

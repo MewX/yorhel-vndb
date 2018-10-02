@@ -62,7 +62,7 @@ sub page {
       [ notes      => 'Notes',           diff => qr/[ ,\n\.]/ ],
       [ platforms  => 'Platforms',       join => ', ', split => sub { map $self->{platforms}{$_}, @{$_[0]} } ],
       [ media      => 'Media',           join => ', ', split => sub { map fmtmedia($_->{medium}, $_->{qty}), @{$_[0]} } ],
-      [ resolution => 'Resolution',      serialize => sub { $self->{resolutions}[$_[0]][0]; } ],
+      [ resolution => 'Resolution',      serialize => sub { $self->{resolutions}{$_[0]}[0]; } ],
       [ voiced     => 'Voiced',          serialize => sub { $self->{voiced}[$_[0]] } ],
       [ ani_story  => 'Story animation', serialize => sub { $self->{animated}[$_[0]] } ],
       [ ani_ero    => 'Ero animation',   serialize => sub { $self->{animated}[$_[0]] } ],
@@ -164,10 +164,10 @@ sub _infotable {
      end;
    }
 
-   if($r->{resolution}) {
+   if($r->{resolution} ne 'unknown') {
      Tr;
       td 'Resolution';
-      td $self->{resolutions}[$r->{resolution}][0];
+      td $self->{resolutions}{$r->{resolution}}[0];
      end;
    }
 
@@ -324,7 +324,7 @@ sub edit {
       { post => 'notes',     required => 0, default => '', maxlength => 10240 },
       { post => 'platforms', required => 0, default => '', multi => 1, enum => [ keys %{$self->{platforms}} ] },
       { post => 'media',     required => 0, default => '' },
-      { post => 'resolution',required => 0, default => 0, enum => [ 0..$#{$self->{resolutions}} ] },
+      { post => 'resolution',required => 0, default => 0, enum => [ keys %{$self->{resolutions}} ] },
       { post => 'voiced',    required => 0, default => 0, enum => [ 0..$#{$self->{voiced}} ] },
       { post => 'ani_story', required => 0, default => 0, enum => [ 0..$#{$self->{animated}} ] },
       { post => 'ani_ero',   required => 0, default => 0, enum => [ 0..$#{$self->{animated}} ] },
@@ -347,7 +347,8 @@ sub edit {
       $frm->{$_} = $frm->{$_} ? 1 : 0 for (qw|patch freeware doujin uncensored ihid ilock|);
 
       # reset some fields when the patch flag is set
-      $frm->{doujin} = $frm->{resolution} = $frm->{voiced} = $frm->{ani_story} = $frm->{ani_ero} = 0 if $frm->{patch};
+      $frm->{doujin} = $frm->{voiced} = $frm->{ani_story} = $frm->{ani_ero} = 0 if $frm->{patch};
+      $frm->{resolution} = 'unknown' if $frm->{patch};
       $frm->{uncensored} = 0 if $frm->{minage} != 18;
 
       my $same = $rid &&
@@ -422,7 +423,7 @@ sub _form {
 
   rel_format => [ 'Format',
     [ select => short => 'resolution', name => 'Resolution', options => [
-      map [ $_, @{$self->{resolutions}[$_]} ], 0..$#{$self->{resolutions}} ] ],
+      map [ $_, @{$self->{resolutions}{$_}} ], keys %{$self->{resolutions}} ] ],
     [ select => short => 'voiced',     name => 'Voiced', options => [
       map [ $_, $self->{voiced}[$_] ], 0..$#{$self->{voiced}} ] ],
     [ select => short => 'ani_story',  name => 'Story animation', options => [
@@ -611,7 +612,6 @@ sub _fil_compat {
     { get => 'ma_a', required => 0, default => 0, enum => $self->{age_ratings} },
     { get => 'mi', required => 0, default => 0, template => 'uint' },
     { get => 'ma', required => 0, default => 99999999, template => 'uint' },
-    { get => 're', required => 0, multi => 1, default => 0, enum => [ 1..$#{$self->{resolutions}} ] },
   );
   return () if $f->{_err};
   $c{minage} = [ grep $_ >= 0 && ($f->{ma_m} ? $f->{ma_a} >= $_ : $f->{ma_a} <= $_), @{$self->{age_ratings}} ] if $f->{ma_a} || $f->{ma_m};
@@ -620,7 +620,6 @@ sub _fil_compat {
   $c{plat} = $f->{pl}        if $f->{pl}[0];
   $c{lang} = $f->{ln}        if $f->{ln}[0];
   $c{med} = $f->{me}         if $f->{me}[0];
-  $c{resolution} = $f->{re}  if $f->{re}[0];
   $c{type} = $f->{tp}        if $f->{tp};
   $c{patch} = $f->{pa} == 2 ? 0 : 1 if $f->{pa};
   $c{freeware} = $f->{fw} == 2 ? 0 : 1 if $f->{fw};
