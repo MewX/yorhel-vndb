@@ -98,9 +98,13 @@ sub filCompat {
     $mod++;
   }
 
-  if($type eq 'release' && $fil->{resolution} && $fil->{resolution} =~ /^[0-9]+$/) {
-    $fil->{resolution} = (keys %{$self->{resolutions}})[$fil->{resolution}] || 'unknown';
-    $mod++;
+  if($type eq 'release' && $fil->{resolution}) {
+    $fil->{resolution} = [ map {
+      if(/^[0-9]+$/) {
+        $mod++;
+        (keys %{$self->{resolutions}})[$_] || 'unknown'
+      } else { $_ }
+    } ref $fil->{resolution} ? @{$fil->{resolution}} : $fil->{resolution} ];
   }
 
   $mod;
