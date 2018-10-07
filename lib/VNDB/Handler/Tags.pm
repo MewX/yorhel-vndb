@@ -121,6 +121,7 @@ sub tagpage {
       end;
      end;
      input type => 'hidden', class => 'hidden', name => 'fil', id => 'fil', value => $f->{fil};
+     input type => 'hidden', class => 'hidden', name => 'm', id => 'm', value => $f->{m};
 
      if(!@$list) {
        p; br; br; txt 'This tag has not been linked to any visual novels yet, or they were hidden because of your spoiler settings or default filters.'; end;

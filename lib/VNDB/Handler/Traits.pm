@@ -97,9 +97,9 @@ sub traitpage {
      h1 'Characters';
 
      p class => 'browseopts';
-      a href => "/i$trait?m=0", $f->{m} == 0 ? (class => 'optselected') : (), 'Hide spoilers';
-      a href => "/i$trait?m=1", $f->{m} == 1 ? (class => 'optselected') : (), 'Show minor spoilers';
-      a href => "/i$trait?m=2", $f->{m} == 2 ? (class => 'optselected') : (), 'Spoil me!';
+      a href => "/i$trait?fil=$f->{fil};m=0", $f->{m} == 0 ? (class => 'optselected') : (), 'Hide spoilers';
+      a href => "/i$trait?fil=$f->{fil};m=1", $f->{m} == 1 ? (class => 'optselected') : (), 'Show minor spoilers';
+      a href => "/i$trait?fil=$f->{fil};m=2", $f->{m} == 2 ? (class => 'optselected') : (), 'Spoil me!';
      end;
 
      p class => 'filselect';
@@ -108,6 +108,7 @@ sub traitpage {
       end;
      end;
      input type => 'hidden', class => 'hidden', name => 'fil', id => 'fil', value => $f->{fil};
+     input type => 'hidden', class => 'hidden', name => 'm', id => 'm', value => $f->{m};
 
      if(!@$chars) {
        p; br; br; txt 'This trait has not been linked to any characters yet, or they were hidden because of your spoiler settings.'; end;
