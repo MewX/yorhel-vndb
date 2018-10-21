@@ -9,6 +9,7 @@ ENV LANG en_US.utf8
 RUN apt-get install -y tzdata && apt-get install -y --no-install-recommends \
     build-essential \
     cpanminus \
+    curl \
     git \
     graphviz \
     imagemagick \
