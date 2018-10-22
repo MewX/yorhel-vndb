@@ -79,25 +79,6 @@ if(byId('listsel'))
       ulist_redirect('[rv]', '/list', this.name, 'e='+this.options[this.selectedIndex].value);
   };
 
-
-// NSFW VN image toggle (/v+)
-(function() {
-  var msg = byId('nsfw_show');
-  if(msg) {
-    var img = byId('nsfw_hid');
-    byName(msg, 'a')[0].onclick = function() {
-      setClass(msg, 'hidden', true);
-      setClass(img, 'hidden', false);
-      return false;
-    };
-    img.onclick = function() {
-      setClass(msg, 'hidden', false);
-      setClass(img, 'hidden', true);
-    };
-  }
-})();
-
-
 // NSFW toggle for screenshots (/v+)
 if(byId('nsfwhide'))
   byId('nsfwhide').onclick = function() {

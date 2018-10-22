@@ -367,18 +367,25 @@ sub page {
      if(!$v->{image}) {
        p 'No image uploaded yet';
      } else {
-       p $v->{img_nsfw} ? (id => 'nsfw_hid', $self->authPref('show_nsfw') ? () : (class => 'hidden')) : ();
-        img src => imgurl(cv => $v->{image}), alt => $v->{title};
-        i 'Flagged as NSFW' if $v->{img_nsfw};
-       end;
        if($v->{img_nsfw}) {
-         p id => 'nsfw_show', $self->authPref('show_nsfw') ? (class => 'hidden') : ();
-          txt 'This image has been flagged as Not Safe For Work.';
-          br; br;
-          a href => '#', 'Show me anyway';
-          br; br;
-          txt '(This warning can be disabled in your account)';
+         p class => 'nsfw_pic';
+          input id => 'nsfw_chk', type => 'checkbox', class => 'visuallyhidden', $self->authPref('show_nsfw') ? (checked => 'checked') : ();
+          label for => 'nsfw_chk';
+           span id => 'nsfw_show';
+            txt 'This image has been flagged as Not Safe For Work.';
+            br; br;
+            span class => 'fake_link', 'Show me anyway';
+            br; br;
+            txt '(This warning can be disabled in your account)';
+           end;
+           span id => 'nsfw_hid';
+            img src => imgurl(cv => $v->{image}), alt => $v->{title};
+            i 'Flagged as NSFW';
+           end;
+          end;
          end;
+       } else {
+         img src => imgurl(cv => $v->{image}), alt => $v->{title};
        }
      }
     end 'div'; # /vnimg
