@@ -59,8 +59,8 @@ sub dbReleaseGet {
     !$o{id} && !$o{hidden_only} ? ( 'r.hidden = FALSE' => 0 ) : (),
     $o{hidden_only} ? ('r.hidden = TRUE' => 1) : (),
     $o{id}  ? ( 'r.id = ?'         => $o{id}  ) : (),
-    $o{vid} ? ( 'rv.vid IN(!l)'    => [ ref $o{vid} ? $o{vid} : [$o{vid}] ] ) : (),
     $o{pid} ? ( 'rp.pid = ?'       => $o{pid} ) : (),
+    $o{vid} ? ( 'r.id IN(SELECT id FROM releases_vn WHERE vid IN(!l))' => [ ref $o{vid} ? $o{vid} : [$o{vid}] ] ) : (),
     $self->dbReleaseFilters(%o),
   );
 
@@ -78,7 +78,6 @@ sub dbReleaseGet {
   }
 
   my @join = (
-    $o{vid} ? 'JOIN releases_vn rv ON rv.id = r.id' : (),
     $o{pid} ? 'JOIN releases_producers rp ON rp.id = r.id' : (),
   );
 
