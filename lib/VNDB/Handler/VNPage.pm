@@ -5,6 +5,8 @@ use strict;
 use warnings;
 use TUWF ':html', 'xml_escape';
 use VNDB::Func;
+use List::Util 'min';
+use POSIX 'strftime';
 
 
 TUWF::register(
@@ -435,7 +437,7 @@ sub page {
      _producers($self, $r);
      _relations($self, $v) if @{$v->{relations}};
      _anime($self, $v) if @{$v->{anime}};
-     _useroptions($self, $v) if $self->authInfo->{id};
+     _useroptions($self, $v, $r) if $self->authInfo->{id};
      _affiliate_links($self, $r);
 
      Tr class => 'nostripe';
@@ -682,7 +684,11 @@ sub _anime {
 
 
 sub _useroptions {
-  my($self, $v) = @_;
+  my($self, $v, $r) = @_;
+
+  # Voting option is hidden if nothing has been released yet
+  my $minreleased = min grep $_, map $_->{released}, @$r;
+  my $canvote = $minreleased && $minreleased < strftime '%Y%m%d', gmtime;
 
   my $vote = $self->dbVoteGet(uid => $self->authInfo->{id}, vid => $v->{id})->[0];
   my $list = $self->dbVNListGet(uid => $self->authInfo->{id}, vid => $v->{id})->[0];
@@ -691,7 +697,7 @@ sub _useroptions {
   Tr;
    td 'User options';
    td;
-    if($vote || !$wish) {
+    if($vote || ($canvote && !$wish)) {
       Select id => 'votesel', name => $self->authGetCode("/v$v->{id}/vote");
        option value => -3, $vote ? 'your vote: '.fmtvote($vote->{vote}) : 'not voted yet';
        optgroup label => $vote ? 'Change vote' : 'Vote';
