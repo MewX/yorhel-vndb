@@ -902,10 +902,10 @@ sub _release_icons {
 sub _screenshots {
   my($self, $v, $r) = @_;
 
-   if(grep $_->{nsfw}, @{$v->{screenshots}}) {
-     input id => 'nsfwhide_chk', type => 'checkbox', class => 'visuallyhidden', $self->authPref('show_nsfw') ? (checked => 'checked') : ();
-     div class => 'mainbox', id => 'screenshots';
+  input id => 'nsfwhide_chk', type => 'checkbox', class => 'visuallyhidden', $self->authPref('show_nsfw') ? (checked => 'checked') : ();
+  div class => 'mainbox', id => 'screenshots';
 
+   if(grep $_->{nsfw}, @{$v->{screenshots}}) {
      p class => 'nsfwtoggle';
       txt 'Showing ';
       i id => 'nsfwshown', scalar grep(!$_->{nsfw}, @{$v->{screenshots}});
@@ -913,8 +913,6 @@ sub _screenshots {
       txt sprintf ' out of %d screenshot%s. ', scalar @{$v->{screenshots}}, @{$v->{screenshots}} == 1 ? '' : 's';
       label for => 'nsfwhide_chk', class => 'fake_link', 'show/hide NSFW';
      end;
-   } else {
-     div class => 'mainbox', id => 'screenshots';
    }
 
    h1 'Screenshots';
