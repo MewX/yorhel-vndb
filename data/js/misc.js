@@ -79,25 +79,6 @@ if(byId('listsel'))
       ulist_redirect('[rv]', '/list', this.name, 'e='+this.options[this.selectedIndex].value);
   };
 
-// NSFW toggle for screenshots (/v+)
-if(byId('nsfwhide'))
-  byId('nsfwhide').onclick = function() {
-    var shown = 0;
-    var l = byClass(byId('screenshots'), 'a', 'scrlnk');
-    for(var i=0; i<l.length; i++) {
-      if(hasClass(l[i], 'nsfw')) {
-        var hidden = !hasClass(l[i], 'hidden');
-        setClass(l[i], 'hidden', hidden);
-        if(!hidden)
-          shown++;
-      } else
-        shown++;
-    }
-    setText(byId('nsfwshown'), shown);
-    return false;
-  };
-
-
 // Notification list onclick
 (function(){
   var d = byId('notifies');

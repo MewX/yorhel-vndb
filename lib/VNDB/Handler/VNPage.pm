@@ -901,15 +901,20 @@ sub _release_icons {
 
 sub _screenshots {
   my($self, $v, $r) = @_;
-  div class => 'mainbox', id => 'screenshots';
 
    if(grep $_->{nsfw}, @{$v->{screenshots}}) {
+     input id => 'nsfwhide_chk', type => 'checkbox', class => 'visuallyhidden', $self->authPref('show_nsfw') ? (checked => 'checked') : ();
+     div class => 'mainbox', id => 'screenshots';
+
      p class => 'nsfwtoggle';
       txt 'Showing ';
-      i id => 'nsfwshown', $self->authPref('show_nsfw') ? scalar @{$v->{screenshots}} : scalar grep(!$_->{nsfw}, @{$v->{screenshots}});
+      i id => 'nsfwshown', scalar grep(!$_->{nsfw}, @{$v->{screenshots}});
+      span class => 'nsfw', scalar @{$v->{screenshots}};
       txt sprintf ' out of %d screenshot%s. ', scalar @{$v->{screenshots}}, @{$v->{screenshots}} == 1 ? '' : 's';
-      a href => '#', id => "nsfwhide", 'show/hide NSFW';
+      label for => 'nsfwhide_chk', class => 'fake_link', 'show/hide NSFW';
      end;
+   } else {
+     div class => 'mainbox', id => 'screenshots';
    }
 
    h1 'Screenshots';
@@ -926,7 +931,7 @@ sub _screenshots {
       for (@scr) {
         my($w, $h) = imgsize($_->{width}, $_->{height}, @{$self->{scr_size}});
         a href => imgurl(sf => $_->{id}),
-          class => sprintf('scrlnk%s%s', $_->{nsfw} ? ' nsfw':'', $_->{nsfw}&&!$self->authPref('show_nsfw')?' hidden':''),
+          class => sprintf('scrlnk%s', $_->{nsfw} ? ' nsfw':''),
           'data-iv' => "$_->{width}x$_->{height}:scr";
          img src => imgurl(st => $_->{id}),
            width => $w, height => $h, alt => "Screenshot #$_->{id}";
