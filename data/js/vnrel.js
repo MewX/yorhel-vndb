@@ -2,7 +2,9 @@ function vnrLoad() {
   // read the current relations
   var rels = byId('vnrelations').value.split('|||');
   for(var i=0; i<rels.length && rels[0].length>1; i++) {
-    var rel = rels[i].split(',', 4);
+    var rel = rels[i].split(',');
+    // fix for titles containing commas
+    rel[3] = rel.splice(3).join();
     vnrAdd(rel[0], rel[1], rel[2]==1?true:false, rel[3]);
   }
   vnrEmpty();
