@@ -50,7 +50,7 @@ function init() {
 // Find the next (dir=1) or previous (dir=-1) non-hidden link object for the category.
 function findnav(cat, i, dir) {
   for(var j=i+dir; j>=0 && j<cats[cat].length; j+=dir)
-    if(!hasClass(cats[cat][j], 'hidden'))
+    if(!hasClass(cats[cat][j], 'hidden') && cats[cat][j].offsetWidth > 0 && cats[cat][j].offsetHeight > 0)
       return cats[cat][j];
   return 0
 }
