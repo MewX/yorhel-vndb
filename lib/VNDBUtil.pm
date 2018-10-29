@@ -55,7 +55,7 @@ sub normalize {
   # This effectively removes all accents from the characters (e.g. é -> e)
   $_ = compose(NFKD($_) =~ s/(?<=[^ア-ンあ-ん])\pM//rg);
   # remove some characters that have no significance when searching
-  tr/\r\n\t,_\-.~～〜∼ー῀:[]()%+!?#$"'`♥★☆♪†「」『』【】・‟”‛’‘‚„«‹»›//d;
+  tr/\r\n\t,_\-.~～〜∼ー῀:[]()%+!?#$"'`♥★☆♪†「」『』【】・‟“”‛’‘‚„«‹»›//d;
   tr/@/a/;
   tr/ı/i/; # Turkish lowercase i
   s/&/and/;
