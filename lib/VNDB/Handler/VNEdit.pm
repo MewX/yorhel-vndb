@@ -253,7 +253,6 @@ sub _uploadimage {
 
 sub _form {
   my($self, $v, $frm, $r, $chars) = @_;
-  my $import = @$chars ? $self->dbVNImportSeiyuu($v->{id}, [ map $_->{id}, @$chars ]) : [];
   $self->htmlForm({ frm => $frm, action => $v ? "/v$v->{id}/edit" : '/v/new', editsum => 1, upload => 1 },
   vn_geninfo => [ 'General info',
     [ input    => short => 'title',     name => 'Title (romaji)', width => 450 ],
@@ -341,14 +340,6 @@ sub _form {
   @{$chars} ? (vn_cast => [ 'Cast',
     [ json   => short => 'seiyuu' ],
     [ static => nolabel => 1, content => sub {
-      if (@$import) {
-        script_json castimpdata => [
-          map { my $c = $_; +{ map { $_ => $c->{$_} } qw|cid sid aid name| } } @$import
-        ];
-        div id => 'cast_import';
-         a href => '#', title => 'Import character cast from related visual novels', 'Import cast';
-        end;
-      }
       table; tbody id => 'cast_tbl';
        Tr id => 'cast_loading'; td colspan => '4', 'Loading...'; end;
       end; end;

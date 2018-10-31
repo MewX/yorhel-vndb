@@ -8,7 +8,7 @@ use POSIX 'strftime';
 use Exporter 'import';
 use VNDB::Func 'normalize_query';
 
-our @EXPORT = qw|dbVNGet dbVNGetRev dbVNRevisionInsert dbVNImageId dbScreenshotAdd dbScreenshotGet dbScreenshotRandom dbVNImportSeiyuu|;
+our @EXPORT = qw|dbVNGet dbVNGetRev dbVNRevisionInsert dbVNImageId dbScreenshotAdd dbScreenshotGet dbScreenshotRandom|;
 
 
 # Options: id, char, search, length, lang, olang, plat, tag_inc, tag_exc, tagspoil,
@@ -347,18 +347,6 @@ sub dbScreenshotRandom {
         JOIN vn v ON v.id = vs.id
         JOIN screenshots s ON s.id = vs.scr
      |, @vids).' ORDER BY position', @vids);
-}
-
-
-# returns seiyuus that voice characters referenced by $cids in VNs other than $vid
-sub dbVNImportSeiyuu {
-  my($self, $vid, $cids) = @_;
-  return $self->dbAll(q|
-    SELECT DISTINCT ON(c.id) c.id AS cid, c.name AS c_name, sa.id AS sid, sa.aid, sa.name
-      FROM vn_seiyuu vs
-      JOIN chars c ON c.id = vs.cid
-      JOIN staff_alias sa ON sa.aid = vs.aid
-      WHERE vs.cid IN(!l) AND vs.id <> ?|, $cids, $vid);
 }
 
 

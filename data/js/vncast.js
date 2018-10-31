@@ -1,5 +1,3 @@
-var vncImportData = [];
-
 function vncLoad() {
   var cast = jsonParse(byId('seiyuu').value) || [];
   var copt = byId('cast_chars').options;
@@ -20,14 +18,6 @@ function vncLoad() {
   }
   vncEmpty();
 
-  var cast_import = byId('cast_import');
-  if(cast_import) {
-    vncImportData = jsonParse(getText(byId('castimpdata')||{})) || [];
-    if(vncImportData.length)
-      byName(cast_import, 'a')[0].onclick = vncImport;
-    else
-      cast_import.style.display = 'none';
-  }
   onSubmit(byName(byId('maincontent'), 'form')[0], vncSerialize);
 
   // dropdown search
@@ -36,31 +26,6 @@ function vncLoad() {
     tr.appendChild(tag('td', item.firstChild.nodeValue));
     tr.appendChild(tag('td', item.getAttribute('orig')));
   }, vncFormAdd);
-}
-
-function vncImport() {
-  if (!vncImportData.length)
-    return false;
-  var c = {};
-  for (var i = 0; i < vncImportData.length; i++) {
-    var s = vncImportData[i];
-    c[s.cid] = s;
-  }
-  // exclude already credited cast from import list
-  var l = byName(byId('cast_tbl'), 'tr');
-  for (var i = 0; i < l.length; i++) {
-    if(l[i].id == 'cast_tr_none')
-      continue;
-    var role = byName(byClass(l[i], 'tc_char')[0], 'select')[0].value;
-    if (role in c)
-      delete c[role];
-  }
-  for (var cid in c) {
-    if (!c.hasOwnProperty(cid))
-      continue;
-    vncAdd({ id:c[cid].sid, aid:c[cid].aid, name:c[cid].name }, cid, '');
-  }
-  return false;
 }
 
 function vncAdd(seiyuu, chr, note) {
