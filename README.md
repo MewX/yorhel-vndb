@@ -24,6 +24,13 @@ While running, if you need another terminal into the container:
   docker exec -ti vndb su devuser -c 'psql -U vndb'   # postgres vndb shell
 ```
 
+To run Multi, the optional application server:
+
+```
+  docker exec -ti vndb su -l devuser
+  cd /var/www
+  make multi-restart
+```
 
 ## Development database
 
@@ -101,10 +108,17 @@ util/multi.pl (application server, optional):
 - Update the vndb_site password in data/config.pl to whatever you set it in
   the previous step.
 - (Optional) Import the "Development database" as explained above.
+- (Optional) Do the same for vndb_multi if Multi is needed.
 - Now simply run:
 
 ```
   util/vndb-dev-server.pl
+```
+
+- (Optional) To start Multi, the application server:
+
+```
+  make multi-restart
 ```
 
 ## License

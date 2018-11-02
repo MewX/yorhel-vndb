@@ -22,6 +22,7 @@ package VNDB;
   scrypt_salt  => '<another unique string>',
 );
 
+$M{db_login} = { dbname => 'vndb', user => 'vndb_multi', password => 'vndb_multi' };
 
 # Uncomment to enable certain features of Multi
 

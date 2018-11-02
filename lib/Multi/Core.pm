@@ -72,11 +72,8 @@ sub daemon_done {
 
 
 sub load_pg {
-  my @db = @{$VNDB::O{db_login}};
-  my @dsn = DBI->parse_dsn($db[0]);
-  my %vars = split /[,=]/, $dsn[4];
   $PG = AnyEvent::Pg::Pool->new(
-    {%vars, user => $db[1], password => $db[2], host => 'localhost'},
+    $VNDB::M{db_login},
     timeout => 600, # Some maintenance queries can take a while to run...
     on_error => sub { die "Lost connection to PostgreSQL\n"; },
     on_connect_error => sub { die "Lost connection to PostgreSQL\n"; },
