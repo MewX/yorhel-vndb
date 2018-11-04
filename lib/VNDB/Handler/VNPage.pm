@@ -457,25 +457,46 @@ sub page {
    my $t = $self->dbTagStats(vid => $v->{id}, sort => 'rating', reverse => 1, minrating => 0, results => 999);
    if(@$t) {
      div id => 'tagops';
-      # NOTE: order of these links is hardcoded in JS
+      # NOTE: order of these inputs is hardcoded in JS
       my $tags_cat = $self->authPref('tags_cat') || $self->{default_tags_cat};
-      a href => "#$_", $tags_cat =~ /\Q$_/ ? (class => 'tsel') : (), lc $self->{tag_categories}{$_} for keys %{$self->{tag_categories}};
-      my $spoiler = $self->authPref('spoilers') || 0;
-      a href => '#', class => 'sec'.($spoiler == 0 ? ' tsel' : ''), lc 'Hide spoilers';
-      a href => '#', $spoiler == 1 ? (class => 'tsel') : (), lc 'Show minor spoilers';
-      a href => '#', $spoiler == 2 ? (class => 'tsel') : (), lc 'Spoil me!';
-      a href => '#', class => 'sec'.($self->authPref('tags_all') ? '': ' tsel'), 'summary';
-      a href => '#', $self->authPref('tags_all') ? (class => 'tsel') : (), 'all';
-     end;
-     div id => 'vntags';
-      for (@$t) {
-        my $spoil = $_->{spoiler} > 1.3 ? 2 : $_->{spoiler} > 0.4 ? 1 : 0;
-        span class => sprintf 'tagspl%d cat_%s %s', $spoil, $_->{cat}, $spoil > 0 ? 'hidden' : '';
-         a href => "/g$_->{id}", style => sprintf('font-size: %dpx', $_->{rating}*3.5+6), $_->{name};
-         b class => 'grayedout', sprintf ' %.1f', $_->{rating};
-        end;
-        txt ' ';
+      for (keys %{$self->{tag_categories}}) {
+        input id => "cat_$_", type => 'checkbox', class => 'visuallyhidden', $tags_cat =~ /\Q$_/ ? (checked => 'checked') : ();
+        label for => "cat_$_", lc $self->{tag_categories}{$_};
       }
+      my $spoiler = $self->authPref('spoilers') || 0;
+      input id => 'tag_spoil_none', type => 'radio', class => 'visuallyhidden', name => 'tag_spoiler', $spoiler == 0 ? (checked => 'checked') : ();
+      label for => 'tag_spoil_none', class => 'sec', lc 'Hide spoilers';
+      input id => 'tag_spoil_some', type => 'radio', class => 'visuallyhidden', name => 'tag_spoiler', $spoiler == 1 ? (checked => 'checked') : ();
+      label for => 'tag_spoil_some', lc 'Show minor spoilers';
+      input id => 'tag_spoil_all', type => 'radio', class => 'visuallyhidden', name => 'tag_spoiler', $spoiler == 2 ? (checked => 'checked') : ();
+      label for => 'tag_spoil_all', lc 'Spoil me!';
+
+      input id => 'tag_toggle_summary', type => 'radio', class => 'visuallyhidden', name => 'tag_all', $self->authPref('tags_all') ? () : (checked => 'checked');
+      label for => 'tag_toggle_summary', class => 'sec', lc 'summary';
+      input id => 'tag_toggle_all', type => 'radio', class => 'visuallyhidden', name => 'tag_all', $self->authPref('tags_all') ? (checked => 'checked') : ();
+      label for => 'tag_toggle_all', class => 'lst', lc 'all';
+      div id => 'vntags';
+       my %counts = ();
+       for (@$t) {
+         my $cnt0 = $counts{$_->{cat} . '0'} || 0;
+         my $cnt1 = $counts{$_->{cat} . '1'} || 0;
+         my $cnt2 = $counts{$_->{cat} . '2'} || 0;
+         my $spoil = $_->{spoiler} > 1.3 ? 2 : $_->{spoiler} > 0.4 ? 1 : 0;
+         SWITCH: {
+           $counts{$_->{cat} . '2'} = ++$cnt2;
+           if ($spoil == 2) { last SWITCH; }
+           $counts{$_->{cat} . '1'} = ++$cnt1;
+           if ($spoil == 1) { last SWITCH; }
+           $counts{$_->{cat} . '0'} = ++$cnt0;
+         }
+         my $cut = $cnt0 > 15 ? ' cut cut2 cut1 cut0' : ($cnt1 > 15 ? ' cut cut2 cut1' : ($cnt2 > 15 ? ' cut cut2' : ''));
+         span class => sprintf 'tagspl%d cat_%s%s', $spoil, $_->{cat}, $cut;
+          a href => "/g$_->{id}", style => sprintf('font-size: %dpx', $_->{rating}*3.5+6), $_->{name};
+          b class => 'grayedout', sprintf ' %.1f', $_->{rating};
+         end;
+         txt ' ';
+       }
+      end;
      end;
    }
   end 'div'; # /mainbox

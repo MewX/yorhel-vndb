@@ -373,13 +373,33 @@ div.vndetails td.anime b      { font-size: 10px; font-weight: normal; padding-ri
 
 tr#buynow .pricenote { border: 0 }
 
-div#vntags                    { margin: 15px 30px 0 30px; border-top: 1px solid $border$; padding: 1px 5% 0 5%; text-align: center; }
+div#vntags                    { margin: 0 30px 0 30px; border-top: 1px solid $border$; padding: 1px 5% 0 5%; text-align: center; }
 #vntags span                  { white-space: nowrap; margin-left: 15px; }
 #vntags b                     { color: $grayedout$; font-weight: normal; font-size: 10px }
-#tagops                       { float: right; text-align: right; width: auto; margin: 0 30px; }
-#tagops a                     { margin: 0 0 0 10px;  border: 0; outline: none }
-#tagops a.sec                 { border-left: 1px solid $border$; padding-left: 10px }
-#tagops a.tsel                { color: $maintext$; }
+#tagops                       { text-align: right; width: auto; }
+
+#tagops label                 { margin: 0 0 0 10px;  border: 0; outline: none; color: $link$; cursor: pointer; }
+#tagops label.sec             { border-left: 1px solid $border$; padding-left: 10px }
+#tagops label.lst             { margin: 0 30px 0 10px; }
+#tagops input:checked + label { color: $maintext$; }
+
+/* tag filter machinery; the order of declarations is important */
+
+#tag_spoil_all:checked ~ #vntags .cut2 { display: none; }
+#tag_spoil_some:checked ~ #vntags .cut1 { display: none; }
+#tag_spoil_none:checked ~ #vntags .cut0 { display: none; }
+
+#tag_toggle_all:checked ~ #vntags .cut { display: inline }
+
+#cat_cont:not(:checked) ~ #vntags .cat_cont { display: none; }
+#cat_tech:not(:checked) ~ #vntags .cat_tech { display: none; }
+#cat_ero:not(:checked) ~ #vntags .cat_ero   { display: none; }
+
+#tag_spoil_none:checked ~ #vntags .tagspl1  { display: none; }
+#tag_spoil_none:checked ~ #vntags .tagspl2  { display: none; }
+#tag_spoil_some:checked ~ #vntags .tagspl2  { display: none; }
+
+/* end of tag filter machinery */
 
 .releases table,
 #screenshots table     { width: 100%; }
