@@ -457,7 +457,6 @@ sub page {
    my $t = $self->dbTagStats(vid => $v->{id}, sort => 'rating', reverse => 1, minrating => 0, results => 999);
    if(@$t) {
      div id => 'tagops';
-      # NOTE: order of these inputs is hardcoded in JS
       my $tags_cat = $self->authPref('tags_cat') || $self->{default_tags_cat};
       for (keys %{$self->{tag_categories}}) {
         input id => "cat_$_", type => 'checkbox', class => 'visuallyhidden', $tags_cat =~ /\Q$_/ ? (checked => 'checked') : ();

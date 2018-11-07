@@ -23,7 +23,6 @@ VARS = /*VARS*/;
 
 // Page/functionality-specific widgets
 //include vnreldropdown.js
-//include tagops.js
 //include charops.js
 //include filter.js
 //include misc.js
