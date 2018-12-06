@@ -481,6 +481,7 @@ function filFTagInput(name, label, type) {
       if(item.getAttribute('meta') == 'yes')
         alert('Can\'t use meta '+type+'s here!');
       else {
+        obj.parentNode.fil_val = null;
         addtag(byName(obj.parentNode, 'ul')[0], item.getAttribute('id'), item.firstChild.nodeValue, item.getAttribute('groupname'));
         selectField(obj);
       }
