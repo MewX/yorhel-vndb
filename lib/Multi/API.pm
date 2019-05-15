@@ -17,6 +17,7 @@ use Crypt::URandom 'urandom';
 use Crypt::ScryptKDF 'scrypt_raw';;
 use VNDBUtil 'normalize_query', 'norm_ip';
 use JSON::XS;
+use PWLookup;
 
 # Linux-specific, not exported by the Socket module.
 sub TCP_KEEPIDLE  () { 4 }
@@ -274,6 +275,8 @@ sub login {
     return;
   } else {
     $arg->{username} = lc $arg->{username};
+    return cerr $c, auth => "Password too weak, please log in on the site and change your password"
+      if $VNDB::S{password_db} && PWLookup::lookup($VNDB::S{password_db}, $arg->{password});
   }
 
   login_auth($c, $arg);

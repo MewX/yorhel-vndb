@@ -81,11 +81,12 @@ sub _createsession {
   my($self, $uid, $encpass, $url) = @_;
 
   my $token = urandom(20);
-  return 0 if !$self->dbUserLogin($uid, $encpass, sha1 $token);
+  my $token_e = sha1 $token;
+  return 0 if !$self->dbUserLogin($uid, $encpass, $token_e);
 
   $self->resRedirect($url, 'post');
   $self->resCookie(auth => unpack('H*', $token).'.'.$uid, httponly => 1, expires => time + 31536000); # keep the cookie for 1 year
-  return 1;
+  return $token_e;
 }
 
 

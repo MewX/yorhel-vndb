@@ -6,6 +6,7 @@ use warnings;
 use TUWF ':html', 'xml_escape';
 use VNDB::Func;
 use POSIX 'floor';
+use PWLookup;
 
 
 TUWF::register(
@@ -142,11 +143,8 @@ sub userpage {
 }
 
 
-sub login {
+sub _check_throttle {
   my $self = shift;
-
-  return $self->resRedirect('/', 'temp') if $self->authInfo->{id};
-
   my $tm = $self->dbThrottleGet(norm_ip($self->reqIP));
   if($tm-time() > $self->{login_throttle}[1]) {
     $self->htmlHeader(title => 'Login');
@@ -165,8 +163,19 @@ sub login {
      end;
     end 'div';
     $self->htmlFooter;
-    return;
+    return undef;
   }
+  $tm
+}
+
+
+sub login {
+  my $self = shift;
+
+  return $self->resRedirect('/', 'temp') if $self->authInfo->{id};
+
+  my $tm = _check_throttle($self);
+  return if !defined $tm;
 
   my $ref = $self->formValidate({ param => 'ref', required => 0, default => '/'})->{ref};
 
@@ -180,7 +189,16 @@ sub login {
 
     if(!$frm->{_err}) {
       $frm->{usrname} = lc $frm->{usrname};
-      return if $self->authLogin($frm->{usrname}, $frm->{usrpass}, $ref);
+
+      my $ok = $self->authLogin($frm->{usrname}, $frm->{usrpass}, $ref);
+
+      if($ok && $self->{password_db} && PWLookup::lookup($self->{password_db}, $frm->{usrpass})) {
+        my $u = $self->dbUserGet(username => $frm->{usrname})->[0];
+        $self->dbUserLogout($u->{id}, $ok); # Make sure to throw away the session we just created
+        return $self->resRedirect("/u$u->{id}/setpass", 'post');
+      }
+      return if $ok;
+
       $frm->{_err} = [ 'Invalid username or password' ];
       $self->dbThrottleSet(norm_ip($self->reqIP), $tm+$self->{login_throttle}[0]);
     }
@@ -262,36 +280,55 @@ sub newpass_sent {
 }
 
 
+# /u+/setpass has two modes: With a token (?t=xxx), to set the password after a
+# 'register' or 'newpass', or without a token, after the user tried to log in
+# with a weak password.
 sub setpass {
   my($self, $uid) = @_;
   return $self->resRedirect('/', 'temp') if $self->authInfo->{id};
 
-  my $t = $self->formValidate({get => 't', regex => qr/^[a-f0-9]{40}$/i });
+  my $t = $self->formValidate({param => 't', required => 0, regex => qr/^[a-f0-9]{40}$/i });
   return $self->resNotFound if $t->{_err};
   $t = $t->{t};
 
   my $u = $self->dbUserGet(uid => $uid)->[0];
-  return $self->resNotFound if !$u || !$self->authIsValidToken($u->{id}, $t);
+  return $self->resNotFound if !$u || ($t && !$self->authIsValidToken($u->{id}, $t));
+
+  my $tm = !$t && _check_throttle($self);
+  return if !$t && !defined $tm;
 
   my $frm;
   if($self->reqMethod eq 'POST') {
-    return if !$self->authCheckCode("/u$u->{id}/setpass?t=$t");
+    return if !$self->authCheckCode("/u$u->{id}/setpass");
     $frm = $self->formValidate(
+      $t ? () : (
+        { post => 'curpass',  minlength => 4, maxlength => 500 },
+      ),
       { post => 'usrpass',  minlength => 4, maxlength => 500 },
       { post => 'usrpass2', minlength => 4, maxlength => 500 },
     );
     push @{$frm->{_err}}, 'Passwords do not match' if $frm->{usrpass} ne $frm->{usrpass2};
+    push @{$frm->{_err}}, 'The chosen password is too weak, please choose a stronger password'
+      if $self->{password_db} && PWLookup::lookup($self->{password_db}, $frm->{usrpass});
 
     if(!$frm->{_err}) {
       $self->dbUserEdit($uid, email_confirmed => 1);
-      return $self->authSetPass($uid, $frm->{usrpass}, "/u$uid", token => $t)
+      return if $self->authSetPass($uid, $frm->{usrpass}, "/u$uid", $t ? (token => $t) : (pass => $frm->{curpass}));
+      $self->dbThrottleSet(norm_ip($self->reqIP), $tm+$self->{login_throttle}[0]);
+      push @{$frm->{_err}}, 'Invalid password';
     }
   }
 
   $self->htmlHeader(title => "Set password for $u->{username}", noindex => 1);
-  $self->htmlForm({ frm => $frm, action => "/u$u->{id}/setpass?t=$t" }, setpass => [ "Set password for $u->{username}",
-    [ static => nolabel => 1, content => 'Now you can set a password for your account.'
-        .' You will be logged in automatically after your password has been saved.' ],
+  $self->htmlForm({ frm => $frm, action => "/u$u->{id}/setpass" }, setpass => [ "Set password for $u->{username}",
+    [ hidden => short => 't', value => $t||'' ],
+    $t ? (
+      [ static => nolabel => 1, content => 'Now you can set a password for your account.'
+          .' You will be logged in automatically after your password has been saved.' ],
+    ) : (
+      [ static => nolabel => 1, content => "Your current password is too weak, please change your password to continue.<br><br>" ],
+      [ passwd => short => 'curpass',  name => 'Current password' ],
+    ),
     [ passwd => short => 'usrpass',  name => 'Password' ],
     [ passwd => short => 'usrpass2', name => 'Confirm password' ],
   ]);
@@ -411,6 +448,8 @@ sub edit {
     );
     push @{$frm->{_err}}, 'Passwords do not match'
       if ($frm->{usrpass} || $frm->{usrpass2}) && (!$frm->{usrpass} || !$frm->{usrpass2} || $frm->{usrpass} ne $frm->{usrpass2});
+    push @{$frm->{_err}}, 'The chosen password is too weak, please choose a stronger password'
+      if $self->{password_db} && PWLookup::lookup($self->{password_db}, $frm->{usrpass});
 
     if(!$frm->{_err}) {
       $frm->{skin} = '' if $frm->{skin} eq $self->{skin_default};

@@ -20,6 +20,9 @@ package VNDB;
   url_static   => 'http://localhost:3000',
   form_salt    => '<some unique string>',
   scrypt_salt  => '<another unique string>',
+  # Uncomment if you want to test password strength against a dictionary. See
+  # lib/PWLookup.pm for instructions on how to create the database file.
+  #password_db => $ROOT.'/data/passwords.dat',
 );
 
 $M{db_login} = { dbname => 'vndb', user => 'vndb_multi', password => 'vndb_multi' };

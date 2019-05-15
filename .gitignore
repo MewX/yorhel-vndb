@@ -1,8 +1,9 @@
 /data/config.pl
-/data/multi.pid
 /data/docs/8
-/data/log/
 /data/icons/icons.css
+/data/log/
+/data/multi.pid
+/data/passwords.dat
 /static/f/js/
 /static/f/icons.png
 /static/f/vndb.js
