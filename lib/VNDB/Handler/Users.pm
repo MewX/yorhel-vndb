@@ -175,7 +175,7 @@ sub login {
     return if !$self->authCheckCode;
     $frm = $self->formValidate(
       { post => 'usrname', required => 1, minlength => 2, maxlength => 15 },
-      { post => 'usrpass', required => 1, minlength => 4, maxlength => 64, template => 'ascii' },
+      { post => 'usrpass', required => 1, minlength => 4, maxlength => 500 },
     );
 
     if(!$frm->{_err}) {
@@ -277,8 +277,8 @@ sub setpass {
   if($self->reqMethod eq 'POST') {
     return if !$self->authCheckCode("/u$u->{id}/setpass?t=$t");
     $frm = $self->formValidate(
-      { post => 'usrpass',  minlength => 4, maxlength => 64, template => 'ascii' },
-      { post => 'usrpass2', minlength => 4, maxlength => 64, template => 'ascii' },
+      { post => 'usrpass',  minlength => 4, maxlength => 500 },
+      { post => 'usrpass2', minlength => 4, maxlength => 500 },
     );
     push @{$frm->{_err}}, 'Passwords do not match' if $frm->{usrpass} ne $frm->{usrpass2};
 
@@ -397,9 +397,9 @@ sub edit {
         { post => 'ign_votes', required => 0, default => 0 },
       ) : (),
       { post => 'mail',       template => 'email' },
-      { post => 'curpass',    required => 0, minlength => 4, maxlength => 64, template => 'ascii', default => '' },
-      { post => 'usrpass',    required => 0, minlength => 4, maxlength => 64, template => 'ascii' },
-      { post => 'usrpass2',   required => 0, minlength => 4, maxlength => 64, template => 'ascii' },
+      { post => 'curpass',    required => 0, minlength => 4, maxlength => 500, default => '' },
+      { post => 'usrpass',    required => 0, minlength => 4, maxlength => 500 },
+      { post => 'usrpass2',   required => 0, minlength => 4, maxlength => 500 },
       { post => 'hide_list',  required => 0, default => 0,  enum => [0,1] },
       { post => 'show_nsfw',  required => 0, default => 0,  enum => [0,1] },
       { post => 'traits_sexual', required => 0, default => 0,  enum => [0,1] },
