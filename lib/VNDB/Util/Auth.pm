@@ -72,7 +72,7 @@ sub _preparepass {
   my($self, $pass, $salt, $N, $r, $p) = @_;
   ($N, $r, $p) = @{$self->{scrypt_args}} if !$N;
   $salt ||= urandom(8);
-  return pack 'NCCa8a*', $N, $r, $p, $salt, scrypt_raw($pass, $self->{scrypt_salt} . $salt, $N, $r, $p, 32);
+  return pack 'NCCa8a*', $N, $r, $p, $salt, scrypt_raw(encode_utf8($pass), $self->{scrypt_salt} . $salt, $N, $r, $p, 32);
 }
 
 
