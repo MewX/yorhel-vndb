@@ -87,7 +87,7 @@ sub encode {
     while((my $p = <STDIN>)) {
         chomp($p);
         # No need to store passwords that are rejected by form validation
-        if(!length($p) || length($p) > 500 || !eval { decode_utf8((local $_=$p), Encode::FB_CROAK); 1 }) {
+        if(!length($p) || length($p) > 500 || !eval { decode_utf8((local $_=$p), Encode::FB_CROAK); 1 } || $p =~ /\x00/) {
             warn sprintf "Rejecting: %s\n", ($p =~ s/([^\x21-\x7e])/sprintf '%%%02x', ord $1/ger);
             next;
         }
