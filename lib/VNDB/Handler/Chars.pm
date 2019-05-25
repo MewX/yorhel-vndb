@@ -53,7 +53,7 @@ sub page {
       [ s_waist   => 'Waist',         serialize => sub { $_[0]||'[empty]' } ],
       [ s_hip     => 'Hip',           serialize => sub { $_[0]||'[empty]' } ],
       [ height    => 'Height',        serialize => sub { $_[0]||'[empty]' } ],
-      [ weight    => 'Weight',        serialize => sub { $_[0]||'[empty]' } ],
+      [ weight    => 'Weight',        serialize => sub { $_[0]//'[empty]' } ],
       [ bloodt    => 'Blood type',    serialize => sub { $self->{blood_types}{$_[0]} } ],
       [ main      => 'Main character',htmlize => sub { $_[0] ? sprintf '<a href="/c%d">c%d</a>', $_[0], $_[0] : '[empty]' } ],
       [ main_spoil=> 'Spoiler',       serialize => \&fmtspoil ],
@@ -152,12 +152,12 @@ sub charTable {
        td $r->{alias};
       end;
     }
-    if($r->{weight} || $r->{height} || $r->{s_bust} || $r->{s_waist} || $r->{s_hip}) {
+    if(defined($r->{weight}) || $r->{height} || $r->{s_bust} || $r->{s_waist} || $r->{s_hip}) {
       Tr;
        td class => 'key', 'Measurements';
        td join ', ',
          $r->{height} ? "Height: $r->{height}cm" : (),
-         $r->{weight} ? "Weight: $r->{weight}kg" : (),
+         defined($r->{weight}) ? "Weight: $r->{weight}kg" : (),
          $r->{s_bust} || $r->{s_waist} || $r->{s_hip} ?
            sprintf 'Bust-Waist-Hips: %s-%s-%scm', $r->{s_bust}||'??', $r->{s_waist}||'??', $r->{s_hip}||'??' : ();
       end;
@@ -307,7 +307,7 @@ sub edit {
       { post => 's_waist',       required  => 0, default => 0, template => 'uint', max => 32767 },
       { post => 's_hip',         required  => 0, default => 0, template => 'uint', max => 32767 },
       { post => 'height',        required  => 0, default => 0, template => 'uint', max => 32767 },
-      { post => 'weight',        required  => 0, default => 0, template => 'uint', max => 32767 },
+      { post => 'weight',        required  => 0, default => undef, template => 'uint', max => 32767 },
       { post => 'bloodt',        required  => 0, default => 'unknown', enum => [ keys %{$self->{blood_types}} ] },
       { post => 'main',          required  => 0, default => 0, template => 'id' },
       { post => 'main_spoil',    required  => 0, default => 0, enum => [ 0..2 ] },
@@ -346,7 +346,7 @@ sub edit {
       @traits = grep $traits{$_->[0]}, @traits;
 
       # check for changes
-      my $same = $id && !grep $frm->{$_} ne $b4{$_}, keys %b4;
+      my $same = $id && !grep +($frm->{$_}//'') ne ($b4{$_}//''), keys %b4;
       return $self->resRedirect("/c$id", 'post') if !$copy && $same;
       $frm->{_err} = ["No changes, please don't create an entry that is fully identical to another"] if $copy && $same;
     }
@@ -391,7 +391,7 @@ sub edit {
     [ input  => name => 'Waist',     short => 's_waist',width => 50, post => ' cm' ],
     [ input  => name => 'Hips',      short => 's_hip',  width => 50, post => ' cm' ],
     [ input  => name => 'Height',    short => 'height', width => 50, post => ' cm' ],
-    [ input  => name => 'Weight',    short => 'weight', width => 50, post => ' kg' ],
+    [ input  => name => 'Weight',    short => 'weight', width => 50, post => ' kg', allow0 => 1 ],
     [ select => name => 'Blood type',short => 'bloodt', options => [
        map [ $_, $self->{blood_types}{$_} ], keys %{$self->{blood_types}} ] ],
     [ static => content => '<br />' ],

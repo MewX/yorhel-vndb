@@ -40,7 +40,7 @@ sub dbCharGet {
     defined $o{height_min} ? ( 'c.height >= ?' => $o{height_min} ) : (),
     defined $o{height_max} ? ( 'c.height <= ? AND c.height > 0' => $o{height_max} ) : (),
     defined $o{weight_min} ? ( 'c.weight >= ?' => $o{weight_min} ) : (),
-    defined $o{weight_max} ? ( 'c.weight <= ? AND c.weight > 0' => $o{weight_max} ) : (),
+    defined $o{weight_max} ? ( 'c.weight <= ?' => $o{weight_max} ) : (),
     $o{search} ? (
       "(c.name ILIKE ? OR translate(c.original,' ','') ILIKE translate(?,' ','') OR c.alias ILIKE ?)", [ map '%'.$o{search}.'%', 1..3 ] ) : (),
     $o{char} ? (

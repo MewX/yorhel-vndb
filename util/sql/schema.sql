@@ -96,7 +96,7 @@ CREATE TABLE chars ( -- dbentry_type=c
   b_month    smallint NOT NULL DEFAULT 0,
   b_day      smallint NOT NULL DEFAULT 0,
   height     smallint NOT NULL DEFAULT 0,
-  weight     smallint NOT NULL DEFAULT 0,
+  weight     smallint,
   bloodt     blood_type NOT NULL DEFAULT 'unknown',
   main       integer, -- chars.id
   main_spoil smallint NOT NULL DEFAULT 0
@@ -117,7 +117,7 @@ CREATE TABLE chars_hist (
   b_month    smallint NOT NULL DEFAULT 0,
   b_day      smallint NOT NULL DEFAULT 0,
   height     smallint NOT NULL DEFAULT 0,
-  weight     smallint NOT NULL DEFAULT 0,
+  weight     smallint,
   bloodt     blood_type NOT NULL DEFAULT 'unknown',
   main       integer, -- chars.id
   main_spoil smallint NOT NULL DEFAULT 0

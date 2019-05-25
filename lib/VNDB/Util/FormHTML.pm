@@ -70,7 +70,7 @@ sub htmlFormError {
 # Type      Options
 #  hidden    short, (value)
 #  json      short, (value)   # Same as hidden, but value is passed through json_encode()
-#  input     short, name, (width, pre, post)
+#  input     short, name, (allow0, width, pre, post)
 #  passwd    short, name
 #  static    content, (label, nolabel)
 #  check     name, short, (value)
@@ -135,7 +135,7 @@ sub htmlFormPart {
     if(/input/) {
       lit $o{pre} if $o{pre};
       input type => 'text', class => 'text', name => $o{short}, id => $o{short}, tabindex => 10,
-        value => $frm->{$o{short}}||'', $o{width} ? (style => "width: $o{width}px") : ();
+        value => $o{allow0} ? $frm->{$o{short}}//'' : $frm->{$o{short}}||'', $o{width} ? (style => "width: $o{width}px") : ();
       lit $o{post} if $o{post};
     }
     if(/passwd/) {
