@@ -308,7 +308,7 @@ sub setpass {
       { post => 'usrpass2', minlength => 4, maxlength => 500 },
     );
     push @{$frm->{_err}}, 'Passwords do not match' if $frm->{usrpass} ne $frm->{usrpass2};
-    push @{$frm->{_err}}, 'The chosen password is too weak, please choose a stronger password'
+    push @{$frm->{_err}}, 'Your chosen password is in a database of leaked passwords, please choose another one.'
       if $self->{password_db} && PWLookup::lookup($self->{password_db}, $frm->{usrpass});
 
     if(!$frm->{_err}) {
@@ -326,7 +326,7 @@ sub setpass {
       [ static => nolabel => 1, content => 'Now you can set a password for your account.'
           .' You will be logged in automatically after your password has been saved.' ],
     ) : (
-      [ static => nolabel => 1, content => "Your current password is too weak, please change your password to continue.<br><br>" ],
+      [ static => nolabel => 1, content => "Your current password is in a database of leaked passwords, please change your password to continue.<br><br>" ],
       [ passwd => short => 'curpass',  name => 'Current password' ],
     ),
     [ passwd => short => 'usrpass',  name => 'Password' ],
@@ -448,7 +448,7 @@ sub edit {
     );
     push @{$frm->{_err}}, 'Passwords do not match'
       if ($frm->{usrpass} || $frm->{usrpass2}) && (!$frm->{usrpass} || !$frm->{usrpass2} || $frm->{usrpass} ne $frm->{usrpass2});
-    push @{$frm->{_err}}, 'The chosen password is too weak, please choose a stronger password'
+    push @{$frm->{_err}}, 'Your chosen password is in a database of leaked passwords, please choose another one'
       if $self->{password_db} && PWLookup::lookup($self->{password_db}, $frm->{usrpass});
 
     if(!$frm->{_err}) {
