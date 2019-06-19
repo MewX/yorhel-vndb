@@ -606,7 +606,7 @@ sub _producers {
 
   if(grep $_->{developer}, map @{$_->{producers}}, @$r) {
     my %dev = map $_->{developer} ? ($_->{id} => $_) : (), map @{$_->{producers}}, @$r;
-    my @dev = values %dev;
+    my @dev = sort { $a->{name} cmp $b->{name} } values %dev;
     Tr;
      td 'Developer';
      td;
@@ -624,7 +624,7 @@ sub _producers {
      td;
       for my $l (@lang) {
         my %p = map $_->{publisher} ? ($_->{id} => $_) : (), map @{$_->{producers}}, grep grep($_ eq $l, @{$_->{languages}}), @$r;
-        my @p = values %p;
+        my @p = sort { $a->{name} cmp $b->{name} } values %p;
         next if !@p;
         cssicon "lang $l", $self->{languages}{$l};
         for (@p) {
