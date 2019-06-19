@@ -55,7 +55,9 @@ our %S;
     cs Czech
     da Danish
     de German
+    el Greek
     en English
+    eo Esperanto
     es Spanish
     fi Finnish
     fr French
