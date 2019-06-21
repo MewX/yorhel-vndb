@@ -993,15 +993,16 @@ sub _chars {
   for my $r (keys %{$self->{char_roles}}) {
     $rol{$r} = [ grep grep($_->{role} eq $r, @{$_->{vns}}) && !$done{$_->{id}}++, @$l ];
   }
-  my $first = 0;
-  for my $r (keys %{$self->{char_roles}}) {
-    next if !@{$rol{$r}};
-    div class => 'mainbox';
-     $self->charOps(1) if !$first++;
-     h1 $self->{char_roles}{$r}[ @{$rol{$r}} > 1 ? 1 : 0 ];
-     $self->charTable($_, 1, $_ != $rol{$r}[0], 1, _charspoillvl $v->{id}, $_) for (@{$rol{$r}});
-    end;
-  }
+  div class => 'charops', id => 'charops';
+   $self->charOps(1, 'chars');
+   for my $r (keys %{$self->{char_roles}}) {
+     next if !@{$rol{$r}};
+     div class => 'mainbox';
+      h1 $self->{char_roles}{$r}[ @{$rol{$r}} > 1 ? 1 : 0 ];
+      $self->charTable($_, 1, $_ != $rol{$r}[0], 1, _charspoillvl $v->{id}, $_) for (@{$rol{$r}});
+     end;
+   }
+  end;
 }
 
 
@@ -1019,8 +1020,8 @@ sub _charsum {
     }
   }
 
-  div class => 'mainbox charsum summarize', 'data-summarize-height' => 200;
-   $self->charOps(0) if $has_spoilers;
+  div class => 'mainbox charsum summarize charops', 'data-summarize-height' => 200, id => 'charops';
+   $self->charOps(0, 'charsum') if $has_spoilers;
    h1 'Character summary';
    div class => 'charsum_list';
     for my $c (@l) {

@@ -5,10 +5,10 @@ var spoil, sexual, t;
 function fixrow(c) {
   var l = byName(byName(c, 'td')[1], 'span');
   var first = 1;
-  for(var i=0; i<l.length; i+=2)
-    if(!hasClass(l[i], 'hidden')) {
-      setClass(l[i+1], 'hidden', first);
+  for(var i=0; i<l.length; i++)
+    if(!hasClass(l[i], 'ishidden')) {
       first = 0;
+      break;
     }
   setClass(c, 'hidden', first);
 }
@@ -32,18 +32,15 @@ function restripe() {
 }
 
 
-function setall(h) {
+function setall() {
   var k = byClass('charspoil');
   for(var i=0; i<k.length; i++)
-    setClass(k[i], 'hidden',
+    setClass(k[i], 'ishidden',
       !sexual && hasClass(k[i], 'sexual') ? true :
       hasClass(k[i], 'charspoil_0') ? false :
       hasClass(k[i], 'charspoil_-1') ? spoil > 1 :
       hasClass(k[i], 'charspoil_1') ? spoil < 1 : spoil < 2);
-  for(var i=0; i<3; i++)
-    setClass(h[i], 'sel', spoil == i);
-  if(h[3])
-    setClass(h[3], 'sel', sexual);
+
   if(k.length)
     restripe();
   return false;
@@ -51,29 +48,34 @@ function setall(h) {
 
 
 function init() {
-  var h = byName(byId('charops'), 'a');
+  var opsParent = byId('charops');
   t = byClass('table', 'stripe');
 
   // Spoiler level
   for(var i=0; i<3; i++) {
-    h[i].num = i;
-    h[i].onclick = function() {
+    var splChk = byClass(opsParent, 'radio_spoil' + i)[0];
+
+    splChk.num = i;
+    splChk.onchange = function() {
       spoil = this.num;
-      return setall(h);
+      return setall();
     };
-    if(hasClass(h[i], 'sel'))
+    if(splChk.checked)
       spoil = i;
   };
 
   // Sexual toggle
-  if(h[3]) {
-    h[3].onclick = function() {
+  var sexChk = byClass(opsParent, 'sexual_check');
+  if(sexChk.length) {
+    sexChk = sexChk[0]
+
+    sexChk.onchange = function() {
       sexual = !sexual;
-      return setall(h);
+      return setall();
     };
-    sexual = hasClass(h[3], 'sel');
+    sexual = sexChk.checked;
   }
-  setall(h);
+  setall();
 }
 
 

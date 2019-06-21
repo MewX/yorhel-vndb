@@ -72,43 +72,70 @@ sub page {
     );
   }
 
-  div class => 'mainbox';
-   $self->htmlItemMessage('c', $r);
-   $self->charOps(1);
-   h1 $r->{name};
-   h2 class => 'alttitle', $r->{original} if $r->{original};
-   $self->charTable($r);
-  end;
+  div class => 'charops', id => 'charops';
+   $self->charOps(1, 'char');
 
-  # TODO: ordering of these instances?
-  my $inst = [];
-  if(!$r->{main}) {
-    $inst = $self->dbCharGet(instance => $r->{id}, what => 'extended traits vns seiyuu');
-  } else {
-    $inst = $self->dbCharGet(instance => $r->{main}, notid => $r->{id}, what => 'extended traits vns seiyuu');
-    push @$inst, $self->dbCharGet(id => $r->{main}, what => 'extended traits vns seiyuu')->[0];
-  }
-  if(@$inst) {
-    my $spoil = sub { local $_=shift; !$r->{main} ? $_->{main_spoil} : $_->{main_spoil} > $r->{main_spoil} ? $_->{main_spoil} : $r->{main_spoil} };
-    my $minspoil = min map $spoil->($_), @$inst;
-    div class => 'mainbox '.charspoil($minspoil);
-     h1 'Other instances';
-     $self->charTable($_, 1, $_ != $inst->[0], 0, $spoil->($_)) for @$inst;
-    end;
-  }
+   div class => 'mainbox';
+    $self->htmlItemMessage('c', $r);
+    #div class => 'charops', id => 'charops';
+     h1 $r->{name};
+     h2 class => 'alttitle', $r->{original} if $r->{original};
+     $self->charTable($r);
+    #end;
+   end;
+
+   # TODO: ordering of these instances?
+   my $inst = [];
+   if(!$r->{main}) {
+     $inst = $self->dbCharGet(instance => $r->{id}, what => 'extended traits vns seiyuu');
+   } else {
+     $inst = $self->dbCharGet(instance => $r->{main}, notid => $r->{id}, what => 'extended traits vns seiyuu');
+     push @$inst, $self->dbCharGet(id => $r->{main}, what => 'extended traits vns seiyuu')->[0];
+   }
+   if(@$inst) {
+     my $spoil = sub { local $_=shift; !$r->{main} ? $_->{main_spoil} : $_->{main_spoil} > $r->{main_spoil} ? $_->{main_spoil} : $r->{main_spoil} };
+     my $minspoil = min map $spoil->($_), @$inst;
+     div class => 'mainbox '.charspoil($minspoil);
+      h1 'Other instances';
+      $self->charTable($_, 1, $_ != $inst->[0], 0, $spoil->($_)) for @$inst;
+     end;
+   }
+
+  end;
 
   $self->htmlFooter;
 }
 
 
 sub charOps {
-  my($self, $sexual) = @_;
+  my($self, $sexual, $blockId) = @_;
   my $spoil = $self->authPref('spoilers')||0;
-  p id => 'charops';
-   # Note: Order of these links is hardcoded in JS
-   a href => '#', $spoil == $_ ? (class => 'sel') : (), ['Hide spoilers', 'Show minor spoilers', 'Spoil me!']->[$_] for (0..2);
-   a href => '#', class => 'sec'.($self->authPref('traits_sexual') ? ' sel' : ''), 'Show sexual traits' if $sexual;
-  end;
+
+  my $rnd_name = 'charop_';
+
+  if ($blockId) {
+    $rnd_name .= $blockId;
+  } else {
+    $rnd_name .= sprintf("%x", rand 16) for 1..8;
+  }
+
+  if ($sexual) {
+    my $id_sex = $rnd_name.'_sex';
+    input type => 'checkbox', class => 'visuallyhidden sexual_check', id => $id_sex, ($self->authPref('traits_sexual') ? (checked => 'checked') : ());
+    label for => $id_sex, class => 'lst sec', 'Show sexual traits';
+  }
+
+  my $id_2 = $rnd_name.'_2';
+  input type => 'radio', class => 'visuallyhidden radio_spoil2', name => $rnd_name, id => $id_2, $spoil == 2 ? (checked => 'checked') : ();
+  label for => $id_2, $sexual ? () : (class => 'lst'), 'Spoil me!';
+
+  my $id_1 = $rnd_name.'_1';
+  input type => 'radio', class => 'visuallyhidden radio_spoil1', name => $rnd_name, id => $id_1, $spoil == 1 ? (checked => 'checked') : ();
+  label for => $id_1, 'Show minor spoilers';
+
+  my $id_0 = $rnd_name.'_0';
+  input type => 'radio', class => 'visuallyhidden radio_spoil0', name => $rnd_name, id => $id_0, $spoil == 0 ? (checked => 'checked') : ();
+  label for => $id_0, 'Hide spoilers';
 }
 
 
@@ -183,8 +210,8 @@ sub charTable {
        td;
         for (0..$#{$groups{$g}}) {
           my $t = $groups{$g}[$_];
-          span class => charspoil($t->{spoil}).($t->{sexual} ? ' sexual hidden' : '');
-           span ', ';
+          span class => charspoil($t->{spoil}).($t->{sexual} ? ' sexual' : '');
+           txt ', ';
            a href => "/i$t->{tid}", $t->{name};
           end;
         }

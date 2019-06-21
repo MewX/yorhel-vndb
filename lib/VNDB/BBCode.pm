@@ -188,7 +188,7 @@ sub bb2html {
     } elsif($tag eq 'spoiler_start') {
       $ret .= !$charspoil
         ? '<b class="spoiler">'
-        : '<b class="grayedout charspoil charspoil_-1">&lt;hidden by spoiler settings&gt;</b><span class="charspoil charspoil_2 hidden">';
+        : '<b class="grayedout charspoil charspoil_-1">&lt;hidden by spoiler settings&gt;</b><span class="charspoil charspoil_2">';
     } elsif($tag eq 'spoiler_end') {
       $ret .= !$charspoil ? '</b>' : '</span>';
 

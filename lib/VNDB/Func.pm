@@ -186,7 +186,7 @@ sub childtags {
 
 # generates the class elements for character spoiler hiding
 sub charspoil {
-  return "charspoil charspoil_$_[0]".($_[0] ? ' hidden' : '');
+  return "charspoil charspoil_$_[0]";
 }
 
 
