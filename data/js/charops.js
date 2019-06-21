@@ -49,11 +49,16 @@ function setall() {
 
 function init() {
   var opsParent = byId('charops');
+  if(!opsParent)
+    return;
+
   t = byClass('table', 'stripe');
 
   // Spoiler level
   for(var i=0; i<3; i++) {
     var splChk = byClass(opsParent, 'radio_spoil' + i)[0];
+    if(!splChk)
+      continue;
 
     splChk.num = i;
     splChk.onchange = function() {
