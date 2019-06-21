@@ -77,11 +77,9 @@ sub page {
 
    div class => 'mainbox';
     $self->htmlItemMessage('c', $r);
-    #div class => 'charops', id => 'charops';
-     h1 $r->{name};
-     h2 class => 'alttitle', $r->{original} if $r->{original};
-     $self->charTable($r);
-    #end;
+    h1 $r->{name};
+    h2 class => 'alttitle', $r->{original} if $r->{original};
+    $self->charTable($r);
    end;
 
    # TODO: ordering of these instances?
@@ -109,32 +107,25 @@ sub page {
 
 sub charOps {
   my($self, $sexual, $blockId) = @_;
+  $blockId ||= 'charops_block';
   my $spoil = $self->authPref('spoilers')||0;
 
-  my $rnd_name = 'charop_';
-
-  if ($blockId) {
-    $rnd_name .= $blockId;
-  } else {
-    $rnd_name .= sprintf("%x", rand 16) for 1..8;
-  }
-
-  if ($sexual) {
-    my $id_sex = $rnd_name.'_sex';
+  if($sexual) {
+    my $id_sex = $blockId.'_sex';
     input type => 'checkbox', class => 'visuallyhidden sexual_check', id => $id_sex, ($self->authPref('traits_sexual') ? (checked => 'checked') : ());
     label for => $id_sex, class => 'lst sec', 'Show sexual traits';
   }
 
-  my $id_2 = $rnd_name.'_2';
-  input type => 'radio', class => 'visuallyhidden radio_spoil2', name => $rnd_name, id => $id_2, $spoil == 2 ? (checked => 'checked') : ();
+  my $id_2 = $blockId.'_2';
+  input type => 'radio', class => 'visuallyhidden radio_spoil2', name => $blockId, id => $id_2, $spoil == 2 ? (checked => 'checked') : ();
   label for => $id_2, $sexual ? () : (class => 'lst'), 'Spoil me!';
 
-  my $id_1 = $rnd_name.'_1';
-  input type => 'radio', class => 'visuallyhidden radio_spoil1', name => $rnd_name, id => $id_1, $spoil == 1 ? (checked => 'checked') : ();
+  my $id_1 = $blockId.'_1';
+  input type => 'radio', class => 'visuallyhidden radio_spoil1', name => $blockId, id => $id_1, $spoil == 1 ? (checked => 'checked') : ();
   label for => $id_1, 'Show minor spoilers';
 
-  my $id_0 = $rnd_name.'_0';
-  input type => 'radio', class => 'visuallyhidden radio_spoil0', name => $rnd_name, id => $id_0, $spoil == 0 ? (checked => 'checked') : ();
+  my $id_0 = $blockId.'_0';
+  input type => 'radio', class => 'visuallyhidden radio_spoil0', name => $blockId, id => $id_0, $spoil == 0 ? (checked => 'checked') : ();
   label for => $id_0, 'Hide spoilers';
 }
 
