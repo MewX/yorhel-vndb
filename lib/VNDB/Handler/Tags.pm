@@ -176,6 +176,7 @@ sub tagedit {
       { post => 'defaultspoil',required => 0, default => 0, enum => [ 0..2 ] },
       { post => 'parents',     required => !$self->authCan('tagmod'), default => '' },
       { post => 'merge',       required => 0, default => '' },
+      { post => 'wipevotes',   required => 0, default => 0 },
     );
     my @aliases = split /[\t\s]*\n[\t\s]*/, $frm->{alias};
     my @parents = split /[\t\s]*,[\t\s]*/, $frm->{parents};
@@ -213,6 +214,7 @@ sub tagedit {
         $self->dbTagEdit($tag, %opts, upddate => $frm->{state} == 2 && $t->{state} != 2);
         _set_childs_cat($self, $tag, $frm->{cat}) if $frm->{catrec};
       }
+      $self->dbTagWipeVotes($tag) if $self->authCan('tagmod') && $frm->{wipevotes};
       $self->dbTagMerge($tag, @merge) if $self->authCan('tagmod') && @merge;
       $self->resRedirect("/g$tag", 'post');
       return;
@@ -270,13 +272,16 @@ sub tagedit {
     [ input    => short => 'parents',  name => 'Parent tags' ],
     [ static   => content => 'Comma separated list of tag names to be used as parent for this tag.' ],
     $self->authCan('tagmod') ? (
-      [ part   => title => 'Merge tags' ],
+      [ part   => title => 'DANGER: Merge tags' ],
       [ input  => short => 'merge', name => 'Tags to merge' ],
       [ static => content =>
           'Comma separated list of tag names to merge into this one.'
          .' All votes and aliases/names will be moved over to this tag, and the old tags will be deleted.'
          .' Just leave this field empty if you don\'t intend to do a merge.'
          .'<br />WARNING: this action cannot be undone!' ],
+
+      [ part     => title => 'DANGER: Delete tag votes' ],
+      [ checkbox => short => 'wipevotes', name => 'Remove all votes on this tag. WARNING: cannot be undone!' ],
     ) : (),
   ]);
   $self->htmlFooter;

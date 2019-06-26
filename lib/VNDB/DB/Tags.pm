@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Exporter 'import';
 
-our @EXPORT = qw|dbTagGet dbTTTree dbTagEdit dbTagAdd dbTagMerge dbTagLinks dbTagLinkEdit dbTagStats|;
+our @EXPORT = qw|dbTagGet dbTTTree dbTagEdit dbTagAdd dbTagMerge dbTagLinks dbTagLinkEdit dbTagStats dbTagWipeVotes|;
 
 
 # %options->{ id noid name search state searchable applicable page results what sort reverse  }
@@ -273,6 +273,12 @@ sub dbTagStats {
   );
 
   return wantarray ? ($r, $np) : $r;
+}
+
+
+# Deletes all votes on a tag.
+sub dbTagWipeVotes {
+  $_[0]->dbExec('DELETE FROM tags_vn WHERE tag = ?', $_[1])
 }
 
 1;
