@@ -132,14 +132,14 @@ BEGIN
   INSERT INTO tags_vn_inherit
     -- All votes for all tags, including votes inherited by child tags if the
     -- parent tag itself does not have any votes.
-    -- (also includes meta tags, because they could have a normal tag as parent)
-    WITH RECURSIVE tags_vn_all(lvl, tag, vid, uid, vote, spoiler, defaultspoil, meta) AS (
-        SELECT 15, tv.tag, tv.vid, tv.uid, tv.vote, tv.spoiler, t.defaultspoil, false
+    -- (also includes non-searchable tags, because they could have a searchable tag as parent)
+    WITH RECURSIVE tags_vn_all(lvl, tag, vid, uid, vote, spoiler, defaultspoil, searchable) AS (
+        SELECT 15, tv.tag, tv.vid, tv.uid, tv.vote, tv.spoiler, t.defaultspoil, true
         FROM tags_vn tv
         JOIN tags t ON t.id = tv.tag
        WHERE NOT tv.ignore
       UNION ALL
-        SELECT lvl-1, tp.parent, ta.vid, ta.uid, ta.vote, ta.spoiler, t.defaultspoil, t.meta
+        SELECT lvl-1, tp.parent, ta.vid, ta.uid, ta.vote, ta.spoiler, t.defaultspoil, t.searchable
         FROM tags_vn_all ta
         JOIN tags_parents tp ON tp.tag = ta.tag
         JOIN tags t ON t.id = tp.parent
@@ -154,10 +154,10 @@ BEGIN
                  WHEN AVG(spoiler) > 0.4 THEN 1 ELSE 0
             END)::smallint AS spoiler
     FROM (
-      -- grouped by (tag, vid, uid), so only one user votes on one parent tag per VN entry (also removing meta tags)
+      -- grouped by (tag, vid, uid), so only one user votes on one parent tag per VN entry (also removing unsearchable tags)
       SELECT tag, vid, uid, MAX(vote)::real, AVG(spoiler)::real, defaultspoil
       FROM tags_vn_all
-      WHERE NOT meta
+      WHERE searchable
       GROUP BY tag, vid, uid, defaultspoil
     ) AS t(tag, vid, uid, vote, spoiler, defaultspoil)
     GROUP BY tag, vid, defaultspoil

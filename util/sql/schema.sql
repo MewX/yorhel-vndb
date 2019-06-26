@@ -456,13 +456,14 @@ CREATE TABLE tags (
   id SERIAL NOT NULL PRIMARY KEY,
   name varchar(250) NOT NULL UNIQUE,
   description text NOT NULL DEFAULT '',
-  meta boolean NOT NULL DEFAULT FALSE,
   added timestamptz NOT NULL DEFAULT NOW(),
   state smallint NOT NULL DEFAULT 0,
   c_items integer NOT NULL DEFAULT 0,
   addedby integer NOT NULL DEFAULT 0,
   cat tag_category NOT NULL DEFAULT 'cont',
-  defaultspoil smallint NOT NULL DEFAULT 0
+  defaultspoil smallint NOT NULL DEFAULT 0,
+  searchable boolean NOT NULL DEFAULT TRUE,
+  applicable boolean NOT NULL DEFAULT TRUE
 );
 
 -- tags_aliases

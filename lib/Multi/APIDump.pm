@@ -20,7 +20,7 @@ sub run {
 sub tags_gen {
   # The subqueries are kinda ugly, but it's convenient to have everything in a single query.
   pg_cmd q|
-    SELECT id, name, description, meta, c_items AS vns, cat,
+    SELECT id, name, description, searchable, applicable, c_items AS vns, cat,
       (SELECT string_agg(alias,'$$$-$$$') FROM tags_aliases where tag = id) AS aliases,
       (SELECT string_agg(parent::text, ',') FROM tags_parents WHERE tag = id) AS parents
     FROM tags WHERE state = 2
@@ -31,7 +31,9 @@ sub tags_gen {
     my @res = $res->rowsAsHashes;
     for(@res) {
       $_->{id} *= 1;
-      $_->{meta} = $_->{meta} eq 't' ? JSON::XS::true : JSON::XS::false;
+      $_->{meta} = $_->{searchable} ne 't' ? JSON::XS::true : JSON::XS::false; # For backwards compat
+      $_->{searchable} = $_->{searchable} eq 't' ? JSON::XS::true : JSON::XS::false;
+      $_->{applicable} = $_->{applicable} eq 't' ? JSON::XS::true : JSON::XS::false;
       $_->{vns} *= 1;
       $_->{aliases} = [ split /\$\$\$-\$\$\$/, ($_->{aliases}||'') ];
       $_->{parents} = [ map $_*1, split /,/, ($_->{parents}||'') ];

@@ -39,7 +39,7 @@ sub tagpage {
   return $self->resNotFound if $f->{_err};
   $f->{fil} //= $self->authPref('filter_vn');
 
-  my($list, $np) = $t->{meta} || $t->{state} != 2 ? ([],0) : $self->filFetchDB(vn => $f->{fil}, undef, {
+  my($list, $np) = !$t->{searchable} || $t->{state} != 2 ? ([],0) : $self->filFetchDB(vn => $f->{fil}, undef, {
     what => 'rating',
     results => 50,
     page => $f->{p},
@@ -49,7 +49,7 @@ sub tagpage {
     tag_exc => undef,
   });
 
-  my $title = ($t->{meta} ? 'Meta tag: ' : 'Tag: ').$t->{name};
+  my $title = "Tag: $t->{name}";
   $self->htmlHeader(title => $title, noindex => $t->{state} != 2);
   $self->htmlMainTabs('g', $t);
 
@@ -87,6 +87,15 @@ sub tagpage {
       lit bb2html $t->{description};
      end;
    }
+   if(!$t->{applicable} || !$t->{searchable}) {
+     p class => 'center';
+       b 'Properties';
+       br;
+       txt 'Not searchable.' if !$t->{searchable};
+       br;
+       txt 'Can not be directly applied to visual novels.' if !$t->{applicable};
+     end;
+   }
    p class => 'center';
     b 'Category';
     br;
@@ -103,7 +112,7 @@ sub tagpage {
 
   childtags($self, 'Child tags', 'g', $t) if @{$t->{childs}};
 
-  if(!$t->{meta} && $t->{state} == 2) {
+  if($t->{searchable} && $t->{state} == 2) {
     form action => "/g$t->{id}", 'accept-charset' => 'UTF-8', method => 'get';
     div class => 'mainbox';
      a class => 'addnew', href => "/g/links?t=$tag", 'Recently tagged';
@@ -160,7 +169,8 @@ sub tagedit {
       { post => 'state',       required => 0, default => 0,  enum => [ 0..2 ] },
       { post => 'cat',         required => 1, enum => [ keys %{$self->{tag_categories}} ] },
       { post => 'catrec',      required => 0 },
-      { post => 'meta',        required => 0, default => 0 },
+      { post => 'searchable',  required => 0, default => 0 },
+      { post => 'applicable',  required => 0, default => 0 },
       { post => 'alias',       required => 0, maxlength => 1024, default => '', regex => [ qr/^[^,]+$/s, 'No comma allowed in aliases' ]  },
       { post => 'description', required => 0, maxlength => 10240, default => '' },
       { post => 'defaultspoil',required => 0, default => 0, enum => [ 0..2 ] },
@@ -182,13 +192,17 @@ sub tagedit {
     }
 
     if(!$frm->{_err}) {
-      $frm->{state} = $frm->{meta} = 0 if !$self->authCan('tagmod');
+      if(!$self->authCan('tagmod')) {
+        $frm->{state} = 0;
+        $frm->{searchable} = $frm->{applicable} = 1;
+      }
       my %opts = (
         name => $frm->{name},
         state => $frm->{state},
         cat => $frm->{cat},
         description => $frm->{description},
-        meta => $frm->{meta}?1:0,
+        searchable => $frm->{searchable}?1:0,
+        applicable => $frm->{applicable}?1:0,
         defaultspoil => $frm->{defaultspoil},
         aliases => \@aliases,
         parents => \@parents,
@@ -206,7 +220,7 @@ sub tagedit {
   }
 
   if($tag) {
-    $frm->{$_} ||= $t->{$_} for (qw|name meta description state cat defaultspoil|);
+    $frm->{$_} ||= $t->{$_} for (qw|name searchable applicable description state cat defaultspoil|);
     $frm->{alias} ||= join "\n", @{$t->{aliases}};
     $frm->{parents} ||= join ', ', map $_->{name}, @{$t->{parents}};
   }
@@ -239,9 +253,8 @@ sub tagedit {
         [ static   => label => 'Added by', content => fmtuser($t->{addedby}, $t->{username}) ] : (),
       [ select   => short => 'state',    name => 'State', options => [
         [0, 'Awaiting moderation'], [1, 'Deleted/hidden'], [2, 'Approved']  ] ],
-      [ checkbox => short => 'meta',     name => 'This is a meta-tag (only to be used as parent for other tags, not for linking to VN entries)' ],
-      $tag ?
-        [ static => content => 'WARNING: Checking this option or selecting "Deleted" as state will permanently delete all existing VN relations!' ] : (),
+      [ checkbox => short => 'searchable', name => 'Searchable (people can use this tag to filter VNs)' ],
+      [ checkbox => short => 'applicable', name => 'Applicable (people can apply this tag to VNs)' ],
     ) : (),
     [ select   => short => 'cat', name => 'Category', options => [
       map [$_, $self->{tag_categories}{$_}], keys %{$self->{tag_categories}} ] ],
@@ -504,6 +517,11 @@ sub vntagmod {
     my %insert;   # tag => [ vote, spoiler, ignore ]
     my %overrule; # tag => 0/1
 
+    # remove tags in the deleted state
+    delete $new{$_->{id}} for(keys %new ? @{$self->dbTagGet(id => [ keys %new ], state => 1)} : ());
+    # and not-applicable tags
+    delete $new{$_->{id}} for(keys %new ? @{$self->dbTagGet(id => [ keys %new ], applicable => 0)} : ());
+
     for my $t (keys %old, keys %new) {
       my $prev_over = $old{$t} && !$old{$t}{ignore} && $tags{$t}{overruled};
 
@@ -525,8 +543,6 @@ sub vntagmod {
         $update{$t} = [ $new{$t}[0], $new{$t}[1] ];
       }
     }
-    # remove tags in the deleted state.
-    delete $insert{$_->{id}} for(keys %insert ? @{$self->dbTagGet(id => [ keys %insert ], state => 1)} : ());
 
     $self->dbTagLinkEdit($self->authInfo->{id}, $vid, \%insert, \%update, \%delete, \%overrule);
 
@@ -668,7 +684,7 @@ sub tagindex {
     # Popular
     td;
      a class => 'addnew', href => "/g/links", 'Recently tagged';
-     $r = $self->dbTagGet(sort => 'items', reverse => 1, meta => 0, results => 10);
+     $r = $self->dbTagGet(sort => 'items', reverse => 1, searchable => 1, applicable => 1, results => 10);
      h1 'Popular tags';
      ul;
       for (@$r) {
@@ -758,7 +774,7 @@ sub tagxml {
   xml;
   tag 'tags', more => $np ? 'yes' : 'no', $f->{q} ? (query => $f->{q}) : ();
    for(@$list) {
-     tag 'item', id => $_->{id}, meta => $_->{meta} ? 'yes' : 'no', state => $_->{state}, $_->{name};
+     tag 'item', id => $_->{id}, searchable => $_->{searchable} ? 'yes' : 'no', applicable => $_->{applicable} ? 'yes' : 'no', state => $_->{state}, $_->{name};
    }
   end;
 }

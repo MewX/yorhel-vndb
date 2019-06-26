@@ -8,8 +8,8 @@ function tglLoad() {
   dsInit(byId('tagmod_tag'), '/xml/tags.xml?q=', function(item, tr) {
     tr.appendChild(tag('td',
       shorten(item.firstChild.nodeValue, 40),
-      item.getAttribute('meta') == 'yes' ? tag('b', {'class':'grayedout'}, ' meta') :
-      item.getAttribute('state') == 0    ? tag('b', {'class':'grayedout'}, ' awaiting moderation') : null
+      item.getAttribute('applicable') == 'no' ? tag('b', {'class':'grayedout'}, ' not applicable') :
+      item.getAttribute('state') == 0         ? tag('b', {'class':'grayedout'}, ' awaiting moderation') : null
     ));
   }, function(item) {
     return item.firstChild.nodeValue;
@@ -109,8 +109,8 @@ function tglAdd() {
     var items = hr.responseXML.getElementsByTagName('item');
     if(items.length < 1)
       return alert('Item not found!');
-    if(items[0].getAttribute('meta') == 'yes')
-      return alert('Can\'t use meta tags here!');
+    if(items[0].getAttribute('applicable') == 'no')
+      return alert('This tag may not be applied to visual novels.');
 
     var name = items[0].firstChild.nodeValue;
     var id = items[0].getAttribute('id');

@@ -473,13 +473,13 @@ function filFTagInput(name, label, type) {
       tr.appendChild(tag('td',
         type=='trait' && g ? tag('b', {'class':'grayedout'}, g+' / ') : null,
         shorten(item.firstChild.nodeValue, 40),
-        item.getAttribute('meta') == 'yes' ? tag('b', {'class': 'grayedout'}, ' meta') : null,
-        item.getAttribute('state') == 0    ? tag('b', {'class': 'grayedout'}, ' awaiting moderation') : null
+        item.getAttribute('searchable') == 'no' ? tag('b', {'class': 'grayedout'}, ' not searchable') : null,
+        item.getAttribute('state') == 0         ? tag('b', {'class': 'grayedout'}, ' awaiting moderation') : null
       ));
     },
     function(item, obj) {
-      if(item.getAttribute('meta') == 'yes')
-        alert('Can\'t use meta '+type+'s here!');
+      if(item.getAttribute('searchable') == 'no')
+        alert('Can\'t use unsearchable '+type+'s here!');
       else {
         obj.parentNode.fil_val = null;
         addtag(byName(obj.parentNode, 'ul')[0], item.getAttribute('id'), item.firstChild.nodeValue, item.getAttribute('groupname'));

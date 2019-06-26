@@ -8,7 +8,7 @@ use Exporter 'import';
 our @EXPORT = qw|dbTagGet dbTTTree dbTagEdit dbTagAdd dbTagMerge dbTagLinks dbTagLinkEdit dbTagStats|;
 
 
-# %options->{ id noid name search state meta page results what sort reverse  }
+# %options->{ id noid name search state searchable applicable page results what sort reverse  }
 # what: parents childs(n) aliases addedby
 # sort: id name added items search
 sub dbTagGet {
@@ -35,11 +35,11 @@ sub dbTagGet {
       't.state <> 1' => 1 ) : (),
     $o{search} ? (
       't.id IN (SELECT id FROM tags LEFT JOIN tags_aliases ON id = tag WHERE name ILIKE ? OR alias ILIKE ?)' => [ "%$o{search}%", "%$o{search}%" ] ) : (),
-    defined $o{meta} ? (
-      't.meta = ?' => $o{meta}?1:0 ) : (),
+    defined $o{searchable} ? ('t.searchable = ?' => $o{searchable}?1:0 ) : (),
+    defined $o{applicable} ? ('t.applicable = ?' => $o{applicable}?1:0 ) : (),
   );
   my @select = (
-    qw|t.id t.meta t.name t.description t.state t.cat t.c_items t.defaultspoil|,
+    qw|t.id t.searchable t.applicable t.name t.description t.state t.cat t.c_items t.defaultspoil|,
     q|extract('epoch' from t.added) as added|,
     $o{what} =~ /addedby/ ? ('t.addedby', 'u.username') : (),
   );
@@ -129,7 +129,7 @@ sub dbTagEdit {
 
   $self->dbExec('UPDATE tags !H WHERE id = ?', {
     $o{upddate} ? ('added = NOW()' => 1) : (),
-    map exists($o{$_}) ? ("$_ = ?" => $o{$_}) : (), qw|name meta description state cat defaultspoil|
+    map exists($o{$_}) ? ("$_ = ?" => $o{$_}) : (), qw|name searchable applicable description state cat defaultspoil|
   }, $id);
   if($o{aliases}) {
     $self->dbExec('DELETE FROM tags_aliases WHERE tag = ?', $id);
@@ -139,7 +139,6 @@ sub dbTagEdit {
     $self->dbExec('DELETE FROM tags_parents WHERE tag = ?', $id);
     $self->dbExec('INSERT INTO tags_parents (tag, parent) VALUES (?, ?)', $id, $_) for(@{$o{parents}});
   }
-  $self->dbExec('DELETE FROM tags_vn WHERE tag = ?', $id) if $o{meta} || ($o{state} && $o{state} == 1);
 }
 
 
@@ -147,8 +146,8 @@ sub dbTagEdit {
 # returns the id of the new tag
 sub dbTagAdd {
   my($self, %o) = @_;
-  my $id = $self->dbRow('INSERT INTO tags (name, meta, description, state, cat, defaultspoil, addedby) VALUES (!l, ?) RETURNING id',
-    [ map $o{$_}, qw|name meta description state cat defaultspoil| ], $o{addedby}||$self->authInfo->{id}
+  my $id = $self->dbRow('INSERT INTO tags (name, searchable, applicable, description, state, cat, defaultspoil, addedby) VALUES (!l, ?) RETURNING id',
+    [ map $o{$_}, qw|name searchable applicable description state cat defaultspoil| ], $o{addedby}||$self->authInfo->{id}
   )->{id};
   $self->dbExec('INSERT INTO tags_parents (tag, parent) VALUES (?, ?)', $id, $_) for(@{$o{parents}});
   $self->dbExec('INSERT INTO tags_aliases (tag, alias) VALUES (?, ?)', $id, $_) for (@{$o{aliases}});

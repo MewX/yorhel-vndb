@@ -90,7 +90,7 @@ sub filCompat {
     my $tagfind = sub {
       return map {
         my $i = $self->dbTagGet(name => $_)->[0];
-        $i && !$i->{meta} ? $i->{id} : ();
+        $i && $i->{searchable} ? $i->{id} : ();
       } grep $_, ref $_[0] ? @{$_[0]} : ($_[0]||'')
     };
     $fil->{tag_inc} //= [ $tagfind->(delete $fil->{taginc}) ] if $fil->{taginc};
