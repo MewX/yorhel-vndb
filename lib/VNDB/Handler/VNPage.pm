@@ -454,7 +454,7 @@ sub page {
    div class => 'clearfloat', style => 'height: 5px', ''; # otherwise the tabs below aren't positioned correctly
 
    # tags
-   my $t = $self->dbTagStats(vid => $v->{id}, sort => 'rating', reverse => 1, minrating => 0, results => 999);
+   my $t = $self->dbTagStats(vid => $v->{id}, sort => 'rating', reverse => 1, minrating => 0, results => 999, state => 2);
    if(@$t) {
      div id => 'tagops';
       my $tags_cat = $self->authPref('tags_cat') || $self->{default_tags_cat};

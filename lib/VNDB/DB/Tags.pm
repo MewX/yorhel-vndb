@@ -241,7 +241,7 @@ sub dbTagLinkEdit {
 
 
 # Fetch all tags related to a VN
-# Argument: %options->{ vid minrating results what page sort reverse }
+# Argument: %options->{ vid minrating state results what page sort reverse }
 # sort: name, rating
 sub dbTagStats {
   my($self, %o) = @_;
@@ -254,17 +254,22 @@ sub dbTagStats {
     rating => "$rating %s",
   }->{ $o{sort}||'name' }, $o{reverse} ? 'DESC' : 'ASC';
 
+  my %where = (
+      'tv.vid = ?' => $o{vid},
+      defined $o{state} ? ('t.state = ?', $o{state}) : (),
+  );
+
   my($r, $np) = $self->dbPage(\%o, qq|
     SELECT t.id, t.name, t.cat, count(*) as cnt, $rating as rating,
         COALESCE(avg(CASE WHEN tv.ignore THEN NULL ELSE tv.spoiler END), t.defaultspoil) as spoiler,
         bool_or(tv.ignore) AS overruled
       FROM tags t
       JOIN tags_vn tv ON tv.tag = t.id
-      WHERE tv.vid = ?
+      !W
       GROUP BY t.id, t.name, t.cat
       !s
       ORDER BY !s|,
-    $o{vid}, defined $o{minrating} ? "HAVING $rating > $o{minrating}" : '', $order
+    \%where, defined $o{minrating} ? "HAVING $rating > $o{minrating}" : '', $order
   );
 
   return wantarray ? ($r, $np) : $r;
