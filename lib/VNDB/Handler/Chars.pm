@@ -351,17 +351,17 @@ sub edit {
     my(@traits, @vns);
     if(!$frm->{_err}) {
       # parse and normalize
-      @traits = sort { $a->[0] <=> $b->[0] } map /^(\d+)-(\d+)$/&&[$1,$2], split / /, $frm->{traits};
       @vns = sort { $a->[0] <=> $b->[0] || $a->[1] <=> $b->[1] }  map [split /-/], split / /, $frm->{vns};
-      $frm->{traits} = join(' ', map sprintf('%d-%d', @$_), @traits);
       $frm->{vns}    = join(' ', map sprintf('%d-%d-%d-%s', @$_), @vns);
       $frm->{ihid}   = $frm->{ihid} ?1:0;
       $frm->{ilock}  = $frm->{ilock}?1:0;
       $frm->{desc}   = $self->bbSubstLinks($frm->{desc});
       $frm->{main_spoil} = 0 if !$frm->{main};
 
-      my %traits = @traits ? map +($_->{id}, 1), @{$self->dbTraitGet(results => 500, state => 2, id => [ map $_->[0], @traits ])} : ();
+      @traits = sort { $a->[0] <=> $b->[0] } map /^(\d+)-(\d+)$/&&[$1,$2], split / /, $frm->{traits};
+      my %traits = @traits ? map +($_->{id}, 1), @{$self->dbTraitGet(results => 500, state => 2, applicable => 1, id => [ map $_->[0], @traits ])} : ();
       @traits = grep $traits{$_->[0]}, @traits;
+      $frm->{traits} = join(' ', map sprintf('%d-%d', @$_), @traits);
 
       # check for changes
       my $same = $id && !grep +($frm->{$_}//'') ne ($b4{$_}//''), keys %b4;

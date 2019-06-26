@@ -171,7 +171,6 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 
-
 -- recalculate traits_chars
 CREATE OR REPLACE FUNCTION traits_chars_calc() RETURNS void AS $$
 BEGIN
@@ -180,14 +179,14 @@ BEGIN
     -- all char<->trait links of the latest revisions, including chars
     -- inherited from child traits if the parent trait was not mentioned
     -- directly.
-    -- (also includes meta traits, because they could have a normal trait as parent)
-    WITH RECURSIVE traits_chars_all(lvl, tid, cid, spoiler, meta) AS (
-        SELECT 15, tid, ct.id, spoil, false
+    -- (also includes non-searchable traits, because they could have a searchable trait as parent)
+    WITH RECURSIVE traits_chars_all(lvl, tid, cid, spoiler, searchable) AS (
+        SELECT 15, tid, ct.id, spoil, true
         FROM chars_traits ct
         JOIN chars c ON c.id = ct.id
        WHERE NOT c.hidden
       UNION ALL
-        SELECT lvl-1, tp.parent, tc.cid, tc.spoiler, t.meta
+        SELECT lvl-1, tp.parent, tc.cid, tc.spoiler, t.searchable
         FROM traits_chars_all tc
         JOIN traits_parents tp ON tp.trait = tc.tid
         JOIN traits t ON t.id = tp.parent
@@ -195,10 +194,10 @@ BEGIN
           AND tc.lvl > 0
           AND NOT EXISTS(SELECT 1 FROM chars_traits cti WHERE cti.tid = tp.parent AND cti.id = tc.cid)
     )
-    -- now grouped by (tid, cid) and with meta traits filtered out
+    -- now grouped by (tid, cid) and with non-searchable traits filtered out
     SELECT tid, cid, (CASE WHEN AVG(spoiler) > 1.3 THEN 2 WHEN AVG(spoiler) > 0.7 THEN 1 ELSE 0 END)::smallint AS spoiler
     FROM traits_chars_all
-    WHERE NOT meta
+    WHERE searchable
     GROUP BY tid, cid;
   -- and update the VN count in the tags table
   UPDATE traits SET c_items = (SELECT COUNT(*) FROM traits_chars WHERE tid = id);

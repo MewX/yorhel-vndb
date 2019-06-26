@@ -13,7 +13,7 @@ use Exporter 'import';
 our @EXPORT = qw|dbTraitGet dbTraitEdit dbTraitAdd|;
 
 
-# Options: id noid search name state what results page sort reverse
+# Options: id noid search name state applicable what results page sort reverse
 # what: parents childs(n) addedby
 # sort: id name name added items search
 sub dbTraitGet {
@@ -39,10 +39,11 @@ sub dbTraitGet {
       '(t.name ILIKE ? OR t.alias ILIKE ?)' => [ "%$o{search}%", "%$o{search}%" ] ) : (),
     $o{name}  ? ( # TODO: This is terribly ugly, use an aliases table.
       q{(LOWER(t.name) = LOWER(?) OR t.alias ~ ('(!sin)^'||?||'$'))} => [ $o{name}, '?', quotemeta $o{name} ] ) : (),
+    defined $o{applicable} ? ('t.applicable = ?' => $o{applicable}) : (),
   );
 
   my @select = (
-    qw|t.id t.meta t.name t.description t.state t.alias t."group" t."order" t.sexual t.c_items t.defaultspoil|,
+    qw|t.id t.searchable t.applicable t.name t.description t.state t.alias t."group" t."order" t.sexual t.c_items t.defaultspoil|,
     'tg.name AS groupname', 'tg."order" AS grouporder', q|extract('epoch' from t.added) as added|,
     $o{what} =~ /addedby/ ? ('t.addedby', 'u.username') : (),
   );
@@ -86,7 +87,7 @@ sub dbTraitEdit {
 
   $self->dbExec('UPDATE traits !H WHERE id = ?', {
     $o{upddate} ? ('added = NOW()' => 1) : (),
-    map exists($o{$_}) ? ("\"$_\" = ?" => $o{$_}) : (), qw|name meta description state alias group order sexual defaultspoil|
+    map exists($o{$_}) ? ("\"$_\" = ?" => $o{$_}) : (), qw|name searchable applicable description state alias group order sexual defaultspoil|
   }, $id);
   if($o{parents}) {
     $self->dbExec('DELETE FROM traits_parents WHERE trait = ?', $id);
@@ -99,8 +100,8 @@ sub dbTraitEdit {
 # returns the id of the new trait
 sub dbTraitAdd {
   my($self, %o) = @_;
-  my $id = $self->dbRow('INSERT INTO traits (name, meta, description, state, alias, "group", "order", sexual, defaultspoil, addedby) VALUES (!l, ?) RETURNING id',
-    [ map $o{$_}, qw|name meta description state alias group order sexual defaultspoil| ], $o{addedby}||$self->authInfo->{id}
+  my $id = $self->dbRow('INSERT INTO traits (name, searchable, applicable, description, state, alias, "group", "order", sexual, defaultspoil, addedby) VALUES (!l, ?) RETURNING id',
+    [ map $o{$_}, qw|name searchable applicable description state alias group order sexual defaultspoil| ], $o{addedby}||$self->authInfo->{id}
   )->{id};
   $self->dbExec('INSERT INTO traits_parents (trait, parent) VALUES (?, ?)', $id, $_) for(@{$o{parents}});
   return $id;

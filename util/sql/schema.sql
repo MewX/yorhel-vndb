@@ -554,7 +554,6 @@ CREATE TABLE traits (
   name varchar(250) NOT NULL,
   alias varchar(500) NOT NULL DEFAULT '',
   description text NOT NULL DEFAULT '',
-  meta boolean NOT NULL DEFAULT false,
   added timestamptz NOT NULL DEFAULT NOW(),
   state smallint NOT NULL DEFAULT 0,
   addedby integer NOT NULL DEFAULT 0,
@@ -563,6 +562,8 @@ CREATE TABLE traits (
   sexual boolean NOT NULL DEFAULT false,
   c_items integer NOT NULL DEFAULT 0,
   defaultspoil smallint NOT NULL DEFAULT 0
+  searchable boolean NOT NULL DEFAULT true,
+  applicable boolean NOT NULL DEFAULT true
 );
 
 -- traits_chars

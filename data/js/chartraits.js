@@ -26,7 +26,7 @@ function ctrLoad() {
     tr.appendChild(tag('td', { style: 'text-align: right; padding-right: 5px'}, 'i'+item.getAttribute('id')));
     tr.appendChild(tag('td',
       tag('b', {'class':'grayedout'}, g), item.firstChild.nodeValue,
-      tag('b', {'class':'grayedout'}, item.getAttribute('meta')=='yes' ? 'meta' : '')));
+      tag('b', {'class':'grayedout'}, item.getAttribute('applicable')=='no' ? 'not applicable' : '')));
   }, ctrFormAdd);
 }
 
@@ -67,8 +67,8 @@ function ctrFormAdd(item) {
       break;
   if(i < l.length)
     alert('Selected trait is already present.');
-  else if(item.getAttribute('meta') == 'yes')
-    alert('Meta traits can\'t be used here.');
+  else if(item.getAttribute('applicable') == 'no')
+    alert('This trait can\'t be used here.');
   else
     ctrAdd(item, Math.floor(item.getAttribute('defaultspoil')));
   return '';

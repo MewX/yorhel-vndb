@@ -31,7 +31,7 @@ sub traitpage {
   );
   return $self->resNotFound if $f->{_err};
 
-  my $title = sprintf '%s: %s', $t->{meta} ? 'Meta trait' : 'Trait', $t->{name};
+  my $title = "Trait: $t->{name}";
   $self->htmlHeader(title => $title, noindex => $t->{state} != 2);
   $self->htmlMainTabs('i', $t);
 
@@ -67,6 +67,15 @@ sub traitpage {
       lit bb2html $t->{description};
      end;
    }
+   if(!$t->{applicable} || !$t->{searchable}) {
+     p class => 'center';
+       b 'Properties';
+       br;
+       txt 'Not searchable.' if !$t->{searchable};
+       br;
+       txt 'Can not be directly applied to characters.' if !$t->{applicable};
+     end;
+   }
    if($t->{sexual}) {
      p class => 'center';
       b 'Sexual content';
@@ -83,7 +92,7 @@ sub traitpage {
 
   childtags($self, 'Child traits', 'i', $t) if @{$t->{childs}};
 
-  if(!$t->{meta} && $t->{state} == 2) {
+  if($t->{searchable} && $t->{state} == 2) {
     my($chars, $np) = $self->filFetchDB(char => $f->{fil}, {}, {
       trait_inc => $trait,
       tagspoil => $f->{m},
@@ -144,7 +153,8 @@ sub traitedit {
     $frm = $self->formValidate(
       { post => 'name',        required => 1, maxlength => 250, regex => [ qr/^[^,]+$/, 'A comma is not allowed in trait names' ] },
       { post => 'state',       required => 0, default => 0,  enum => [ 0..2 ] },
-      { post => 'meta',        required => 0, default => 0 },
+      { post => 'searchable',  required => 0, default => 0 },
+      { post => 'applicable',  required => 0, default => 0 },
       { post => 'sexual',      required => 0, default => 0 },
       { post => 'alias',       required => 0, maxlength => 1024, default => '', regex => [ qr/^[^,]+$/s, 'No comma allowed in aliases' ]  },
       { post => 'description', required => 0, maxlength => 10240, default => '' },
@@ -168,12 +178,16 @@ sub traitedit {
     }
 
     if(!$frm->{_err}) {
-      $frm->{state} = $frm->{meta} = 0 if !$self->authCan('tagmod');
+      if(!$self->authCan('tagmod')) {
+        $frm->{state} = 0;
+        $frm->{applicable} = $frm->{searchable} = 1;
+      }
       my %opts = (
         name => $frm->{name},
         state => $frm->{state},
         description => $frm->{description},
-        meta => $frm->{meta}?1:0,
+        searchable => $frm->{searchable}?1:0,
+        applicable => $frm->{applicable}?1:0,
         sexual => $frm->{sexual}?1:0,
         alias => $frm->{alias},
         order => $frm->{order},
@@ -193,7 +207,7 @@ sub traitedit {
   }
 
   if($t) {
-    $frm->{$_} ||= $t->{$_} for (qw|name meta sexual description state alias order defaultspoil|);
+    $frm->{$_} ||= $t->{$_} for (qw|name searchable applicable sexual description state alias order defaultspoil|);
     $frm->{parents} ||= join ' ', map $_->{id}, @{$t->{parents}};
   }
 
@@ -220,7 +234,8 @@ sub traitedit {
         [ static   => label => 'Added by', content => fmtuser($t->{addedby}, $t->{username}) ] : (),
       [ select   => short => 'state',    name => 'State', options => [
         [0,'Awaiting moderation'], [1,'Deleted/hidden'], [2,'Approved'] ] ],
-      [ checkbox => short => 'meta',     name => 'This is a meta trait (only to be used as parent for other traits, not for direct use with characters)' ]
+      [ checkbox => short => 'searchable', name => 'Searchable (people can use this trait to filter characters)' ],
+      [ checkbox => short => 'applicable', name => 'Applicable (people can apply this trait to characters)' ],
     ) : (),
     [ checkbox => short => 'sexual',   name => 'Indicates sexual content' ],
     [ textarea => short => 'alias',    name => "Aliases\n(Separated by newlines)", cols => 30, rows => 4 ],
@@ -427,7 +442,7 @@ sub traitxml {
   xml;
   tag 'traits', more => $np ? 'yes' : 'no';
    for(@$list) {
-     tag 'item', id => $_->{id}, meta => $_->{meta} ? 'yes' : 'no', group => $_->{group}||'',
+     tag 'item', id => $_->{id}, searchable => $_->{searchable} ? 'yes' : 'no', applicable => $_->{applicable} ? 'yes' : 'no', group => $_->{group}||'',
        groupname => $_->{groupname}||'', state => $_->{state}, defaultspoil => $_->{defaultspoil}, $_->{name};
    }
   end;

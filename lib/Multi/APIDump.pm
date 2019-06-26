@@ -45,7 +45,7 @@ sub tags_gen {
 
 sub traits_gen {
   pg_cmd q|
-    SELECT id, name, alias AS aliases, description, meta, c_items AS chars,
+    SELECT id, name, alias AS aliases, description, searchable, applicable, c_items AS chars,
       (SELECT string_agg(parent::text, ',') FROM traits_parents WHERE trait = id) AS parents
     FROM traits WHERE state = 2
   |, undef, sub {
@@ -55,7 +55,9 @@ sub traits_gen {
     my @res = $res->rowsAsHashes;
     for(@res) {
       $_->{id} *= 1;
-      $_->{meta} = $_->{meta} eq 't' ? JSON::XS::true : JSON::XS::false;
+      $_->{meta} = $_->{searchable} ne 't' ? JSON::XS::true : JSON::XS::false; # For backwards compat
+      $_->{searchable} = $_->{searchable} eq 't' ? JSON::XS::true : JSON::XS::false;
+      $_->{applicable} = $_->{applicable} eq 't' ? JSON::XS::true : JSON::XS::false;
       $_->{chars} *= 1;
       $_->{aliases} = [ split /\r?\n/, ($_->{aliases}||'') ];
       $_->{parents} = [ map $_*1, split /,/, ($_->{parents}||'') ];
