@@ -510,7 +510,8 @@ CREATE TABLE threads (
   poll_question varchar(100),
   poll_max_options smallint NOT NULL DEFAULT 1,
   poll_preview boolean NOT NULL DEFAULT FALSE,
-  poll_recast boolean NOT NULL DEFAULT FALSE
+  poll_recast boolean NOT NULL DEFAULT FALSE,
+  private boolean NOT NULL DEFAULT FALSE
 );
 
 -- threads_poll_options

@@ -8,7 +8,7 @@ use Exporter 'import';
 our @EXPORT = qw|dbThreadGet dbThreadEdit dbThreadAdd dbPostGet dbPostEdit dbPostAdd dbThreadCount dbPollStats dbPollVote|;
 
 
-# Options: id, type, iid, results, page, what, notusers, search, sort, reverse
+# Options: id, type, iid, results, page, what, asuser, notusers, search, sort, reverse
 # What: boards, boardtitles, firstpost, lastpost, poll
 # Sort: id lastpost
 sub dbThreadGet {
@@ -19,9 +19,11 @@ sub dbThreadGet {
 
   my @where = (
     $o{id} ? (
-      't.id = ?' => $o{id} ) : (),
-    !$o{id} ? (
-      't.hidden = FALSE' => 0 ) : (),
+      't.id = ?' => $o{id}
+    ) : (
+      'NOT t.hidden' => 0,
+      q{(NOT t.private OR EXISTS(SELECT 1 FROM threads_boards WHERE tid = t.id AND type = 'u' AND iid = ?))} => $o{asuser}
+    ),
     $o{type} && !$o{iid} ? (
       'EXISTS(SELECT 1 FROM threads_boards WHERE tid = t.id AND type IN(!l))' => [ ref $o{type} ? $o{type} : [ $o{type} ] ] ) : (),
     $o{type} && $o{iid} ? (
@@ -38,7 +40,7 @@ sub dbThreadGet {
   }
 
   my @select = (
-    qw|t.id t.title t.count t.locked t.hidden|, 't.poll_question IS NOT NULL AS haspoll',
+    qw|t.id t.title t.count t.locked t.hidden t.private|, 't.poll_question IS NOT NULL AS haspoll',
     $o{what} =~ /lastpost/  ? ('tpl.uid AS luid', q|EXTRACT('epoch' from tpl.date) AS ldate|, 'ul.username AS lusername') : (),
     $o{what} =~ /poll/      ? (qw|t.poll_question t.poll_max_options t.poll_preview t.poll_recast|) : (),
   );
@@ -118,7 +120,7 @@ sub dbThreadGet {
 }
 
 
-# id, %options->( title locked hidden boards poll_question poll_max_options poll_preview poll_recast poll_options }
+# id, %options->( title locked hidden private boards poll_question poll_max_options poll_preview poll_recast poll_options }
 # The poll_{question,options,max_options} fields should not be set when there
 # are no changes to the poll info. Either all or none of these fields should be
 # set.
@@ -129,6 +131,7 @@ sub dbThreadEdit {
     'title = ?' => $o{title},
     'locked = ?' => $o{locked}?1:0,
     'hidden = ?' => $o{hidden}?1:0,
+    'private = ?' => $o{private}?1:0,
     'poll_preview = ?' => $o{poll_preview}?1:0,
     'poll_recast = ?' => $o{poll_recast}?1:0,
     exists $o{poll_question} ? (
@@ -163,15 +166,15 @@ sub dbThreadEdit {
 }
 
 
-# %options->{ title hidden locked boards poll_stuff }
+# %options->{ title hidden locked private boards poll_stuff }
 sub dbThreadAdd {
   my($self, %o) = @_;
 
   my $id = $self->dbRow(q|
-    INSERT INTO threads (title, hidden, locked, poll_question, poll_max_options, poll_preview, poll_recast)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO threads (title, hidden, locked, private, poll_question, poll_max_options, poll_preview, poll_recast)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       RETURNING id|,
-    $o{title}, $o{hidden}?1:0, $o{locked}?1:0, $o{poll_question}||undef, $o{poll_max_options}||1, $o{poll_preview}?1:0, $o{poll_recast}?1:0
+    $o{title}, $o{hidden}?1:0, $o{locked}?1:0, $o{private}?1:0, $o{poll_question}||undef, $o{poll_max_options}||1, $o{poll_preview}?1:0, $o{poll_recast}?1:0
   )->{id};
 
   $self->dbExec(q|
@@ -224,7 +227,7 @@ sub dbPostGet {
     $o{hide} ? (
       'tp.hidden = FALSE' => 1 ) : (),
     $o{hide} && $o{what} =~ /thread/ ? (
-      't.hidden = FALSE' => 1 ) : (),
+      't.hidden = FALSE AND t.private = FALSE' => 1 ) : (),
     $o{search} ? (
       'bb_tsvector(msg) @@ to_tsquery(?)' => $o{search}) : (),
     $o{type} ? (

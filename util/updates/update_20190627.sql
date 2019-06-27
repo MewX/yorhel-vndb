@@ -1,0 +1,1 @@
+ALTER TABLE threads ADD COLUMN private boolean NOT NULL DEFAULT FALSE;

@@ -36,12 +36,17 @@ sub thread {
   my $t = $self->dbThreadGet(id => $tid, what => 'boardtitles poll')->[0];
   return $self->resNotFound if !$t->{id} || $t->{hidden} && !$self->authCan('boardmod');
 
+  my $onuserboard = grep $_->{type} eq 'u' && $_->{iid} == ($self->authInfo->{id}||-1), @{$t->{boards}};
+  return $self->resNotFound if $t->{private} && !($self->authCan('boardmod') || $onuserboard);
+
   my $p = $self->dbPostGet(tid => $tid, results => 25, page => $page, what => 'user');
   return $self->resNotFound if !$p->[0];
 
   $self->htmlHeader(title => $t->{title}, noindex => 1);
   div class => 'mainbox';
    h1 $t->{title};
+   h2 'Hidden' if $t->{hidden};
+   h2 'Private' if $t->{private};
    h2 'Posted in';
    ul;
     for (sort { $a->{type}.$a->{iid} cmp $b->{type}.$b->{iid} } @{$t->{boards}}) {
@@ -186,6 +191,9 @@ sub edit {
         { post => 'hidden', required => 0 },
         { post => 'nolastmod', required => 0 },
       ) : (),
+      $self->authCan('boardmod') || $self->authCan('dbmod') || $self->authCan('tagmod') ? (
+        { post => 'private', required => 0 },
+      ) : (),
       { post => 'msg', maxlength => 32768 },
       { post => 'fullreply', required => 0 },
     );
@@ -196,7 +204,7 @@ sub edit {
     push @{$frm->{_err}}, 'Please wait 30 seconds before making another post' if !$num && !$frm->{_err} && $self->dbPostGet(
       uid => $self->authInfo->{id}, tid => $tid, mindate => time - 30, results => 1, $tid ? () : (num => 1))->[0]{num};
 
-    # Don't allow regular users to create more than 10 threads a day
+    # Don't allow regular users to create more than 5 threads a day
     push @{$frm->{_err}}, 'You can only create 5 threads every 24 hours' if
       !$tid && !$self->authCan('boardmod') &&
       @{$self->dbPostGet(uid => $self->authInfo->{id}, mindate => time - 24*3600, num => 1)} >= 5;
@@ -242,6 +250,7 @@ sub edit {
           boards => \@boards,
           hidden => $frm->{hidden},
           locked => $frm->{locked},
+          private => $frm->{private},
           poll_preview => $frm->{poll_preview}||0,
           poll_recast  => $frm->{poll_recast}||0,
           !$haspoll ? (
@@ -278,6 +287,7 @@ sub edit {
       $frm->{title} ||= $t->{title};
       $frm->{locked}  //= $t->{locked};
       $frm->{hidden}  //= $t->{hidden};
+      $frm->{private} //= $t->{private};
       if($t->{haspoll}) {
         $frm->{poll}     //= 1;
         $frm->{poll_question}   ||= $t->{poll_question};
@@ -307,6 +317,9 @@ sub edit {
       [ static => content => 'Read <a href="/d9#2">d9#2</a> for information about how to specify boards.' ],
       $self->authCan('boardmod') ? (
         [ check => name => 'Locked', short => 'locked' ],
+      ) : (),
+      $self->authCan('boardmod') || $self->authCan('dbmod') || $self->authCan('tagmod') ? (
+        [ check => name => 'Private (only visible to users mentioned in the boards)', short => 'private' ],
       ) : (),
     ) : (
       [ static => label => 'Topic', content => qq|<a href="/t$tid">|.xml_escape($t->{title}).'</a>' ],
@@ -389,6 +402,7 @@ sub board {
     page => $f->{p},
     what => 'firstpost lastpost boardtitles',
     sort => $type eq 'an' ? 'id' : 'lastpost', reverse => 1,
+    asuser => $self->authInfo()->{id},
   );
 
   $self->htmlHeader(title => $title, noindex => 1, feeds => [ $type eq 'an' ? 'announcements' : 'posts' ]);
@@ -459,6 +473,7 @@ sub index {
       page => 1,
       what => 'firstpost lastpost boardtitles',
       sort => 'lastpost', reverse => 1,
+      asuser => $self->authInfo()->{id},
     );
     h1 class => 'boxtitle';
      a href => "/t/$_", $self->{discussion_boards}{$_};

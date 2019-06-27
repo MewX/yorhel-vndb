@@ -36,7 +36,7 @@ sub generate {
        JOIN threads_posts tp ON tp.tid = t.id AND tp.num = 1
        JOIN threads_boards tb ON tb.tid = t.id AND tb.type = 'an'
        JOIN users u ON u.id = tp.uid
-      WHERE NOT t.hidden
+      WHERE NOT t.hidden AND NOT t.private
       ORDER BY t.id DESC
       LIMIT $1},
     [$VNDB::S{atom_feeds}{announcements}[0]],
@@ -62,14 +62,14 @@ sub generate {
     [$VNDB::S{atom_feeds}{changes}[0]],
     sub { write_atom(changes => @_); };
 
-  # posts (this query isn't all that fast)
+  # posts
   pg_cmd q{
       SELECT '/t'||t.id||'.'||tp.num AS id, t.title||' (#'||tp.num||')' AS title, extract('epoch' from tp.date) AS published,
          extract('epoch' from tp.edited) AS updated, u.username, u.id AS uid, tp.msg AS summary
        FROM threads_posts tp
        JOIN threads t ON t.id = tp.tid
        JOIN users u ON u.id = tp.uid
-      WHERE NOT tp.hidden AND NOT t.hidden
+      WHERE NOT tp.hidden AND NOT t.hidden AND NOT t.private
       ORDER BY tp.date DESC
       LIMIT $1},
     [$VNDB::S{atom_feeds}{posts}[0]],
