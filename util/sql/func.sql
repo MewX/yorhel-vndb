@@ -21,7 +21,7 @@ $$ LANGUAGE sql IMMUTABLE;
 -- ensure the query planner realizes that this function is _slow_.
 CREATE OR REPLACE FUNCTION bb_tsvector(t text) RETURNS tsvector AS $$
 BEGIN
-  RETURN to_tsvector('english', strip_bb_tags(t));
+  RETURN to_tsvector('english', public.strip_bb_tags(t));
 END;
 $$ LANGUAGE plpgsql IMMUTABLE COST 500;
 
