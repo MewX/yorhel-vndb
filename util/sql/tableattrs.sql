@@ -58,7 +58,7 @@ ALTER TABLE threads_poll_votes       ADD CONSTRAINT threads_poll_votes_optid_fke
 ALTER TABLE threads_posts            ADD CONSTRAINT threads_posts_tid_fkey             FOREIGN KEY (tid)       REFERENCES threads       (id);
 ALTER TABLE threads_posts            ADD CONSTRAINT threads_posts_uid_fkey             FOREIGN KEY (uid)       REFERENCES users         (id) ON DELETE SET DEFAULT;
 ALTER TABLE threads_boards           ADD CONSTRAINT threads_boards_tid_fkey            FOREIGN KEY (tid)       REFERENCES threads       (id);
-ALTER TABLE traits                   ADD CONSTRAINT traits_addedby_fkey                FOREIGN KEY (addedby)   REFERENCES users         (id);
+ALTER TABLE traits                   ADD CONSTRAINT traits_addedby_fkey                FOREIGN KEY (addedby)   REFERENCES users         (id) ON DELETE SET DEFAULT;
 ALTER TABLE traits                   ADD CONSTRAINT traits_group_fkey                  FOREIGN KEY ("group")   REFERENCES traits        (id);
 ALTER TABLE traits_parents           ADD CONSTRAINT traits_parents_trait_fkey          FOREIGN KEY (trait)     REFERENCES traits        (id);
 ALTER TABLE traits_parents           ADD CONSTRAINT traits_parents_parent_fkey         FOREIGN KEY (parent)    REFERENCES traits        (id);
