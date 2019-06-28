@@ -107,7 +107,7 @@ function filLoad(lnk, serobj) {
       f.submit();
     }}),
     tag('input', {type:'button', 'class':'submit', value: 'Reset', onclick:function () { serobj.value = ''; deSerialize(obj) } }),
-    byId('pref_code') && lnk.id != 'rfilselect' ? tag('input', {type:'button', 'class':'submit', value: 'Save as default', onclick:saveDefault }) : null,
+    byId('pref_code') && lnk.id == 'filselect' ? tag('input', {type:'button', 'class':'submit', value: 'Save as default', onclick:saveDefault }) : null,
     savenote
   );
   lnk.fil_obj = obj;
@@ -504,7 +504,7 @@ function filFTagInput(name, label, type) {
 }
 
 function filChars() {
-  var ontraitpage = location.pathname.indexOf('/c/') < 0;
+  var ontraitpage = location.pathname.indexOf('/i') == 0;
 
   return [
     'Character filters',
@@ -626,3 +626,5 @@ if(byId('filselect'))
   filLoad(byId('filselect'), byId('fil'));
 if(byId('rfilselect'))
   filLoad(byId('rfilselect'), byId('rfil'));
+if(byId('cfilselect'))
+  filLoad(byId('cfilselect'), byId('cfil'));

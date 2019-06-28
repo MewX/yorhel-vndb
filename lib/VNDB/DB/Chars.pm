@@ -5,7 +5,35 @@ use strict;
 use warnings;
 use Exporter 'import';
 
-our @EXPORT = qw|dbCharGet dbCharGetRev dbCharRevisionInsert dbCharImageId|;
+our @EXPORT = qw|dbCharFilters dbCharGet dbCharGetRev dbCharRevisionInsert dbCharImageId|;
+
+
+# Character filters shared by dbCharGet and dbVNGet
+sub dbCharFilters {
+  my($self, %o) = @_;
+  return (
+    defined $o{gender}     ? ( 'c.gender IN(!l)' => [ ref $o{gender} ? $o{gender} : [$o{gender}] ]) : (),
+    defined $o{bloodt}     ? ( 'c.bloodt IN(!l)' => [ ref $o{bloodt} ? $o{bloodt} : [$o{bloodt}] ]) : (),
+    defined $o{bust_min}   ? ( 'c.s_bust >= ?' => $o{bust_min} ) : (),
+    defined $o{bust_max}   ? ( 'c.s_bust <= ? AND c.s_bust > 0' => $o{bust_max} ) : (),
+    defined $o{waist_min}  ? ( 'c.s_waist >= ?' => $o{waist_min} ) : (),
+    defined $o{waist_max}  ? ( 'c.s_waist <= ? AND c.s_waist > 0' => $o{waist_max} ) : (),
+    defined $o{hip_min}    ? ( 'c.s_hip >= ?' => $o{hip_min} ) : (),
+    defined $o{hip_max}    ? ( 'c.s_hip <= ? AND c.s_hip > 0' => $o{hip_max} ) : (),
+    defined $o{height_min} ? ( 'c.height >= ?' => $o{height_min} ) : (),
+    defined $o{height_max} ? ( 'c.height <= ? AND c.height > 0' => $o{height_max} ) : (),
+    defined $o{weight_min} ? ( 'c.weight >= ?' => $o{weight_min} ) : (),
+    defined $o{weight_max} ? ( 'c.weight <= ?' => $o{weight_max} ) : (),
+    $o{role} ? (
+      'EXISTS(SELECT 1 FROM chars_vns cvi WHERE cvi.id = c.id AND cvi.role IN(!l))',
+      [ ref $o{role} ? $o{role} : [$o{role}] ] ) : (),
+    $o{trait_inc} ? (
+      'c.id IN(SELECT cid FROM traits_chars WHERE tid IN(!l) AND spoil <= ? GROUP BY cid HAVING COUNT(tid) = ?)',
+      [ ref $o{trait_inc} ? $o{trait_inc} : [$o{trait_inc}], $o{tagspoil}, ref $o{trait_inc} ? $#{$o{trait_inc}}+1 : 1 ]) : (),
+    $o{trait_exc} ? (
+      'c.id NOT IN(SELECT cid FROM traits_chars WHERE tid IN(!l))' => [ ref $o{trait_exc} ? $o{trait_exc} : [$o{trait_exc}] ] ) : (),
+  )
+}
 
 
 # options: id instance tagspoil trait_inc trait_exc char what results page gender bloodt
@@ -29,32 +57,13 @@ sub dbCharGet {
     $o{notid}    ? ( 'c.id <> ?'   => $o{notid} ) : (),
     $o{instance} ? ( 'c.main = ?' => $o{instance} ) : (),
     $o{vid}      ? ( 'c.id IN(SELECT id FROM chars_vns WHERE vid = ?)' => $o{vid} ) : (),
-    defined $o{gender}     ? ( 'c.gender IN(!l)' => [ ref $o{gender} ? $o{gender} : [$o{gender}] ]) : (),
-    defined $o{bloodt}     ? ( 'c.bloodt IN(!l)' => [ ref $o{bloodt} ? $o{bloodt} : [$o{bloodt}] ]) : (),
-    defined $o{bust_min}   ? ( 'c.s_bust >= ?' => $o{bust_min} ) : (),
-    defined $o{bust_max}   ? ( 'c.s_bust <= ? AND c.s_bust > 0' => $o{bust_max} ) : (),
-    defined $o{waist_min}  ? ( 'c.s_waist >= ?' => $o{waist_min} ) : (),
-    defined $o{waist_max}  ? ( 'c.s_waist <= ? AND c.s_waist > 0' => $o{waist_max} ) : (),
-    defined $o{hip_min}    ? ( 'c.s_hip >= ?' => $o{hip_min} ) : (),
-    defined $o{hip_max}    ? ( 'c.s_hip <= ? AND c.s_hip > 0' => $o{hip_max} ) : (),
-    defined $o{height_min} ? ( 'c.height >= ?' => $o{height_min} ) : (),
-    defined $o{height_max} ? ( 'c.height <= ? AND c.height > 0' => $o{height_max} ) : (),
-    defined $o{weight_min} ? ( 'c.weight >= ?' => $o{weight_min} ) : (),
-    defined $o{weight_max} ? ( 'c.weight <= ?' => $o{weight_max} ) : (),
     $o{search} ? (
       "(c.name ILIKE ? OR translate(c.original,' ','') ILIKE translate(?,' ','') OR c.alias ILIKE ?)", [ map '%'.$o{search}.'%', 1..3 ] ) : (),
     $o{char} ? (
       'LOWER(SUBSTR(c.name, 1, 1)) = ?' => $o{char} ) : (),
     defined $o{char} && !$o{char} ? (
       '(ASCII(c.name) < 97 OR ASCII(c.name) > 122) AND (ASCII(c.name) < 65 OR ASCII(c.name) > 90)' => 1 ) : (),
-    $o{role} ? (
-      'EXISTS(SELECT 1 FROM chars_vns cvi WHERE cvi.id = c.id AND cvi.role IN(!l))',
-      [ ref $o{role} ? $o{role} : [$o{role}] ] ) : (),
-    $o{trait_inc} ? (
-      'c.id IN(SELECT cid FROM traits_chars WHERE tid IN(!l) AND spoil <= ? GROUP BY cid HAVING COUNT(tid) = ?)',
-      [ ref $o{trait_inc} ? $o{trait_inc} : [$o{trait_inc}], $o{tagspoil}, ref $o{trait_inc} ? $#{$o{trait_inc}}+1 : 1 ]) : (),
-    $o{trait_exc} ? (
-      'c.id NOT IN(SELECT cid FROM traits_chars WHERE tid IN(!l))' => [ ref $o{trait_exc} ? $o{trait_exc} : [$o{trait_exc}] ] ) : (),
+    $self->dbCharFilters(%o),
   );
 
   my @select = (qw|c.id c.name c.original c.gender|);

@@ -13,7 +13,7 @@ our @EXPORT = qw|dbVNGet dbVNGetRev dbVNRevisionInsert dbVNImageId dbScreenshotA
 
 # Options: id, char, search, length, lang, olang, plat, tag_inc, tag_exc, tagspoil,
 #   hasani, hasshot, ul_notblack, ul_onwish, results, page, what, sort,
-#   reverse, inc_hidden, date_before, date_after, released, release
+#   reverse, inc_hidden, date_before, date_after, released, release, character
 # What: extended anime staff seiyuu relations screenshots relgraph rating ranking wishlist vnlist
 #  Note: wishlist and vnlist are ignored (no db search) unless a user is logged in
 # Sort: id rel pop rating title tagscore rand
@@ -80,6 +80,12 @@ sub dbVNGet {
     my($q, @p) = sqlprint
       'v.id IN(SELECT rv.vid FROM releases r JOIN releases_vn rv ON rv.id = r.id !W)',
       [ 'NOT r.hidden' => 1, $self->dbReleaseFilters(%{$o{release}}), ];
+    push @where, $q, \@p;
+  }
+  if($o{character}) {
+    my($q, @p) = sqlprint
+      'v.id IN(SELECT cv.vid FROM chars c JOIN chars_vns cv ON cv.id = c.id !W)',
+      [ 'NOT c.hidden' => 1, $self->dbCharFilters(%{$o{character}}) ];
     push @where, $q, \@p;
   }
 
