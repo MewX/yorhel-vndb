@@ -469,8 +469,12 @@ sub taglinks {
       Tr;
        td class => 'tc1', fmtdate $l->{date};
        td class => 'tc2';
-        a href => $url->(u=>$l->{uid}), class => 'setfil', '> ' if !$f->{u};
-        a href => "/u$l->{uid}", $l->{username};
+        if($l->{uid}) {
+          a href => $url->(u=>$l->{uid}), class => 'setfil', '> ' if !$f->{u};
+          a href => "/u$l->{uid}", $l->{username};
+        } else {
+          txt '[deleted]';
+        }
        end;
        td class => 'tc3'.($l->{ignore}?' ignored':'');
         tagscore $l->{vote};
