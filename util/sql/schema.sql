@@ -562,7 +562,7 @@ CREATE TABLE traits (
   "order" smallint NOT NULL DEFAULT 0,
   sexual boolean NOT NULL DEFAULT false,
   c_items integer NOT NULL DEFAULT 0,
-  defaultspoil smallint NOT NULL DEFAULT 0
+  defaultspoil smallint NOT NULL DEFAULT 0,
   searchable boolean NOT NULL DEFAULT true,
   applicable boolean NOT NULL DEFAULT true
 );
