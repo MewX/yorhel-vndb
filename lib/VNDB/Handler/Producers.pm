@@ -489,7 +489,7 @@ sub pxml {
 
   $self->resHeader('Content-type' => 'text/xml; charset=UTF-8');
   xml;
-  tag 'producers', more => $np ? 'yes' : 'no', query => $f->{q};
+  tag 'producers', more => $np ? 'yes' : 'no', query => $f->{q}||'';
    for(@$list) {
      tag 'item', id => $_->{id}, $_->{name};
    }
