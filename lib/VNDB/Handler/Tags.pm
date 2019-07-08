@@ -424,8 +424,8 @@ sub taglinks {
         my $o = $self->dbUserGet(uid => $f->{u})->[0];
         li;
          txt '['; a href => $url->(u=>0), 'remove'; txt '] ';
-         txt 'User:'; txt ' ';
-         a href => "/u$o->{id}", $o->{username};
+         txt 'User: ';
+         a href => "/u$f->{u}", $o->{username}||'Unknown user';
         end;
       }
       if($f->{t}) {
@@ -433,7 +433,7 @@ sub taglinks {
         li;
          txt '['; a href => $url->(t=>0), 'remove'; txt '] ';
          txt 'Tag:'; txt ' ';
-         a href => "/g$o->{id}", $o->{name};
+         a href => "/g$f->{t}", $o->{name}||'Unknown tag';
         end;
       }
       if($f->{v}) {
@@ -441,7 +441,7 @@ sub taglinks {
         li;
          txt '['; a href => $url->(v=>0), 'remove'; txt '] ';
          txt 'Visual novel:'; txt ' ';
-         a href => "/v$o->{id}", $o->{title};
+         a href => "/v$f->{v}", $o->{title}||'Unknown VN';
         end;
       }
      end 'ul';
