@@ -426,6 +426,7 @@ sub traitxml {
     { get => 'q', required => 0, maxlength => 500 },
     { get => 'id', required => 0, multi => 1, template => 'id' },
     { get => 'r', required => 0, default => 15, template => 'uint', min => 1, max => 200 },
+    { get => 'searchable', required => 0, default => 0 },
   );
   return $self->resNotFound if $f->{_err} || (!$f->{q} && !$f->{id} && !$f->{id}[0]);
 
@@ -434,6 +435,7 @@ sub traitxml {
     page => 1,
     sort => 'group',
     state => 2,
+    $f->{searchable} ? (searchable => 1) : (),
     !$f->{q} ? () : $f->{q} =~ /^i([1-9]\d*)/ ? (id => $1) : (search => $f->{q}, sort => 'search'),
     $f->{id} && $f->{id}[0] ? (id => $f->{id}) : (),
   );

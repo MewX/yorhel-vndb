@@ -474,19 +474,22 @@ sub list {
 sub pxml {
   my $self = shift;
 
-  my $q = $self->formValidate({ get => 'q', maxlength => 500 });
-  return $self->resNotFound if $q->{_err};
-  $q = $q->{q};
+  my $f = $self->formValidate(
+    { get => 'q', required => 0, maxlength => 500 },
+    { get => 'id', required => 0, multi => 1, template => 'id' },
+  );
+  return $self->resNotFound if $f->{_err} || (!$f->{q} && !$f->{id} && !$f->{id}[0]);
 
   my($list, $np) = $self->dbProducerGet(
-    $q =~ /^p([1-9]\d*)/ ? (id => $1) : (search => $q, sort => 'search'),
+    !$f->{q} ? () : $f->{q} =~ /^p([1-9]\d*)/ ? (id => $1) : (search => $f->{q}, sort => 'search'),
+    $f->{id} && $f->{id}[0] ? (id => $f->{id}) : (),
     results => 10,
     page => 1,
   );
 
   $self->resHeader('Content-type' => 'text/xml; charset=UTF-8');
   xml;
-  tag 'producers', more => $np ? 'yes' : 'no', query => $q;
+  tag 'producers', more => $np ? 'yes' : 'no', query => $f->{q};
    for(@$list) {
      tag 'item', id => $_->{id}, $_->{name};
    }

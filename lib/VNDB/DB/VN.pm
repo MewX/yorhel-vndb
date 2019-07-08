@@ -58,6 +58,8 @@ sub dbVNGet {
       'v.id NOT IN(SELECT vid FROM tags_vn_inherit WHERE tag IN(!l))' => [ ref $o{tag_exc} ? $o{tag_exc} : [$o{tag_exc}] ] ) : (),
     $o{search} ? (
       map +('v.c_search like ?', "%$_%"), normalize_query($o{search})) : (),
+    $o{staff_inc} ? ( 'v.id IN(SELECT ivs.id FROM vn_staff ivs JOIN staff_alias isa ON isa.aid = ivs.aid WHERE isa.id IN(!l))' => [ ref $o{staff_inc} ? $o{staff_inc} : [$o{staff_inc}] ] ) : (),
+    $o{staff_exc} ? ( 'v.id NOT IN(SELECT ivs.id FROM vn_staff ivs JOIN staff_alias isa ON isa.aid = ivs.aid WHERE isa.id IN(!l))' => [ ref $o{staff_exc} ? $o{staff_exc} : [$o{staff_exc}] ] ) : (),
     $uid && $o{ul_notblack} ? (
       'v.id NOT IN(SELECT vid FROM wlists WHERE uid = ? AND wstat = 3)' => $uid ) : (),
     $uid && defined $o{ul_onwish} ? (

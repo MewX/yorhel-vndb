@@ -41,12 +41,14 @@ sub dbReleaseFilters {
       grep(/^unk$/, @{$o{med}}) ? 'NOT EXISTS(SELECT 1 FROM releases_media irm WHERE irm.id = r.id)' : (),
       grep(!/^unk$/, @{$o{med}}) ? 'r.id IN(SELECT irm.id FROM releases_media irm WHERE irm.medium IN(!l))' : ()
       ).')', [ [ grep(!/^unk$/, @{$o{med}}) ] ]) : (),
+    $o{prod_inc} ? ('r.id IN(SELECT irp.id FROM releases_producers irp WHERE irp.pid IN(!l))' => [ ref $o{prod_inc} ? $o{prod_inc} : [$o{prod_inc}] ]) : (),
+    $o{prod_exc} ? ('r.id NOT IN(SELECT irp.id FROM releases_producers irp WHERE irp.pid IN(!l))' => [ ref $o{prod_exc} ? $o{prod_exc} : [$o{prod_exc}] ]) : (),
   );
 }
 
 
 # Options: id vid pid released page results what med sort reverse date_before date_after
-#   plat lang olang type minage search resolution freeware doujin voiced uncensored ani_story ani_ero hidden_only
+#   plat prod_inc prod_exc lang olang type minage search resolution freeware doujin voiced uncensored ani_story ani_ero hidden_only
 # What: extended vn producers platforms media affiliates
 # Sort: title released minage
 sub dbReleaseGet {

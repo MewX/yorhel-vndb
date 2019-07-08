@@ -412,24 +412,26 @@ function filFOptions(c, n, opts) {
   ];
 }
 
-function filFTagInput(name, label, type) {
-  var src = type=='tag' ? '/xml/tags.xml' : '/xml/traits.xml';
 
+// fieldcode  -> See <fieldcode> in filter definitions
+// fieldname  -> See <fieldname> in filter definitions
+// src        -> The API URL where to get items, must work with dropdownsearch.js and support appending ';q=' and ';id=' to it.
+// fmtlist    -> Called with item id + XML data, should return an inline element to inject into the list view.
+function filFDList(fieldcode, fieldname, src, fmtds, fmtlist) {
   var visible = false;
-  var addtag = function(ul, id, name, group) {
+  var addel = function(ul, id, data) {
     ul.appendChild(
       tag('li', { fil_id: id },
-      type=='trait' && group ? tag('b', {'class':'grayedout'}, group+' / ') : null,
-      type=='tag' ? tag('a', {href:'/g'+id}, name||'g'+id) : tag('a', {href:'/i'+id}, name||'i'+id),
-      ' (', tag('a', {href:'#',
-        onclick:function () {
-          // a -> li -> ul -> div
-          var ul = this.parentNode.parentNode;
-          ul.removeChild(this.parentNode);
-          selectField(ul.parentNode);
-          return false
-        }
-      }, 'remove'), ')'
+        data ? fmtlist(id, data) : null,
+        ' (', tag('a', {href:'#',
+          onclick:function () {
+            // a -> li -> ul -> div
+            var ul = this.parentNode.parentNode;
+            ul.removeChild(this.parentNode);
+            selectField(ul.parentNode);
+            return false
+          }
+        }, 'remove'), ')'
     ));
   }
   var fetch = function(c)   {
@@ -450,16 +452,16 @@ function filFTagInput(name, label, type) {
     for(var i=0; i<v.length; i++) {
       q.push('id='+v[i]);
       if(!visible)
-        addtag(ul, v[i]);
+        addel(ul, v[i]);
     }
     txt.value = 'Loading...';
     txt.disabled = true;
     if(visible)
-      ajax(src+'?'+q.join(';'), function (hr) {
+      ajax(src+';'+q.join(';'), function (hr) {
         var items = hr.responseXML.getElementsByTagName('item');
         setText(ul, '');
         for(var i=0; i<items.length; i++)
-          addtag(ul, items[i].getAttribute('id'), items[i].firstChild.nodeValue, items[i].getAttribute('groupname'));
+          addel(ul, items[i].getAttribute('id'), items[i]);
         txt.value = '';
         txt.disabled = false;
         c.fil_val = null;
@@ -467,22 +469,13 @@ function filFTagInput(name, label, type) {
   };
   var input = tag('input', {type:'text', 'class':'text', style:'width:300px', onfocus:selectField});
   var list = tag('ul', null);
-  dsInit(input, src+'?q=',
-    function(item, tr) {
-      var g = item.getAttribute('groupname');
-      tr.appendChild(tag('td',
-        type=='trait' && g ? tag('b', {'class':'grayedout'}, g+' / ') : null,
-        shorten(item.firstChild.nodeValue, 40),
-        item.getAttribute('searchable') == 'no' ? tag('b', {'class': 'grayedout'}, ' not searchable') : null,
-        item.getAttribute('state') == 0         ? tag('b', {'class': 'grayedout'}, ' awaiting moderation') : null
-      ));
-    },
+  dsInit(input, src+';q=', fmtds,
     function(item, obj) {
-      if(item.getAttribute('searchable') == 'no')
-        alert('Can\'t use unsearchable '+type+'s here!');
+      if(byName(obj.parentNode, 'li').length >= 10)
+        alert('Too many items selected');
       else {
         obj.parentNode.fil_val = null;
-        addtag(byName(obj.parentNode, 'ul')[0], item.getAttribute('id'), item.firstChild.nodeValue, item.getAttribute('groupname'));
+        addel(byName(obj.parentNode, 'ul')[0], item.getAttribute('id'), item);
         selectField(obj);
       }
       return '';
@@ -491,7 +484,7 @@ function filFTagInput(name, label, type) {
   );
 
   return [
-    name, label, tag('div', list, input),
+    fieldcode, fieldname, tag('div', list, input),
     function(c) {
       var v = []; var l = byName(c, 'li');
       for(var i=0; i<l.length; i++)
@@ -502,6 +495,59 @@ function filFTagInput(name, label, type) {
     function(c) { visible = true; fetch(c); }
   ];
 }
+
+function filFTagInput(code, name) {
+  return filFDList(code, name, '/xml/tags.xml?searchable=1',
+    function(item, tr) {
+      tr.appendChild(tag('td', shorten(item.firstChild.nodeValue, 40)));
+    },
+    function(id, item) {
+      return tag('span', tag('a', {href:'/g'+id}, item.firstChild.nodeValue||'g'+id))
+    }
+  )
+}
+
+function filFTraitInput(code, name) {
+  return filFDList(code, name, '/xml/traits.xml?searchable=1',
+    function(item, tr) {
+      var g = item.getAttribute('groupname');
+      tr.appendChild(tag('td',
+        g ? tag('b', {'class':'grayedout'}, g+' / ') : null,
+        shorten(item.firstChild.nodeValue, 40)
+      ));
+    },
+    function(id, item) {
+      var g = item.getAttribute('groupname');
+      return tag('span',
+        g ? tag('b', {'class':'grayedout'}, g+' / ') : null,
+        tag('a', {href:'/i'+id}, item.firstChild.nodeValue||'i'+id)
+      )
+    }
+  )
+}
+
+function filFProducerInput(code, name) {
+  return filFDList(code, name, '/xml/producers.xml?',
+    function(item, tr) {
+      tr.appendChild(tag('td', shorten(item.firstChild.nodeValue, 40)));
+    },
+    function(id, item) {
+      return tag('span', tag('a', {href:'/p'+id}, item.firstChild.nodeValue||'p'+id))
+    }
+  )
+}
+
+function filFStaffInput(code, name) {
+  return filFDList(code, name, '/xml/staff.xml?staffid=1',
+    function(item, tr) {
+      tr.appendChild(tag('td', shorten(item.firstChild.nodeValue, 40)));
+    },
+    function(id, item) {
+      return tag('span', tag('a', {href:'/s'+id}, item.firstChild.nodeValue||'s'+id))
+    }
+  )
+}
+
 
 function filChars() {
   var ontraitpage = location.pathname.indexOf('/i') == 0;
@@ -528,11 +574,16 @@ function filChars() {
       [ '', ' ', tag('Additional trait filters are not available on this page. Use the character browser instead (available from the main menu -> characters).') ],
     ] : [ 'Traits',
       [ '', ' ', tag('Boolean and, selecting more gives less results') ],
-      filFTagInput('trait_inc', 'Traits to include', 'trait'),
-      filFTagInput('trait_exc', 'Traits to exclude', 'trait'),
+      filFTraitInput('trait_inc', 'Traits to include'),
+      filFTraitInput('trait_exc', 'Traits to exclude'),
       filFOptions('tagspoil', ' ', [[0, 'Hide spoilers'],[1, 'Show minor spoilers'],[2, 'Spoil me!']]),
     ],
-    [ 'Roles', filFSelect('role', 'Roles', 4, VARS.char_roles) ]
+    [ 'Roles', filFSelect('role', 'Roles', 4, VARS.char_roles) ],
+    [ 'Seiyuu',
+      [ '',       ' ',                     tag('Boolean or, selecting more gives more results') ],
+      filFStaffInput('va_inc', 'Seiyuu to include'),
+      filFStaffInput('va_exc', 'Seiyuu to exclude')
+    ],
   ];
 }
 
@@ -559,6 +610,11 @@ function filReleases() {
       [ 'Original language',    filFSelect('olang',    'Original language', 20, VARS.languages) ],
     [ 'Screen resolution',    filFSelect('resolution', 'Screen resolution', 15, VARS.resolutions) ],
     [ 'Platform',             filFSelect('plat',       'Platform',          20, plat) ],
+    [ 'Producer',
+      [ '',       ' ',                     tag('Boolean or, selecting more gives more results') ],
+      filFProducerInput('prod_inc', 'Producers to include'),
+      filFProducerInput('prod_exc', 'Producers to exclude')
+    ],
     [ 'Misc',
       filFSelect('med',       'Medium',         10, med),
       filFSelect('voiced',    'Voiced',          5, VARS.voiced),
@@ -586,13 +642,18 @@ function filVN() {
     ] : [ 'Tags',
       [ '',       ' ',                     tag('Boolean and, selecting more gives less results') ],
       [ '',       ' ', byId('pref_code') ? tag('These filters are ignored on tag pages (when set as default).') : null ],
-      filFTagInput('tag_inc', 'Tags to include', 'tag'),
-      filFTagInput('tag_exc', 'Tags to exclude', 'tag'),
+      filFTagInput('tag_inc', 'Tags to include'),
+      filFTagInput('tag_exc', 'Tags to exclude'),
       filFOptions('tagspoil', ' ', [[0, 'Hide spoilers'],[1, 'Show minor spoilers'],[2, 'Spoil me!']])
     ],
     [ 'Language',          filFSelect('lang', 'Language',          20, VARS.languages) ],
     [ 'Original language', filFSelect('olang','Original language', 20, VARS.languages) ],
     [ 'Platform',          filFSelect('plat', 'Platform',          20, VARS.platforms) ],
+    [ 'Staff',
+      [ '',       ' ',                     tag('Boolean or, selecting more gives more results') ],
+      filFStaffInput('staff_inc', 'Staff to include'),
+      filFStaffInput('staff_exc', 'Staff to exclude')
+    ],
     !byId('pref_code') ? null : [
       'My lists',
       filFOptions('ul_notblack', 'Blacklist', [[1, 'Exclude VNs on my blacklist']]),

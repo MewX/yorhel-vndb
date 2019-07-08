@@ -32,6 +32,8 @@ sub dbCharFilters {
       [ ref $o{trait_inc} ? $o{trait_inc} : [$o{trait_inc}], $o{tagspoil}, ref $o{trait_inc} ? $#{$o{trait_inc}}+1 : 1 ]) : (),
     $o{trait_exc} ? (
       'c.id NOT IN(SELECT cid FROM traits_chars WHERE tid IN(!l))' => [ ref $o{trait_exc} ? $o{trait_exc} : [$o{trait_exc}] ] ) : (),
+    $o{va_inc} ? ( 'c.id IN(SELECT ivs.cid FROM vn_seiyuu ivs JOIN staff_alias isa ON isa.aid = ivs.aid WHERE isa.id IN(!l))' => [ ref $o{va_inc} ? $o{va_inc} : [$o{va_inc}] ] ) : (),
+    $o{va_exc} ? ( 'c.id NOT IN(SELECT ivs.cid FROM vn_seiyuu ivs JOIN staff_alias isa ON isa.aid = ivs.aid WHERE isa.id IN(!l))' => [ ref $o{va_exc} ? $o{va_exc} : [$o{va_exc}] ] ) : (),
   )
 }
 

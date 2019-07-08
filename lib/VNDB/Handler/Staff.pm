@@ -372,11 +372,16 @@ sub list {
 sub staffxml {
   my $self = shift;
 
-  my $q = $self->formValidate({ get => 'q', required => 0, maxlength => 500 });
-  return $self->resNotFound if $q->{_err} || !$q->{q};
+  my $f = $self->formValidate(
+    { get => 'q', required => 0, maxlength => 500 },
+    { get => 'id', required => 0, multi => 1, template => 'id' },
+    { get => 'staffid', required => 0, default => 0 }, # The returned id = staff id when set, otherwise it's the alias id
+  );
+  return $self->resNotFound if $f->{_err} || (!$f->{q} && !$f->{id} && !$f->{id}[0]);
 
   my($list, $np) = $self->dbStaffGet(
-    $q->{q} =~ /^s([1-9]\d*)/ ? (id => $1) : $q->{q} =~ /^=(.+)/ ? (exact => $1) : (search => $q->{q}, sort => 'search'),
+    !$f->{q} ? () : $f->{q} =~ /^s([1-9]\d*)/ ? (id => $1) : $f->{q} =~ /^=(.+)/ ? (exact => $1) : (search => $f->{q}, sort => 'search'),
+    $f->{id} && $f->{id}[0] ? (id => $f->{id}) : (),
     results => 10, page => 1,
   );
 
@@ -384,7 +389,7 @@ sub staffxml {
   xml;
   tag 'staff', more => $np ? 'yes' : 'no';
    for(@$list) {
-     tag 'item', sid => $_->{id}, id => $_->{aid}, orig => $_->{original}, $_->{name};
+     tag 'item', sid => $_->{id}, id => $f->{staffid} ? $_->{id} : $_->{aid}, orig => $_->{original}, $_->{name};
    }
   end;
 }

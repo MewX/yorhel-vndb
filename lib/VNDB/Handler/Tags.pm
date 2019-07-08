@@ -769,6 +769,7 @@ sub tagxml {
   my $f = $self->formValidate(
     { get => 'q', required => 0, maxlength => 500 },
     { get => 'id', required => 0, multi => 1, template => 'id' },
+    { get => 'searchable', required => 0, default => 0 },
   );
   return $self->resNotFound if $f->{_err} || (!$f->{q} && !$f->{id} && !$f->{id}[0]);
 
@@ -777,6 +778,7 @@ sub tagxml {
     $f->{id} && $f->{id}[0] ? (id => $f->{id}) : (),
     results => 15,
     page => 1,
+    $f->{searchable} ? (state => 2, searchable => 1) : (),
   );
 
   $self->resHeader('Content-type' => 'text/xml; charset=UTF-8');
