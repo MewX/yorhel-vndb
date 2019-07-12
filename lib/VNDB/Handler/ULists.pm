@@ -145,8 +145,7 @@ sub votelist {
 
   my($list, $np) = $self->dbVoteGet(
     $type.'id' => $id,
-    what     => $type eq 'v' ? 'user' : 'vn',
-    hide     => $type eq 'v',
+    what     => $type eq 'v' ? 'user hide_list' : 'vn',
     hide_ign => $type eq 'v',
     sort     => $f->{s} eq 'title' && $type eq 'v' ? 'username' : $f->{s},
     reverse  => $f->{o} eq 'd',
@@ -194,7 +193,13 @@ sub votelist {
        end;
        td class => 'tc2', fmtvote $l->{vote};
        td class => 'tc3';
-        a href => $type eq 'v' ? ("/u$l->{uid}", $l->{username}) : ("/v$l->{vid}", shorten $l->{title}, 100);
+        if($type eq 'u') {
+          a href => "/v$l->{vid}", title => $l->{original}||$l->{title}, shorten $l->{title}, 100;
+        } elsif($l->{hide_list}) {
+          b class => 'grayedout', 'hidden';
+        } else {
+          a href => "/u$l->{uid}", $l->{username};
+        }
        end;
       end;
     },

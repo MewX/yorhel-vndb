@@ -172,8 +172,8 @@ sub dbRListDel {
 }
 
 
-# Options: uid vid hide hide_ign results page what sort reverse
-# what: user, vn
+# Options: uid vid hide_ign results page what sort reverse
+# what: user, vn, hide_list
 sub dbVoteGet {
   my($self, %o) = @_;
   $o{results} ||= 50;
@@ -185,7 +185,6 @@ sub dbVoteGet {
   my %where = (
     $o{uid} ? ( 'n.uid = ?' => $o{uid} ) : (),
     $o{vid} ? ( 'n.vid = ?' => $o{vid} ) : (),
-    $o{hide} ? ( 'NOT EXISTS(SELECT 1 FROM users_prefs WHERE uid = n.uid AND key = \'hide_list\')' => 1 ) : (),
     $o{hide_ign} ? ( '(NOT u.ign_votes OR u.id = ?)' => $self->authInfo->{id}||0 ) : (),
     $o{vn_char}  ? ( 'LOWER(SUBSTR(v.title, 1, 1)) = ?' => $o{vn_char} ) : (),
     defined $o{vn_char} && !$o{vn_char} ? (
@@ -199,6 +198,7 @@ sub dbVoteGet {
     qw|n.vid n.vote n.uid|, q|extract('epoch' from n.date) as date|,
     $o{what} =~ /user/ ? ('u.username') : (),
     $o{what} =~ /vn/ ? (qw|v.title v.original|) : (),
+    $o{what} =~ /hide_list/ ? ('up.uid as hide_list') : (),
   );
 
   my @join = (
@@ -208,11 +208,15 @@ sub dbVoteGet {
     $o{what} =~ /user/ || $o{hide} ? (
       'JOIN users u ON u.id = n.uid'
     ) : (),
+    $o{what} =~ /hide_list/ ? (
+      'LEFT JOIN users_prefs up ON up.uid = n.uid AND key = \'hide_list\''
+    ) : (),
   );
 
   my $order = sprintf {
     date     => 'n.date %s',
-    username => 'u.username %s',
+    # Hidden users should not be sorted among the rest. as that would still give them away
+    username => $o{what} =~ /hide_list/ ? '(CASE WHEN up.uid IS NULL THEN u.username ELSE NULL END) %s, n.date' : 'u.username %s',
     title    => 'v.title %s',
     vote     => 'n.vote %s'.($o{what} =~ /vn/ ? ', v.title ASC' : $o{what} =~ /user/ ? ', u.username ASC' : ''),
   }->{$o{sort}}, $o{reverse} ? 'DESC' : 'ASC';

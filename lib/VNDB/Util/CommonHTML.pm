@@ -389,8 +389,7 @@ sub htmlVoteStats {
    my $recent = $self->dbVoteGet(
      $type.'id' => $obj->{id},
      results => 8,
-     what => $type eq 'v' ? 'user' : 'vn',
-     hide => $type eq 'v',
+     what => $type eq 'v' ? 'user hide_list' : 'vn',
      hide_ign => $type eq 'v',
    );
    if(@$recent) {
@@ -410,6 +409,8 @@ sub htmlVoteStats {
          td;
           if($type eq 'u') {
             a href => "/v$_->{vid}", title => $_->{original}||$_->{title}, shorten $_->{title}, 40;
+          } elsif($_->{hide_list}) {
+            b class => 'grayedout', 'hidden';
           } else {
             a href => "/u$_->{uid}", $_->{username};
           }
