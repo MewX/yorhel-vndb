@@ -151,7 +151,7 @@ sub votelist {
     reverse  => $f->{o} eq 'd',
     results  => 50,
     page     => $f->{p},
-    $f->{c} ne 'all' ? ($type eq 'u' ? 'vn_char' : 'user_char', $f->{c}) : (),
+    $type eq 'u' && $f->{c} ne 'all' ? (vn_char => $f->{c}) : (),
   );
 
   my $title = $type eq 'v' ? "Votes for $obj->{title}" : "Votes by $obj->{username}";
@@ -159,11 +159,13 @@ sub votelist {
   $self->htmlMainTabs($type => $obj, 'votes');
   div class => 'mainbox';
    h1 $title;
-   p class => 'browseopts';
-    for ('all', 'a'..'z', 0) {
-      a href => "/$type$id/votes?c=$_", $_ eq $f->{c} ? (class => 'optselected') : (), $_ eq 'all' ? 'ALL' : $_ ? uc $_ : '#';
-    }
-   end;
+   if($type eq 'u') {
+     p class => 'browseopts';
+      for ('all', 'a'..'z', 0) {
+        a href => "/$type$id/votes?c=$_", $_ eq $f->{c} ? (class => 'optselected') : (), $_ eq 'all' ? 'ALL' : $_ ? uc $_ : '#';
+      }
+     end;
+   }
    p 'No votes to list. :-(' if !@$list;
   end;
 

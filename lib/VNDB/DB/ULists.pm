@@ -189,9 +189,6 @@ sub dbVoteGet {
     $o{vn_char}  ? ( 'LOWER(SUBSTR(v.title, 1, 1)) = ?' => $o{vn_char} ) : (),
     defined $o{vn_char} && !$o{vn_char} ? (
       '(ASCII(v.title) < 97 OR ASCII(v.title) > 122) AND (ASCII(v.title) < 65 OR ASCII(v.title) > 90)' => 1 ) : (),
-    $o{user_char} ? ( 'LOWER(SUBSTR(u.username, 1, 1)) = ?' => $o{user_char} ) : (),
-    defined $o{user_char} && !$o{user_char} ? (
-      '(ASCII(u.username) < 97 OR ASCII(u.username) > 122) AND (ASCII(u.username) < 65 OR ASCII(u.username) > 90)' => 1 ) : (),
   );
 
   my @select = (
