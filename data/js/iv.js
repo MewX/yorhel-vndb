@@ -64,7 +64,7 @@ function fixnav(lnk, cat, i, dir) {
   lnk.setAttribute('data-iv', a ? a.getAttribute('data-iv') : '');
 }
 
-function show() {
+function show(ev) {
   var u = this.href;
   var opt = this.getAttribute('data-iv').split(':');
   var idx = this.iv_i;
@@ -110,10 +110,24 @@ function show() {
   byId('ivimgload').style.left = ((ww - 100) / 2 - 10)+'px';
   byId('ivimgload').style.top = ((wh - 20) / 2 + st)+'px';
   setClass(byId('ivimgload'), 'hidden', false);
+
+  document.body.onclick = close;
+  // Capture left/right arrow keys
+  document.onkeydown = function(e) {
+    if(e.keyCode == 37 && byId('ivprev').style.visibility == 'visible') {
+      byId('ivprev').click();
+    }
+    if(e.keyCode == 39 && byId('ivnext').style.visibility == 'visible') {
+      byId('ivnext').click();
+    }
+  };
+  ev.stopPropagation();
   return false;
 }
 
 function close() {
+  document.body.onclick = null;
+  document.onkeydown = null;
   setClass(byId('iv_view'), 'hidden', true);
   setClass(byId('ivimgload'), 'hidden', true);
   setText(byId('ivimg'), '');
