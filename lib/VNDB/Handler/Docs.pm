@@ -82,7 +82,7 @@ sub page {
     my $prev = $rev && $rev > 1 && $self->dbDocGetRev(id => $id, rev => $rev-1)->[0];
     $self->htmlRevision('d', $prev, $d,
       [ title   => 'Title',   diff => 1 ],
-      [ content => 'Content', diff => qr/\s+/ ],
+      [ content => 'Content', diff => qr/\s+/, short_diff => 1 ],
     );
   }
 

@@ -163,6 +163,7 @@ sub htmlHiddenMessage {
 #  [ shortname, displayname, %options ],
 #  Where %options:
 #   diff      => 1/0/regex, whether to show a diff on this field, and what to split it with (1 = character-level diff)
+#   short_diff=> 1/0, when set, cut off long context in diffs
 #   serialize => coderef, should convert the field into a readable string, no HTML allowed
 #   htmlize   => same as serialize, but HTML is allowed and this can't be diff'ed
 #   split     => coderef, should return an array of HTML strings that can be diff'ed. (implies diff => 1)
@@ -265,7 +266,7 @@ sub revdiff {
       my $a = join($o{join}, @ser1[ $d[$i*2]   .. $d[$i*2+2]-1 ]);
       my $b = join($o{join}, @ser2[ $d[$i*2+1] .. $d[$i*2+3]-1 ]);
       # Reduce context if we have too much
-      if($i % 2 == 0 && length($a) > 300) {
+      if($o{short_diff} && $i % 2 == 0 && length($a) > 300) {
         my $sep = '<b class="standout">&lt;...&gt;</b>';
         my $ctx = 100;
         $a = $i == 0          ? $sep.'<br>'.substr $a, -$ctx :
