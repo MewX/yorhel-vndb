@@ -6,12 +6,12 @@ use warnings;
 use TUWF 'sqlprint';
 use POSIX 'strftime';
 use Exporter 'import';
-use VNDB::Func 'normalize_query';
+use VNDB::Func 'normalize_query', 'gtintype';
 
 our @EXPORT = qw|dbVNGet dbVNGetRev dbVNRevisionInsert dbVNImageId dbScreenshotAdd dbScreenshotGet dbScreenshotRandom|;
 
 
-# Options: id, char, search, length, lang, olang, plat, tag_inc, tag_exc, tagspoil,
+# Options: id, char, search, gtin, length, lang, olang, plat, tag_inc, tag_exc, tagspoil,
 #   hasani, hasshot, ul_notblack, ul_onwish, results, page, what, sort,
 #   reverse, inc_hidden, date_before, date_after, released, release, character
 # What: extended anime staff seiyuu relations screenshots relgraph rating ranking wishlist vnlist
@@ -31,6 +31,8 @@ sub dbVNGet {
       !$o{tag_inc} ? () : (ref($o{tag_inc}) ? @{$o{tag_inc}} : $o{tag_inc});
 
   my $uid = $self->authInfo->{id};
+
+  $o{gtin} = delete $o{search} if $o{search} && $o{search} =~ /^\d+$/ && gtintype(local $_ = $o{search});
 
   my @where = (
     $o{id} ? (
@@ -58,6 +60,8 @@ sub dbVNGet {
       'v.id NOT IN(SELECT vid FROM tags_vn_inherit WHERE tag IN(!l))' => [ ref $o{tag_exc} ? $o{tag_exc} : [$o{tag_exc}] ] ) : (),
     $o{search} ? (
       map +('v.c_search like ?', "%$_%"), normalize_query($o{search})) : (),
+    $o{gtin} ? (
+      'v.id IN(SELECT irv.vid FROM releases_vn irv JOIN releases ir ON ir.id = irv.id WHERE ir.gtin = ?)' => $o{gtin}) : (),
     $o{staff_inc} ? ( 'v.id IN(SELECT ivs.id FROM vn_staff ivs JOIN staff_alias isa ON isa.aid = ivs.aid WHERE isa.id IN(!l))' => [ ref $o{staff_inc} ? $o{staff_inc} : [$o{staff_inc}] ] ) : (),
     $o{staff_exc} ? ( 'v.id NOT IN(SELECT ivs.id FROM vn_staff ivs JOIN staff_alias isa ON isa.aid = ivs.aid WHERE isa.id IN(!l))' => [ ref $o{staff_exc} ? $o{staff_exc} : [$o{staff_exc}] ] ) : (),
     $uid && $o{ul_notblack} ? (
