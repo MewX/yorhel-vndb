@@ -62,37 +62,35 @@ sub addnumsql {
   print "# Items in $name... $count\n";
 }
 
-sub adddoc {
-  $count = 0;
-  for my $fn (glob("$ROOT/data/docs/*")) {
-    local $/=undef;
-    open my $F, $fn or die "Can't open $fn: $!\n";
-    addtxt scalar <$F>;
-  }
-  print "# Referencs in the docs: $count\n";
-}
-
 sub findunused {
   my $size = 0;
   $count = 0;
+  my $left = 0;
   find {
     no_chdir => 1,
+    follow => 1,
     wanted => sub {
-      return if $File::Find::name !~ /($fnmatch)$/;
+      return if -d "$File::Find::name";
+      if($File::Find::name !~ /($fnmatch)$/) {
+         print "# Unknown file: $File::Find::name\n";
+         return;
+      }
       if(!$dir{$2}{$3}) {
         my $s = (-s $File::Find::name) / 1024;
         $size += $s;
         $count++;
         printf "rm '%s' # %d KiB, https://s.vndb.org%s\n", $File::Find::name, $s, $1
+      } else {
+        $left++;
       }
     }
-  }, "$ROOT/static";
-  printf "# Deleted %d files, saved %d KiB\n", $count, $size;
+  }, "$ROOT/static/cv", "$ROOT/static/ch", "$ROOT/static/sf", "$ROOT/static/st";
+  printf "# Deleted %d files, left %d files, saved %d KiB\n", $count, $left, $size;
 }
 
 
 cleandb;
-adddoc;
+addtxtsql 'Docs',                   'SELECT content FROM docs     UNION ALL SELECT content FROM docs_hist';
 addtxtsql 'VN descriptions',        'SELECT "desc" FROM vn        UNION ALL SELECT "desc" FROM vn_hist';
 addtxtsql 'Character descriptions', 'SELECT "desc" FROM chars     UNION ALL SELECT "desc" FROM chars_hist';
 addtxtsql 'Producer descriptions',  'SELECT "desc" FROM producers UNION ALL SELECT "desc" FROM producers_hist';
