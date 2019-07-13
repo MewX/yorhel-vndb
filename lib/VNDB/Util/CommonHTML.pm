@@ -259,10 +259,20 @@ sub revdiff {
 
     $ser1 = $ser2 = '';
     my @d = compact_diff(\@ser1, \@ser2);
-    for my $i (0..($#d-2)/2) {
+    my $lastchunk = int (($#d-2)/2);
+    for my $i (0..$lastchunk) {
       # $i % 2 == 0  -> equal, otherwise it's different
       my $a = join($o{join}, @ser1[ $d[$i*2]   .. $d[$i*2+2]-1 ]);
       my $b = join($o{join}, @ser2[ $d[$i*2+1] .. $d[$i*2+3]-1 ]);
+      # Reduce context if we have too much
+      if($i % 2 == 0 && length($a) > 300) {
+        my $sep = '<b class="standout">&lt;...&gt;</b>';
+        my $ctx = 100;
+        $a = $i == 0          ? $sep.'<br>'.substr $a, -$ctx :
+             $i == $lastchunk ? substr($a, 0, $ctx).'<br>'.$sep :
+                                substr($a, 0, $ctx)."<br><br>$sep<br><br>".substr($a, -$ctx);
+        $b = $a;
+      }
       $ser1 .= ($ser1?$o{join}:'').($i % 2 ? qq|<b class="diff_del">$a</b>| : $a) if $a ne '';
       $ser2 .= ($ser2?$o{join}:'').($i % 2 ? qq|<b class="diff_add">$b</b>| : $b) if $b ne '';
     }
