@@ -35,7 +35,7 @@ function init() {
   }
 
   if(n && !byId('iv_view')) {
-    addBody(tag('div', {id: 'iv_view','class':'hidden'},
+    addBody(tag('div', {id: 'iv_view','class':'hidden', onclick: function(ev) { ev.stopPropagation(); return true } },
       tag('b', {id:'ivimg'}, ''),
       tag('br', null),
       tag('a', {href:'#', id:'ivfull'}, ''),
