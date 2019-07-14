@@ -66,6 +66,7 @@ sub page {
       [ voiced     => 'Voiced',          serialize => sub { $self->{voiced}[$_[0]] } ],
       [ ani_story  => 'Story animation', serialize => sub { $self->{animated}[$_[0]] } ],
       [ ani_ero    => 'Ero animation',   serialize => sub { $self->{animated}[$_[0]] } ],
+      [ engine     => 'Engine' ],
       [ producers  => 'Producers',       join => '<br />', split => sub {
         map sprintf('<a href="/p%d" title="%s">%s</a> (%s)', $_->{id}, $_->{original}||$_->{name}, shorten($_->{name}, 50),
           join(', ', $_->{developer} ? 'developer' :(), $_->{publisher} ? 'publisher' :())
@@ -187,6 +188,13 @@ sub _infotable {
      end;
    }
 
+   if(length $r->{engine}) {
+     Tr;
+      td 'Engine';
+      td $r->{engine};
+     end;
+   }
+
    Tr;
     td 'Released';
     td;
@@ -294,7 +302,7 @@ sub edit {
   my $vn = $rid ? $r->{vn} : [{ vid => $vid, title => $v->{title} }];
   my %b4 = !$rid ? () : (
     (map { $_ => $r->{$_} } qw|type title original gtin catalog languages website released minage
-      notes platforms patch resolution voiced freeware doujin uncensored ani_story ani_ero ihid ilock|),
+      notes platforms patch resolution voiced freeware doujin uncensored ani_story ani_ero engine ihid ilock|),
     media     => join(',',   sort map "$_->{medium} $_->{qty}", @{$r->{media}}),
     producers => join('|||', map
       sprintf('%d,%d,%s', $_->{id}, ($_->{developer}?1:0)+($_->{publisher}?2:0), $_->{name}),
@@ -328,12 +336,17 @@ sub edit {
       { post => 'voiced',    required => 0, default => 0, enum => [ 0..$#{$self->{voiced}} ] },
       { post => 'ani_story', required => 0, default => 0, enum => [ 0..$#{$self->{animated}} ] },
       { post => 'ani_ero',   required => 0, default => 0, enum => [ 0..$#{$self->{animated}} ] },
+      { post => 'engine',    required => 0, default => '', maxlength => 50 },
+      { post => 'engine_oth',required => 0, default => '', maxlength => 50 },
       { post => 'producers', required => 0, default => '' },
       { post => 'vn',        maxlength => 50000 },
       { post => 'editsum',   template => 'editsum' },
       { post => 'ihid',      required  => 0 },
       { post => 'ilock',     required  => 0 },
     );
+
+    $frm->{engine} = $frm->{engine_oth} if $frm->{engine} eq '_other_';
+    delete $frm->{engine_oth};
 
     push @{$frm->{_err}}, [ 'released', 'required', 1 ] if !$frm->{released};
 
@@ -347,8 +360,11 @@ sub edit {
       $frm->{$_} = $frm->{$_} ? 1 : 0 for (qw|patch freeware doujin uncensored ihid ilock|);
 
       # reset some fields when the patch flag is set
-      $frm->{doujin} = $frm->{voiced} = $frm->{ani_story} = $frm->{ani_ero} = 0 if $frm->{patch};
-      $frm->{resolution} = 'unknown' if $frm->{patch};
+      if($frm->{patch}) {
+        $frm->{doujin} = $frm->{voiced} = $frm->{ani_story} = $frm->{ani_ero} = 0;
+        $frm->{resolution} = 'unknown';
+        $frm->{engine} = '';
+      }
       $frm->{uncensored} = 0 if $frm->{minage} != 18;
 
       my $same = $rid &&
@@ -364,7 +380,7 @@ sub edit {
     if(!$frm->{_err}) {
       my $nrev = $self->dbItemEdit(r => !$copy && $rid ? ($r->{id}, $r->{rev}) : (undef, undef),
         (map { $_ => $frm->{$_} } qw| type title original gtin catalog languages website released minage
-          notes platforms resolution editsum patch voiced freeware doujin uncensored ani_story ani_ero ihid ilock|),
+          notes platforms resolution editsum patch voiced freeware doujin uncensored ani_story ani_ero engine ihid ilock|),
         vn        => $new_vn,
         producers => $producers,
         media     => $media,
@@ -424,6 +440,15 @@ sub _form {
   rel_format => [ 'Format',
     [ select => short => 'resolution', name => 'Resolution', options => [
       map [ $_, @{$self->{resolutions}{$_}} ], keys %{$self->{resolutions}} ] ],
+    [ static => label => 'Engine', content => sub {
+      my $other = $frm->{engine} && !grep($_ eq $frm->{engine}, @{$self->{engines}});
+      Select name => 'engine', id => 'engine', tabindex => 10;
+       option value => $_, $frm->{engine} eq $_ ? (selected => 'selected') : (), $_ || 'Unknown'
+         for ('', @{$self->{engines}});
+       option value => '_other_', $other ? (selected => 'selected') : (), 'Other';
+      end;
+      input type => 'text', name => 'engine_oth', id => 'engine_oth', tabindex => 10, class => 'text '.($other ? '' : 'hidden'), value => $frm->{engine};
+    } ],
     [ select => short => 'voiced',     name => 'Voiced', options => [
       map [ $_, $self->{voiced}[$_] ], 0..$#{$self->{voiced}} ] ],
     [ select => short => 'ani_story',  name => 'Story animation', options => [

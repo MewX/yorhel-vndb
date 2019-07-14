@@ -150,6 +150,8 @@ if(location.hostname != 'vndb.org') {
       byId('voiced').disabled =
       byId('ani_story').disabled =
       byId('ani_ero').disabled =
+      byId('engine').disabled =
+      byId('engine_oth').disabled =
       byId('patch').checked;
 
     setClass(
@@ -161,6 +163,19 @@ if(location.hostname != 'vndb.org') {
   if(byId('jt_box_rel_geninfo')) {
     sync();
     byId('patch').onclick = byId('minage').onclick = sync;
+  }
+})();
+
+
+// Release edit engine selection (/r+/edit)
+(function(){
+  var en = byId('engine');
+  var en_other = byId('engine_oth');
+  if(en && en_other) {
+    en.onchange = function() {
+      setClass(en_other, 'hidden', en.options[en.selectedIndex].value != '_other_');
+      return true;
+    };
   }
 })();
 

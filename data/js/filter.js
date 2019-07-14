@@ -389,6 +389,14 @@ function filFSelect(c, n, lines, opts) {
   ];
 }
 
+function filFInput(c, n) {
+  return [ c, n,
+    tag('input', {type: 'text', 'class': 'text', onfocus: selectField, onchange: serialize}),
+    function (c) { return [c.value] },
+    function (c, f) { c.value = f }
+  ]
+}
+
 function filFOptions(c, n, opts) {
   var p = tag('p', {'class':'opts', fil_val:opts[0][0]});
   var sel = function (e) {
@@ -619,7 +627,8 @@ function filReleases() {
       filFSelect('med',       'Medium',         10, med),
       filFSelect('voiced',    'Voiced',          5, VARS.voiced),
       filFSelect('ani_story', 'Story animation', 5, VARS.animated),
-      filFSelect('ani_ero',   'Ero animation',   5, VARS.animated)
+      filFSelect('ani_ero',   'Ero animation',   5, VARS.animated),
+      filFInput('engine',     'Engine')
     ]
   ];
 }

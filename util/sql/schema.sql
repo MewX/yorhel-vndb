@@ -266,7 +266,8 @@ CREATE TABLE releases ( -- dbentry_type=r
   voiced     smallint NOT NULL DEFAULT 0,
   ani_story  smallint NOT NULL DEFAULT 0,
   ani_ero    smallint NOT NULL DEFAULT 0,
-  uncensored boolean NOT NULL DEFAULT FALSE
+  uncensored boolean NOT NULL DEFAULT FALSE,
+  engine     varchar(50) NOT NULL DEFAULT ''
 );
 
 -- releases_hist
@@ -288,7 +289,8 @@ CREATE TABLE releases_hist (
   voiced     smallint NOT NULL DEFAULT 0,
   ani_story  smallint NOT NULL DEFAULT 0,
   ani_ero    smallint NOT NULL DEFAULT 0,
-  uncensored boolean NOT NULL DEFAULT FALSE
+  uncensored boolean NOT NULL DEFAULT FALSE,
+  engine     varchar(50) NOT NULL DEFAULT ''
 );
 
 -- releases_lang

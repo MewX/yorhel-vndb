@@ -255,6 +255,23 @@ our %S;
     staff      => 'Staff',
   ),
   poll_options    => 20, # max number of options in discussion board polls
+  engines => [ grep $_, split /\s*\n\s*/, q{
+    BGI/Ethornell
+    CatSystem2
+    codeX RScript
+    EntisGLS
+    Ikura GDL
+    KiriKiri
+    Majiro
+    NScripter
+    QLIE
+    RPG Maker
+    RealLive
+    Ren'Py
+    Shiina Rio
+    Unity
+    YU-RIS
+  }],
 );
 
 
