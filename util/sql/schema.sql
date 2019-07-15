@@ -32,10 +32,15 @@
 -- The changes and *_hist tables contain all the data. In a sense, the other
 -- tables related to the item are just a cache/view into the latest versions.
 -- All modifications to the item tables has to go through the edit_* functions
--- in func.sql, these are also responsible for keeping things synchronized.
+-- in editfunc.sql, these are also responsible for keeping things synchronized.
+--
+-- Columns marked with a '[pub]' comment on the same line are included in the
+-- public database dump. Be aware that not all properties of the to-be-dumped
+-- data is annotated in this file. Which tables and which rows are exported is
+-- defined in util/dbdump.pl.
 --
 -- Note: Every CREATE TABLE clause and each column should be on a separate
--- line. This file is parsed by util/sqleditfunc.pl, and it doesn't implement a
+-- line. This file is parsed by lib/VNDBSchema.pm and it doesn't implement a
 -- full SQL query parser.
 
 
@@ -55,13 +60,13 @@ CREATE TABLE affiliate_links (
 
 -- anime
 CREATE TABLE anime (
-  id integer NOT NULL PRIMARY KEY,
-  year smallint,
-  ann_id integer,
-  nfo_id varchar(200),
-  type anime_type,
-  title_romaji varchar(250),
-  title_kanji varchar(250),
+  id integer NOT NULL PRIMARY KEY, -- [pub]
+  year smallint, -- [pub]
+  ann_id integer, -- [pub]
+  nfo_id varchar(200), -- [pub]
+  type anime_type, -- [pub]
+  title_romaji varchar(250) -- [pub]
+  title_kanji varchar(250), -- [pub]
   lastfetch timestamptz
 );
 
@@ -81,25 +86,25 @@ CREATE TABLE changes (
 
 -- chars
 CREATE TABLE chars ( -- dbentry_type=c
-  id         SERIAL PRIMARY KEY,
+  id         SERIAL PRIMARY KEY, -- [pub]
   locked     boolean NOT NULL DEFAULT FALSE,
   hidden     boolean NOT NULL DEFAULT FALSE,
-  name       varchar(250) NOT NULL DEFAULT '',
-  original   varchar(250) NOT NULL DEFAULT '',
-  alias      varchar(500) NOT NULL DEFAULT '',
-  image      integer  NOT NULL DEFAULT 0,
-  "desc"     text     NOT NULL DEFAULT '',
-  gender     gender NOT NULL DEFAULT 'unknown',
-  s_bust     smallint NOT NULL DEFAULT 0,
-  s_waist    smallint NOT NULL DEFAULT 0,
-  s_hip      smallint NOT NULL DEFAULT 0,
-  b_month    smallint NOT NULL DEFAULT 0,
-  b_day      smallint NOT NULL DEFAULT 0,
-  height     smallint NOT NULL DEFAULT 0,
-  weight     smallint,
-  bloodt     blood_type NOT NULL DEFAULT 'unknown',
-  main       integer, -- chars.id
-  main_spoil smallint NOT NULL DEFAULT 0
+  name       varchar(250) NOT NULL DEFAULT '', -- [pub]
+  original   varchar(250) NOT NULL DEFAULT '', -- [pub]
+  alias      varchar(500) NOT NULL DEFAULT '', -- [pub]
+  image      integer  NOT NULL DEFAULT 0, -- [pub]
+  "desc"     text     NOT NULL DEFAULT '', -- [pub]
+  gender     gender NOT NULL DEFAULT 'unknown', -- [pub]
+  s_bust     smallint NOT NULL DEFAULT 0, -- [pub]
+  s_waist    smallint NOT NULL DEFAULT 0, -- [pub]
+  s_hip      smallint NOT NULL DEFAULT 0, -- [pub]
+  b_month    smallint NOT NULL DEFAULT 0, -- [pub]
+  b_day      smallint NOT NULL DEFAULT 0, -- [pub]
+  height     smallint NOT NULL DEFAULT 0, -- [pub]
+  weight     smallint, -- [pub]
+  bloodt     blood_type NOT NULL DEFAULT 'unknown', -- [pub]
+  main       integer, -- [pub] chars.id
+  main_spoil smallint NOT NULL DEFAULT 0 -- [pub]
 );
 
 -- chars_hist
@@ -125,9 +130,9 @@ CREATE TABLE chars_hist (
 
 -- chars_traits
 CREATE TABLE chars_traits (
-  id         integer NOT NULL,
-  tid        integer NOT NULL, -- traits.id
-  spoil      smallint NOT NULL DEFAULT 0,
+  id         integer NOT NULL, -- [pub]
+  tid        integer NOT NULL, -- [pub] traits.id
+  spoil      smallint NOT NULL DEFAULT 0, -- [pub]
   PRIMARY KEY(id, tid)
 );
 
@@ -141,11 +146,11 @@ CREATE TABLE chars_traits_hist (
 
 -- chars_vns
 CREATE TABLE chars_vns (
-  id         integer NOT NULL,
-  vid        integer NOT NULL, -- vn.id
-  rid        integer NULL, -- releases.id
-  spoil      smallint NOT NULL DEFAULT 0,
-  role       char_role NOT NULL DEFAULT 'main'
+  id         integer NOT NULL, -- [pub]
+  vid        integer NOT NULL, -- [pub] vn.id
+  rid        integer NULL, -- [pub] releases.id
+  spoil      smallint NOT NULL DEFAULT 0, -- [pub]
+  role       char_role NOT NULL DEFAULT 'main' -- [pub]
 );
 
 -- chars_vns_hist
@@ -159,11 +164,11 @@ CREATE TABLE chars_vns_hist (
 
 -- docs
 CREATE TABLE docs ( -- dbentry_type=d
-  id         SERIAL PRIMARY KEY,
+  id         SERIAL PRIMARY KEY, -- [pub]
   locked     boolean NOT NULL DEFAULT FALSE,
   hidden     boolean NOT NULL DEFAULT FALSE,
-  title      varchar(200) NOT NULL DEFAULT '',
-  content    text NOT NULL DEFAULT ''
+  title      varchar(200) NOT NULL DEFAULT '', -- [pub]
+  content    text NOT NULL DEFAULT '' -- [pub]
 );
 
 -- docs_hist
@@ -195,17 +200,17 @@ CREATE TABLE notifications (
 
 -- producers
 CREATE TABLE producers ( -- dbentry_type=p
-  id         SERIAL PRIMARY KEY,
+  id         SERIAL PRIMARY KEY, -- [pub]
   locked     boolean NOT NULL DEFAULT FALSE,
   hidden     boolean NOT NULL DEFAULT FALSE,
-  type       producer_type NOT NULL DEFAULT 'co',
-  name       varchar(200) NOT NULL DEFAULT '',
-  original   varchar(200) NOT NULL DEFAULT '',
-  website    varchar(250) NOT NULL DEFAULT '',
-  lang       language NOT NULL DEFAULT 'ja',
-  "desc"     text NOT NULL DEFAULT '',
-  alias      varchar(500) NOT NULL DEFAULT '',
-  l_wp       varchar(150),
+  type       producer_type NOT NULL DEFAULT 'co', -- [pub]
+  name       varchar(200) NOT NULL DEFAULT '', -- [pub]
+  original   varchar(200) NOT NULL DEFAULT '', -- [pub]
+  website    varchar(250) NOT NULL DEFAULT '', -- [pub]
+  lang       language NOT NULL DEFAULT 'ja', -- [pub]
+  "desc"     text NOT NULL DEFAULT '', -- [pub]
+  alias      varchar(500) NOT NULL DEFAULT '', -- [pub]
+  l_wp       varchar(150), -- [pub]
   rgraph     integer -- relgraphs.id
 );
 
@@ -224,9 +229,9 @@ CREATE TABLE producers_hist (
 
 -- producers_relations
 CREATE TABLE producers_relations (
-  id         integer NOT NULL,
-  pid        integer NOT NULL, -- producers.id
-  relation   producer_relation NOT NULL,
+  id         integer NOT NULL, -- [pub]
+  pid        integer NOT NULL, -- [pub] producers.id
+  relation   producer_relation NOT NULL, -- [pub]
   PRIMARY KEY(id, pid)
 );
 
@@ -247,27 +252,27 @@ CREATE TABLE quotes (
 
 -- releases
 CREATE TABLE releases ( -- dbentry_type=r
-  id         SERIAL PRIMARY KEY,
+  id         SERIAL PRIMARY KEY, -- [pub]
   locked     boolean NOT NULL DEFAULT FALSE,
   hidden     boolean NOT NULL DEFAULT FALSE,
-  title      varchar(250) NOT NULL DEFAULT '',
-  original   varchar(250) NOT NULL DEFAULT '',
-  type       release_type NOT NULL DEFAULT 'complete',
-  website    varchar(250) NOT NULL DEFAULT '',
-  catalog    varchar(50) NOT NULL DEFAULT '',
-  gtin       bigint NOT NULL DEFAULT 0,
-  released   integer NOT NULL DEFAULT 0,
-  notes      text NOT NULL DEFAULT '',
-  minage     smallint,
-  patch      boolean NOT NULL DEFAULT FALSE,
-  freeware   boolean NOT NULL DEFAULT FALSE,
-  doujin     boolean NOT NULL DEFAULT FALSE,
-  resolution resolution NOT NULL DEFAULT 'unknown',
-  voiced     smallint NOT NULL DEFAULT 0,
-  ani_story  smallint NOT NULL DEFAULT 0,
-  ani_ero    smallint NOT NULL DEFAULT 0,
-  uncensored boolean NOT NULL DEFAULT FALSE,
-  engine     varchar(50) NOT NULL DEFAULT ''
+  title      varchar(250) NOT NULL DEFAULT '', -- [pub]
+  original   varchar(250) NOT NULL DEFAULT '', -- [pub]
+  type       release_type NOT NULL DEFAULT 'complete', -- [pub]
+  website    varchar(250) NOT NULL DEFAULT '', -- [pub]
+  catalog    varchar(50) NOT NULL DEFAULT '', -- [pub]
+  gtin       bigint NOT NULL DEFAULT 0, -- [pub]
+  released   integer NOT NULL DEFAULT 0, -- [pub]
+  notes      text NOT NULL DEFAULT '', -- [pub]
+  minage     smallint, -- [pub]
+  patch      boolean NOT NULL DEFAULT FALSE, -- [pub]
+  freeware   boolean NOT NULL DEFAULT FALSE, -- [pub]
+  doujin     boolean NOT NULL DEFAULT FALSE, -- [pub]
+  resolution resolution NOT NULL DEFAULT 'unknown', -- [pub]
+  voiced     smallint NOT NULL DEFAULT 0, -- [pub]
+  ani_story  smallint NOT NULL DEFAULT 0, -- [pub]
+  ani_ero    smallint NOT NULL DEFAULT 0, -- [pub]
+  uncensored boolean NOT NULL DEFAULT FALSE, -- [pub]
+  engine     varchar(50) NOT NULL DEFAULT '' -- [pub]
 );
 
 -- releases_hist
@@ -295,8 +300,8 @@ CREATE TABLE releases_hist (
 
 -- releases_lang
 CREATE TABLE releases_lang (
-  id         integer NOT NULL,
-  lang       language NOT NULL,
+  id         integer NOT NULL, -- [pub]
+  lang       language NOT NULL, -- [pub]
   PRIMARY KEY(id, lang)
 );
 
@@ -309,9 +314,9 @@ CREATE TABLE releases_lang_hist (
 
 -- releases_media
 CREATE TABLE releases_media (
-  id         integer NOT NULL,
-  medium     medium NOT NULL,
-  qty        smallint NOT NULL DEFAULT 1,
+  id         integer NOT NULL, -- [pub]
+  medium     medium NOT NULL, -- [pub]
+  qty        smallint NOT NULL DEFAULT 1, -- [pub]
   PRIMARY KEY(id, medium, qty)
 );
 
@@ -325,8 +330,8 @@ CREATE TABLE releases_media_hist (
 
 -- releases_platforms
 CREATE TABLE releases_platforms (
-  id         integer NOT NULL,
-  platform   platform NOT NULL,
+  id         integer NOT NULL, -- [pub]
+  platform   platform NOT NULL, -- [pub]
   PRIMARY KEY(id, platform)
 );
 
@@ -339,10 +344,10 @@ CREATE TABLE releases_platforms_hist (
 
 -- releases_producers
 CREATE TABLE releases_producers (
-  id         integer NOT NULL,
-  pid        integer NOT NULL, -- producers.id
-  developer  boolean NOT NULL DEFAULT FALSE,
-  publisher  boolean NOT NULL DEFAULT TRUE,
+  id         integer NOT NULL, -- [pub]
+  pid        integer NOT NULL, -- [pub] producers.id
+  developer  boolean NOT NULL DEFAULT FALSE, -- [pub]
+  publisher  boolean NOT NULL DEFAULT TRUE, -- [pub]
   CHECK(developer OR publisher),
   PRIMARY KEY(id, pid)
 );
@@ -359,8 +364,8 @@ CREATE TABLE releases_producers_hist (
 
 -- releases_vn
 CREATE TABLE releases_vn (
-  id         integer NOT NULL,
-  vid        integer NOT NULL, -- vn.id
+  id         integer NOT NULL, -- [pub]
+  vid        integer NOT NULL, -- [pub] vn.id
   PRIMARY KEY(id, vid)
 );
 
@@ -379,18 +384,18 @@ CREATE TABLE relgraphs (
 
 -- rlists
 CREATE TABLE rlists (
-  uid integer NOT NULL DEFAULT 0,
-  rid integer NOT NULL DEFAULT 0,
-  status smallint NOT NULL DEFAULT 0,
-  added timestamptz NOT NULL DEFAULT NOW(),
+  uid integer NOT NULL DEFAULT 0, -- [pub]
+  rid integer NOT NULL DEFAULT 0, -- [pub]
+  status smallint NOT NULL DEFAULT 0, -- [pub]
+  added timestamptz NOT NULL DEFAULT NOW(), -- [pub]
   PRIMARY KEY(uid, rid)
 );
 
 -- screenshots
 CREATE TABLE screenshots (
-  id SERIAL NOT NULL PRIMARY KEY,
-  width smallint NOT NULL DEFAULT 0,
-  height smallint NOT NULL DEFAULT 0
+  id SERIAL NOT NULL PRIMARY KEY, -- [pub]
+  width smallint NOT NULL DEFAULT 0, -- [pub]
+  height smallint NOT NULL DEFAULT 0 -- [pub]
 );
 
 -- sessions
@@ -404,17 +409,17 @@ CREATE TABLE sessions (
 
 -- staff
 CREATE TABLE staff ( -- dbentry_type=s
-  id         SERIAL PRIMARY KEY,
+  id         SERIAL PRIMARY KEY, -- [pub]
   locked     boolean NOT NULL DEFAULT FALSE,
   hidden     boolean NOT NULL DEFAULT FALSE,
-  aid        integer NOT NULL DEFAULT 0, -- staff_alias.aid
-  gender     gender NOT NULL DEFAULT 'unknown',
-  lang       language NOT NULL DEFAULT 'ja',
-  "desc"     text NOT NULL DEFAULT '',
-  l_wp       varchar(150) NOT NULL DEFAULT '',
-  l_site     varchar(250) NOT NULL DEFAULT '',
-  l_twitter  varchar(16) NOT NULL DEFAULT '',
-  l_anidb    integer
+  aid        integer NOT NULL DEFAULT 0, -- [pub] staff_alias.aid
+  gender     gender NOT NULL DEFAULT 'unknown', -- [pub]
+  lang       language NOT NULL DEFAULT 'ja', -- [pub]
+  "desc"     text NOT NULL DEFAULT '', -- [pub]
+  l_wp       varchar(150) NOT NULL DEFAULT '', -- [pub]
+  l_site     varchar(250) NOT NULL DEFAULT '', -- [pub]
+  l_twitter  varchar(16) NOT NULL DEFAULT '', -- [pub]
+  l_anidb    integer -- [pub]
 );
 
 -- staff_hist
@@ -432,10 +437,10 @@ CREATE TABLE staff_hist (
 
 -- staff_alias
 CREATE TABLE staff_alias (
-  id         integer NOT NULL,
-  aid        SERIAL PRIMARY KEY, -- Globally unique ID of this alias
-  name       varchar(200) NOT NULL DEFAULT '',
-  original   varchar(200) NOT NULL DEFAULT ''
+  id         integer NOT NULL, -- [pub]
+  aid        SERIAL PRIMARY KEY, -- [pub] Globally unique ID of this alias
+  name       varchar(200) NOT NULL DEFAULT '', -- [pub]
+  original   varchar(200) NOT NULL DEFAULT '' -- [pub]
 );
 
 -- staff_alias_hist
@@ -455,41 +460,41 @@ CREATE TABLE stats_cache (
 
 -- tags
 CREATE TABLE tags (
-  id SERIAL NOT NULL PRIMARY KEY,
-  name varchar(250) NOT NULL UNIQUE,
-  description text NOT NULL DEFAULT '',
+  id SERIAL NOT NULL PRIMARY KEY, -- [pub]
+  name varchar(250) NOT NULL UNIQUE, -- [pub]
+  description text NOT NULL DEFAULT '', -- [pub]
   added timestamptz NOT NULL DEFAULT NOW(),
-  state smallint NOT NULL DEFAULT 0,
+  state smallint NOT NULL DEFAULT 0, -- [pub]
   c_items integer NOT NULL DEFAULT 0,
   addedby integer NOT NULL DEFAULT 0,
-  cat tag_category NOT NULL DEFAULT 'cont',
-  defaultspoil smallint NOT NULL DEFAULT 0,
-  searchable boolean NOT NULL DEFAULT TRUE,
-  applicable boolean NOT NULL DEFAULT TRUE
+  cat tag_category NOT NULL DEFAULT 'cont', -- [pub]
+  defaultspoil smallint NOT NULL DEFAULT 0, -- [pub]
+  searchable boolean NOT NULL DEFAULT TRUE, -- [pub]
+  applicable boolean NOT NULL DEFAULT TRUE -- [pub]
 );
 
 -- tags_aliases
 CREATE TABLE tags_aliases (
-  alias varchar(250) NOT NULL PRIMARY KEY,
-  tag integer NOT NULL
+  alias varchar(250) NOT NULL PRIMARY KEY, -- [pub]
+  tag integer NOT NULL -- [pub]
 );
 
 -- tags_parents
 CREATE TABLE tags_parents (
-  tag integer NOT NULL,
-  parent integer NOT NULL,
+  tag integer NOT NULL, -- [pub]
+  parent integer NOT NULL, -- [pub]
   PRIMARY KEY(tag, parent)
 );
 
 -- tags_vn
 CREATE TABLE tags_vn (
-  tag integer NOT NULL,
-  vid integer NOT NULL,
-  uid integer NOT NULL,
-  vote smallint NOT NULL DEFAULT 3 CHECK (vote >= -3 AND vote <= 3 AND vote <> 0),
-  spoiler smallint CHECK(spoiler >= 0 AND spoiler <= 2),
-  date timestamptz NOT NULL DEFAULT NOW(),
-  ignore boolean NOT NULL DEFAULT false,
+  tag integer NOT NULL, -- [pub]
+  vid integer NOT NULL, -- [pub]
+  uid integer NOT NULL, -- [pub]
+  vote smallint NOT NULL DEFAULT 3 CHECK (vote >= -3 AND vote <= 3 AND vote <> 0), -- [pub]
+  spoiler smallint CHECK(spoiler >= 0 AND spoiler <= 2), -- [pub]
+  date timestamptz NOT NULL DEFAULT NOW(), -- [pub]
+  ignore boolean NOT NULL DEFAULT false, -- [pub]
   PRIMARY KEY(tag, vid, uid)
 );
 
@@ -553,20 +558,20 @@ CREATE TABLE threads_boards (
 
 -- traits
 CREATE TABLE traits (
-  id SERIAL PRIMARY KEY,
-  name varchar(250) NOT NULL,
-  alias varchar(500) NOT NULL DEFAULT '',
-  description text NOT NULL DEFAULT '',
+  id SERIAL PRIMARY KEY, -- [pub]
+  name varchar(250) NOT NULL, -- [pub]
+  alias varchar(500) NOT NULL DEFAULT '', -- [pub]
+  description text NOT NULL DEFAULT '', -- [pub]
   added timestamptz NOT NULL DEFAULT NOW(),
-  state smallint NOT NULL DEFAULT 0,
+  state smallint NOT NULL DEFAULT 0, -- [pub]
   addedby integer NOT NULL DEFAULT 0,
-  "group" integer,
-  "order" smallint NOT NULL DEFAULT 0,
-  sexual boolean NOT NULL DEFAULT false,
+  "group" integer, -- [pub]
+  "order" smallint NOT NULL DEFAULT 0, -- [pub]
+  sexual boolean NOT NULL DEFAULT false, -- [pub]
   c_items integer NOT NULL DEFAULT 0,
-  defaultspoil smallint NOT NULL DEFAULT 0,
-  searchable boolean NOT NULL DEFAULT true,
-  applicable boolean NOT NULL DEFAULT true
+  defaultspoil smallint NOT NULL DEFAULT 0, -- [pub]
+  searchable boolean NOT NULL DEFAULT true, -- [pub]
+  applicable boolean NOT NULL DEFAULT true -- [pub]
 );
 
 -- traits_chars
@@ -582,15 +587,15 @@ CREATE TABLE traits_chars (
 
 -- traits_parents
 CREATE TABLE traits_parents (
-  trait integer NOT NULL,
-  parent integer NOT NULL,
+  trait integer NOT NULL, -- [pub]
+  parent integer NOT NULL, -- [pub]
   PRIMARY KEY(trait, parent)
 );
 
 -- users
 CREATE TABLE users (
-  id SERIAL NOT NULL PRIMARY KEY,
-  username varchar(20) NOT NULL UNIQUE,
+  id SERIAL NOT NULL PRIMARY KEY, -- [pub]
+  username varchar(20) NOT NULL UNIQUE, -- [pub]
   mail varchar(100) NOT NULL,
   perm smallint NOT NULL DEFAULT 1+4+16,
   -- Interpretation of the passwd column depends on its length:
@@ -622,19 +627,19 @@ CREATE TABLE users_prefs (
 
 -- vn
 CREATE TABLE vn ( -- dbentry_type=v
-  id         SERIAL PRIMARY KEY,
+  id         SERIAL PRIMARY KEY, -- [pub]
   locked     boolean NOT NULL DEFAULT FALSE,
   hidden     boolean NOT NULL DEFAULT FALSE,
-  title      varchar(250) NOT NULL DEFAULT '',
-  original   varchar(250) NOT NULL DEFAULT '',
-  alias      varchar(500) NOT NULL DEFAULT '',
-  length     smallint NOT NULL DEFAULT 0,
-  img_nsfw   boolean NOT NULL DEFAULT FALSE,
-  image      integer NOT NULL DEFAULT 0,
-  "desc"     text NOT NULL DEFAULT '',
-  l_wp       varchar(150) NOT NULL DEFAULT '',
-  l_encubed  varchar(100) NOT NULL DEFAULT '',
-  l_renai    varchar(100) NOT NULL DEFAULT '',
+  title      varchar(250) NOT NULL DEFAULT '', -- [pub]
+  original   varchar(250) NOT NULL DEFAULT '', -- [pub]
+  alias      varchar(500) NOT NULL DEFAULT '', -- [pub]
+  length     smallint NOT NULL DEFAULT 0, -- [pub]
+  img_nsfw   boolean NOT NULL DEFAULT FALSE, -- [pub]
+  image      integer NOT NULL DEFAULT 0, -- [pub]
+  "desc"     text NOT NULL DEFAULT '', -- [pub]
+  l_wp       varchar(150) NOT NULL DEFAULT '', -- [pub]
+  l_encubed  varchar(100) NOT NULL DEFAULT '', -- [pub]
+  l_renai    varchar(100) NOT NULL DEFAULT '', -- [pub]
   rgraph     integer, -- relgraphs.id
   c_released integer NOT NULL DEFAULT 0,
   c_languages language[] NOT NULL DEFAULT '{}',
@@ -663,8 +668,8 @@ CREATE TABLE vn_hist (
 
 -- vn_anime
 CREATE TABLE vn_anime (
-  id         integer NOT NULL,
-  aid        integer NOT NULL, -- anime.id
+  id         integer NOT NULL, -- [pub]
+  aid        integer NOT NULL, -- [pub] anime.id
   PRIMARY KEY(id, aid)
 );
 
@@ -677,10 +682,10 @@ CREATE TABLE vn_anime_hist (
 
 -- vn_relations
 CREATE TABLE vn_relations (
-  id         integer NOT NULL,
-  vid        integer NOT NULL, -- vn.id
-  relation   vn_relation NOT NULL,
-  official   boolean NOT NULL DEFAULT TRUE,
+  id         integer NOT NULL, -- [pub]
+  vid        integer NOT NULL, -- [pub] vn.id
+  relation   vn_relation NOT NULL, -- [pub]
+  official   boolean NOT NULL DEFAULT TRUE, -- [pub]
   PRIMARY KEY(id, vid)
 );
 
@@ -695,10 +700,10 @@ CREATE TABLE vn_relations_hist (
 
 -- vn_screenshots
 CREATE TABLE vn_screenshots (
-  id         integer NOT NULL,
-  scr        integer NOT NULL, -- screenshots.id
-  rid        integer,          -- releases.id (only NULL for old revisions, nowadays not allowed anymore)
-  nsfw       boolean NOT NULL DEFAULT FALSE,
+  id         integer NOT NULL, -- [pub]
+  scr        integer NOT NULL, -- [pub] screenshots.id
+  rid        integer,          -- [pub] releases.id (only NULL for old revisions, nowadays not allowed anymore)
+  nsfw       boolean NOT NULL DEFAULT FALSE, -- [pub]
   PRIMARY KEY(id, scr)
 );
 
@@ -713,10 +718,10 @@ CREATE TABLE vn_screenshots_hist (
 
 -- vn_seiyuu
 CREATE TABLE vn_seiyuu (
-  id         integer NOT NULL,
-  aid        integer NOT NULL, -- staff_alias.aid
-  cid        integer NOT NULL, -- chars.id
-  note       varchar(250) NOT NULL DEFAULT '',
+  id         integer NOT NULL, -- [pub]
+  aid        integer NOT NULL, -- [pub] staff_alias.aid
+  cid        integer NOT NULL, -- [pub] chars.id
+  note       varchar(250) NOT NULL DEFAULT '', -- [pub]
   PRIMARY KEY (id, aid, cid)
 );
 
@@ -731,10 +736,10 @@ CREATE TABLE vn_seiyuu_hist (
 
 -- vn_staff
 CREATE TABLE vn_staff (
-  id         integer NOT NULL,
-  aid        integer NOT NULL, -- staff_alias.aid
-  role       credit_type NOT NULL DEFAULT 'staff',
-  note       varchar(250) NOT NULL DEFAULT '',
+  id         integer NOT NULL, -- [pub]
+  aid        integer NOT NULL, -- [pub] staff_alias.aid
+  role       credit_type NOT NULL DEFAULT 'staff', -- [pub]
+  note       varchar(250) NOT NULL DEFAULT '', -- [pub]
   PRIMARY KEY (id, aid, role)
 );
 
@@ -749,28 +754,28 @@ CREATE TABLE vn_staff_hist (
 
 -- vnlists
 CREATE TABLE vnlists (
-  uid integer NOT NULL,
-  vid integer NOT NULL,
-  status smallint NOT NULL DEFAULT 0,
-  added TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  notes varchar NOT NULL DEFAULT '',
+  uid integer NOT NULL, -- [pub]
+  vid integer NOT NULL, -- [pub]
+  status smallint NOT NULL DEFAULT 0, -- [pub]
+  added TIMESTAMPTZ NOT NULL DEFAULT NOW(), -- [pub]
+  notes varchar NOT NULL DEFAULT '', -- [pub]
   PRIMARY KEY(uid, vid)
 );
 
 -- votes
 CREATE TABLE votes (
-  vid integer NOT NULL DEFAULT 0,
-  uid integer NOT NULL DEFAULT 0,
-  vote integer NOT NULL DEFAULT 0,
-  date timestamptz NOT NULL DEFAULT NOW(),
+  vid integer NOT NULL DEFAULT 0, -- [pub]
+  uid integer NOT NULL DEFAULT 0, -- [pub]
+  vote integer NOT NULL DEFAULT 0, -- [pub]
+  date timestamptz NOT NULL DEFAULT NOW(), -- [pub]
   PRIMARY KEY(vid, uid)
 );
 
 -- wlists
 CREATE TABLE wlists (
-  uid integer NOT NULL DEFAULT 0,
-  vid integer NOT NULL DEFAULT 0,
-  wstat smallint NOT NULL DEFAULT 0,
-  added timestamptz NOT NULL DEFAULT NOW(),
+  uid integer NOT NULL DEFAULT 0, -- [pub]
+  vid integer NOT NULL DEFAULT 0, -- [pub]
+  wstat smallint NOT NULL DEFAULT 0, -- [pub]
+  added timestamptz NOT NULL DEFAULT NOW(), -- [pub]
   PRIMARY KEY(uid, vid)
 );
