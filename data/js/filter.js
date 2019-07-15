@@ -415,7 +415,7 @@ function filFOptions(c, n, opts) {
 
 // fieldcode  -> See <fieldcode> in filter definitions
 // fieldname  -> See <fieldname> in filter definitions
-// src        -> The API URL where to get items, must work with dropdownsearch.js and support appending ';q=' and ';id=' to it.
+// src        -> The API URL where to get items, must work with dropdownsearch.js and support appending ';q=', ';id=' and ';r=' to it.
 // fmtlist    -> Called with item id + XML data, should return an inline element to inject into the list view.
 function filFDList(fieldcode, fieldname, src, fmtds, fmtlist) {
   var visible = false;
@@ -457,7 +457,7 @@ function filFDList(fieldcode, fieldname, src, fmtds, fmtlist) {
     txt.value = 'Loading...';
     txt.disabled = true;
     if(visible)
-      ajax(src+';'+q.join(';'), function (hr) {
+      ajax(src+';r=50;'+q.join(';'), function (hr) {
         var items = hr.responseXML.getElementsByTagName('item');
         setText(ul, '');
         for(var i=0; i<items.length; i++)
@@ -471,7 +471,7 @@ function filFDList(fieldcode, fieldname, src, fmtds, fmtlist) {
   var list = tag('ul', null);
   dsInit(input, src+';q=', fmtds,
     function(item, obj) {
-      if(byName(obj.parentNode, 'li').length >= 10)
+      if(byName(obj.parentNode, 'li').length >= 50)
         alert('Too many items selected');
       else {
         obj.parentNode.fil_val = null;

@@ -770,13 +770,14 @@ sub tagxml {
     { get => 'q', required => 0, maxlength => 500 },
     { get => 'id', required => 0, multi => 1, template => 'id' },
     { get => 'searchable', required => 0, default => 0 },
+    { get => 'r', required => 0, template => 'uint', min => 1, max => 50, default => 15 },
   );
   return $self->resNotFound if $f->{_err} || (!$f->{q} && !$f->{id} && !$f->{id}[0]);
 
   my($list, $np) = $self->dbTagGet(
     !$f->{q} ? () : $f->{q} =~ /^g([1-9]\d*)/ ? (id => $1) : $f->{q} =~ /^=(.+)$/ ? (name => $1) : (search => $f->{q}, sort => 'search'),
     $f->{id} && $f->{id}[0] ? (id => $f->{id}) : (),
-    results => 15,
+    results => $f->{r},
     page => 1,
     $f->{searchable} ? (state => 2, searchable => 1) : (),
   );
