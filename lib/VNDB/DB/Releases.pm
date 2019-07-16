@@ -7,7 +7,7 @@ use POSIX 'strftime';
 use Exporter 'import';
 use VNDB::Func 'gtintype';
 
-our @EXPORT = qw|dbReleaseFilters dbReleaseGet dbReleaseGetRev dbReleaseRevisionInsert|;
+our @EXPORT = qw|dbReleaseFilters dbReleaseGet dbReleaseGetRev dbReleaseRevisionInsert dbReleaseEngines|;
 
 
 # Release filters shared by dbReleaseGet and dbVNGet
@@ -251,6 +251,10 @@ sub dbReleaseRevisionInsert {
   }
 }
 
+
+sub dbReleaseEngines {
+  shift->dbAll(q{SELECT engine, count(*) as cnt FROM releases WHERE engine <> '' GROUP BY engine ORDER BY COUNT(*) desc, engine});
+}
 
 1;
 

@@ -13,6 +13,7 @@ TUWF::register(
   qr{r}                            => \&browse,
   qr{r(?:([1-9]\d*)(?:\.([1-9]\d*))?/(edit|copy))}
     => \&edit,
+  qr{r/engines}                    => \&engines,
   qr{xml/releases.xml}             => \&relxml,
 );
 
@@ -191,7 +192,7 @@ sub _infotable {
    if(length $r->{engine}) {
      Tr;
       td 'Engine';
-      td $r->{engine};
+      td; a href => '/r?fil='.fil_serialize({engine => $r->{engine}}), $r->{engine}; end;
      end;
    }
 
@@ -449,6 +450,7 @@ sub _form {
       end;
       input type => 'text', name => 'engine_oth', id => 'engine_oth', tabindex => 10, class => 'text '.($other ? '' : 'hidden'), value => $frm->{engine}||'';
     } ],
+    [ static => content => 'Try to use a name from the <a href="/r/engines">engine list</a>.' ],
     [ select => short => 'voiced',     name => 'Voiced', options => [
       map [ $_, $self->{voiced}[$_] ], 0..$#{$self->{voiced}} ] ],
     [ select => short => 'ani_story',  name => 'Story animation', options => [
@@ -650,6 +652,34 @@ sub _fil_compat {
   $c{freeware} = $f->{fw} == 2 ? 0 : 1 if $f->{fw};
   $c{doujin} = $f->{do} == 2 ? 0 : 1 if $f->{do};
   return %c;
+}
+
+
+sub engines {
+  my $self = shift;
+  my $lst = $self->dbReleaseEngines();
+  $self->htmlHeader(title => 'Engine list', noindex => 1);
+
+  div class => 'mainbox';
+   h1 'Engine list';
+   p;
+    lit q{
+     This is a list of all engines currently associated with releases. This
+     list can be used as reference when filling out the engine field for a
+     release and to find inconsistencies in the engine names. See the <a
+     href="/d3.3">releases guidelines</a> for more information.
+    };
+   end;
+   ul;
+    for my $e (@$lst) {
+      li;
+       a href => '/r?fil='.fil_serialize({engine => $e->{engine}}), $e->{engine};
+       b class => 'grayedout', " $e->{cnt}";
+      end;
+    }
+   end;
+
+  end;
 }
 
 
