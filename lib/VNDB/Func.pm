@@ -93,7 +93,7 @@ sub fil_parse {
   my %keys = map +($_,1), @_;
   my %r;
   for (split /\./, $str) {
-    next if !/^([a-z0-9_]+)-([a-zA-Z0-9_~]+)$/ || !$keys{$1};
+    next if !/^([a-z0-9_]+)-([a-zA-Z0-9_~\x81-\x{ffffff}]+)$/ || !$keys{$1};
     my($f, $v) = ($1, $2);
     my @v = split /~/, $v;
     s/_([0-9]{2})/$1 > $#fil_escape ? '' : $fil_escape[$1]/eg for(@v);
