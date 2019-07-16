@@ -443,11 +443,11 @@ sub _form {
     [ static => label => 'Engine', content => sub {
       my $other = $frm->{engine} && !grep($_ eq $frm->{engine}, @{$self->{engines}});
       Select name => 'engine', id => 'engine', tabindex => 10;
-       option value => $_, $frm->{engine} eq $_ ? (selected => 'selected') : (), $_ || 'Unknown'
+       option value => $_, ($frm->{engine}||'') eq $_ ? (selected => 'selected') : (), $_ || 'Unknown'
          for ('', @{$self->{engines}});
        option value => '_other_', $other ? (selected => 'selected') : (), 'Other';
       end;
-      input type => 'text', name => 'engine_oth', id => 'engine_oth', tabindex => 10, class => 'text '.($other ? '' : 'hidden'), value => $frm->{engine};
+      input type => 'text', name => 'engine_oth', id => 'engine_oth', tabindex => 10, class => 'text '.($other ? '' : 'hidden'), value => $frm->{engine}||'';
     } ],
     [ select => short => 'voiced',     name => 'Voiced', options => [
       map [ $_, $self->{voiced}[$_] ], 0..$#{$self->{voiced}} ] ],
