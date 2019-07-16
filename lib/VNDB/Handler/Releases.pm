@@ -667,7 +667,7 @@ sub engines {
      This is a list of all engines currently associated with releases. This
      list can be used as reference when filling out the engine field for a
      release and to find inconsistencies in the engine names. See the <a
-     href="/d3.3">releases guidelines</a> for more information.
+     href="/d3#3">releases guidelines</a> for more information.
     };
    end;
    ul;
