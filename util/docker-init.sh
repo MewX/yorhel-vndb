@@ -7,6 +7,7 @@ if ! test -f /var/vndb-docker-image; then
 fi
 
 
+# Should run as root
 mkdevuser() {
     # Create a new user with the same UID and GID as the owner of the VNDB
     # directory. This allows for convenient exchange of files without worrying
@@ -24,50 +25,34 @@ mkdevuser() {
         useradd -u $USER_UID -g $USER_GID -m -s /bin/bash devuser
     fi
 
-    # So you can easily do a 'psql -U vndb'
-    echo '*:*:*:vndb:vndb'              >/home/devuser/.pgpass
-    echo '*:*:*:vndb_site:vndb_site'   >>/home/devuser/.pgpass
-    echo '*:*:*:vndb_multi:vndb_multi' >>/home/devuser/.pgpass
-    chown devuser /home/devuser/.pgpass
-    chmod 600 /home/devuser/.pgpass
+    echo 'LANG=en_US.UTF-8' >>/home/devuser/.profile
+    echo 'export LANG'      >>/home/devuser/.profile
+    chown devuser:devgroup -R /var/run/postgresql/
 }
 
 
+# Should run as devuser
 pg_start() {
-    echo 'local all postgres peer' >/etc/postgresql/10/main/pg_hba.conf
-    echo 'local all all md5'      >>/etc/postgresql/10/main/pg_hba.conf
-    # I'm glad Ubuntu 18.04 still has an init script for this
-    /etc/init.d/postgresql start
-}
+    if [ ! -d /var/www/data/docker-pg/10 ]; then
+        mkdir -p /var/www/data/docker-pg/10
+        /usr/lib/postgresql/10/bin/pg_ctl initdb -D /var/www/data/docker-pg/10
+    fi
+    echo 'local all all trust' >/var/www/data/docker-pg/10/pg_hba.conf
+    /usr/lib/postgresql/10/bin/pg_ctl -D /var/www/data/docker-pg/10 -l /var/www/data/docker-pg/10/logfile start
 
-
-pg_init() {
-    if test -f /var/lib/postgresql/vndb-init-done; then
+    cd /var/www
+    if test -f data/docker-pg/vndb-init-done; then
         echo
         echo "Database initialization already done."
         echo
         return
     fi
-    su postgres -c '/var/www/util/docker-init.sh pg_load_superuser'
-    su devuser -c '/var/www/util/docker-init.sh pg_load_vndb'
-    touch /var/lib/postgresql/vndb-init-done
 
-    echo
-    echo "Database initialization done!"
-    echo
-}
+    psql postgres -f util/sql/superuser_init.sql
+    echo "ALTER ROLE vndb       LOGIN" | psql postgres
+    echo "ALTER ROLE vndb_site  LOGIN" | psql postgres
+    echo "ALTER ROLE vndb_multi LOGIN" | psql postgres
 
-# Should run as the postgres user
-pg_load_superuser() {
-    psql -f /var/www/util/sql/superuser_init.sql
-    echo "ALTER ROLE vndb       LOGIN PASSWORD 'vndb'"       | psql -U postgres
-    echo "ALTER ROLE vndb_site  LOGIN PASSWORD 'vndb_site'"  | psql -U postgres
-    echo "ALTER ROLE vndb_multi LOGIN PASSWORD 'vndb_multi'" | psql -U postgres
-}
-
-# Should run as devuser
-pg_load_vndb() {
-    cd /var/www
     make util/sql/editfunc.sql
     psql -U vndb -f util/sql/all.sql
 
@@ -84,7 +69,14 @@ pg_load_vndb() {
     then
         curl https://s.vndb.org/devdump.tar.gz | tar -xzf-
         psql -U vndb -f dump.sql
+        rm dump.sql
     fi
+
+    touch data/docker-pg/vndb-init-done
+
+    echo
+    echo "Database initialization done!"
+    echo
 }
 
 
@@ -99,15 +91,11 @@ devshell() {
 case "$1" in
     '')
         mkdevuser
-        pg_start
-        pg_init
+        su devuser -c '/var/www/util/docker-init.sh pg_start'
         exec su devuser -c '/var/www/util/docker-init.sh devshell'
         ;;
-    pg_load_superuser)
-        pg_load_superuser
-        ;;
-    pg_load_vndb)
-        pg_load_vndb
+    pg_start)
+        pg_start
         ;;
     devshell)
         devshell

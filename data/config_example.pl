@@ -6,7 +6,7 @@ package VNDB;
 %O = (
   %O,
   db_login      => [ 'dbi:Pg:dbname=vndb', 'vndb_site', 'vndb_site' ],
-  logfile       => $ROOT.'/err.log',
+  #logfile       => $ROOT.'/err.log',
   xml_pretty    => 0,
   log_queries   => 0,
   debug         => 1,

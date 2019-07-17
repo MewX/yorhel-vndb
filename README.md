@@ -6,30 +6,38 @@ Setup:
 
 ```
   docker build -t vndb .
-  docker volume create --name vndb-data
 ```
 
 Run (will run on the foreground):
 
 ```
-  docker run -ti --name vndb -p 3000:3000 -v vndb-data:/var/lib/postgresql -v "`pwd`":/var/www --rm vndb
+  docker run -ti --name vndb -p 3000:3000 -v "`pwd`":/var/www --rm vndb
 ```
 
-While running, if you need another terminal into the container:
+If you need another terminal into the container while it's running:
 
 ```
-  docker exec -ti vndb bash                           # root shell
-  docker exec -ti vndb su -l devuser                  # development shell
-  docker exec -ti vndb su postgres -c psql            # postgres superuser shell
-  docker exec -ti vndb su devuser -c 'psql -U vndb'   # postgres vndb shell
+  docker exec -ti vndb su -l devuser         # development shell (files are at /var/www)
+  docker exec -ti vndb psql -U devuser vndb  # postgres superuser shell
+  docker exec -ti vndb psql -U vndb          # postgres vndb shell
 ```
 
-To run Multi, the optional application server:
+To start Multi, the optional application server:
 
 ```
-  docker exec -ti vndb su -l devuser
-  cd /var/www
-  make multi-restart
+  docker exec -ti vndb su -l devuser -c 'make -C /var/www multi-restart'
+```
+
+It will run in the background for as long as the container is alive. Logs are
+written to `data/log/multi.log`.
+
+The PostgreSQL database will be stored in `data/docker-pg/` and the uploaded
+files in `static/{ch,cv,sf,st}`. If you want to restart with a clean slate, you
+can stop the container and run:
+
+```
+  # Might want to make a backup of these dirs first if you have any interesting data.
+  rm -rf data/docker-pg static/{ch,cv,sf,st}
 ```
 
 ## Development database
@@ -107,8 +115,8 @@ util/multi.pl (application server, optional):
 
 - Update the vndb_site password in data/config.pl to whatever you set it in
   the previous step.
-- (Optional) Import the "Development database" as explained above.
 - (Optional) Do the same for vndb_multi if Multi is needed.
+- (Optional) Import the "Development database" as explained above.
 - Now simply run:
 
 ```
