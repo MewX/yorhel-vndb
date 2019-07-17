@@ -523,8 +523,9 @@ sub edit {
 
     [ part   => title => 'Options' ],
     [ check  => short => 'hide_list', name =>
-       qq{Don't allow other people to see my visual novel list (<a href="/u$uid/list">/u$uid/list</a>),
-          votes (<a href="/u$uid/votes">/u$uid/votes</a>) and wishlist (<a href="/u$uid/wish">/u$uid/wish</a>).} ],
+       qq{Don't allow other people to see my <a href="/u$uid/list">visual novel list</a>,
+          <a href="/u$uid/votes">votes</a> and <a href="/u$uid/wish">wishlist</a>,
+          and exclude these lists from the <a href="/d14">database dumps</a> and <a href="/d11">API</a>.} ],
     [ check  => short => 'show_nsfw', name => 'Disable warnings for images that are not safe for work.' ],
     [ check  => short => 'traits_sexual', name => 'Show sexual traits by default on character pages.' ],
     [ check  => short => 'tags_all', name => 'Show all tags by default on visual novel pages.' ],
