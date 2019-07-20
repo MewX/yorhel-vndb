@@ -104,7 +104,7 @@ sub page {
      li; a href => '/d9',  'Discussion Board'; end;
      li; a href => '/d6',  'FAQ'; end;
      li; a href => '/d7',  'About Us'; end;
-     li; a href => '/d17', 'Privacy Policy'; end;
+     li; a href => '/d17', 'Privacy Policy & Licensing'; end;
      li; a href => '/d11', 'Database API'; end;
      li; a href => '/d14', 'Database Dumps'; end;
      li; a href => '/d8',  'Development'; end;
