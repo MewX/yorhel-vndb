@@ -596,7 +596,7 @@ sub posts {
 
 sub delete {
   my($self, $uid, $act) = @_;
-  return $self->htmlDenied if !$self->authCan('usermod');
+  return $self->htmlDenied if ($self->authInfo->{id}) != 2; # Yeah, yorhel-only function
 
   # rarely used admin function, won't really need translating
 
