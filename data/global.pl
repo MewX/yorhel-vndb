@@ -281,7 +281,6 @@ our %M = (
   log_level => 'trace',
   modules   => {
     #API         => {},  # disabled by default, not really needed
-    #APIDump     => {},
     Feed        => {},
     RG          => {},
     #Anime       => {},  # disabled by default, requires AniDB username/pass

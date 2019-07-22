@@ -11,6 +11,10 @@ util/dbdump.pl export-db output.tar.zst
 util/dbdump.pl export-img output.tar.zst
 
   Write an export of all referenced images to a .tar.zst
+
+util/dbdump.pl export-votes output.gz
+util/dbdump.pl export-tags output.gz
+util/dbdump.pl export-traits output.gz
 _
 
 # TODO:
@@ -242,10 +246,88 @@ sub export_img {
 }
 
 
+sub export_votes {
+    my $dest = shift;
+    require PerlIO::gzip;
+
+    open my $F, '>:gzip:utf8', $dest;
+    $db->do(q{COPY (
+        SELECT vv.vid||' '||vv.uid||' '||vv.vote||' '||to_char(vv.date, 'YYYY-MM-DD')
+          FROM votes vv
+          JOIN users u ON u.id = vv.uid
+          JOIN vn v ON v.id = vv.vid
+         WHERE NOT v.hidden
+           AND NOT u.ign_votes
+           AND NOT EXISTS(SELECT 1 FROM users_prefs up WHERE up.uid = u.id AND key = 'hide_list')
+         ORDER BY vv.vid, vv.uid
+       ) TO STDOUT
+    });
+    my $v;
+    print $F $v while($db->pg_getcopydata($v) >= 0);
+}
+
+
+sub export_tags {
+    my $dest = shift;
+    require JSON::XS;
+    require PerlIO::gzip;
+
+    my $lst = $db->selectall_arrayref(q{
+        SELECT id, name, description, searchable, applicable, c_items AS vns, cat,
+          (SELECT string_agg(alias,'$$$-$$$') FROM tags_aliases where tag = id) AS aliases,
+          (SELECT string_agg(parent::text, ',') FROM tags_parents WHERE tag = id) AS parents
+        FROM tags WHERE state = 2 ORDER BY id
+    }, { Slice => {} });
+    for(@$lst) {
+      $_->{id} *= 1;
+      $_->{meta} = !$_->{searchable} ? JSON::XS::true() : JSON::XS::false(); # For backwards compat
+      $_->{searchable} = $_->{searchable} ? JSON::XS::true() : JSON::XS::false();
+      $_->{applicable} = $_->{applicable} ? JSON::XS::true() : JSON::XS::false();
+      $_->{vns} *= 1;
+      $_->{aliases} = [ split /\$\$\$-\$\$\$/, ($_->{aliases}||'') ];
+      $_->{parents} = [ map $_*1, split /,/, ($_->{parents}||'') ];
+    }
+
+    open my $F, '>:gzip:utf8', $dest;
+    print $F JSON::XS->new->canonical->encode($lst);
+}
+
+
+sub export_traits {
+    my $dest = shift;
+    require JSON::XS;
+    require PerlIO::gzip;
+
+    my $lst = $db->selectall_arrayref(q{
+        SELECT id, name, alias AS aliases, description, searchable, applicable, c_items AS chars,
+               (SELECT string_agg(parent::text, ',') FROM traits_parents WHERE trait = id) AS parents
+        FROM traits WHERE state = 2 ORDER BY id
+    }, { Slice => {} });
+    for(@$lst) {
+      $_->{id} *= 1;
+      $_->{meta} = $_->{searchable} ? JSON::XS::true() : JSON::XS::false(); # For backwards compat
+      $_->{searchable} = $_->{searchable} ? JSON::XS::true() : JSON::XS::false();
+      $_->{applicable} = $_->{applicable} ? JSON::XS::true() : JSON::XS::false();
+      $_->{chars} *= 1;
+      $_->{aliases} = [ split /\r?\n/, ($_->{aliases}||'') ];
+      $_->{parents} = [ map $_*1, split /,/, ($_->{parents}||'') ];
+    }
+
+    open my $F, '>:gzip:utf8', $dest;
+    print $F JSON::XS->new->canonical->encode($lst);
+}
+
+
 if($ARGV[0] && $ARGV[0] eq 'export-db' && $ARGV[1]) {
     export_db $ARGV[1];
 } elsif($ARGV[0] && $ARGV[0] eq 'export-img' && $ARGV[1]) {
     export_img $ARGV[1];
+} elsif($ARGV[0] && $ARGV[0] eq 'export-votes' && $ARGV[1]) {
+    export_votes $ARGV[1];
+} elsif($ARGV[0] && $ARGV[0] eq 'export-tags' && $ARGV[1]) {
+    export_tags $ARGV[1];
+} elsif($ARGV[0] && $ARGV[0] eq 'export-traits' && $ARGV[1]) {
+    export_traits $ARGV[1];
 } else {
     print $HELP;
 }
