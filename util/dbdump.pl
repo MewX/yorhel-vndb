@@ -207,7 +207,7 @@ sub export_db {
     export_import_script "${dest}_dir/import.sql";
 
     print "# Compressing\n";
-    `tar -cf "$dest" -I 'zstd -7' --sort=name -C "${dest}_dir" @static TIMESTAMP db`
+    `tar -cf "$dest" -I 'zstd -7' --sort=name -C "${dest}_dir" @static import.sql TIMESTAMP db`
 }
 
 
