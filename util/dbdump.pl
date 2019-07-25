@@ -117,7 +117,7 @@ sub export_table {
     my @cols = grep $_->{pub}, @{$schema->{cols}};
     die "No columns to export for table '$table->{name}'\n" if !@cols;;
 
-    print "# Dumping $table->{name}\n";
+    #print "# Dumping $table->{name}\n";
     my $fn = "$dest/$table->{name}";
 
     # Truncate all timestamptz columns to a day, to avoid leaking privacy-sensitive info.
@@ -206,7 +206,7 @@ sub export_db {
     export_table "${dest}_dir/db", $_ for @tables;
     export_import_script "${dest}_dir/import.sql";
 
-    print "# Compressing\n";
+    #print "# Compressing\n";
     `tar -cf "$dest" -I 'zstd -7' --sort=name -C "${dest}_dir" @static import.sql TIMESTAMP db`
 }
 
