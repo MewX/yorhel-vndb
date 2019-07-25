@@ -2,6 +2,7 @@ package VN3::VN::Edit;
 
 use VN3::Prelude;
 use VN3::VN::Lib;
+use VN3::ElmGen;
 
 
 my $FORM = {
@@ -64,10 +65,11 @@ my $FORM = {
     } },
 };
 
-our $FORM_OUT = form_compile out => $FORM;
-our $FORM_IN  = form_compile in  => $FORM;
-our $FORM_CMP = form_compile cmp => $FORM;
+my $FORM_OUT = form_compile out => $FORM;
+my $FORM_IN  = form_compile in  => $FORM;
+my $FORM_CMP = form_compile cmp => $FORM;
 
+elm_form VNEdit => $FORM_OUT, $FORM_IN;
 
 
 TUWF::get qr{/$VREV_RE/edit} => sub {

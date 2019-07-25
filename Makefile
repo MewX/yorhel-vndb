@@ -80,23 +80,8 @@ data/icons/icons.css: data/icons/*.png data/icons/*/*.png util/spritegen.pl | st
 static/s/%/style.css: static/s/%/conf util/skingen.pl data/style.css data/icons/icons.css
 	util/skingen.pl $*
 
-
-ELMDEP=\
-	data/config3.pl \
-	lib/VN3/Auth.pm \
-	lib/VN3/Docs/Edit.pm \
-	lib/VN3/Release/Edit.pm \
-	lib/VN3/Producer/Edit.pm \
-	lib/VN3/Char/Edit.pm \
-	lib/VN3/Staff/Edit.pm \
-	lib/VN3/Types.pm \
-	lib/VN3/User/Settings.pm \
-	lib/VN3/VN/Edit.pm \
-	lib/VN3/Validation.pm \
-	util/elmgen.pl
-
-elm3/Lib/Gen.elm: ${ELMDEP}
-	util/elmgen.pl >$@
+elm3/Lib/Gen.elm: lib/VN3/*.pm lib/VN3/*/*.pm data/config3.pl
+	util/vndb3.pl elmgen >$@
 
 static/v3/elm.js: elm3/*.elm elm3/*/*.elm elm3/Lib/Gen.elm | static/f
 	cd elm3 && ELM_HOME=elm-stuff elm make *.elm */*.elm --output ../$@

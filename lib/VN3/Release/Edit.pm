@@ -1,6 +1,7 @@
 package VN3::Release::Edit;
 
 use VN3::Prelude;
+use VN3::ElmGen;
 
 my $FORM = {
     hidden      => { anybool => 1 },
@@ -44,10 +45,11 @@ my $FORM = {
     editsum     => { _when => 'in out', editsum => 1 },
 };
 
-our $FORM_OUT = form_compile out => $FORM;
-our $FORM_IN  = form_compile in  => $FORM;
-our $FORM_CMP = form_compile cmp => $FORM;
+my $FORM_OUT = form_compile out => $FORM;
+my $FORM_IN  = form_compile in  => $FORM;
+my $FORM_CMP = form_compile cmp => $FORM;
 
+elm_form RelEdit => $FORM_OUT, $FORM_IN;
 
 TUWF::get qr{/$RREV_RE/(?<type>edit|copy)}, sub {
     my $r = entry r => tuwf->capture('id'), tuwf->capture('rev') or return tuwf->resNotFound;

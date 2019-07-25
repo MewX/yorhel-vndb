@@ -67,4 +67,9 @@ TUWF::hook before => sub {
 
 require VN3::Validation; # Load this early, to ensure the custom_validations are available
 TUWF::load_recursive 'VN3';
-TUWF::run;
+
+if($ARGV[0] && $ARGV[0] eq 'elmgen') {
+    VN3::ElmGen::print();
+} else {
+    TUWF::run;
+}
