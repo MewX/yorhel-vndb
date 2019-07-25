@@ -1,9 +1,12 @@
 /data/config.pl
+/data/config3.pl
 /data/docker-pg
 /data/icons/icons.css
 /data/log/
 /data/multi.pid
 /data/passwords.dat
+/elm3/elm-stuff/
+/elm3/Lib/Gen.elm
 /static/f/js/
 /static/f/icons.png
 /static/f/vndb.js
@@ -12,6 +15,13 @@
 /static/s/*/style.css
 /static/s/*/style.css.gz
 /static/s/*/boxbg.png
+/static/v3/elm.js
+/static/v3/elm-opt.js
+/static/v3/min.js
+/static/v3/min.js.gz
+/static/v3/min.css
+/static/v3/min.css.gz
+/static/v3/style.css
 /static/ch
 /static/cv
 /static/sf
@@ -20,3 +30,4 @@
 /static/api
 /util/sql/editfunc.sql
 /www/
+*.swp

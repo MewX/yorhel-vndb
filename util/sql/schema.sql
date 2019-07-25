@@ -65,7 +65,7 @@ CREATE TABLE anime (
   ann_id integer, -- [pub]
   nfo_id varchar(200), -- [pub]
   type anime_type, -- [pub]
-  title_romaji varchar(250) -- [pub]
+  title_romaji varchar(250), -- [pub]
   title_kanji varchar(250), -- [pub]
   lastfetch timestamptz
 );

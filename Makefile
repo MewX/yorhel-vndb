@@ -1,30 +1,12 @@
 # all (default)
-#   Same as `make dirs js icons skins robots`
+#   Create all the necessary directories, javascript, css, etc.
 #
-# dirs
-#   Creates the required directories not present in git
-#
-# js
-#   Generates the Javascript code
-#
-# icons
-#   Generates the CSS icon sprites
-#
-# skins
-#   Generates the CSS code
-#
-# robots
-#   Ensures that www/robots.txt and static/robots.txt exist. Can be modified to
-#   suit your needs.
+# prod
+#   Create static assets for production (v3 only).
 #
 # chmod
 #   For when the http process is run from a different user than the files are
 #   chown'ed to. chmods all files and directories written to from vndb.pl.
-#
-# chmod-autoupdate
-#   As chmod, but also chmods all files that may need to be updated from a
-#   normal 'make' run. Should be used when the regen_static option is enabled
-#   and the http process is run from a different user.
 #
 # multi-start, multi-stop, multi-restart:
 #   Start/stop/restart the Multi daemon. Provided for convenience, a proper initscript
@@ -35,19 +17,39 @@
 #   other environments. Patches to improve the portability are always welcome.
 
 
-.PHONY: all dirs js icons skins robots chmod chmod-autoupdate multi-stop multi-start multi-restart
+.PHONY: all chmod multi-stop multi-start multi-restart
 
-all: dirs js skins robots data/config.pl util/sql/editfunc.sql
+ALL_KEEP=\
+	static/ch static/cv static/sf static/st \
+	data/log static/f static/v3 www www/feeds www/api \
+	data/config.pl data/config3.pl \
+	www/robots.txt static/robots.txt
 
-dirs: static/ch static/f static/cv static/sf static/st data/log www www/feeds www/api
+ALL_CLEAN=\
+	static/f/vndb.js \
+	data/icons/icons.css \
+	static/v3/elm.js \
+	static/v3/style.css \
+	util/sql/editfunc.sql \
+	$(shell ls static/s | sed -e 's/\(.\+\)/static\/s\/\1\/style.css/g')
 
-js: static/f/vndb.js
+PROD=\
+	static/v3/elm-opt.js \
+	static/v3/min.js static/v3/min.js.gz \
+	static/v3/min.css static/v3/min.css.gz
 
-icons: data/icons/icons.css
+all: ${ALL_KEEP} ${ALL_CLEAN}
+prod: ${PROD}
 
-skins: $(shell ls static/s | sed -e 's/\(.\+\)/static\/s\/\1\/style.css/g')
+clean:
+	rm -f ${ALL_CLEAN} ${PROD}
+	rm -f static/f/icons.png
+	rm -f static/s/*/style.css.gz static/s/*/boxbg.png
+	rm -f elm3/Lib/Gen.elm
+	rm -rf elm3/elm-stuff/build-artifacts
 
-robots: dirs www/robots.txt static/robots.txt
+cleaner: clean
+	rm -rf elm3/elm-stuff
 
 util/sql/editfunc.sql: util/sqleditfunc.pl util/sql/schema.sql
 	util/sqleditfunc.pl
@@ -56,11 +58,18 @@ static/ch static/cv static/sf static/st:
 	mkdir -p $@;
 	for i in $$(seq -w 0 1 99); do mkdir -p "$@/$$i"; done
 
-data/log www www/feeds www/api static/f:
+data/log www www/feeds www/api static/f static/v3:
 	mkdir -p $@
 
 data/config.pl:
 	cp -n data/config_example.pl data/config.pl
+
+data/config3.pl:
+	cp -n data/config3_example.pl data/config3.pl
+
+%/robots.txt: | www
+	echo 'User-agent: *' > $@
+	echo 'Disallow: /' >> $@
 
 static/f/vndb.js: data/js/*.js util/jsgen.pl data/config.pl data/global.pl | static/f
 	util/jsgen.pl
@@ -71,16 +80,59 @@ data/icons/icons.css: data/icons/*.png data/icons/*/*.png util/spritegen.pl | st
 static/s/%/style.css: static/s/%/conf util/skingen.pl data/style.css data/icons/icons.css
 	util/skingen.pl $*
 
-%/robots.txt:
-	echo 'User-agent: *' > $@
-	echo 'Disallow: /' >> $@
+
+ELMDEP=\
+	data/config3.pl \
+	lib/VN3/Auth.pm \
+	lib/VN3/Docs/Edit.pm \
+	lib/VN3/Release/Edit.pm \
+	lib/VN3/Producer/Edit.pm \
+	lib/VN3/Char/Edit.pm \
+	lib/VN3/Staff/Edit.pm \
+	lib/VN3/Types.pm \
+	lib/VN3/User/Settings.pm \
+	lib/VN3/VN/Edit.pm \
+	lib/VN3/Validation.pm \
+	util/elmgen.pl
+
+elm3/Lib/Gen.elm: ${ELMDEP}
+	util/elmgen.pl >$@
+
+static/v3/elm.js: elm3/*.elm elm3/*/*.elm elm3/Lib/Gen.elm | static/f
+	cd elm3 && ELM_HOME=elm-stuff elm make *.elm */*.elm --output ../$@
+	sed -i 's/var author\$$project\$$Lib\$$Ffi\$$/var __unused__/g' $@
+	sed -Ei 's/author\$$project\$$Lib\$$Ffi\$$([a-zA-Z0-9_]+)/window.elmFfi_\1(_Json_wrap)/g' $@
+
+static/v3/elm-opt.js: elm/*.elm elm/*/*.elm elm/Lib/Gen.elm | static/f
+	cd elm3 && ELM_HOME=elm-stuff elm make --optimize *.elm */*.elm --output ../$@
+	sed -i 's/var author\$$project\$$Lib\$$Ffi\$$/var __unused__/g' $@
+	sed -Ei 's/author\$$project\$$Lib\$$Ffi\$$([a-zA-Z0-9_]+)/window.elmFfi_\1(_Json_wrap)/g' $@
+
+static/v3/min.js: static/v3/elm-opt.js static/v3/vndb.js
+	uglifyjs $^ --compress 'pure_funcs="F2,F3,F4,F5,F6,F7,F8,F9,A2,A3,A4,A5,A6,A7,A8,A9",pure_getters,keep_fargs=false,unsafe_comps,unsafe' | uglifyjs --mangle -o $@
+
+static/v3/min.js.gz: static/v3/min.js
+	zopfli $<
+
+
+CSS=\
+	css3/framework/base.css\
+	css3/framework/helpers.css\
+	css3/framework/grid.css\
+	css3/framework/elements.css\
+	css3/vndb.css
+
+static/v3/style.css: ${CSS} | static/f
+	cat $^ >$@
+
+static/v3/min.css: static/v3/style.css
+	uglifycss $^ >$@
+
+static/v3/min.css.gz: static/v3/min.css
+	zopfli $<
 
 chmod: all
 	chmod -R a-x+rwX static/{ch,cv,sf,st}
-
-chmod-autoupdate: chmod
-	chmod a+xrw static/f data/icons
-	chmod -f a-x+rw static/s/*/{style.css,boxbg.png} static/f/icons.png
 
 
 # may wait indefinitely, ^C and kill -9 in that case

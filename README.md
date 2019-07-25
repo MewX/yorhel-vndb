@@ -17,9 +17,8 @@ Run (will run on the foreground):
 If you need another terminal into the container while it's running:
 
 ```
-  docker exec -ti vndb su -l devuser         # development shell (files are at /var/www)
-  docker exec -ti vndb psql -U devuser vndb  # postgres superuser shell
-  docker exec -ti vndb psql -U vndb          # postgres vndb shell
+  docker exec -ti vndb su -l devuser  # development shell (files are at /var/www)
+  docker exec -ti vndb psql -U vndb   # postgres shell
 ```
 
 To start Multi, the optional application server:
@@ -60,6 +59,7 @@ Global requirements:
 - Linux, or an OS that resembles Linux. Chances are VNDB won't run on Windows.
 - PostgreSQL 10 (older versions may work)
 - perl 5.24 recommended, 5.10+ may also work
+- Elm 0.19
 
 **Perl modules** (core modules are not listed):
 
@@ -75,6 +75,7 @@ General:
 
 util/vndb.pl (the web backend):
 - Algorithm::Diff::XS
+- SQL::Interp
 - Text::MultiMarkdown
 - TUWF
 - HTTP::Server::Simple
@@ -89,8 +90,10 @@ util/multi.pl (application server, optional):
 
 ## Setup
 
-- Make sure all the required dependencies (see above) are installed
+- Make sure all the required dependencies (see above) are installed. Hint: See
+  the Docker file for Ubuntu commands. For non-root setup: Use cpanm & local::lib.
 - Create a suitable data/config.pl, using data/config_example.pl as base.
+  (For v3, you may also want a config3.pl based on config3_example.pl)
 - Run the build system:
 
 ```
@@ -127,6 +130,29 @@ util/multi.pl (application server, optional):
 
 ```
   make multi-restart
+```
+
+
+# Version 2 & 3
+
+The VNDB website is being rewritten. The current active site is version 2, but
+this repository also contains the code for the new (in progress) version 3. The
+code is easy to identify, the following files are only used by version 3:
+
+- `lib/VN3/`
+- `css3/`
+- `elm3/`
+- `util/{vndb3,elmgen}.pl`
+- `data/config3{,_example}.pl`
+
+To run version 3 instead of 2:
+
+```
+  # When not using Docker
+  util/vndb-dev-server.pl 3
+  
+  # Or when using Docker, start the container as follows:
+  docker run -ti --name vndb -p 3000:3000 -v "`pwd`":/var/www --rm vndb /var/www/util/docker-init.sh 3
 ```
 
 ## License

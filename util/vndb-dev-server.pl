@@ -15,6 +15,8 @@ use Cwd 'abs_path';
 my $listen_port = $ENV{TUWF_HTTP_SERVER_PORT} || 3000;
 $ENV{TUWF_HTTP_SERVER_PORT} = $listen_port+1;
 
+my $script = $ARGV[0] && $ARGV[0] eq '3' ? 'vndb3.pl' : 'vndb.pl';
+
 my($pid, $prog, $killed);
 
 sub prog_start {
@@ -28,7 +30,7 @@ sub prog_start {
         }
         print $d;
     };
-    $prog = run_cmd "$ROOT/util/vndb.pl",
+    $prog = run_cmd "$ROOT/util/$script",
         '$$' => \$pid,
         '>'  => $output,
         '2>' => $output;
@@ -102,7 +104,9 @@ sub checkmod {
     chdir $ROOT;
     $check->($_) for (qw{
         util/vndb.pl
+        util/vndb3.pl
         data/config.pl
+        data/config3.pl
         data/global.pl
     });
 
@@ -150,6 +154,6 @@ while(1) {
 
     my $prog_conn = AE::cv;
     tcp_connect '127.0.0.1', $ENV{TUWF_HTTP_SERVER_PORT}, sub { $prog_conn->send(shift); };
-    my $prog_fh = $prog_conn->recv || die "Unable to connect to vndb.pl? $!";
+    my $prog_fh = $prog_conn->recv || die "Unable to connect to $script? $!";
     pipe_fhs($serv_fh, $prog_fh);
 }

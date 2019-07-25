@@ -67,7 +67,7 @@ pg_start() {
     read -p "Choice: " opt
     if [[ $opt =~ ^[Yy] ]]
     then
-        curl https://s.vndb.org/devdump.tar.gz | tar -xzf-
+        curl -L https://dl.vndb.org/dump/vndb-dev-latest.tar.gz | tar -xzf-
         psql -U vndb -f dump.sql
         rm dump.sql
     fi
@@ -83,7 +83,7 @@ pg_start() {
 # Should run as devuser
 devshell() {
     cd /var/www
-    util/vndb-dev-server.pl
+    util/vndb-dev-server.pl $1
     bash
 }
 
@@ -94,10 +94,15 @@ case "$1" in
         su devuser -c '/var/www/util/docker-init.sh pg_start'
         exec su devuser -c '/var/www/util/docker-init.sh devshell'
         ;;
+    3)
+        mkdevuser
+        su devuser -c '/var/www/util/docker-init.sh pg_start'
+        exec su devuser -c '/var/www/util/docker-init.sh devshell 3'
+        ;;
     pg_start)
         pg_start
         ;;
     devshell)
-        devshell
+        devshell $2
         ;;
 esac
