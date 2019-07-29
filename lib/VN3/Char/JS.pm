@@ -3,6 +3,17 @@ package VN3::Char::JS;
 use VN3::Prelude;
 
 
+my $elm_CharResult = elm_api CharResult => { aoh => {
+    id            => { id => 1 },
+    name          => {},
+    original      => {},
+    main          => { type => 'hash', required => 0, keys => {
+        id            => { id => 1 },
+        name          => {},
+        original      => {},
+    }},
+}};
+
 json_api '/js/char.json', {
     search => { maxlength => 500 }
 }, sub {
@@ -32,7 +43,12 @@ json_api '/js/char.json', {
         'LIMIT 20'
     );
 
-    tuwf->resJSON({CharResult => $r});
+    for (@$r) {
+        $_->{main} = $_->{main} ? { id => $_->{main}, name => $_->{main_name}, original => $_->{main_original} } : undef;
+        delete $_->{main_name}, $_->{main_original};
+    }
+
+    $elm_CharResult->($r);
 };
 
 1;

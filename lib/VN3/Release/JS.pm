@@ -3,11 +3,11 @@ package VN3::Release::JS;
 use VN3::Prelude;
 
 
-my $OUT = tuwf->compile({ aoh => {
+my $elm_ReleaseResult = elm_api ReleaseResult => { aoh => {
     id       => { id => 1 },
     title    => {},
     lang     => { type => 'array', values => {} },
-}});
+}};
 
 
 # Fetch all releases assigned to a VN
@@ -26,7 +26,7 @@ json_api '/js/release.json', {
     });
     enrich_list1 lang => id => id => sub { sql 'SELECT id, lang FROM releases_lang WHERE id IN', $_[0], 'ORDER BY id, lang' }, $r;
 
-    tuwf->resJSON({ReleaseResult => $OUT->analyze->coerce_for_json($r)});
+    $elm_ReleaseResult->($r);
 };
 
 1;

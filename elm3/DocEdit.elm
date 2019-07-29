@@ -7,13 +7,13 @@ import Browser
 import Browser.Navigation exposing (load)
 import Json.Encode as JE
 import Lib.Html exposing (..)
-import Lib.Gen exposing (..)
+import Lib.Gen as Gen
 import Lib.Api as Api
 import Lib.Ffi as Ffi
 import Lib.Editsum as Editsum
 
 
-main : Program DocEdit Model Msg
+main : Program Gen.DocEdit Model Msg
 main = Browser.element
   { init   = \e -> (init e, Cmd.none)
   , view   = view
@@ -32,7 +32,7 @@ type alias Model =
   }
 
 
-init : DocEdit -> Model
+init : Gen.DocEdit -> Model
 init d =
   { state       = Api.Normal
   , editsum     = { authmod = True, editsum = d.editsum, locked = d.locked, hidden = d.hidden }
@@ -43,7 +43,7 @@ init d =
   }
 
 
-encode : Model -> DocEditSend
+encode : Model -> Gen.DocEditSend
 encode model =
   { editsum     = model.editsum.editsum
   , hidden      = model.editsum.hidden
@@ -73,10 +73,10 @@ update msg model =
     Submit ->
       let
         path = "/d" ++ String.fromInt model.id ++ "/edit"
-        body = doceditSendEncode (encode model)
+        body = Gen.doceditSendEncode (encode model)
       in ({ model | state = Api.Loading }, Api.post path body Submitted)
 
-    Submitted (Api.Changed id rev) -> (model, load <| "/d" ++ String.fromInt id ++ "." ++ String.fromInt rev)
+    Submitted (Gen.Changed id rev) -> (model, load <| "/d" ++ String.fromInt id ++ "." ++ String.fromInt rev)
     Submitted r -> ({ model | state = Api.Error r }, Cmd.none)
 
     Preview ->
@@ -84,7 +84,7 @@ update msg model =
       , Api.post "/js/markdown.json" (JE.object [("content", JE.string model.content)]) HandlePreview
       )
 
-    HandlePreview (Api.Content s) -> ({ model | state = Api.Normal, preview = s }, Cmd.none)
+    HandlePreview (Gen.Content s) -> ({ model | state = Api.Normal, preview = s }, Cmd.none)
     HandlePreview r -> ({ model | state = Api.Error r }, Cmd.none)
 
 

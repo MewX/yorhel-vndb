@@ -7,6 +7,8 @@ import Http
 import Html exposing (Attribute)
 import Html.Events exposing (on)
 
+import Lib.Gen exposing (ApiResponse(..), decodeApiResponse)
+
 
 -- Handy state enum for forms
 type State
@@ -15,170 +17,13 @@ type State
   | Error Response
 
 
-type alias VN =
-  { id       : Int
-  , title    : String
-  , original : String
-  , hidden   : Bool
-  }
 
-decodeVN : JD.Decoder VN
-decodeVN = JD.map4
-  (\a b c d -> { id = a, title = b, original = c, hidden = d})
-  (JD.field "id"       JD.int)
-  (JD.field "title"    JD.string)
-  (JD.field "original" JD.string)
-  (JD.field "hidden"   JD.bool)
+type alias Response = ApiResponse
 
 
-type alias Staff =
-  { id       : Int
-  , aid      : Int
-  , name     : String
-  , original : String
-  }
-
-decodeStaff : JD.Decoder Staff
-decodeStaff = JD.map4
-  (\a b c d -> { id = a, aid = b, name = c, original = d })
-  (JD.field "id"       JD.int)
-  (JD.field "aid"      JD.int)
-  (JD.field "name"     JD.string)
-  (JD.field "original" JD.string)
-
-
-type alias Producer =
-  { id       : Int
-  , name     : String
-  , original : String
-  , hidden   : Bool
-  }
-
-decodeProducer : JD.Decoder Producer
-decodeProducer = JD.map4
-  (\a b c d -> { id = a, name = b, original = c, hidden = d })
-  (JD.field "id"       JD.int)
-  (JD.field "name"     JD.string)
-  (JD.field "original" JD.string)
-  (JD.field "hidden"   JD.bool)
-
-
-type alias Char =
-  { id       : Int
-  , name     : String
-  , original : String
-  , main     : Maybe
-    { id       : Int
-    , name     : String
-    }
-  }
-
-decodeChar : JD.Decoder Char
-decodeChar = JD.map5
-  (\a b c d e ->
-    { id = a, name = b, original = c
-    , main = case (d, e) of
-        (Just id, Just name) -> Just { id = id, name = name }
-        _ -> Nothing
-    })
-  (JD.field "id"            JD.int)
-  (JD.field "name"          JD.string)
-  (JD.field "original"      JD.string)
-  (JD.field "main"          (JD.nullable JD.int   ))
-  (JD.field "main_name"     (JD.nullable JD.string))
-
-
-type alias Trait =
-  { id    : Int
-  , name  : String
-  , gid   : Maybe Int
-  , group : Maybe String
-  }
-
-decodeTrait : JD.Decoder Trait
-decodeTrait = JD.map4
-  (\a b c d -> { id = a, name = b, gid = c, group = d })
-  (JD.field "id"    JD.int)
-  (JD.field "name"  JD.string)
-  (JD.field "gid"   (JD.nullable JD.int))
-  (JD.field "group" (JD.nullable JD.string))
-
-
--- Same as Lib.Gen.CharEditVnrelsReleases
-type alias Release =
-  { id    : Int
-  , title : String
-  , lang  : List String
-  }
-
-decodeRelease : JD.Decoder Release
-decodeRelease = JD.map3
-  (\a b c -> { id = a, title = b, lang = c })
-  (JD.field "id"    JD.int)
-  (JD.field "title" JD.string)
-  (JD.field "lang"   (JD.list JD.string))
-
-
--- Possible server responses. This only includes "expected" responses. Much of
--- the form validation is performed client side, so a constraint violation in
--- the JSON structure or data fields is unexpected and is reported by the
--- server as a 400 or 500 response.
-type Response
-  = HTTPError Http.Error
-  | Success
-  | CSRF
-  | Throttled
-  | Invalid JE.Value -- JSON structure constraint violation, contains TUWF::Validate error for low-level error reporting
-  | Unauth
-  | BadEmail
-  | BadLogin
-  | BadPass
-  | Bot
-  | Taken
-  | DoubleEmail
-  | DoubleIP
-  | Unchanged
-  | Changed Int Int -- DB entry updated, entry ID and revision number
-  | VNResult (List VN)
-  | StaffResult (List Staff)
-  | ProducerResult (List Producer)
-  | CharResult (List Char)
-  | TraitResult (List Trait)
-  | ReleaseResult (List Release)
-  | ImgFormat
-  | Image Int Int Int  -- Uploaded image (id, width, height)
-  | Content String -- Text content
-
-
-decodeResponse : JD.Decoder Response
-decodeResponse = JD.oneOf
-  [ JD.field "Success"       <| JD.succeed Success
-  , JD.field "Throttled"     <| JD.succeed Throttled
-  , JD.field "CSRF"          <| JD.succeed CSRF
-  , JD.field "Invalid"       <| JD.map Invalid JD.value
-  , JD.field "Unauth"        <| JD.succeed Unauth
-  , JD.field "BadEmail"      <| JD.succeed BadEmail
-  , JD.field "BadLogin"      <| JD.succeed BadLogin
-  , JD.field "BadPass"       <| JD.succeed BadPass
-  , JD.field "Bot"           <| JD.succeed Bot
-  , JD.field "Taken"         <| JD.succeed Taken
-  , JD.field "DoubleEmail"   <| JD.succeed DoubleEmail
-  , JD.field "DoubleIP"      <| JD.succeed DoubleIP
-  , JD.field "Unchanged"     <| JD.succeed Unchanged
-  , JD.field "Changed"       <| JD.map2 Changed (JD.index 0 JD.int) (JD.index 1 JD.int)
-  , JD.field "VNResult"      <| JD.map VNResult       <| JD.list decodeVN
-  , JD.field "StaffResult"   <| JD.map StaffResult    <| JD.list decodeStaff
-  , JD.field "ProducerResult"<| JD.map ProducerResult <| JD.list decodeProducer
-  , JD.field "CharResult"    <| JD.map CharResult     <| JD.list decodeChar
-  , JD.field "TraitResult"   <| JD.map TraitResult    <| JD.list decodeTrait
-  , JD.field "ReleaseResult" <| JD.map ReleaseResult  <| JD.list decodeRelease
-  , JD.field "ImgFormat"     <| JD.succeed ImgFormat
-  , JD.field "Image"         <| JD.map3 Image (JD.index 0 JD.int) (JD.index 1 JD.int) (JD.index 2 JD.int)
-  , JD.field "Content"       <| JD.map Content JD.string
-  ]
-
-
--- User-friendly error message if the response isn't what the code expected
+-- User-friendly error message if the response isn't what the code expected.
+-- (Technically a good chunk of this function could also be automatically
+-- generated by ElmGen.pm, but that wouldn't really have all that much value).
 showResponse : Response -> String
 showResponse res =
   let unexp = "Unexpected response, please report a bug."
@@ -219,7 +64,7 @@ expectResponse msg =
     res r = msg <| case r of
       Err e -> HTTPError e
       Ok v -> v
-  in Http.expectJson res decodeResponse
+  in Http.expectJson res decodeApiResponse
 
 
 -- Send a POST request with a JSON body to the VNDB API and get a Response back.

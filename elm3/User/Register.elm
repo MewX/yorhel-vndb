@@ -5,7 +5,7 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Browser
 import Json.Encode as JE
-import Lib.Gen exposing (emailPattern)
+import Lib.Gen as Gen
 import Lib.Api as Api
 import Lib.Html exposing (..)
 
@@ -52,7 +52,7 @@ update msg model =
     Submit -> ( { model | state = Api.Loading }
               , Api.post "/u/register" (encodeForm model) Submitted)
 
-    Submitted Api.Success     -> ({ model | state = Api.Normal, success = True }, Cmd.none)
+    Submitted Gen.Success     -> ({ model | state = Api.Normal, success = True }, Cmd.none)
     Submitted e               -> ({ model | state = Api.Error e}, Cmd.none)
 
 
@@ -82,7 +82,7 @@ view model = form_ Submit (model.state == Api.Loading)
         ]
       , div [ class "form-group" ]
         [ label [ for "email" ] [ text "Email" ]
-        , inputText "email" model.email EMail [required True, type_ "email", pattern emailPattern]
+        , inputText "email" model.email EMail [required True, type_ "email", pattern Gen.emailPattern]
         , div [ class "form-group__help" ]
           [ text "Your email address will only be used in case you lose your password. We will never send spam or newsletters unless you explicitly ask us for it or we get hacked." ]
         ]

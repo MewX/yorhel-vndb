@@ -7,15 +7,15 @@ import Browser
 import Browser.Navigation exposing (load)
 import Lib.Util exposing (splitLn)
 import Lib.Html exposing (..)
-import Lib.Gen exposing (..)
+import Lib.Gen as Gen
 import Lib.Api as Api
 import Lib.Editsum as Editsum
 import ProdEdit.Names as Names
-import ProdEdit.General as Gen
+import ProdEdit.General as General
 import ProdEdit.Relations as Rel
 
 
-main : Program ProdEdit Model Msg
+main : Program Gen.ProdEdit Model Msg
 main = Browser.element
   { init   = \e -> (init e, Cmd.none)
   , view   = view
@@ -29,20 +29,20 @@ type alias Model =
   , new         : Bool
   , editsum     : Editsum.Model
   , names       : Names.Model
-  , general     : Gen.Model
+  , general     : General.Model
   , relations   : Rel.Model
   , id          : Maybe Int
-  , dupProds    : List Api.Producer
+  , dupProds    : List Gen.ApiProducerResult
   }
 
 
-init : ProdEdit -> Model
+init : Gen.ProdEdit -> Model
 init d =
   { state       = Api.Normal
   , new         = False
   , editsum     = { authmod = d.authmod, editsum = d.editsum, locked = d.locked, hidden = d.hidden }
   , names       = Names.init d
-  , general     = Gen.init d
+  , general     = General.init d
   , relations   = Rel.init d.relations
   , id          = d.id
   , dupProds    = []
@@ -55,14 +55,14 @@ new =
   , new         = True
   , editsum     = Editsum.new
   , names       = Names.new
-  , general     = Gen.new
+  , general     = General.new
   , relations   = Rel.init []
   , id          = Nothing
   , dupProds    = []
   }
 
 
-encode : Model -> ProdEditSend
+encode : Model -> Gen.ProdEditSend
 encode model =
   { editsum     = model.editsum.editsum
   , hidden      = model.editsum.hidden
@@ -84,7 +84,7 @@ type Msg
   | Submit
   | Submitted Api.Response
   | Names Names.Msg
-  | General Gen.Msg
+  | General General.Msg
   | Relations Rel.Msg
   | CheckDup
   | RecvDup Api.Response
@@ -94,7 +94,7 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     Names   m -> ({ model | names   = Names.update   m model.names, dupProds = [] }, Cmd.none)
-    General m -> ({ model | general = Gen.update     m model.general }, Cmd.none)
+    General m -> ({ model | general = General.update m model.general }, Cmd.none)
     Editsum m -> ({ model | editsum = Editsum.update m model.editsum }, Cmd.none)
     Relations m -> let (nm, c) = Rel.update m model.relations in ({ model | relations = nm }, Cmd.map Relations c)
 
@@ -104,10 +104,10 @@ update msg model =
           case model.id of
             Just id -> "/p" ++ String.fromInt id ++ "/edit"
             Nothing -> "/p/add"
-        body = prodeditSendEncode (encode model)
+        body = Gen.prodeditSendEncode (encode model)
       in ({ model | state = Api.Loading }, Api.post path body Submitted)
 
-    Submitted (Api.Changed id rev) -> (model, load <| "/p" ++ String.fromInt id ++ "." ++ String.fromInt rev)
+    Submitted (Gen.Changed id rev) -> (model, load <| "/p" ++ String.fromInt id ++ "." ++ String.fromInt rev)
     Submitted r -> ({ model | state = Api.Error r }, Cmd.none)
 
     CheckDup ->
@@ -119,7 +119,7 @@ update msg model =
         then ({ model | state = Api.Loading }, Api.post "/js/producer.json" body RecvDup)
         else ({ model | new = False }, Cmd.none)
 
-    RecvDup (Api.ProducerResult dup) ->
+    RecvDup (Gen.ProducerResult dup) ->
       ({ model | state = Api.Normal, dupProds = dup, new = not (List.isEmpty dup) }, Cmd.none)
     RecvDup r -> ({ model | state = Api.Error r }, Cmd.none)
 
@@ -151,7 +151,7 @@ view model =
     ]
 
   else form_ Submit (model.state == Api.Loading)
-    [ Gen.view model.general General <| List.map (Html.map Names) <| Names.view model.names
+    [ General.view model.general General <| List.map (Html.map Names) <| Names.view model.names
     , Html.map Relations   <| Rel.view     model.relations
     , Html.map Editsum     <| Editsum.view model.editsum
     , submitButton "Submit" model.state (isValid model) False

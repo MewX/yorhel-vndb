@@ -1,7 +1,6 @@
 package VN3::Producer::Edit;
 
 use VN3::Prelude;
-use VN3::ElmGen;
 
 
 my $FORM = {
@@ -77,7 +76,7 @@ json_api qr{/(?:$PID_RE/edit|p/add)}, $FORM_IN, sub {
     my $new = !tuwf->capture('id');
     my $p = $new ? { id => 0 } : entry p => tuwf->capture('id') or return tuwf->resNotFound;
 
-    return tuwf->resJSON({Unauth => 1}) if !can_edit p => $p;
+    return $elm_Unauth->() if !can_edit p => $p;
 
     $data->{l_wp} ||= undef;
     if(!auth->permDbmod) {
@@ -92,14 +91,14 @@ json_api qr{/(?:$PID_RE/edit|p/add)}, $FORM_IN, sub {
     $data->{desc} = bb_subst_links $data->{desc};
 
     $p->{ptype} = delete $p->{type};
-    return tuwf->resJSON({Unchanged => 1}) if !$new && !form_changed $FORM_CMP, $data, $p;
+    return $elm_Unchanged->() if !$new && !form_changed $FORM_CMP, $data, $p;
     $data->{type} = delete $data->{ptype};
 
     my($id,undef,$rev) = update_entry p => $p->{id}, $data;
 
     update_reverse($id, $rev, $p, $data);
 
-    tuwf->resJSON({Changed => [$id, $rev]});
+    $elm_Changed->($id, $rev);
 };
 
 

@@ -4,20 +4,19 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Lib.Html exposing (..)
-import Lib.Gen exposing (ProdEditRelations, producerRelations)
-import Lib.Api exposing (Producer)
+import Lib.Gen as Gen
 import Lib.Util exposing (..)
 import Lib.Autocomplete as A
 
 
 type alias Model =
-  { relations  : List ProdEditRelations
-  , search     : A.Model Producer
+  { relations  : List Gen.ProdEditRelations
+  , search     : A.Model Gen.ApiProducerResult
   , duplicates : Bool
   }
 
 
-init : List ProdEditRelations -> Model
+init : List Gen.ProdEditRelations -> Model
 init l =
   { relations  = l
   , search     = A.init
@@ -28,10 +27,10 @@ init l =
 type Msg
   = Del Int
   | Rel Int String
-  | Search (A.Msg Producer)
+  | Search (A.Msg Gen.ApiProducerResult)
 
 
-searchConfig : A.Config Msg Producer
+searchConfig : A.Config Msg Gen.ApiProducerResult
 searchConfig = { wrap = Search, id = "add-relation", source = A.producerSource }
 
 
@@ -50,7 +49,7 @@ update msg model =
         Nothing -> ({ model | search = nm }, c)
         Just r  ->
           let
-            rel = List.head producerRelations |> Maybe.map Tuple.first |> Maybe.withDefault ""
+            rel = List.head Gen.producerRelations |> Maybe.map Tuple.first |> Maybe.withDefault ""
             nrow = { pid = r.id, relation = rel, name = r.name }
           in (validate { model | search = A.clear nm, relations = model.relations ++ [nrow] }, c)
 
@@ -62,7 +61,7 @@ view model =
       [ editListField 1 "single-line"
         [ a [href <| "/p" ++ String.fromInt e.pid, title e.name, target "_blank" ] [text e.name ] ]
       , editListField 1 ""
-        [ inputSelect [onInput (Rel n)] e.relation producerRelations ]
+        [ inputSelect [onInput (Rel n)] e.relation Gen.producerRelations ]
       , editListField 0 "" [ removeButton (Del n) ]
       ]
 

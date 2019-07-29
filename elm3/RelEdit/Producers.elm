@@ -5,19 +5,18 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Lib.Html exposing (..)
 import Lib.Autocomplete as A
-import Lib.Gen exposing (RelEditProducers)
+import Lib.Gen as Gen
 import Lib.Util exposing (..)
-import Lib.Api exposing (Producer)
 
 
 type alias Model =
-  { producers  : List RelEditProducers
-  , search     : A.Model Producer
+  { producers  : List Gen.RelEditProducers
+  , search     : A.Model Gen.ApiProducerResult
   , duplicates : Bool
   }
 
 
-init : List RelEditProducers -> Model
+init : List Gen.RelEditProducers -> Model
 init l =
   { producers  = l
   , search     = A.init
@@ -28,10 +27,10 @@ init l =
 type Msg
   = Del Int
   | SetRole Int String
-  | Search (A.Msg Producer)
+  | Search (A.Msg Gen.ApiProducerResult)
 
 
-searchConfig : A.Config Msg Producer
+searchConfig : A.Config Msg Gen.ApiProducerResult
 searchConfig = { wrap = Search, id = "add-producer", source = A.producerSource }
 
 

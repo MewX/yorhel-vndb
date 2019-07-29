@@ -1,15 +1,5 @@
 # This module provides additional validations for tuwf->validate(), and exports
-# an easy wrapper to create a simple API that accepts JSON data on POST
-# requests. The CSRF token and the input data are validated before the
-# subroutine is called.
-#
-# Usage:
-#
-#   json_api '/some/url', {
-#       username => { maxlength => 10 },
-#   }, sub {
-#       my $validated_data = shift;
-#   };
+# a few convenient form handling/validation functions.
 package VN3::Validation;
 
 use strict;
@@ -23,7 +13,7 @@ use JSON::XS;
 use Exporter 'import';
 use Time::Local 'timegm';
 use Carp 'croak';
-our @EXPORT = ('form_compile', 'form_changed', 'json_api', 'validate_dbid', 'can_edit');
+our @EXPORT = ('form_compile', 'form_changed', 'validate_dbid', 'can_edit');
 
 
 TUWF::set custom_validations => {
@@ -140,30 +130,6 @@ sub form_changed {
     #warn "a=".JSON::XS->new->pretty->canonical->encode($na);
     #warn "b=".JSON::XS->new->pretty->canonical->encode($nb);
     !eq_deep $na, $nb;
-}
-
-
-sub json_api {
-    my($path, $keys, $sub) = @_;
-
-    my $schema = ref $keys eq 'HASH' ? tuwf->compile({ type => 'hash', keys => $keys }) : $keys;
-
-    TUWF::post $path => sub {
-        if(!auth->csrfcheck(tuwf->reqHeader('X-CSRF-Token')||'')) {
-            warn "Invalid CSRF token in request\n";
-            tuwf->resJSON({CSRF => 1});
-            return;
-        }
-
-        my $data = tuwf->validate(json => $schema);
-        if(!$data) {
-            warn "JSON validation failed\ninput: " . JSON::XS->new->allow_nonref->pretty->canonical->encode(tuwf->reqJSON) . "\nerror: " . JSON::XS->new->encode($data->err) . "\n";
-            tuwf->resJSON({Invalid => $data->err});
-            return;
-        }
-
-        $sub->($data->data);
-    };
 }
 
 

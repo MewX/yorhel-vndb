@@ -1,7 +1,6 @@
 package VN3::Staff::Edit;
 
 use VN3::Prelude;
-use VN3::ElmGen;
 
 
 my $FORM = {
@@ -77,7 +76,7 @@ json_api qr{/(?:$SID_RE/edit|s/add)}, $FORM_IN, sub {
     my $new = !tuwf->capture('id');
     my $e = $new ? { id => 0 } : entry s => tuwf->capture('id') or return tuwf->resNotFound;
 
-    return tuwf->resJSON({Unauth => 1}) if !can_edit s => $e;
+    return $elm_Unauth->() if !can_edit s => $e;
 
     if(!auth->permDbmod) {
         $data->{hidden} = $e->{hidden}||0;
@@ -101,9 +100,9 @@ json_api qr{/(?:$SID_RE/edit|s/add)}, $FORM_IN, sub {
 
     $data->{desc} = bb_subst_links $data->{desc};
 
-    return tuwf->resJSON({Unchanged => 1}) if !$new && !form_changed $FORM_CMP, $data, $e;
+    return $elm_Unchanged->() if !$new && !form_changed $FORM_CMP, $data, $e;
     my($id,undef,$rev) = update_entry s => $e->{id}, $data;
-    tuwf->resJSON({Changed => [$id, $rev]});
+    $elm_Changed->($id, $rev);
 };
 
 1;

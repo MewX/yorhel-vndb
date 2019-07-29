@@ -12,6 +12,9 @@ TUWF::get '/u/login' => sub {
 };
 
 
+my $elm_Throttled = elm_api 'Throttled';
+my $elm_BadLogin = elm_api 'BadLogin';
+
 json_api '/u/login', {
     username => { username => 1 },
     password => { password => 1 }
@@ -25,21 +28,16 @@ json_api '/u/login', {
         'SELECT', sql_totime('greatest(timeout, now())'), 'FROM login_throttle WHERE ip =', \$ip
     ) || time;
 
-    my $status
-        = $tm-time() > $conf->[1] ? 'Throttled'
-        : auth->login($data->{username}, $data->{password}) ? 'Success'
-        : 'BadLogin';
+    return $elm_Throttled->() if $tm-time() > $conf->[1];
+    return $elm_Success->() if auth->login($data->{username}, $data->{password});
 
     # Failed login, update throttle.
-    if($status eq 'BadLogin') {
-        my $upd = {
-            ip      => \$ip,
-            timeout => sql_fromtime $tm+$conf->[0]
-        };
-        tuwf->dbExeci('INSERT INTO login_throttle', $upd, 'ON CONFLICT (ip) DO UPDATE SET', $upd);
-    }
-
-    tuwf->resJSON({$status => 1});
+    my $upd = {
+        ip      => \$ip,
+        timeout => sql_fromtime $tm+$conf->[0]
+    };
+    tuwf->dbExeci('INSERT INTO login_throttle', $upd, 'ON CONFLICT (ip) DO UPDATE SET', $upd);
+    $elm_BadLogin->()
 };
 
 

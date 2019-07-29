@@ -7,13 +7,13 @@ import File exposing (File)
 import Lib.Html exposing (..)
 import Lib.Util exposing (..)
 import Lib.Api as Api
-import Lib.Gen exposing (resolutions, VNEditScreenshots, VNEditReleases)
+import Lib.Gen as Gen
 import Lib.Util exposing (lookup, isJust)
 
 
 type alias Model =
-  { screenshots : List VNEditScreenshots
-  , releases    : List VNEditReleases
+  { screenshots : List Gen.VNEditScreenshots
+  , releases    : List Gen.VNEditReleases
   , state       : List Api.State
   , id          : Int -- Temporary negative internal screenshot identifier, until the image has been uploaded and the actual ID is known
   , rel         : Int
@@ -22,7 +22,7 @@ type alias Model =
   }
 
 
-init : List VNEditScreenshots -> List VNEditReleases -> Model
+init : List Gen.VNEditScreenshots -> List Gen.VNEditReleases -> Model
 init scr rels =
   { screenshots = scr
   , releases    = rels
@@ -76,10 +76,10 @@ update msg model =
         Just (n,_) ->
           let
             st _ = case r of
-              Api.Image _ _ _ -> Api.Normal
+              Gen.Image _ _ _ -> Api.Normal
               re -> Api.Error re
             scr s = case r of
-              Api.Image nid width height -> { s | scr = nid, width = width, height = height }
+              Gen.Image nid width height -> { s | scr = nid, width = width, height = height }
               _ -> s
           in ({ model | screenshots = modidx n scr model.screenshots, state = modidx n st model.state }, Cmd.none)
 
@@ -102,7 +102,7 @@ view model vid =
 
     commonRes res =
       -- NDS resolution, not in the database
-      res == "256x384" || isJust (lookup res resolutions)
+      res == "256x384" || isJust (lookup res Gen.resolutions)
 
     resWarn e =
       let res = String.fromInt e.width ++ "x" ++ String.fromInt e.height

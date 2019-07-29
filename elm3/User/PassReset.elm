@@ -6,6 +6,7 @@ import Html.Events exposing (..)
 import Browser
 import Json.Encode as JE
 import Lib.Api as Api
+import Lib.Gen as Gen
 import Lib.Html exposing (..)
 
 
@@ -45,7 +46,7 @@ update msg model =
               , Api.post "/u/newpass" (encodeForm model) Submitted
               )
 
-    Submitted Api.Success -> ({ model | success = True  }, Cmd.none)
+    Submitted Gen.Success -> ({ model | success = True  }, Cmd.none)
     Submitted e           -> ({ model | state = Api.Error e }, Cmd.none)
 
 

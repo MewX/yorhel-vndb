@@ -1,6 +1,6 @@
 # This module is responsible for generating elm3/Lib/Gen.elm. Variables and
-# type definitions can be added from any Perl module by calling def() and
-# elm_form() at file load time.
+# type definitions can be added from any Perl module by calling def(),
+# elm_form() and elm_api() at file load time.
 
 package VN3::ElmGen;
 
@@ -8,10 +8,14 @@ use strict;
 use warnings;
 use TUWF;
 use Exporter 'import';
+use List::Util 'max';
 use VN3::Auth;
 use VN3::Types;
 
-our @EXPORT = qw/ elm_form /;
+our @EXPORT = qw/
+    elm_form elm_api
+    $elm_Unauth $elm_Unchanged $elm_Changed $elm_Success $elm_CSRF
+/;
 
 
 my $data = <<_;
@@ -19,7 +23,9 @@ my $data = <<_;
 -- DO NOT EDIT!
 module Lib.Gen exposing (..)
 
+import Http
 import Json.Encode as JE
+import Json.Decode as JD
 
 type alias Medium =
   { qty    : Bool
@@ -80,7 +86,79 @@ sub elm_form {
     encoder lc($name).'SendEncode', $name.'Send', $in->analyze;
 }
 
-sub print { print $data };
+
+my %apis;
+
+# Define an API response. This will be added to the 'Lib.Api.Response' union type.
+# Usage:
+#
+#   # At file scope:
+#   my $json_generator = elm_api_response UnionName => $SCHEMA1, $SCHEMA2, ..;
+#
+#   # Later, to actually generate a JSON response:
+#   $json_generator->($data1, $data2, ..);
+#
+# Limitation: There may be only a single $SCHEMA with an embedded {type => 'hash'}.
+sub elm_api {
+    my($name, @schema) = @_;
+    @schema = map tuwf->compile($_), @schema;
+    $apis{$name} = \@schema;
+    sub {
+        # TODO: Validate $data? Easier to catch bugs that way
+        tuwf->resJSON({$name, @schema ? [map $schema[$_]->analyze->coerce_for_json($_[$_], unknown => 'reject'), 0..$#schema] : 1})
+    }
+}
+
+# Common API responses.
+our $elm_Unauth    = elm_api 'Unauth';
+our $elm_Unchanged = elm_api 'Unchanged';
+our $elm_Changed   = elm_api 'Changed', { id => 1 }, { uint => 1 };
+our $elm_Success   = elm_api 'Success';
+our $elm_CSRF      = elm_api 'CSRF';
+
+
+sub print {
+    # Generate the ApiResponse type and decoder.
+    #
+    # Extract all { type => 'hash' } schemas and give them their own
+    # definition, so that it's easy to refer to those records in other places
+    # of the Elm code, similar to def_type().
+    my(@union, @decode);
+    my $len = max map length, keys %apis;
+    for (sort keys %apis) {
+        my($name, $schema) = ($_, $apis{$_});
+        my $def = $name;
+        my $dec = sprintf 'JD.field "%s"%s <| %s', $name,
+            ' 'x($len-(length $name)),
+            @$schema == 0 ? "JD.succeed $name" :
+            @$schema == 1 ? "JD.map $name"     : sprintf 'JD.map%d %s', scalar @$schema, $name;
+        my $tname = "Api$name";
+        for my $argn (0..$#$schema) {
+            my $arg = $schema->[$argn]->analyze();
+            my $jd = $arg->elm_decoder(json_decode => 'JD.', level => 3);
+            $dec .= " (JD.index $argn $jd)";
+            if($arg->{keys}) {
+                def_type $tname, $arg;
+                $def .= " $tname";
+                #$dec .= $jd;
+            } elsif($arg->{values} && $arg->{values}{keys}) {
+                def_type $tname, $arg->{values};
+                $def .= " (List $tname)";
+                #$dec .= "(JD.list $jd)";
+            } else {
+                $def .= ' '.$arg->elm_type();
+                #$dec .= $jd;
+            }
+            #$dec .= ')';
+        }
+        push @union, $def;
+        push @decode, $dec;
+    }
+    $data .= sprintf "\ntype ApiResponse\n  = HTTPError Http.Error\n  | %s\n", join "\n  | ", @union;
+    $data .= sprintf "\ndecodeApiResponse : JD.Decoder ApiResponse\ndecodeApiResponse = JD.oneOf\n  [ %s\n  ]", join "\n  , ", @decode;
+
+    print $data;
+};
 
 
 my $perms = VN3::Auth::listPerms();

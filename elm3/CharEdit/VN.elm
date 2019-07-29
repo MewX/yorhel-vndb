@@ -7,9 +7,8 @@ import Json.Encode as JE
 import Dict exposing (Dict)
 import Lib.Html exposing (..)
 import Lib.Autocomplete as A
-import Lib.Gen exposing (..)
+import Lib.Gen as Gen
 import Lib.Util exposing (..)
-import Lib.Api exposing (VN)
 import Lib.Api as Api
 
 
@@ -24,13 +23,13 @@ type alias VNRel =
 
 type alias Model =
   { vn         : List VNRel
-  , releases   : Dict Int (List CharEditVnrelsReleases)  -- Mapping from VN id -> list of releases
-  , search     : A.Model VN
+  , releases   : Dict Int (List Gen.CharEditVnrelsReleases)  -- Mapping from VN id -> list of releases
+  , search     : A.Model Gen.ApiVNResult
   , duplicates : Bool
   }
 
 
-init : List CharEditVns -> List CharEditVnrels -> Model
+init : List Gen.CharEditVns -> List Gen.CharEditVnrels -> Model
 init vns rels =
   -- Turn the array from the server into a more usable data structure. This assumes that the array is ordered by VN id.
   let
@@ -60,7 +59,7 @@ init vns rels =
 -- XXX: The model and the UI allow an invalid state: VN is present, but
 -- role="". This isn't too obvious to trigger, I hope, so in this case we'll
 -- just be lazy and not send the VN to the server.
-encode : Model -> List CharEditSendVns
+encode : Model -> List Gen.CharEditSendVns
 encode model =
   let
     vn e =
@@ -78,11 +77,11 @@ type Msg
   | SetSpoil Int String
   | SetRRole Int Int String
   | SetRSpoil Int Int String
-  | Search (A.Msg VN)
+  | Search (A.Msg Gen.ApiVNResult)
   | ReleaseInfo Int Api.Response
 
 
-searchConfig : A.Config Msg VN
+searchConfig : A.Config Msg Gen.ApiVNResult
 searchConfig = { wrap = Search, id = "add-vn", source = A.vnSource }
 
 
@@ -118,7 +117,7 @@ update msg model =
               Just _ -> Cmd.none
           in (validate { model | search = A.clear nm, vn = model.vn ++ [nrow] }, Cmd.batch [c, nc])
 
-    ReleaseInfo vid (Api.ReleaseResult r) -> ({ model | releases = Dict.insert vid r model.releases}, Cmd.none)
+    ReleaseInfo vid (Gen.ReleaseResult r) -> ({ model | releases = Dict.insert vid r model.releases}, Cmd.none)
     ReleaseInfo _ _ -> (model, Cmd.none)
 
 
@@ -146,7 +145,7 @@ view model =
       , editListField 1 ""
         [ inputSelect [onInput (SetRole n)] e.role <|
             (if e.relsel then [("", "Not involved")] else [])
-            ++ charRoles
+            ++ Gen.charRoles
         ]
       , editListField 1 ""
         [ if e.role == ""
@@ -165,7 +164,7 @@ view model =
         ++
         [ a [href <| "/r" ++ String.fromInt e.id, title e.title, target "_blank" ] [ text e.title ] ]
       , editListField 1 ""
-        [ inputSelect [onInput (SetRRole n e.id)] sel.role (("", "-default-") :: charRoles) ]
+        [ inputSelect [onInput (SetRRole n e.id)] sel.role (("", "-default-") :: Gen.charRoles) ]
       , editListField 1 ""
         [ if sel.role == ""
           then text ""

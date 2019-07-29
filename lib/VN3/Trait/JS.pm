@@ -2,6 +2,12 @@ package VN3::Trait::JS;
 
 use VN3::Prelude;
 
+my $elm_TraitResult = elm_api TraitResult => { aoh => {
+    id    => { id => 1 },
+    name  => {},
+    gid   => { id => 1, required => 0 },
+    group => { required => 0 }
+}};
 
 # Returns only approved and applicable traits
 json_api '/js/trait.json', {
@@ -32,7 +38,7 @@ json_api '/js/trait.json', {
         'LIMIT 20'
     );
 
-    tuwf->resJSON({TraitResult => $r});
+    $elm_TraitResult->($r);
 };
 
 1;

@@ -8,7 +8,7 @@ import Browser
 import Lib.Api as Api
 import Lib.Html exposing (..)
 import Lib.Util exposing (lookup)
-import Lib.Gen exposing (vnlistStatus)
+import Lib.Gen as Gen
 
 
 main : Program Flags Model Msg
@@ -59,7 +59,7 @@ update msg model =
       in ( nmodel
          , Api.post "/u/setvnstatus" (encodeForm nmodel) Saved )
 
-    Saved Api.Success -> ({ model | state = Api.Normal  }, Cmd.none)
+    Saved Gen.Success -> ({ model | state = Api.Normal  }, Cmd.none)
     Saved e           -> ({ model | state = Api.Error e }, Cmd.none)
 
 
@@ -69,9 +69,9 @@ view model =
   if model.state == Api.Loading
   then div [ class "spinner spinner--md" ] []
   else div []
-    [ text <| Maybe.withDefault "" <| lookup model.flags.status vnlistStatus
+    [ text <| Maybe.withDefault "" <| lookup model.flags.status Gen.vnlistStatus
     , inputSelect
       [ class "form-control--table-edit form-control--table-edit-overlay", onInput Input ]
       (String.fromInt model.flags.status)
-      (List.map (\(a,b) -> (String.fromInt a, b)) vnlistStatus)
+      (List.map (\(a,b) -> (String.fromInt a, b)) Gen.vnlistStatus)
     ]

@@ -7,6 +7,7 @@ import Json.Encode as JE
 import Browser
 import Browser.Navigation exposing (load)
 import Lib.Api as Api
+import Lib.Gen as Gen
 import Lib.Html exposing (..)
 
 
@@ -59,7 +60,7 @@ update msg model =
       else ( { model | state = Api.Loading }
            , Api.post model.url (encodeForm model) Submitted)
 
-    Submitted Api.Success -> (model, load "/")
+    Submitted Gen.Success -> (model, load "/")
     Submitted e           -> ({ model | state = Api.Error e }, Cmd.none)
 
 

@@ -1,7 +1,6 @@
 package VN3::User::Settings;
 
 use VN3::Prelude;
-use VN3::ElmGen;
 
 
 my $FORM = {
@@ -32,6 +31,8 @@ my $FORM_IN  = form_compile in  => $FORM;
 
 elm_form UserEdit => $FORM_OUT, $FORM_IN;
 
+my $elm_BadPass  = elm_api 'BadPass';
+my $elm_BadLogin = elm_api 'BadLogin';
 
 TUWF::get qr{/$UID_RE/edit}, sub {
     my $u = tuwf->dbRowi('SELECT id, username, perm, ign_votes FROM users WHERE id =', \tuwf->capture('id'));
@@ -63,7 +64,7 @@ json_api qr{/$UID_RE/edit}, $FORM_IN, sub {
     my $data = shift;
     my $id = tuwf->capture('id');
 
-    return tuwf->resJSON({Unauth => 1}) if !can_edit u => { id => $id };
+    return $elm_Unauth->() if !can_edit u => { id => $id };
 
     if(auth->permUsermod) {
         tuwf->dbExeci(update => users => set => {
@@ -75,10 +76,10 @@ json_api qr{/$UID_RE/edit}, $FORM_IN, sub {
     }
 
     if($data->{password}) {
-        return tuwf->resJSON({BadPass => 1}) if tuwf->isUnsafePass($data->{password}{new});
+        return $elm_BadPass->() if tuwf->isUnsafePass($data->{password}{new});
 
         if(auth->uid == $id) {
-            return tuwf->resJSON({BadLogin => 1}) if !auth->setpass($id, undef, $data->{password}{old}, $data->{password}{new});
+            return $elm_BadLogin->() if !auth->setpass($id, undef, $data->{password}{old}, $data->{password}{new});
         } else {
             tuwf->dbExeci(select => sql_func user_admin_setpass => \$id, \auth->uid,
                 sql_fromhex(auth->token), sql_fromhex auth->_preparepass($data->{password}{new})
@@ -91,7 +92,7 @@ json_api qr{/$UID_RE/edit}, $FORM_IN, sub {
     auth->prefSet($_, $data->{$_}, $id) for qw/hide_list show_nsfw traits_sexual tags_all spoilers/;
     auth->prefSet(tags_cat => join(',', map $data->{"tags_$_"} ? $_ : (), qw/cont ero tech/), $id);
 
-    tuwf->resJSON({Success => 1});
+    $elm_Success->();
 };
 
 1;

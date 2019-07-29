@@ -8,12 +8,12 @@ import Browser
 import Browser.Navigation exposing (load)
 import Lib.Util exposing (..)
 import Lib.Html exposing (..)
-import Lib.Gen exposing (..)
+import Lib.Gen as Gen
 import Lib.Api as Api
 import Lib.Editsum as Editsum
 
 
-main : Program StaffEdit Model Msg
+main : Program Gen.StaffEdit Model Msg
 main = Browser.element
   { init   = \e -> (init e, Cmd.none)
   , view   = view
@@ -25,7 +25,7 @@ main = Browser.element
 type alias Model =
   { state       : Api.State
   , editsum     : Editsum.Model
-  , alias       : List StaffEditAlias
+  , alias       : List Gen.StaffEditAlias
   , aliasDup    : Bool
   , aid         : Int
   , desc        : String
@@ -39,7 +39,7 @@ type alias Model =
   }
 
 
-init : StaffEdit -> Model
+init : Gen.StaffEdit -> Model
 init d =
   { state       = Api.Normal
   , editsum     = { authmod = d.authmod, editsum = d.editsum, locked = d.locked, hidden = d.hidden }
@@ -75,7 +75,7 @@ new =
   }
 
 
-encode : Model -> StaffEditSend
+encode : Model -> Gen.StaffEditSend
 encode model =
   { editsum     = model.editsum.editsum
   , hidden      = model.editsum.hidden
@@ -142,10 +142,10 @@ update msg model =
           case model.id of
             Just id -> "/s" ++ String.fromInt id ++ "/edit"
             Nothing -> "/s/add"
-        body = staffeditSendEncode (encode model)
+        body = Gen.staffeditSendEncode (encode model)
       in ({ model | state = Api.Loading }, Api.post path body Submitted)
 
-    Submitted (Api.Changed id rev) -> (model, load <| "/s" ++ String.fromInt id ++ "." ++ String.fromInt rev)
+    Submitted (Gen.Changed id rev) -> (model, load <| "/s" ++ String.fromInt id ++ "." ++ String.fromInt rev)
     Submitted r -> ({ model | state = Api.Error r }, Cmd.none)
 
 
@@ -190,10 +190,10 @@ view model =
 
     meta = cardRow "Meta" Nothing <| formGroups
       [ [ label [for "lang"] [ text "Primary language" ]
-        , inputSelect [id "lang", name "lang", onInput Lang] model.lang languages
+        , inputSelect [id "lang", name "lang", onInput Lang] model.lang Gen.languages
         ]
       , [ label [for "website"] [ text "Official Website" ]
-        , inputText "website" model.l_site Website [pattern weburlPattern]
+        , inputText "website" model.l_site Website [pattern Gen.weburlPattern]
         ]
       , [ label [] [ text "Wikipedia" ]
         , p [] [ text "https://en.wikipedia.org/wiki/", inputText "l_wp" model.l_wp LWP [class "form-control--inline", maxlength 100] ]

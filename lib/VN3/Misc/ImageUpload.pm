@@ -1,11 +1,7 @@
 package VN3::Misc::ImageUpload;
 
-use strict;
-use warnings;
+use VN3::Prelude;
 use Image::Magick;
-use TUWF;
-use VNDBUtil;
-use VN3::Auth;
 
 
 sub save_img {
@@ -25,18 +21,20 @@ sub save_img {
     chmod 0666, $fn;
 }
 
+my $elm_ImgFormat = elm_api 'ImgFormat';
+my $elm_Image     = elm_api 'Image', {id=>1}, {uint=>1}, {uint=>1}; # id, width, height
+
 
 TUWF::post '/js/imageupload.json', sub {
     if(!auth->csrfcheck(tuwf->reqHeader('X-CSRF-Token')||'')) {
         warn "Invalid CSRF token in request";
-        tuwf->resJSON({CSRF => 1});
-        return;
+        return $elm_CSRF->();
     }
-    return tuwf->resJSON({Unauth => 1}) if !auth->permEdit;
+    return $elm_Unauth->() if !auth->permEdit;
 
     my $type = tuwf->validate(post => type => { enum => [qw/cv ch sf/] })->data;
     my $imgdata = tuwf->reqUploadRaw('img');
-    return tuwf->resJSON({ImgFormat => 1}) if $imgdata !~ /^(\xff\xd8|\x89\x50)/; # JPG or PNG header
+    return $elm_ImgFormat->() if $imgdata !~ /^(\xff\xd8|\x89\x50)/; # JPG or PNG header
 
     my $im = Image::Magick->new;
     $im->BlobToImage($imgdata);
@@ -65,8 +63,7 @@ TUWF::post '/js/imageupload.json', sub {
         save_img $im, ch => $id, $ow, $oh, 256, 300;
     }
 
-
-    tuwf->resJSON({Image => [$id, $ow, $oh]});
+    $elm_Image->($id, $ow, $oh);
 };
 
 

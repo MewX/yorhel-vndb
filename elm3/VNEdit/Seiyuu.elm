@@ -5,20 +5,19 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Lib.Util exposing (..)
 import Lib.Html exposing (..)
-import Lib.Gen exposing (VNEditSeiyuu, VNEditChars)
+import Lib.Gen as Gen
 import Lib.Autocomplete as A
-import Lib.Api exposing (Staff)
 
 
 type alias Model =
-  { chars       : List VNEditChars
-  , seiyuu      : List VNEditSeiyuu
-  , search      : A.Model Staff
+  { chars       : List Gen.VNEditChars
+  , seiyuu      : List Gen.VNEditSeiyuu
+  , search      : A.Model Gen.ApiStaffResult
   , duplicates  : Bool
   }
 
 
-init : List VNEditSeiyuu -> List VNEditChars -> Model
+init : List Gen.VNEditSeiyuu -> List Gen.VNEditChars -> Model
 init s c =
   { chars      = c
   , seiyuu     = s
@@ -31,10 +30,10 @@ type Msg
   = Del Int
   | SetNote Int String
   | SetChar Int String
-  | Search (A.Msg Staff)
+  | Search (A.Msg Gen.ApiStaffResult)
 
 
-searchConfig : A.Config Msg Staff
+searchConfig : A.Config Msg Gen.ApiStaffResult
 searchConfig = { wrap = Search, id = "add-seiyuu", source = A.staffSource }
 
 

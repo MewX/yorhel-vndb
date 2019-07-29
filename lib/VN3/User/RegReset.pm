@@ -12,13 +12,21 @@ TUWF::get '/u/newpass' => sub {
 };
 
 
+my $elm_BadEmail    = elm_api 'BadEmail';
+my $elm_BadPass     = elm_api 'BadPass';
+my $elm_Bot         = elm_api 'Bot';
+my $elm_Taken       = elm_api 'Taken';
+my $elm_DoubleEmail = elm_api 'DoubleEmail';
+my $elm_DoubleIP    = elm_api 'DoubleIP';
+
+
 json_api '/u/newpass', {
     email => { email => 1 },
 }, sub {
     my $data = shift;
 
     my($id, $token) = auth->resetpass($data->{email});
-    return tuwf->resJSON({BadEmail => 1}) if !$id;
+    return $elm_BadEmail->() if !$id;
 
     my $name = tuwf->dbVali('SELECT username FROM users WHERE id =', \$id);
     my $body = sprintf
@@ -38,7 +46,7 @@ json_api '/u/newpass', {
       From => 'VNDB <noreply@vndb.org>',
       Subject => "Password reset for $name",
     );
-    tuwf->resJSON({Success => 1});
+    $elm_Success->();
 };
 
 
@@ -66,10 +74,10 @@ json_api $reset_url, {
     my $id = tuwf->capture('id');
     my $token = tuwf->capture('token');
 
-    return tuwf->resJSON({BadPass => 1}) if tuwf->isUnsafePass($data->{pass});
+    return $elm_BadPass->() if tuwf->isUnsafePass($data->{pass});
     die "Invalid reset token" if !auth->setpass($id, $token, undef, $data->{pass});
     tuwf->dbExeci('UPDATE users SET email_confirmed = true WHERE id =', \$id);
-    tuwf->resJSON({Success => 1});
+    $elm_Success->()
 };
 
 
@@ -89,15 +97,12 @@ json_api '/u/register', {
     my $data = shift;
 
     my $num = tuwf->dbVali("SELECT count FROM stats_cache WHERE section = 'vn'");
-    return tuwf->resJSON({Bot => 1})
-        if $data->{vns} < $num*0.995 || $data->{vns} > $num*1.005;
-    return tuwf->resJSON({Taken => 1})
-        if tuwf->dbVali('SELECT 1 FROM users WHERE username =', \$data->{username});
-    return tuwf->resJSON({DoubleEmail => 1})
-        if tuwf->dbVali(select => sql_func user_emailexists => \$data->{email});
+    return $elm_Bot->()         if $data->{vns} < $num*0.995 || $data->{vns} > $num*1.005;
+    return $elm_Taken->()       if tuwf->dbVali('SELECT 1 FROM users WHERE username =', \$data->{username});
+    return $elm_DoubleEmail->() if tuwf->dbVali(select => sql_func user_emailexists => \$data->{email});
 
     my $ip = tuwf->reqIP;
-    return tuwf->resJSON({DoubleIP => 1}) if tuwf->dbVali(
+    return $elm_DoubleIP->() if tuwf->dbVali(
         q{SELECT 1 FROM users WHERE registered >= NOW()-'1 day'::interval AND ip <<},
         $ip =~ /:/ ? \"$ip/48" : \"$ip/30"
     );
@@ -126,7 +131,7 @@ json_api '/u/register', {
       From => 'VNDB <noreply@vndb.org>',
       Subject => "Confirm registration for $data->{username}",
     );
-    tuwf->resJSON({Success => 1});
+    $elm_Success->()
 };
 
 1;

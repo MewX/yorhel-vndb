@@ -3,12 +3,12 @@ package VN3::VN::JS;
 use VN3::Prelude;
 
 
-my $OUT = tuwf->compile({ aoh => {
+my $elm_VNResult = elm_api VNResult => { aoh => {
     id       => { id => 1 },
     title    => {},
     original => {},
     hidden   => { anybool => 1 },
-}});
+}};
 
 
 json_api '/js/vn.json', {
@@ -39,7 +39,7 @@ json_api '/js/vn.json', {
         'LIMIT 20'
     );
 
-    tuwf->resJSON({VNResult => $OUT->analyze->coerce_for_json($r)});
+    $elm_VNResult->($r);
 };
 
 1;

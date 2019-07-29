@@ -6,8 +6,8 @@ import Html.Events exposing (..)
 import File exposing (File)
 import Lib.Html exposing (..)
 import Lib.Autocomplete as A
-import Lib.Gen exposing (..)
 import Lib.Util exposing (..)
+import Lib.Gen as Gen
 import Lib.Api as Api
 
 
@@ -33,11 +33,11 @@ type alias Model =
   , mainId          : Int
   , mainSpoil       : Int
   , mainName        : String
-  , mainSearch      : A.Model Api.Char
+  , mainSearch      : A.Model Gen.ApiCharResult
   }
 
 
-init : CharEdit -> Model
+init : Gen.CharEdit -> Model
 init d =
   { alias           = d.alias
   , aliasDuplicates = False
@@ -91,7 +91,7 @@ new =
   }
 
 
-searchConfig : A.Config Msg Api.Char
+searchConfig : A.Config Msg Gen.ApiCharResult
 searchConfig = { wrap = MainSearch, id = "add-main", source = A.charSource }
 
 
@@ -112,7 +112,7 @@ type Msg
   | Weight String
   | MainInstance Bool
   | MainSpoil String
-  | MainSearch (A.Msg Api.Char)
+  | MainSearch (A.Msg Gen.ApiCharResult)
   | ImgUpload (List File)
   | ImgDone Api.Response
 
@@ -142,13 +142,13 @@ update msg model =
         Nothing -> ({ model | mainSearch = nm }, c)
         Just r  ->
           -- If the selected char has a main, automatically select that as our main
-          let chr = Maybe.withDefault {id = r.id, name = r.name} r.main
+          let chr = Maybe.withDefault {id = r.id, name = r.name, original = r.original } r.main
           in ({ model | mainId = chr.id, mainName = chr.name, mainSearch = A.clear nm }, c)
 
     ImgUpload [i] -> ({ model | imgState = Api.Loading }, Api.postImage Api.Ch i ImgDone)
     ImgUpload _   -> (model, Cmd.none)
 
-    ImgDone (Api.Image id _ _) -> ({ model | image = id, imgState = Api.Normal  }, Cmd.none)
+    ImgDone (Gen.Image id _ _) -> ({ model | image = id, imgState = Api.Normal  }, Cmd.none)
     ImgDone r                  -> ({ model | image =  0, imgState = Api.Error r }, Cmd.none)
 
 
@@ -208,10 +208,10 @@ view model = card "general" "General info" []
 
   , cardRow "Meta" Nothing <| formGroups
     [ [ label [for "sex"] [text "Sex"]
-      , inputSelect [id "sex", onInput Gender] model.gender genders
+      , inputSelect [id "sex", onInput Gender] model.gender Gen.genders
       ]
     , [ label [for "bloodt"] [text "Blood type"]
-      , inputSelect [id "bloodt", onInput Bloodt] model.bloodt bloodTypes
+      , inputSelect [id "bloodt", onInput Bloodt] model.bloodt Gen.bloodTypes
       ]
       -- TODO: Enforce that both or neither are set
     , [ label [for "b_month"] [text "Birthday"]

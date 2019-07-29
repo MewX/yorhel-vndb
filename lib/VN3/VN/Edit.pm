@@ -2,7 +2,6 @@ package VN3::VN::Edit;
 
 use VN3::Prelude;
 use VN3::VN::Lib;
-use VN3::ElmGen;
 
 
 my $FORM = {
@@ -125,7 +124,7 @@ json_api qr{/(?:$VID_RE/edit|v/add)}, $FORM_IN, sub {
     my $new = !tuwf->capture('id');
     my $vn = $new ? { id => 0 } : entry v => tuwf->capture('id') or return tuwf->resNotFound;
 
-    return tuwf->resJSON({Unauth => 1}) if !can_edit v => $vn;
+    return $elm_Unauth->() if !can_edit v => $vn;
 
     if(!auth->permDbmod) {
         $data->{hidden} = $vn->{hidden}||0;
@@ -143,13 +142,13 @@ json_api qr{/(?:$VID_RE/edit|v/add)}, $FORM_IN, sub {
     validate_dbid sql('SELECT DISTINCT id FROM chars_vns WHERE vid =', \$vn->{id}, ' AND id IN'), map $_->{cid}, @{$data->{seiyuu}};
 
     $data->{desc} = bb_subst_links $data->{desc};
-    return tuwf->resJSON({Unchanged => 1}) if !$new && !form_changed $FORM_CMP, $data, $vn;
+    return $elm_Unchanged->() if !$new && !form_changed $FORM_CMP, $data, $vn;
 
     my($id,undef,$rev) = update_entry v => $vn->{id}, $data;
 
     update_reverse($id, $rev, $vn, $data);
 
-    tuwf->resJSON({Changed => [$id, $rev]});
+    $elm_Changed->($id, $rev);
 };
 
 

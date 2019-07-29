@@ -2,6 +2,12 @@ package Staff::JS;
 
 use VN3::Prelude;
 
+my $elm_StaffResult = elm_api StaffResult => { aoh => {
+    id       => { id => 1 },
+    aid      => { id => 1 },
+    name     => {},
+    original => {},
+}};
 
 json_api '/js/staff.json', {
     search => { maxlength => 500 }
@@ -31,7 +37,7 @@ json_api '/js/staff.json', {
         'LIMIT 20'
     );
 
-    tuwf->resJSON({StaffResult => $r});
+    $elm_StaffResult->($r);
 };
 
 1;

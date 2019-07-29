@@ -5,19 +5,18 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Lib.Html exposing (..)
 import Lib.Autocomplete as A
-import Lib.Gen exposing (VNEditStaff, staffRoles)
+import Lib.Gen as Gen
 import Lib.Util exposing (..)
-import Lib.Api exposing (Staff)
 
 
 type alias Model =
-  { staff      : List VNEditStaff
-  , search     : A.Model Staff
+  { staff      : List Gen.VNEditStaff
+  , search     : A.Model Gen.ApiStaffResult
   , duplicates : Bool
   }
 
 
-init : List VNEditStaff -> Model
+init : List Gen.VNEditStaff -> Model
 init l =
   { staff      = l
   , search     = A.init
@@ -29,10 +28,10 @@ type Msg
   = Del Int
   | SetNote Int String
   | SetRole Int String
-  | Search (A.Msg Staff)
+  | Search (A.Msg Gen.ApiStaffResult)
 
 
-searchConfig : A.Config Msg Staff
+searchConfig : A.Config Msg Gen.ApiStaffResult
 searchConfig = { wrap = Search, id = "add-staff", source = A.staffSource }
 
 
@@ -53,7 +52,7 @@ update msg model =
         Nothing -> ({ model | search = nm }, c)
         Just r  ->
           let
-            role = List.head staffRoles |> Maybe.map Tuple.first |> Maybe.withDefault ""
+            role = List.head Gen.staffRoles |> Maybe.map Tuple.first |> Maybe.withDefault ""
             nrow = { aid = r.aid, id = r.id, name = r.name, role = role, note = "" }
           in (validate { model | search = A.clear nm, staff = model.staff ++ [nrow] }, c)
 
@@ -66,7 +65,7 @@ view model =
       [ editListField 1 "col-form-label single-line"
         [ a [href <| "/s" ++ String.fromInt e.id, target "_blank" ] [text e.name ] ]
       , editListField 1 ""
-        [ inputSelect [onInput (SetRole n)] e.role staffRoles ]
+        [ inputSelect [onInput (SetRole n)] e.role Gen.staffRoles ]
       , editListField 2 ""
         [ inputText "" e.note (SetNote n) [placeholder "Note", maxlength 250] ]
       , editListField 0 "" [ removeButton (Del n) ]

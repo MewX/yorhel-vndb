@@ -6,7 +6,7 @@ import Html.Events exposing (..)
 import File exposing (File)
 import Json.Decode as JD
 import Lib.Html exposing (..)
-import Lib.Gen exposing (..)
+import Lib.Gen as Gen
 import Lib.Util exposing (..)
 import Lib.Api as Api
 
@@ -25,7 +25,7 @@ type alias Model =
   }
 
 
-init : VNEdit -> Model
+init : Gen.VNEdit -> Model
 init d =
   { desc            = d.desc
   , image           = d.image
@@ -84,7 +84,7 @@ update msg model =
     ImgUpload [i] -> ({ model | imgState = Api.Loading }, Api.postImage Api.Cv i ImgDone)
     ImgUpload _   -> (model, Cmd.none)
 
-    ImgDone (Api.Image id _ _) -> ({ model | image = id, imgState = Api.Normal  }, Cmd.none)
+    ImgDone (Gen.Image id _ _) -> ({ model | image = id, imgState = Api.Normal  }, Cmd.none)
     ImgDone r                  -> ({ model | image =  0, imgState = Api.Error r }, Cmd.none)
 
 
@@ -133,7 +133,7 @@ view model wrap titles = card "general" "General info" [] <|
     [ [ label [for "length"] [ text "Length" ]
       , inputSelect [id "length", name "length", onInput Length]
           (String.fromInt model.length)
-          (List.map (\(a,b) -> (String.fromInt a, b)) vnLengths)
+          (List.map (\(a,b) -> (String.fromInt a, b)) Gen.vnLengths)
       ]
     , [ label [] [ text "External links" ]
       , p [] [ text "http://en.wikipedia.org/wiki/", inputText "l_wp" model.l_wp LWP [class "form-control--inline", maxlength 100] ]

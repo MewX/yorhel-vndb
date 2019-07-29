@@ -2,7 +2,6 @@ package VN3::Docs::Edit;
 
 use VN3::Prelude;
 use VN3::Docs::Lib;
-use VN3::ElmGen;
 
 
 my $FORM = {
@@ -45,11 +44,11 @@ json_api qr{/$DOC_RE/edit}, $FORM_IN, sub {
     my $data = shift;
     my $doc = entry d => tuwf->capture('id') or return tuwf->resNotFound;
 
-    return tuwf->resJSON({Unauth => 1}) if !can_edit d => $doc;
-    return tuwf->resJSON({Unchanged => 1}) if !form_changed $FORM_CMP, $data, $doc;
+    return $elm_Unauth->() if !can_edit d => $doc;
+    return $elm_Unchanged->() if !form_changed $FORM_CMP, $data, $doc;
 
     my($id,undef,$rev) = update_entry d => $doc->{id}, $data;
-    tuwf->resJSON({Changed => [$id, $rev]});
+    $elm_Changed->($id, $rev);
 };
 
 1;

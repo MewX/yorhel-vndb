@@ -7,18 +7,18 @@ import Json.Encode as JE
 import Browser
 import Browser.Navigation exposing (load)
 import Lib.Html exposing (..)
-import Lib.Gen exposing (..)
+import Lib.Gen as Gen
 import Lib.Api as Api
 import Lib.Editsum as Editsum
 import VNEdit.Titles as Titles
-import VNEdit.General as Gen
+import VNEdit.General as General
 import VNEdit.Seiyuu as Seiyuu
 import VNEdit.Staff as Staff
 import VNEdit.Screenshots as Scr
 import VNEdit.Relations as Rel
 
 
-main : Program VNEdit Model Msg
+main : Program Gen.VNEdit Model Msg
 main = Browser.element
   { init   = \e -> (init e, Cmd.none)
   , view   = view
@@ -33,24 +33,24 @@ type alias Model =
   , editsum     : Editsum.Model
   , l_encubed   : String
   , titles      : Titles.Model
-  , general     : Gen.Model
+  , general     : General.Model
   , staff       : Staff.Model
   , seiyuu      : Seiyuu.Model
   , relations   : Rel.Model
   , screenshots : Scr.Model
   , id          : Maybe Int
-  , dupVNs      : List Api.VN
+  , dupVNs      : List Gen.ApiVNResult
   }
 
 
-init : VNEdit -> Model
+init : Gen.VNEdit -> Model
 init d =
   { state       = Api.Normal
   , new         = False
   , editsum     = { authmod = d.authmod, editsum = d.editsum, locked = d.locked, hidden = d.hidden }
   , l_encubed   = d.l_encubed
   , titles      = Titles.init d
-  , general     = Gen.init d
+  , general     = General.init d
   , staff       = Staff.init d.staff
   , seiyuu      = Seiyuu.init d.seiyuu d.chars
   , relations   = Rel.init d.relations
@@ -67,7 +67,7 @@ new =
   , editsum     = Editsum.new
   , l_encubed   = ""
   , titles      = Titles.new
-  , general     = Gen.new
+  , general     = General.new
   , staff       = Staff.init []
   , seiyuu      = Seiyuu.init [] []
   , relations   = Rel.init []
@@ -77,7 +77,7 @@ new =
   }
 
 
-encode : Model -> VNEditSend
+encode : Model -> Gen.VNEditSend
 encode model =
   { editsum     = model.editsum.editsum
   , hidden      = model.editsum.hidden
@@ -105,7 +105,7 @@ type Msg
   | Submit
   | Submitted Api.Response
   | Titles Titles.Msg
-  | General Gen.Msg
+  | General General.Msg
   | Staff Staff.Msg
   | Seiyuu Seiyuu.Msg
   | Relations Rel.Msg
@@ -126,17 +126,17 @@ update msg model =
           case model.id of
             Just id -> "/v" ++ String.fromInt id ++ "/edit"
             Nothing -> "/v/add"
-        body = vneditSendEncode (encode model)
+        body = Gen.vneditSendEncode (encode model)
       in ({ model | state = Api.Loading }, Api.post path body Submitted)
 
-    Submitted (Api.Changed id rev) -> (model, load <| "/v" ++ String.fromInt id ++ "." ++ String.fromInt rev)
+    Submitted (Gen.Changed id rev) -> (model, load <| "/v" ++ String.fromInt id ++ "." ++ String.fromInt rev)
     Submitted r -> ({ model | state = Api.Error r }, Cmd.none)
 
-    General m     -> let (nm, c) = Gen.update    m model.general     in ({ model | general     = nm }, Cmd.map General     c)
-    Staff m       -> let (nm, c) = Staff.update  m model.staff       in ({ model | staff       = nm }, Cmd.map Staff       c)
-    Seiyuu m      -> let (nm, c) = Seiyuu.update m model.seiyuu      in ({ model | seiyuu      = nm }, Cmd.map Seiyuu      c)
-    Screenshots m -> let (nm, c) = Scr.update    m model.screenshots in ({ model | screenshots = nm }, Cmd.map Screenshots c)
-    Relations   m -> let (nm, c) = Rel.update    m model.relations   in ({ model | relations   = nm }, Cmd.map Relations   c)
+    General m     -> let (nm, c) = General.update m model.general     in ({ model | general     = nm }, Cmd.map General     c)
+    Staff m       -> let (nm, c) = Staff.update   m model.staff       in ({ model | staff       = nm }, Cmd.map Staff       c)
+    Seiyuu m      -> let (nm, c) = Seiyuu.update  m model.seiyuu      in ({ model | seiyuu      = nm }, Cmd.map Seiyuu      c)
+    Screenshots m -> let (nm, c) = Scr.update     m model.screenshots in ({ model | screenshots = nm }, Cmd.map Screenshots c)
+    Relations   m -> let (nm, c) = Rel.update     m model.relations   in ({ model | relations   = nm }, Cmd.map Relations   c)
 
     CheckDup ->
       let body = JE.object
@@ -147,7 +147,7 @@ update msg model =
         then ({ model | state = Api.Loading }, Api.post "/js/vn.json" body RecvDup)
         else ({ model | new = False }, Cmd.none)
 
-    RecvDup (Api.VNResult dup) ->
+    RecvDup (Gen.VNResult dup) ->
       ({ model | state = Api.Normal, dupVNs = dup, new = not (List.isEmpty dup) }, Cmd.none)
     RecvDup r -> ({ model | state = Api.Error r }, Cmd.none)
 
@@ -189,7 +189,7 @@ view model =
     ]
 
   else form_ Submit (model.state == Api.Loading)
-    [ Gen.view model.general General <| List.map (Html.map Titles) <| Titles.view model.titles
+    [ General.view model.general General <| List.map (Html.map Titles) <| Titles.view model.titles
     , Html.map Staff       <| lazy  Staff.view   model.staff
     , Html.map Seiyuu      <| lazy2 Seiyuu.view  model.seiyuu model.id
     , Html.map Relations   <| lazy  Rel.view     model.relations

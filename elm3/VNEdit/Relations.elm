@@ -4,20 +4,19 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Lib.Html exposing (..)
-import Lib.Gen exposing (VNEditRelations, vnRelations)
-import Lib.Api exposing (VN)
+import Lib.Gen as Gen
 import Lib.Util exposing (..)
 import Lib.Autocomplete as A
 
 
 type alias Model =
-  { relations  : List VNEditRelations
-  , search     : A.Model VN
+  { relations  : List Gen.VNEditRelations
+  , search     : A.Model Gen.ApiVNResult
   , duplicates : Bool
   }
 
 
-init : List VNEditRelations -> Model
+init : List Gen.VNEditRelations -> Model
 init l =
   { relations  = l
   , search     = A.init
@@ -29,10 +28,10 @@ type Msg
   = Del Int
   | Official Int Bool
   | Rel Int String
-  | Search (A.Msg VN)
+  | Search (A.Msg Gen.ApiVNResult)
 
 
-searchConfig : A.Config Msg VN
+searchConfig : A.Config Msg Gen.ApiVNResult
 searchConfig = { wrap = Search, id = "add-relation", source = A.vnSource }
 
 
@@ -52,7 +51,7 @@ update msg model =
         Nothing -> ({ model | search = nm }, c)
         Just r  ->
           let
-            rel = List.head vnRelations |> Maybe.map Tuple.first |> Maybe.withDefault ""
+            rel = List.head Gen.vnRelations |> Maybe.map Tuple.first |> Maybe.withDefault ""
             nrow = { vid = r.id, relation = rel, title = r.title, official = True }
           in (validate { model | search = A.clear nm, relations = model.relations ++ [nrow] }, c)
 
@@ -71,7 +70,7 @@ view model =
           ]
         ]
       , editListField 1 ""
-        [ inputSelect [onInput (Rel n)] e.relation vnRelations ]
+        [ inputSelect [onInput (Rel n)] e.relation Gen.vnRelations ]
       , editListField 0 "single-line" [ text " of this VN" ]
       , editListField 0 "" [ removeButton (Del n) ]
       ]

@@ -5,7 +5,7 @@ import Html.Lazy exposing (..)
 import Browser
 import Browser.Navigation exposing (load)
 import Lib.Html exposing (..)
-import Lib.Gen exposing (..)
+import Lib.Gen as Gen
 import Lib.Api as Api
 import Lib.Editsum as Editsum
 import CharEdit.General as General
@@ -13,7 +13,7 @@ import CharEdit.Traits as Traits
 import CharEdit.VN as VN
 
 
-main : Program CharEdit Model Msg
+main : Program Gen.CharEdit Model Msg
 main = Browser.element
   { init   = \e -> (init e, Cmd.none)
   , view   = view
@@ -32,7 +32,7 @@ type alias Model =
   }
 
 
-init : CharEdit -> Model
+init : Gen.CharEdit -> Model
 init d =
   { state       = Api.Normal
   , editsum     = { authmod = d.authmod, editsum = d.editsum, locked = d.locked, hidden = d.hidden }
@@ -43,7 +43,7 @@ init d =
   }
 
 
-new : List CharEditVns -> List CharEditVnrels -> Model
+new : List Gen.CharEditVns -> List Gen.CharEditVnrels -> Model
 new vns vnrels =
   { state       = Api.Normal
   , editsum     = Editsum.new
@@ -54,7 +54,7 @@ new vns vnrels =
   }
 
 
-encode : Model -> CharEditSend
+encode : Model -> Gen.CharEditSend
 encode model =
   { editsum     = model.editsum.editsum
   , hidden      = model.editsum.hidden
@@ -103,10 +103,10 @@ update msg model =
           case model.id of
             Just id -> "/c" ++ String.fromInt id ++ "/edit"
             Nothing -> "/c/add"
-        body = chareditSendEncode (encode model)
+        body = Gen.chareditSendEncode (encode model)
       in ({ model | state = Api.Loading }, Api.post path body Submitted)
 
-    Submitted (Api.Changed id rev) -> (model, load <| "/c" ++ String.fromInt id ++ "." ++ String.fromInt rev)
+    Submitted (Gen.Changed id rev) -> (model, load <| "/c" ++ String.fromInt id ++ "." ++ String.fromInt rev)
     Submitted r -> ({ model | state = Api.Error r }, Cmd.none)
 
 

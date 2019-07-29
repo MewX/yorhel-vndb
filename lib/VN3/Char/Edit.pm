@@ -1,7 +1,6 @@
 package VN3::Char::Edit;
 
 use VN3::Prelude;
-use VN3::ElmGen;
 
 
 my $FORM = {
@@ -137,7 +136,7 @@ json_api qr{/(?:$CID_RE/edit|c/add)}, $FORM_IN, sub {
     my $new = !tuwf->capture('id');
     my $c = $new ? { id => 0 } : entry c => tuwf->capture('id') or return tuwf->resNotFound;
 
-    return tuwf->resJSON({Unauth => 1}) if !can_edit c => $c;
+    return $elm_Unauth->() if !can_edit c => $c;
 
     if(!auth->permDbmod) {
         $data->{hidden} = $c->{hidden}||0;
@@ -160,10 +159,10 @@ json_api qr{/(?:$CID_RE/edit|c/add)}, $FORM_IN, sub {
 
     $data->{desc} = bb_subst_links $data->{desc};
 
-    return tuwf->resJSON({Unchanged => 1}) if !$new && !form_changed $FORM_CMP, $data, $c;
+    return $elm_Unchanged->() if !$new && !form_changed $FORM_CMP, $data, $c;
 
     my($id,undef,$rev) = update_entry c => $c->{id}, $data;
-    tuwf->resJSON({Changed => [$id, $rev]});
+    $elm_Changed->($id, $rev);
 };
 
 1;

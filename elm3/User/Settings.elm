@@ -7,11 +7,11 @@ import Html.Events exposing (..)
 import Browser
 import Browser.Navigation exposing (reload)
 import Lib.Html exposing (..)
-import Lib.Gen exposing (..)
+import Lib.Gen as Gen
 import Lib.Api as Api
 
 
-main : Program UserEdit Model Msg
+main : Program Gen.UserEdit Model Msg
 main = Browser.element
   { init   = init
   , view   = view
@@ -23,7 +23,7 @@ main = Browser.element
 type alias Model =
   { state       : Api.State
   , saved       : Bool
-  , data        : UserEdit
+  , data        : Gen.UserEdit
   , cpass       : Bool
   , pass1       : String
   , pass2       : String
@@ -32,7 +32,7 @@ type alias Model =
   }
 
 
-init : UserEdit -> (Model, Cmd Msg)
+init : Gen.UserEdit -> (Model, Cmd Msg)
 init d =
   ({state         = Api.Normal
   , saved         = False
@@ -45,7 +45,7 @@ init d =
   }, Cmd.none)
 
 
-encode : Model -> UserEditSend
+encode : Model -> Gen.UserEditSend
 encode model =
   { hide_list     = model.data.hide_list
   , ign_votes     = model.data.ign_votes
@@ -87,7 +87,7 @@ type Msg
   | Pass2 String
 
 
-updateField : UpdateMsg -> UserEdit -> UserEdit
+updateField : UpdateMsg -> Gen.UserEdit -> Gen.UserEdit
 updateField msg model =
   case msg of
     Username s -> { model | username = s }
@@ -116,10 +116,10 @@ update msg model =
     Submit ->
       let
         path = "/u" ++ String.fromInt model.data.id ++ "/edit"
-        body = usereditSendEncode (encode model)
+        body = Gen.usereditSendEncode (encode model)
       in ({ model | state = Api.Loading }, Api.post path body Submitted)
 
-    Submitted (Api.Success) ->
+    Submitted (Gen.Success) ->
       ( { model | state = Api.Normal, saved = True, cpass = False, opass = "", pass1 = "", pass2 = "" }
       , if model.cpass then reload else Cmd.none
       )
@@ -136,7 +136,7 @@ view model =
           , inputText "username" model.data.username (Set << Username) [required True, maxlength 200, pattern "[a-z0-9-]{2,15}", disabled (not model.data.authmod)]
           ]
         , [ label [ for "email" ] [ text "Email address" ]
-          , inputText "email" model.data.mail (Set << Email) [type_ "email", required True, pattern emailPattern]
+          , inputText "email" model.data.mail (Set << Email) [type_ "email", required True, pattern Gen.emailPattern]
           ]
         ]
 
@@ -166,7 +166,7 @@ view model =
         [ [ label [] [ text "Permissions" ]
           ] ++ List.map (\(n,s) ->
             label [ class "checkbox" ] [ inputCheck "" (and model.data.perm n > 0) (Set << Perm n), text (" " ++ s) ]
-          ) userPerms
+          ) Gen.userPerms
         , [ label [] [ text "Other" ]
           , label [ class "checkbox" ] [ inputCheck "" model.data.ign_votes (Set << IgnVotes), text "Ignore votes in VN statistics" ]
           ]

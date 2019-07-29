@@ -3,12 +3,12 @@ package VN3::Producer::JS;
 use VN3::Prelude;
 
 
-my $OUT = tuwf->compile({ aoh => {
+my $elm_ProducerResult = elm_api ProducerResult => { aoh => {
     id       => { id => 1 },
     name     => {},
     original => {},
     hidden   => { anybool => 1 },
-}});
+}};
 
 
 json_api '/js/producer.json', {
@@ -41,7 +41,7 @@ json_api '/js/producer.json', {
         'LIMIT 20'
     );
 
-    tuwf->resJSON({ProducerResult => $OUT->analyze->coerce_for_json($r)});
+    $elm_ProducerResult->($r);
 };
 
 1;

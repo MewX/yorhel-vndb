@@ -14,7 +14,7 @@ import Json.Encode as JE
 import Browser
 import Regex
 import Lib.Api as Api
-import Lib.Gen exposing (vnvotePattern)
+import Lib.Gen as Gen
 
 
 main : Program Flags Model Msg
@@ -65,7 +65,7 @@ update msg model =
   case msg of
     Input s ->
       ( { model | text = s
-        , valid = Regex.contains (Maybe.withDefault Regex.never <| Regex.fromString vnvotePattern) s
+        , valid = Regex.contains (Maybe.withDefault Regex.never <| Regex.fromString Gen.vnvotePattern) s
         }
       , Cmd.none
       )
@@ -76,7 +76,7 @@ update msg model =
            , Api.post "/u/setvote" (encodeForm model) Saved )
       else (model, Cmd.none)
 
-    Saved Api.Success ->
+    Saved Gen.Success ->
       let flags = model.flags
           nflags = { flags | vote = model.text }
       in ({ model | flags = nflags, state = Api.Normal }, Cmd.none)
@@ -94,7 +94,7 @@ view model =
   else
     input
       [ type_ "text"
-      , pattern vnvotePattern
+      , pattern Gen.vnvotePattern
       , class "form-control form-control--table-edit form-control--stealth"
       , classList [("is-invalid", not model.valid)]
       , value model.text

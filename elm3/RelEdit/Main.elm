@@ -4,7 +4,7 @@ import Html exposing (..)
 import Browser
 import Browser.Navigation exposing (load)
 import Lib.Html exposing (..)
-import Lib.Gen exposing (..)
+import Lib.Gen as Gen
 import Lib.Api as Api
 import Lib.Editsum as Editsum
 import RelEdit.General as General
@@ -12,7 +12,7 @@ import RelEdit.Producers as Producers
 import RelEdit.Vn as Vn
 
 
-main : Program RelEdit Model Msg
+main : Program Gen.RelEdit Model Msg
 main = Browser.element
   { init   = \e -> (init e, Cmd.none)
   , view   = view
@@ -31,7 +31,7 @@ type alias Model =
   }
 
 
-init : RelEdit -> Model
+init : Gen.RelEdit -> Model
 init d =
   { state       = Api.Normal
   , editsum     = { authmod = d.authmod, editsum = d.editsum, locked = d.locked, hidden = d.hidden }
@@ -53,7 +53,7 @@ new vid title orig =
   }
 
 
-encode : Model -> RelEditSend
+encode : Model -> Gen.RelEditSend
 encode model =
   { editsum     = model.editsum.editsum
   , hidden      = model.editsum.hidden
@@ -106,10 +106,10 @@ update msg model =
           case model.id of
             Just id -> "/r" ++ String.fromInt id ++ "/edit"
             Nothing -> "/r/add"
-        body = releditSendEncode (encode model)
+        body = Gen.releditSendEncode (encode model)
       in ({ model | state = Api.Loading }, Api.post path body Submitted)
 
-    Submitted (Api.Changed id rev) -> (model, load <| "/r" ++ String.fromInt id ++ "." ++ String.fromInt rev)
+    Submitted (Gen.Changed id rev) -> (model, load <| "/r" ++ String.fromInt id ++ "." ++ String.fromInt rev)
     Submitted r -> ({ model | state = Api.Error r }, Cmd.none)
 
 

@@ -289,7 +289,7 @@ json_api '/u/setvote', {
     vote => { vnvote => 1 }
 }, sub {
     my $data = shift;
-    return tuwf->resJSON({Unauth => 1}) if (auth->uid||0) != $data->{uid};
+    return $elm_Unauth->() if (auth->uid||0) != $data->{uid};
 
     tuwf->dbExeci(
         'DELETE FROM votes WHERE',
@@ -303,7 +303,7 @@ json_api '/u/setvote', {
         { vote => $data->{vote} }
     ) if $data->{vote};
 
-    tuwf->resJSON({Success => 1})
+    $elm_Success->()
 };
 
 
@@ -313,7 +313,7 @@ json_api '/u/setvnstatus', {
     status => { vnlist_status => 1 }
 }, sub {
     my $data = shift;
-    return tuwf->resJSON({Unauth => 1}) if (auth->uid||0) != $data->{uid};
+    return $elm_Unauth->() if (auth->uid||0) != $data->{uid};
 
     tuwf->dbExeci(
         'INSERT INTO vnlists',
@@ -321,5 +321,5 @@ json_api '/u/setvnstatus', {
         'ON CONFLICT (vid, uid) DO UPDATE SET',
         { status => $data->{status} }
     );
-    tuwf->resJSON({Success => 1})
+    $elm_Success->();
 };

@@ -25,6 +25,7 @@ import Process
 import Browser.Dom as Dom
 import Lib.Html exposing (..)
 import Lib.Api as Api
+import Lib.Gen as Gen
 
 
 type alias Config m a =
@@ -53,11 +54,11 @@ type alias SourceConfig m a =
 
 
 
-staffSource : SourceConfig m Api.Staff
+staffSource : SourceConfig m Gen.ApiStaffResult
 staffSource =
   { path    = "/js/staff.json"
   , decode  = \x -> case x of
-      Api.StaffResult e -> Just e
+      Gen.StaffResult e -> Just e
       _ -> Nothing
   , view    = (\i -> [ div [ class "row row-compact" ]
     [ div [ class "col single-line muted" ] [ text <| "s" ++ String.fromInt i.id ]
@@ -68,11 +69,11 @@ staffSource =
   }
 
 
-vnSource : SourceConfig m Api.VN
+vnSource : SourceConfig m Gen.ApiVNResult
 vnSource =
   { path   = "/js/vn.json"
   , decode  = \x -> case x of
-      Api.VNResult e -> Just e
+      Gen.VNResult e -> Just e
       _ -> Nothing
   , view    = (\i -> [ div [ class "row row-compact" ]
     [ div [ class "col single-line muted" ] [ text <| "v" ++ String.fromInt i.id ]
@@ -82,11 +83,11 @@ vnSource =
   }
 
 
-producerSource : SourceConfig m Api.Producer
+producerSource : SourceConfig m Gen.ApiProducerResult
 producerSource =
   { path   = "/js/producer.json"
   , decode  = \x -> case x of
-      Api.ProducerResult e -> Just e
+      Gen.ProducerResult e -> Just e
       _ -> Nothing
   , view    = (\i -> [ div [ class "row row-compact" ]
     [ div [ class "col single-line muted" ] [ text <| "p" ++ String.fromInt i.id ]
@@ -96,11 +97,11 @@ producerSource =
   }
 
 
-charSource : SourceConfig m Api.Char
+charSource : SourceConfig m Gen.ApiCharResult
 charSource =
   { path   = "/js/char.json"
   , decode  = \x -> case x of
-      Api.CharResult e -> Just e
+      Gen.CharResult e -> Just e
       _ -> Nothing
   , view    = (\i -> [ div [ class "row row-compact" ]
     [ div [ class "col single-line muted" ] [ text <| "c" ++ String.fromInt i.id ]
@@ -111,11 +112,11 @@ charSource =
   }
 
 
-traitSource : SourceConfig m Api.Trait
+traitSource : SourceConfig m Gen.ApiTraitResult
 traitSource =
   { path   = "/js/trait.json"
   , decode  = \x -> case x of
-      Api.TraitResult e -> Just e
+      Gen.TraitResult e -> Just e
       _ -> Nothing
   , view    = (\i -> [ div [ class "row row-compact" ]
     [ div [ class "col single-line muted" ] [ text <| "i" ++ String.fromInt i.id ]

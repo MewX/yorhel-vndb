@@ -3,20 +3,19 @@ module RelEdit.Vn exposing (Model, Msg, init, update, view)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Lib.Html exposing (..)
-import Lib.Gen exposing (RelEditVn)
+import Lib.Gen as Gen
 import Lib.Util exposing (..)
 import Lib.Autocomplete as A
-import Lib.Api exposing (VN)
 
 
 type alias Model =
-  { vn         : List RelEditVn
-  , search     : A.Model VN
+  { vn         : List Gen.RelEditVn
+  , search     : A.Model Gen.ApiVNResult
   , duplicates : Bool
   }
 
 
-init : List RelEditVn -> Model
+init : List Gen.RelEditVn -> Model
 init l =
   { vn         = l
   , search     = A.init
@@ -26,10 +25,10 @@ init l =
 
 type Msg
   = Del Int
-  | Search (A.Msg VN)
+  | Search (A.Msg Gen.ApiVNResult)
 
 
-searchConfig : A.Config Msg VN
+searchConfig : A.Config Msg Gen.ApiVNResult
 searchConfig = { wrap = Search, id = "add-vn", source = A.vnSource }
 
 

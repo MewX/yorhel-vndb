@@ -5,19 +5,18 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Lib.Html exposing (..)
 import Lib.Autocomplete as A
-import Lib.Gen exposing (CharEditTraits)
+import Lib.Gen as Gen
 import Lib.Util exposing (..)
-import Lib.Api exposing (Trait)
 
 
 type alias Model =
-  { traits     : List CharEditTraits
-  , search     : A.Model Trait
+  { traits     : List Gen.CharEditTraits
+  , search     : A.Model Gen.ApiTraitResult
   , duplicates : Bool
   }
 
 
-init : List CharEditTraits -> Model
+init : List Gen.CharEditTraits -> Model
 init l =
   { traits     = l
   , search     = A.init
@@ -28,10 +27,10 @@ init l =
 type Msg
   = Del Int
   | SetSpoil Int String
-  | Search (A.Msg Trait)
+  | Search (A.Msg Gen.ApiTraitResult)
 
 
-searchConfig : A.Config Msg Trait
+searchConfig : A.Config Msg Gen.ApiTraitResult
 searchConfig = { wrap = Search, id = "add-trait", source = A.traitSource }
 
 
