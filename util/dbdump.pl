@@ -8,9 +8,9 @@ util/dbdump.pl export-db output.tar.zst
 
   The uncompressed directory is written to "output.tar.zst_dir"
 
-util/dbdump.pl export-img output.tar.zst
+util/dbdump.pl export-img output-dir
 
-  Write an export of all referenced images to a .tar.zst
+  Create or update a directory with hardlinks to images.
 
 util/dbdump.pl export-votes output.gz
 util/dbdump.pl export-tags output.gz
@@ -27,6 +27,7 @@ use autodie;
 use DBI;
 use DBD::Pg;
 use File::Copy 'cp';
+use File::Find 'find';
 
 use Cwd 'abs_path';
 our $ROOT;
@@ -211,38 +212,49 @@ sub export_db {
 }
 
 
+# Copy file while retaining access/modification times
+sub cp_p {
+    my($from, $to) = @_;
+    cp $from, $to;
+    utime @{ [stat($from)] }[8,9], $to;
+}
+
+
 # XXX: This does not include images that are linked from descriptions; May want to borrow from util/unusedimages.pl to find those.
 sub export_img {
     my $dest = shift;
 
-    mkdir "${dest}_dir";
-    cp "$ROOT/util/dump/LICENSE-ODBL.txt", "${dest}_dir/LICENSE-ODBL.txt";
-    cp "$ROOT/util/dump/README-img.txt", "${dest}_dir/README.txt";
-    export_timestamp "${dest}_dir/TIMESTAMP";
+    {
+        no autodie;
+        mkdir ${dest};
+        mkdir sprintf '%s/%s', $dest, $_ for qw/ch cv sf st/;
+        mkdir sprintf '%s/%s/%02d', $dest, $_->[0], $_->[1] for map +([ch=>$_], [cv=>$_], [sf=>$_], [st=>$_]), 0..99;
+    }
 
-    open my $F, '>', "${dest}_files";
+    cp_p "$ROOT/util/dump/LICENSE-ODBL.txt", "$dest/LICENSE-ODBL.txt";
+    cp_p "$ROOT/util/dump/README-img.txt", "$dest/README.txt";
+    export_timestamp "$dest/TIMESTAMP";
 
-    printf $F "static/sf/%1\$02d/%2\$d.jpg\nstatic/st/%1\$02d/%2\$d.jpg\n", $_->[0]%100, $_->[0]
-        for $db->selectall_array("SELECT id FROM screenshots WHERE $tables{screenshots}{where} ORDER BY id");
-
-    printf $F "static/cv/%02d/%d.jpg\n", $_->[0]%100, $_->[0]
-        for $db->selectall_array("SELECT image FROM vn WHERE image <> 0 AND $tables{vn}{where} ORDER BY image");
-
-    printf $F "static/ch/%02d/%d.jpg\n", $_->[0]%100, $_->[0]
-        for $db->selectall_array("SELECT image FROM chars WHERE image <> 0 AND $tables{chars}{where} ORDER BY image");
-
-    close $F;
+    my %scr;
+    my %dir = (ch => {}, cv => {}, sf => \%scr, st => \%scr);
+    $dir{sf}{$_->[0]} = 1 for $db->selectall_array("SELECT id FROM screenshots WHERE $tables{screenshots}{where} ORDER BY id");
+    $dir{cv}{$_->[0]} = 1 for $db->selectall_array("SELECT image FROM vn WHERE image <> 0 AND $tables{vn}{where} ORDER BY image");
+    $dir{ch}{$_->[0]} = 1 for $db->selectall_array("SELECT image FROM chars WHERE image <> 0 AND $tables{chars}{where} ORDER BY image");
     undef $db;
 
-    `tar -cf "$dest" -I 'zstd -5' \\
-        --verbatim-files-from --files-from "${dest}_files" \\
-        -C "${dest}_dir" LICENSE-ODBL.txt README.txt TIMESTAMP`;
+    find {
+        no_chdir => 1,
+        wanted => sub {
+            unlink $File::Find::name if $File::Find::name =~ m{(cv|ch|sf|st)/[0-9][0-9]/([0-9]+)\.jpg$} && !$dir{$1}{$2};
+        }
+    }, $dest;
 
-    unlink "${dest}_files";
-    unlink "${dest}_dir/LICENSE-ODBL.txt";
-    unlink "${dest}_dir/README.txt";
-    unlink "${dest}_dir/TIMESTAMP";
-    rmdir "${dest}_dir";
+    for my $d (keys %dir) {
+        for my $i (keys %{$dir{$d}}) {
+            my $f = sprintf('%s/%02d/%d.jpg', $d, $i % 100, $i);
+            link "$ROOT/static/$f", "$dest/$f" if !-e "$dest/$f";
+        }
+    }
 }
 
 
