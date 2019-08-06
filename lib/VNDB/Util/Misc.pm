@@ -173,7 +173,7 @@ sub entryLinks {
   };
 
   $lnk->($obj->{l_site},      'Official website',  '%s'); # (staff) Homepage always comes first
-  $lnk->($obj->{website},     'Official website',  '%s'); # (producers)
+  $lnk->($obj->{website},     'Official website',  '%s'); # (producers, releases)
   $lnk->($w->{enwiki},        'Wikipedia (en)',    'https://en.wikipedia.org/wiki/%s', sub { shift =~ s/ /_/rg });
   $lnk->($w->{jawiki},        'Wikipedia (ja)',    'https://ja.wikipedia.org/wiki/%s', sub { shift =~ s/ /_/rg });
   $lnk->($obj->{l_wikidata},  'Wikidata',          'https://www.wikidata.org/wiki/Q%d');
@@ -191,6 +191,12 @@ sub entryLinks {
     $lnk->($w->{howlongtobeat}, 'HowLongToBeat',  'http://howlongtobeat.com/game.php?id=%s');
     $lnk->($obj->{l_renai},     'Renai.us',       'https://renai.us/game/%s');
     push @links, [ 'VNStat', sprintf 'https://vnstat.net/novel/%d', $obj->{id} ] if $obj->{c_votecount}>=20;
+  }
+
+  # Release links
+  if($type eq 'r') {
+    $lnk->($obj->{l_steam}, 'Steam',   'https://store.steampowered.com/app/%d/');
+    $lnk->($obj->{l_steam}, 'SteamDB', 'https://steamdb.info/app/%d/info');
   }
 
   # Staff links
