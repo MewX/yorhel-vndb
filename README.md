@@ -142,7 +142,7 @@ code is easy to identify, the following files are only used by version 3:
 - `lib/VN3/`
 - `css3/`
 - `elm3/`
-- `util/{vndb3,elmgen}.pl`
+- `util/vndb3.pl`
 - `data/config3{,_example}.pl`
 
 To run version 3 instead of 2:
