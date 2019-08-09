@@ -109,7 +109,7 @@ sub references {
     open my $F, '<', $fn or die "$fn: $!";
     while(<$F>) {
         chomp;
-        next if !/^\s*ALTER\s+TABLE\s+([^ ]+)\s+ADD\s+CONSTRAINT\s+([^ ]+)\s+FOREIGN\s+KEY\s+\(([^\)]+)\)\s+REFERENCES\s+([^ ]+)\s*\(([^\)]+)\)/;
+        next if !/^\s*ALTER\s+TABLE\s+([^ ]+)\s+ADD\s+CONSTRAINT\s+([^ ]+)\s+FOREIGN\s+KEY\s+\(([^\)]+)\)\s*REFERENCES\s+([^ ]+)\s*\(([^\)]+)\)/;
         push @ref, {
             decl => $_,
             from_table => $1,

@@ -19,8 +19,15 @@ TUWF::set(
     editsum => { maxlength => 5000, minlength => 2 },
     json  => { func => \&json_validate, inherit => ['json_fields','json_maxitems','json_unique','json_sort'], default => [] },
     rdate => { template => 'uint', min => 0, max => 99999999, func => \&rdate_validate, default => 0 },
+    wikidata => { func => \&wikidata_id, default => undef },
   }
 );
+
+
+sub wikidata_id {
+  $_[0] =~ s/^Q//;
+  $_[0] =~ /^([0-9]{1,9})$/
+}
 
 
 # Figure out if a field is treated as a number in kv_validate().

@@ -71,6 +71,7 @@ sub page {
       [ l_wp      => 'Wikipedia link',htmlize => sub {
         $_[0] ? sprintf '<a href="http://en.wikipedia.org/wiki/%s">%1$s</a>', xml_escape $_[0] : '[empty]'
       }],
+      [ l_wikidata=> 'Wikidata ID', htmlize => sub { $_[0] ? sprintf '<a href="https://www.wikidata.org/wiki/Q%d">Q%1$d</a>', $_[0] : '[empty]' } ],
       [ desc      => 'Description', diff => qr/[ ,\n\.]/ ],
       [ relations => 'Relations',   join => '<br />', split => sub {
         my @r = map sprintf('%s: <a href="/p%d" title="%s">%s</a>',
@@ -93,14 +94,11 @@ sub page {
       txt "a.k.a. $alias";
     }
 
-    my @links = (
-      $p->{website} ? [ 'Homepage',  $p->{website} ] : (),
-      $p->{l_wp}    ? [ 'Wikipedia', "http://en.wikipedia.org/wiki/$p->{l_wp}" ] : (),
-    );
-    br if @links;
-    for(@links) {
+    my $links = $self->entryLinks(p => $p);
+    br if @$links;
+    for(@$links) {
       a href => $_->[1], $_->[0];
-      txt ' - ' if $_ ne $links[$#links];
+      txt ' - ' if $_ ne $links->[$#$links];
     }
    end 'p';
 
@@ -280,8 +278,7 @@ sub edit {
     || $pid && (($p->{locked} || $p->{hidden}) && !$self->authCan('dbmod'));
 
   my %b4 = !$pid ? () : (
-    (map { $_ => $p->{$_} } qw|type name original lang website desc alias ihid ilock|),
-    l_wp => $p->{l_wp} || '',
+    (map { $_ => $p->{$_} } qw|type name original lang website l_wikidata desc alias ihid ilock|),
     prodrelations => join('|||', map $_->{relation}.','.$_->{id}.','.$_->{name}, sort { $a->{id} <=> $b->{id} } @{$p->{relations}}),
   );
   my $frm;
@@ -295,7 +292,7 @@ sub edit {
       { post => 'alias',         required  => 0, maxlength => 500,  default => '' },
       { post => 'lang',          required  => !$nosubmit, enum => [ keys %{$self->{languages}} ] },
       { post => 'website',       required  => 0, maxlength => 250,  default => '', template => 'weburl' },
-      { post => 'l_wp',          required  => 0, maxlength => 150,  default => '' },
+      { post => 'l_wikidata',    required  => 0, template => 'wikidata' },
       { post => 'desc',          required  => 0, maxlength => 5000, default => '' },
       { post => 'prodrelations', required  => 0, maxlength => 5000, default => '' },
       { post => 'editsum',       required  => !$nosubmit, template => 'editsum' },
@@ -314,11 +311,10 @@ sub edit {
       $frm->{prodrelations} = join '|||', map $_->[0].','.$_->[1].','.$_->[2], sort { $a->[1] <=> $b->[1]} @{$relations};
 
       return $self->resRedirect("/p$pid", 'post')
-        if $pid && !grep $frm->{$_} ne $b4{$_}, keys %b4;
+        if $pid && !grep +(($frm->{$_}//'') ne ($b4{$_}//'')), keys %b4;
 
       $frm->{relations} = $relations;
-      $frm->{l_wp} = undef if !$frm->{l_wp};
-      my $nrev = $self->dbItemEdit(p => $pid||undef, $pid ? $p->{rev} : undef, %$frm);
+      my $nrev = $self->dbItemEdit(p => $pid||undef, $pid ? $p->{rev} : undef, %$frm, l_wp => $p->{l_wp}||undef);
 
       # update reverse relations
       if(!$pid && $#$relations >= 0 || $pid && $frm->{prodrelations} ne $b4{prodrelations}) {
@@ -351,7 +347,10 @@ sub edit {
     [ select => name => 'Primary language', short => 'lang',
       options => [ map [ $_, "$_ ($self->{languages}{$_})" ], keys %{$self->{languages}} ] ],
     [ input  => name => 'Website', short => 'website' ],
-    [ input  => name => 'Wikipedia link', short => 'l_wp', pre => 'http://en.wikipedia.org/wiki/' ],
+    [ input  => short => 'l_wikidata',name => 'Wikidata ID',
+        value => $frm->{l_wikidata} ? "Q$frm->{l_wikidata}" : '',
+        post  => qq{ (<a href="$self->{url_static}/f/wikidata.png">How to find this</a>)}
+    ],
     [ text   => name => 'Description<br /><b class="standout">English please!</b>', short => 'desc', rows => 6 ],
   ], 'pedit_rel' => [ 'Relations',
     [ hidden   => short => 'prodrelations' ],

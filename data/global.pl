@@ -286,6 +286,7 @@ our %M = (
     #Anime       => {},  # disabled by default, requires AniDB username/pass
     Maintenance => {},
     #IRC         => {},  # disabled by default, no need to run an IRC bot when debugging
+    #Wikidata    => {},  # disabled by default, no need to bother the Wikidata API when debugging
   },
 );
 

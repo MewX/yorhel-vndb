@@ -37,7 +37,7 @@ sub dbProducerGet {
   my $join = $o{what} =~ /relgraph/ ? 'JOIN relgraphs pg ON pg.id = p.rgraph' : '';
 
   my $select = 'p.id, p.type, p.name, p.original, p.lang, p.rgraph';
-  $select .= ', p.desc, p.alias, p.website, p.l_wp, p.hidden, p.locked' if $o{what} =~ /extended/;
+  $select .= ', p.desc, p.alias, p.website, p.l_wp, p.l_wikidata, p.hidden, p.locked' if $o{what} =~ /extended/;
   $select .= ', pg.svg' if $o{what} =~ /relgraph/;
 
   my($order, @order) = ('p.name');
@@ -70,7 +70,7 @@ sub dbProducerGetRev {
   my $select = 'c.itemid AS id, p.type, p.name, p.original, p.lang, po.rgraph';
   $select .= ', extract(\'epoch\' from c.added) as added, c.requester, c.comments, u.username, c.rev, c.ihid, c.ilock';
   $select .= ', c.id AS cid, NOT EXISTS(SELECT 1 FROM changes c2 WHERE c2.type = c.type AND c2.itemid = c.itemid AND c2.rev = c.rev+1) AS lastrev';
-  $select .= ', p.desc, p.alias, p.website, p.l_wp, po.hidden, po.locked' if $o{what} =~ /extended/;
+  $select .= ', p.desc, p.alias, p.website, p.l_wp, p.l_wikidata, po.hidden, po.locked' if $o{what} =~ /extended/;
 
   my $r = $self->dbAll(q|
     SELECT !s
@@ -115,7 +115,7 @@ sub dbProducerRevisionInsert {
   my($self, $o) = @_;
 
   my %set = map exists($o->{$_}) ? (qq|"$_" = ?|, $o->{$_}) : (),
-    qw|name original website l_wp type lang desc alias|;
+    qw|name original website l_wp l_wikidata type lang desc alias|;
   $self->dbExec('UPDATE edit_producers !H', \%set) if keys %set;
 
   if($o->{relations}) {

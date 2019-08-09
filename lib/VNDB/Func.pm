@@ -328,8 +328,10 @@ sub form_compare {
   my($old, $new) = @_;
   for my $k (keys %$old) {
     my($o, $n) = ($old->{$k}, $new->{$k});
-    return 1 if !defined $n || ref $o ne ref $n;
-    if(!ref $o) {
+    return 1 if defined $n ne defined $o || ref $o ne ref $n;
+    if(!defined $o) {
+      # must be equivalent
+    } elsif(!ref $o) {
       return 1 if $o ne $n;
     } else { # 'json' template
       return 1 if @$o != @$n;

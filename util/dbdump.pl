@@ -92,6 +92,9 @@ my %tables = (
     votes               => { where => 'uid NOT IN(SELECT uid FROM users_prefs WHERE key = \'hide_list\')'
                                 .' AND uid NOT IN(SELECT id FROM users WHERE ign_votes)'
                                 .' AND vid IN(SELECT id FROM vn WHERE NOT hidden)' },
+    wikidata            => { where => q{id IN(SELECT l_wikidata FROM producers WHERE NOT hidden
+                                        UNION SELECT l_wikidata FROM staff WHERE NOT hidden
+                                        UNION SELECT l_wikidata FROM vn WHERE NOT hidden)} },
     wlists              => { where => 'uid NOT IN(SELECT uid FROM users_prefs WHERE key = \'hide_list\') AND vid IN(SELECT id FROM vn WHERE NOT hidden)' },
 );
 
@@ -191,6 +194,7 @@ sub export_db {
     my $dest = shift;
 
     my @static = qw{
+        LICENSE-CC0.txt
         LICENSE-CC-BY-NC-SA.txt
         LICENSE-DBCL.txt
         LICENSE-ODBL.txt

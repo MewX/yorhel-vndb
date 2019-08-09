@@ -6,7 +6,7 @@ use warnings;
 use Exporter 'import';
 
 our @EXPORT = qw|
-  dbStats dbItemEdit dbRevisionGet dbRandomQuote
+  dbStats dbItemEdit dbRevisionGet dbRandomQuote dbWikidata
 |;
 
 
@@ -121,6 +121,10 @@ sub dbRandomQuote {
 }
 
 
+# Returns a row from wikidata
+sub dbWikidata {
+  return $_[0]->dbRow('SELECT * FROM wikidata WHERE id = ?', $_[1]);
+}
 
 
 1;

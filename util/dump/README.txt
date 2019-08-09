@@ -36,6 +36,9 @@ Database Contents License [DbCL].
 
 With the following exceptions:
 
+Wikidata information (db/wikidata) has been obtained from Wikidata and is
+made available under the Creative Commons CC0 License [CC0].
+
 Anime data (db/anime) is obtained from the AniDB.net UDP API and is licensed
 under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0
 [CC-BY-NC-SA].
@@ -46,4 +49,5 @@ subject to separate license conditions.
 
 [ODbL]: LICENSE-ODBL.txt; http://opendatacommons.org/licenses/odbl/1.0/
 [DbCL]: LICENSE-DBCL.txt; http://opendatacommons.org/licenses/dbcl/1.0/
+[CC0]: LICENSE-CC0.txt; https://creativecommons.org/publicdomain/zero/1.0/
 [CC-BY-NC-SA]: LICENSE-CC-BY-NC-SA.txt; https://creativecommons.org/licenses/by-nc-sa/4.0/

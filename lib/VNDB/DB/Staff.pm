@@ -57,7 +57,7 @@ sub dbStaffGet {
   );
 
   my $select = 's.id, sa.aid, sa.name, sa.original, s.gender, s.lang';
-  $select .= ', s.desc, s.l_wp, s.l_site, s.l_twitter, s.l_anidb, s.hidden, s.locked' if $o{what} =~ /extended/;
+  $select .= ', s.desc, s.l_wp, s.l_site, s.l_twitter, s.l_anidb, s.l_wikidata, s.hidden, s.locked' if $o{what} =~ /extended/;
 
   my($order, @order) = ('sa.name');
   if($o{sort} && $o{sort} eq 'search') {
@@ -87,7 +87,7 @@ sub dbStaffGetRev {
   my $select = 'c.itemid AS id, sa.aid, sa.name, sa.original, s.gender, s.lang';
   $select .= ', extract(\'epoch\' from c.added) as added, c.requester, c.comments, u.username, c.rev, c.ihid, c.ilock';
   $select .= ', c.id AS cid, NOT EXISTS(SELECT 1 FROM changes c2 WHERE c2.type = c.type AND c2.itemid = c.itemid AND c2.rev = c.rev+1) AS lastrev';
-  $select .= ', s.desc, s.l_wp, s.l_site, s.l_twitter, s.l_anidb, so.hidden, so.locked' if $o{what} =~ /extended/;
+  $select .= ', s.desc, s.l_wp, s.l_site, s.l_twitter, s.l_anidb, s.l_wikidata, so.hidden, so.locked' if $o{what} =~ /extended/;
 
   my $r = $self->dbAll(q|
     SELECT !s
@@ -171,7 +171,7 @@ sub dbStaffRevisionInsert {
   }
 
   my %staff = map exists($o->{$_}) ? (qq|"$_" = ?|, $o->{$_}) : (),
-    qw|aid gender lang desc l_wp l_site l_twitter l_anidb|;
+    qw|aid gender lang desc l_wp l_site l_twitter l_anidb l_wikidata|;
   $self->dbExec('UPDATE edit_staff !H', \%staff) if %staff;
   for my $a (@{$o->{aliases}}) {
     if($a->{aid}) {

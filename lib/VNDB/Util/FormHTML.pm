@@ -53,6 +53,7 @@ sub htmlFormError {
         li 'Invalid JAN/UPC/EAN' if $rule eq 'gtin';
         li "$field: Malformed data or invalid input" if $rule eq 'json';
         li 'Invalid release date' if $rule eq 'rdate';
+        li 'Invalid Wikidata ID' if $rule eq 'wikidata';
         if($rule eq 'editsum') {
           li; lit 'Please read <a href="/d5#4">the guidelines</a> on how to use the edit summary.'; end;
         }
@@ -70,7 +71,7 @@ sub htmlFormError {
 # Type      Options
 #  hidden    short, (value)
 #  json      short, (value)   # Same as hidden, but value is passed through json_encode()
-#  input     short, name, (allow0, width, pre, post)
+#  input     short, name, (value, allow0, width, pre, post)
 #  passwd    short, name
 #  static    content, (label, nolabel)
 #  check     name, short, (value)
@@ -135,7 +136,7 @@ sub htmlFormPart {
     if(/input/) {
       lit $o{pre} if $o{pre};
       input type => 'text', class => 'text', name => $o{short}, id => $o{short}, tabindex => 10,
-        value => $o{allow0} ? $frm->{$o{short}}//'' : $frm->{$o{short}}||'', $o{width} ? (style => "width: $o{width}px") : ();
+        value => $o{value} // ($o{allow0} ? $frm->{$o{short}}//'' : $frm->{$o{short}}||''), $o{width} ? (style => "width: $o{width}px") : ();
       lit $o{post} if $o{post};
     }
     if(/passwd/) {

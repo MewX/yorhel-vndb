@@ -94,7 +94,7 @@ sub edit {
   my $chars = $v ? $self->dbCharGet(vid => $v->{id}, results => 500) : [];
 
   my %b4 = !$vid ? () : (
-    (map { $_ => $v->{$_} } qw|title original desc alias length l_wp l_encubed l_renai image img_nsfw ihid ilock|),
+    (map { $_ => $v->{$_} } qw|title original desc alias length l_encubed l_renai l_wikidata image img_nsfw ihid ilock|),
     credits => [
       map { my $c = $_; +{ map { $_ => $c->{$_} } qw|aid role note| } }
       sort { $a->{aid} <=> $b->{aid} || $a->{role} cmp $b->{role} } @{$v->{credits}}
@@ -120,9 +120,9 @@ sub edit {
       { post => 'alias',       required => 0, maxlength => 500, default => '' },
       { post => 'desc',        required => 0, default => '', maxlength => 10240 },
       { post => 'length',      required => 0, default => 0,  enum => [ 0..$#{$self->{vn_lengths}} ] },
-      { post => 'l_wp',        required => 0, default => '', maxlength => 150 },
       { post => 'l_encubed',   required => 0, default => '', maxlength => 100 },
       { post => 'l_renai',     required => 0, default => '', maxlength => 100 },
+      { post => 'l_wikidata',  required => 0, template => 'wikidata' },
       { post => 'anime',       required => 0, default => '' },
       { post => 'image',       required => 0, default => 0,  template => 'id' },
       { post => 'img_nsfw',    required => 0, default => 0 },
@@ -183,9 +183,10 @@ sub edit {
 
       # perform the edit/add
       my $nrev = $self->dbItemEdit(v => $vid ? ($v->{id}, $v->{rev}) : (undef, undef),
-        (map { $_ => $frm->{$_} } qw|title original image alias desc length l_wp l_encubed l_renai editsum img_nsfw ihid ilock credits seiyuu screenshots|),
+        (map { $_ => $frm->{$_} } qw|title original image alias desc length l_encubed l_renai l_wikidata editsum img_nsfw ihid ilock credits seiyuu screenshots|),
         anime => [ keys %$anime ],
         relations => $relations,
+        l_wp => $v->{l_wp}||'',
       );
 
       # update reverse relations & relation graph
@@ -270,9 +271,13 @@ sub _form {
     [ select   => short => 'length',    name => 'Length', width => 450, options =>
       [ map [ $_ => fmtvnlen $_, 2 ], 0..$#{$self->{vn_lengths}} ] ],
 
-    [ input    => short => 'l_wp',      name => 'External links', pre => 'http://en.wikipedia.org/wiki/' ],
-    [ input    => short => 'l_encubed', pre => 'http://novelnews.net/tag/', post => '/' ],
-    [ input    => short => 'l_renai',   pre => 'http://renai.us/game/', post => '.shtml' ],
+    [ input    => short => 'l_wikidata',name => 'Wikidata ID',
+        pre   => 'https://www.wikidata.org/wiki/',
+        value => $frm->{l_wikidata} ? "Q$frm->{l_wikidata}" : '',
+        post  => qq{ (<a href="$self->{url_static}/f/wikidata.png">How to find this</a>)}
+    ],
+    [ input    => short => 'l_encubed', name => 'Novelnews link', pre => 'http://novelnews.net/tag/', post => '/' ],
+    [ input    => short => 'l_renai',   name => 'Renai.us link', pre => 'http://renai.us/game/', post => '.shtml' ],
 
     [ input    => short => 'anime',     name => 'Anime' ],
     [ static   => content =>

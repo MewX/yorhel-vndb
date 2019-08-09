@@ -96,8 +96,7 @@ sub dbVNGet {
   }
 
   my @join = (
-    $o{what} =~ /relgraph/ ?
-      'JOIN relgraphs vg ON vg.id = v.rgraph' : (),
+    $o{what} =~ /relgraph/ ? 'JOIN relgraphs vg ON vg.id = v.rgraph' : (),
     $uid && $o{what} =~ /wishlist/ ?
       'LEFT JOIN wlists wl ON wl.vid = v.id AND wl.uid = ' . $uid : (),
     $uid && $o{what} =~ /vnlist/ ? ("LEFT JOIN (
@@ -114,7 +113,7 @@ sub dbVNGet {
   my @select = ( # see https://rt.cpan.org/Ticket/Display.html?id=54224 for the cast on c_languages and c_platforms
     qw|v.id v.locked v.hidden v.c_released v.c_languages::text[] v.c_platforms::text[] v.title v.original v.rgraph|,
     $o{what} =~ /extended/ ? (
-      qw|v.alias v.image v.img_nsfw v.length v.desc v.l_wp v.l_encubed v.l_renai| ) : (),
+      qw|v.alias v.image v.img_nsfw v.length v.desc v.l_wp v.l_encubed v.l_renai v.l_wikidata| ) : (),
     $o{what} =~ /relgraph/ ? 'vg.svg' : (),
     $o{what} =~ /rating/ ? (qw|v.c_popularity v.c_rating v.c_votecount|) : (),
     $o{what} =~ /ranking/ ? (
@@ -164,7 +163,7 @@ sub dbVNGetRev {
   my $select = 'c.itemid AS id, vo.c_released, vo.c_languages::text[], vo.c_platforms::text[], v.title, v.original, vo.rgraph';
   $select .= ', extract(\'epoch\' from c.added) as added, c.requester, c.comments, u.username, c.rev, c.ihid, c.ilock';
   $select .= ', c.id AS cid, NOT EXISTS(SELECT 1 FROM changes c2 WHERE c2.type = c.type AND c2.itemid = c.itemid AND c2.rev = c.rev+1) AS lastrev';
-  $select .= ', v.alias, v.image, v.img_nsfw, v.length, v.desc, v.l_wp, v.l_encubed, v.l_renai, vo.hidden, vo.locked' if $o{what} =~ /extended/;
+  $select .= ', v.alias, v.image, v.img_nsfw, v.length, v.desc, v.l_wp, v.l_encubed, v.l_renai, v.l_wikidata, vo.hidden, vo.locked' if $o{what} =~ /extended/;
   $select .= ', vo.c_popularity, vo.c_rating, vo.c_votecount' if $o{what} =~ /rating/;
   $select .= ', (SELECT COUNT(*)+1 FROM vn iv WHERE iv.hidden = false AND iv.c_popularity > COALESCE(vo.c_popularity, 0.0)) AS p_ranking'
             .', (SELECT COUNT(*)+1 FROM vn iv WHERE iv.hidden = false AND iv.c_rating > COALESCE(vo.c_rating, 0.0)) AS r_ranking' if $o{what} =~ /ranking/;
@@ -273,7 +272,7 @@ sub dbVNRevisionInsert {
 
   $o->{img_nsfw} = $o->{img_nsfw}?1:0 if exists $o->{img_nsfw};
   my %set = map exists($o->{$_}) ? (qq|"$_" = ?| => $o->{$_}) : (),
-    qw|title original desc alias image img_nsfw length l_wp l_encubed l_renai|;
+    qw|title original desc alias image img_nsfw length l_wp l_encubed l_renai l_wikidata|;
   $self->dbExec('UPDATE edit_vn !H', \%set) if keys %set;
 
   if($o->{screenshots}) {

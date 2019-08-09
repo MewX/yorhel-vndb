@@ -16,7 +16,9 @@ ALTER TABLE chars_vns_hist           ADD CONSTRAINT chars_vns_hist_rid_fkey     
 ALTER TABLE notifications            ADD CONSTRAINT notifications_uid_fkey             FOREIGN KEY (uid)       REFERENCES users         (id) ON DELETE CASCADE;
 ALTER TABLE notifications            ADD CONSTRAINT notifications_c_byuser_fkey        FOREIGN KEY (c_byuser)  REFERENCES users         (id) ON DELETE SET DEFAULT;
 ALTER TABLE producers                ADD CONSTRAINT producers_rgraph_fkey              FOREIGN KEY (rgraph)    REFERENCES relgraphs     (id);
+ALTER TABLE producers                ADD CONSTRAINT producers_l_wikidata_fkey          FOREIGN KEY (l_wikidata)REFERENCES wikidata      (id);
 ALTER TABLE producers_hist           ADD CONSTRAINT producers_chid_id_fkey             FOREIGN KEY (chid)      REFERENCES changes       (id) ON DELETE CASCADE;
+ALTER TABLE producers_hist           ADD CONSTRAINT producers_hist_l_wikidata_fkey     FOREIGN KEY (l_wikidata)REFERENCES wikidata      (id);
 ALTER TABLE producers_relations      ADD CONSTRAINT producers_relations_pid_fkey       FOREIGN KEY (pid)       REFERENCES producers     (id);
 ALTER TABLE producers_relations_hist ADD CONSTRAINT producers_relations_hist_id_fkey   FOREIGN KEY (chid)      REFERENCES changes       (id) ON DELETE CASCADE;
 ALTER TABLE producers_relations_hist ADD CONSTRAINT producers_relations_hist_pid_fkey  FOREIGN KEY (pid)       REFERENCES producers     (id);
@@ -40,7 +42,9 @@ ALTER TABLE rlists                   ADD CONSTRAINT rlists_uid_fkey             
 ALTER TABLE rlists                   ADD CONSTRAINT rlists_rid_fkey                    FOREIGN KEY (rid)       REFERENCES releases      (id);
 ALTER TABLE sessions                 ADD CONSTRAINT sessions_uid_fkey                  FOREIGN KEY (uid)       REFERENCES users         (id) ON DELETE CASCADE;
 ALTER TABLE staff                    ADD CONSTRAINT staff_aid_fkey                     FOREIGN KEY (aid)       REFERENCES staff_alias   (aid) DEFERRABLE INITIALLY DEFERRED;
+ALTER TABLE staff                    ADD CONSTRAINT staff_l_wikidata_fkey              FOREIGN KEY (l_wikidata)REFERENCES wikidata      (id);
 ALTER TABLE staff_hist               ADD CONSTRAINT staff_hist_chid_fkey               FOREIGN KEY (chid)      REFERENCES changes       (id) ON DELETE CASCADE;
+ALTER TABLE staff_hist               ADD CONSTRAINT staff_hist_l_wikidata_fkey         FOREIGN KEY (l_wikidata)REFERENCES wikidata      (id);
 ALTER TABLE staff_alias              ADD CONSTRAINT staff_alias_id_fkey                FOREIGN KEY (id)        REFERENCES staff         (id);
 ALTER TABLE staff_alias_hist         ADD CONSTRAINT staff_alias_chid_fkey              FOREIGN KEY (chid)      REFERENCES changes       (id) ON DELETE CASCADE;
 ALTER TABLE tags                     ADD CONSTRAINT tags_addedby_fkey                  FOREIGN KEY (addedby)   REFERENCES users         (id) ON DELETE SET DEFAULT;
@@ -64,7 +68,9 @@ ALTER TABLE traits_parents           ADD CONSTRAINT traits_parents_trait_fkey   
 ALTER TABLE traits_parents           ADD CONSTRAINT traits_parents_parent_fkey         FOREIGN KEY (parent)    REFERENCES traits        (id);
 ALTER TABLE users_prefs              ADD CONSTRAINT users_prefs_uid_fkey               FOREIGN KEY (uid)       REFERENCES users         (id) ON DELETE CASCADE;
 ALTER TABLE vn                       ADD CONSTRAINT vn_rgraph_fkey                     FOREIGN KEY (rgraph)    REFERENCES relgraphs     (id);
+ALTER TABLE vn                       ADD CONSTRAINT vn_l_wikidata_fkey                 FOREIGN KEY (l_wikidata)REFERENCES wikidata      (id);
 ALTER TABLE vn_hist                  ADD CONSTRAINT vn_hist_chid_fkey                  FOREIGN KEY (chid)      REFERENCES changes       (id) ON DELETE CASCADE;
+ALTER TABLE vn_hist                  ADD CONSTRAINT vn_hist_l_wikidata_fkey            FOREIGN KEY (l_wikidata)REFERENCES wikidata      (id);
 ALTER TABLE vn_anime                 ADD CONSTRAINT vn_anime_id_fkey                   FOREIGN KEY (id)        REFERENCES vn            (id);
 ALTER TABLE vn_anime                 ADD CONSTRAINT vn_anime_aid_fkey                  FOREIGN KEY (aid)       REFERENCES anime         (id);
 ALTER TABLE vn_anime_hist            ADD CONSTRAINT vn_anime_hist_chid_fkey            FOREIGN KEY (chid)      REFERENCES changes       (id) ON DELETE CASCADE;

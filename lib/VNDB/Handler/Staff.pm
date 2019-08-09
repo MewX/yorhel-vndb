@@ -47,6 +47,7 @@ sub page {
       [ l_wp      => 'Wikipedia link',   htmlize => sub {
         $_[0] ? sprintf '<a href="http://en.wikipedia.org/wiki/%s">%1$s</a>', xml_escape $_[0] : '[empty]'
       }],
+      [ l_wikidata=> 'Wikidata ID',      htmlize => sub { $_[0] ? sprintf '<a href="https://www.wikidata.org/wiki/Q%d">Q%1$d</a>', $_[0] : '[empty]' } ],
       [ l_twitter => 'Twitter account',  diff => 1 ],
       [ l_anidb   => 'AniDB creator ID', serialize => sub { $_[0] // '' } ],
       [ desc      => 'Description',      diff => qr/[ ,\n\.]/ ],
@@ -193,7 +194,7 @@ sub edit {
     || $sid && (($s->{locked} || $s->{hidden}) && !$self->authCan('dbmod'));
 
   my %b4 = !$sid ? () : (
-    (map { $_ => $s->{$_} } qw|name original gender lang desc l_wp l_site l_twitter l_anidb ihid ilock|),
+    (map { $_ => $s->{$_} } qw|name original gender lang desc l_site l_wikidata l_twitter l_anidb ihid ilock|),
     primary => $s->{aid},
     aliases => [
       map +{ aid => $_->{aid}, name => $_->{name}, orig => $_->{original} },
@@ -211,8 +212,8 @@ sub edit {
       { post => 'desc',          required  => 0, maxlength => 5000, default => '' },
       { post => 'gender',        required  => 0, default => 'unknown', enum => [qw|unknown m f|] },
       { post => 'lang',          enum      => [ keys %{$self->{languages}} ] },
-      { post => 'l_wp',          required  => 0, maxlength => 150,  default => '' },
       { post => 'l_site',        required => 0, template => 'weburl', maxlength => 250, default => '' },
+      { post => 'l_wikidata',    required => 0, template => 'wikidata' },
       { post => 'l_twitter',     required => 0, maxlength => 16, default => '', regex => [ qr/^\S+$/, 'Invalid twitter username' ] },
       { post => 'l_anidb',       required => 0, template => 'id', default => undef },
       { post => 'aliases',       template => 'json', json_sort => ['name','orig'], json_fields => [
@@ -245,7 +246,7 @@ sub edit {
       $frm->{desc}   = $self->bbSubstLinks($frm->{desc});
       return $self->resRedirect("/s$sid", 'post') if $sid && !form_compare(\%b4, $frm);
 
-      my $nrev = $self->dbItemEdit(s => $sid ? ($s->{id}, $s->{rev}) : (undef, undef), %$frm);
+      my $nrev = $self->dbItemEdit(s => $sid ? ($s->{id}, $s->{rev}) : (undef, undef), %$frm, l_wp => $s->{l_wp}||'');
       return $self->resRedirect("/s$nrev->{itemid}.$nrev->{rev}", 'post');
     }
   }
@@ -285,7 +286,10 @@ sub edit {
     [ select => name => 'Primary language', short => 'lang',
       options => [ map [ $_, "$_ ($self->{languages}{$_})" ], keys %{$self->{languages}} ] ],
     [ input  => name => 'Official page', short => 'l_site' ],
-    [ input  => name => 'Wikipedia link', short => 'l_wp', pre => 'http://en.wikipedia.org/wiki/' ],
+    [ input    => short => 'l_wikidata',name => 'Wikidata ID',
+        value => $frm->{l_wikidata} ? "Q$frm->{l_wikidata}" : '',
+        post  => qq{ (<a href="$self->{url_static}/f/wikidata.png">How to find this</a>)}
+    ],
     [ input  => name => 'Twitter username', short => 'l_twitter' ],
     [ input  => name => 'AniDB creator ID', short => 'l_anidb' ],
     [ static => content => '<br />' ],

@@ -211,7 +211,8 @@ CREATE TABLE producers ( -- dbentry_type=p
   "desc"     text NOT NULL DEFAULT '', -- [pub]
   alias      varchar(500) NOT NULL DEFAULT '', -- [pub]
   l_wp       varchar(150), -- [pub]
-  rgraph     integer -- relgraphs.id
+  rgraph     integer, -- relgraphs.id
+  l_wikidata integer -- [pub]
 );
 
 -- producers_hist
@@ -224,7 +225,8 @@ CREATE TABLE producers_hist (
   lang       language NOT NULL DEFAULT 'ja',
   "desc"     text NOT NULL DEFAULT '',
   alias      varchar(500) NOT NULL DEFAULT '',
-  l_wp       varchar(150)
+  l_wp       varchar(150),
+  l_wikidata integer
 );
 
 -- producers_relations
@@ -419,7 +421,8 @@ CREATE TABLE staff ( -- dbentry_type=s
   l_wp       varchar(150) NOT NULL DEFAULT '', -- [pub]
   l_site     varchar(250) NOT NULL DEFAULT '', -- [pub]
   l_twitter  varchar(16) NOT NULL DEFAULT '', -- [pub]
-  l_anidb    integer -- [pub]
+  l_anidb    integer, -- [pub]
+  l_wikidata integer -- [pub]
 );
 
 -- staff_hist
@@ -432,7 +435,8 @@ CREATE TABLE staff_hist (
   l_wp       varchar(150) NOT NULL DEFAULT '',
   l_site     varchar(250) NOT NULL DEFAULT '',
   l_twitter  varchar(16) NOT NULL DEFAULT '',
-  l_anidb    integer
+  l_anidb    integer,
+  l_wikidata integer
 );
 
 -- staff_alias
@@ -648,7 +652,8 @@ CREATE TABLE vn ( -- dbentry_type=v
   c_popularity real,
   c_rating   real,
   c_votecount integer NOT NULL DEFAULT 0,
-  c_search   text
+  c_search   text,
+  l_wikidata integer -- [pub]
 );
 
 -- vn_hist
@@ -663,7 +668,8 @@ CREATE TABLE vn_hist (
   "desc"     text NOT NULL DEFAULT '',
   l_wp       varchar(150) NOT NULL DEFAULT '',
   l_encubed  varchar(100) NOT NULL DEFAULT '',
-  l_renai    varchar(100) NOT NULL DEFAULT ''
+  l_renai    varchar(100) NOT NULL DEFAULT '',
+  l_wikidata integer
 );
 
 -- vn_anime
@@ -769,6 +775,33 @@ CREATE TABLE votes (
   vote integer NOT NULL DEFAULT 0, -- [pub]
   date timestamptz NOT NULL DEFAULT NOW(), -- [pub]
   PRIMARY KEY(vid, uid)
+);
+
+-- wikidata
+CREATE TABLE wikidata (
+  id                 integer NOT NULL PRIMARY KEY, -- [pub]
+  lastfetch          timestamptz,
+  enwiki             text,    -- [pub]
+  jawiki             text,    -- [pub]
+  website            text,    -- [pub] P856
+  vndb               text,    -- [pub] P3180
+  mobygames          text,    -- [pub] P1933
+  mobygames_company  text,    -- [pub] P4773
+  gamefaqs_game      integer, -- [pub] P4769
+  gamefaqs_company   integer, -- [pub] P6182
+  anidb_anime        integer, -- [pub] P5646
+  anidb_person       integer, -- [pub] P5649
+  ann_anime          integer, -- [pub] P1985
+  ann_manga          integer, -- [pub] P1984
+  musicbrainz_artist uuid,    -- [pub] P434
+  twitter            text,    -- [pub] P2002
+  vgmdb_product      integer, -- [pub] P5659
+  vgmdb_artist       integer, -- [pub] P3435
+  discogs_artist     integer, -- [pub] P1953
+  acdb_char          integer, -- [pub] P7013
+  acdb_source        integer, -- [pub] P7017
+  indiedb_game       text,    -- [pub] P6717
+  howlongtobeat      integer  -- [pub] P2816
 );
 
 -- wlists

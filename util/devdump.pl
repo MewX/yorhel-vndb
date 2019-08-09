@@ -125,6 +125,9 @@ sub copy_entry {
     copy traits => undef, {addedby => 'user'};
     copy 'traits_parents';
 
+    # Wikidata (TODO: This could be a lot more selective)
+    copy 'wikidata';
+
     # Threads (announcements)
     my $threads = join ',', @{ $db->selectcol_arrayref("SELECT tid FROM threads_boards b WHERE b.type = 'an'") };
     copy threads        => "SELECT * FROM threads WHERE id IN($threads)";

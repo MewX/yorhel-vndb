@@ -479,6 +479,17 @@ $$ LANGUAGE plpgsql;
 
 
 
+-- insert rows into wikidata for new l_wikidata items
+-- (this is a BEFORE trigger)
+CREATE OR REPLACE FUNCTION wikidata_insert() RETURNS trigger AS $$
+BEGIN
+  INSERT INTO wikidata (id) VALUES (NEW.l_wikidata) ON CONFLICT (id) DO NOTHING;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+
 -- For each row in rlists, there should be at least one corresponding row in
 -- vnlists for at least one of the VNs linked to that release.
 -- 1. When a row is deleted from vnlists, also remove all rows from rlists that

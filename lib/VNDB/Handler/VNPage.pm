@@ -417,18 +417,14 @@ sub page {
         td fmtvnlen $v->{length}, 1;
        end;
      }
-     my @links = (
-       $v->{l_wp} ?      [ 'Wikipedia', 'http://en.wikipedia.org/wiki/%s', $v->{l_wp} ] : (),
-       #$v->{l_encubed} ? [ 'Encubed',   'http://novelnews.net/tag/%s/', $v->{l_encubed} ] : (),
-       $v->{l_renai} ?   [ 'Renai.us',  'http://renai.us/game/%s.shtml', $v->{l_renai} ] : (),
-     );
-     if(@links) {
+     my $links = $self->entryLinks(v => $v);
+     if(@$links) {
        Tr;
         td 'Links';
         td;
-         for(@links) {
-           a href => sprintf($_->[1], $_->[2]), $_->[0];
-           txt ', ' if $_ ne $links[$#links];
+         for(@$links) {
+           a href => $_->[1], $_->[0];
+           txt ', ' if $_ ne $links->[$#$links];
          }
         end;
        end;
@@ -546,11 +542,12 @@ sub _revision {
     [ l_wp        => 'Wikipedia link', htmlize => sub {
       $_[0] ? sprintf '<a href="http://en.wikipedia.org/wiki/%s">%1$s</a>', xml_escape $_[0] : '[empty]'
     }],
+    [ l_wikidata  => 'Wikidata ID', htmlize => sub { $_[0] ? sprintf '<a href="https://www.wikidata.org/wiki/Q%d">Q%1$d</a>', $_[0] : '[empty]' } ],
     [ l_encubed   => 'Encubed tag', htmlize => sub {
       $_[0] ? sprintf '<a href="http://novelnews.net/tag/%s/">%1$s</a>', xml_escape $_[0] : '[empty]'
     }],
     [ l_renai     => 'Renai.us link', htmlize => sub {
-      $_[0] ? sprintf '<a href="http://renai.us/game/%s.shtml">%1$s</a>', xml_escape $_[0] : '[empty]'
+      $_[0] ? sprintf '<a href="https://renai.us/game/%s">%1$s</a>', xml_escape $_[0] : '[empty]'
     }],
     [ credits     => 'Credits', join => '<br />', split => sub {
       my @r = map sprintf('<a href="/s%d" title="%s">%s</a> [%s]%s', $_->{id},

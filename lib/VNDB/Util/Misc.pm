@@ -8,7 +8,7 @@ use TUWF ':html';
 use VNDB::Func;
 use VNDB::BBCode ();
 
-our @EXPORT = qw|filFetchDB filCompat bbSubstLinks|;
+our @EXPORT = qw|filFetchDB filCompat bbSubstLinks entryLinks|;
 
 
 our %filfields = (
@@ -158,6 +158,60 @@ sub bbSubstLinks {
     1;
   };
   return $result;
+}
+
+
+# Returns an arrayref of links, each link being [$title, $url]
+sub entryLinks {
+  my($self, $type, $obj) = @_;
+  my $w = $obj->{l_wikidata} ? $self->dbWikidata($obj->{l_wikidata}) : {};
+
+  # Not everything in the wikidata table is actually used, only those links that
+  # seem to be directly mappings (i.e. not displaying anime links on VN pages).
+  my @links = (
+    $w->{enwiki}            ? [ 'Wikipedia (en)', 'https://en.wikipedia.org/wiki/%s', $w->{enwiki} =~ s/ /_/rg ] : (),
+    $w->{jawiki}            ? [ 'Wikipedia (ja)', 'https://ja.wikipedia.org/wiki/%s', $w->{jawiki} =~ s/ /_/rg ] : (),
+
+    # VN links
+    $type eq 'v' ? (
+      $w->{mobygames}         ? [ 'MobyGames',      'https://www.mobygames.com/game/%s', $w->{mobygames} ] : (),
+      $w->{gamefaqs_game}     ? [ 'GameFAQs',       'https://gamefaqs.gamespot.com/-/%s-', $w->{gamefaqs_game} ] : (),
+      $w->{vgmdb_product}     ? [ 'VGMdb',          'https://vgmdb.net/product/%s', $w->{vgmdb_product} ] : (),
+      $w->{acdb_source}       ? [ 'ACDB',           'https://www.animecharactersdatabase.com/source.php?id=%s', $w->{acdb_source} ] : (),
+      $w->{indiedb_game}      ? [ 'IndieDB',        'https://www.indiedb.com/games/%s', $w->{indiedb_game} ] : (),
+      $w->{howlongtobeat}     ? [ 'HowLongToBeat',  'http://howlongtobeat.com/game.php?id=%s', $w->{howlongtobeat} ] : (),
+      $obj->{l_renai}         ? [ 'Renai.us',       'https://renai.us/game/%s', $obj->{l_renai} ] : (),
+      $obj->{l_wikidata}      ? [ 'Wikidata',       'https://www.wikidata.org/wiki/Q%d', $obj->{l_wikidata} ] : (),
+      #$obj->{l_wp}             ? [ 'Wikipedia', 'http://en.wikipedia.org/wiki/%s', $obj->{l_wp} ] : (), # Superseded by l_wikidata
+      #$obj->{l_encubed}        ? [ 'Encubed',   'http://novelnews.net/tag/%s/', $obj->{l_encubed} ] : (), # Seems dead
+    ) : (),
+
+    # Staff links
+    $type eq 's' ? (
+      $obj->{l_site} ?    [ 'Official page', $obj->{l_site} ] : (),
+      $obj->{l_twitter} ? [ 'Twitter',       'https://twitter.com/%s', $obj->{l_twitter} ] : (),
+      $obj->{l_anidb} ?   [ 'AniDB',         'https://anidb.net/cr%s', $obj->{l_anidb}   ] : (),
+
+      !$obj->{l_anidb}   && $w->{anidb_person} ? [ 'AniDB',   'https://anidb,net/cr%s', $w->{anidb_person} ] : (),
+      !$obj->{l_twitter} && $w->{twitter}      ? [ 'Twitter', 'https://twitter.com/%s', $w->{twitter} ] : (),
+      $w->{musicbrainz_artist} ? [ 'MusicBrainz',    'https://musicbrainz.org/artist/%s', $w->{musicbrainz_artist} ] : (),
+      $w->{vgmdb_artist}       ? [ 'VGMdb',          'https://vgmdb.net/artist/%s', $w->{vgmdb_artist} ] : (),
+      $w->{discogs_artist}     ? [ 'Discogs',        'https://www.discogs.com/artist/%s', $w->{discogs_artist} ] : (),
+
+      #$s->{l_wp} ?      [ 'Wikipedia',    "https://en.wikipedia.org/wiki/$s->{l_wp}" ] : (), # Superseded by l_wikidata
+    ) : (),
+
+    # Producer links
+    $type eq 'p' ? (
+      $obj->{website}         ? [ 'Homepage',   $obj->{website} ] : (),
+      $w->{mobygames_company} ? [ 'MobyGames', 'https://www.mobygames.com/company/%s', $w->{mobygames_company} ] : (),
+      $w->{gamefaqs_company}  ? [ 'GameFAQs',  'https://gamefaqs.gamespot.com/company/%s-', $w->{gamefaqs_company} ] : (),
+
+      #$obj->{l_wp} ?      [ 'Wikipedia',    "https://en.wikipedia.org/wiki/$obj->{l_wp}" ] : (), # Superseded by l_wikidata
+    ) : (),
+  );
+
+  [ map [ $_->[0], $_->[2] ? sprintf $_->[1], $_->[2] : $_->[1] ], @links ];
 }
 
 1;
