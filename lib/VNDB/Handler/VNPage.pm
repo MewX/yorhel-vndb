@@ -417,6 +417,10 @@ sub page {
         td fmtvnlen $v->{length}, 1;
        end;
      }
+
+     _producers($self, $r);
+     _relations($self, $v) if @{$v->{relations}};
+
      my $links = $self->entryLinks(v => $v);
      if(@$links) {
        Tr;
@@ -430,8 +434,6 @@ sub page {
        end;
      }
 
-     _producers($self, $r);
-     _relations($self, $v) if @{$v->{relations}};
      _anime($self, $v) if @{$v->{anime}};
      _useroptions($self, $v, $r) if $self->authInfo->{id};
      _affiliate_links($self, $r);
