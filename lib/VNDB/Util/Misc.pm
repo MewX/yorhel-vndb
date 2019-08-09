@@ -171,6 +171,7 @@ sub entryLinks {
   my @links = (
     $w->{enwiki}            ? [ 'Wikipedia (en)', 'https://en.wikipedia.org/wiki/%s', $w->{enwiki} =~ s/ /_/rg ] : (),
     $w->{jawiki}            ? [ 'Wikipedia (ja)', 'https://ja.wikipedia.org/wiki/%s', $w->{jawiki} =~ s/ /_/rg ] : (),
+    $obj->{l_wikidata}      ? [ 'Wikidata',       'https://www.wikidata.org/wiki/Q%d', $obj->{l_wikidata} ] : (),
 
     # VN links
     $type eq 'v' ? (
@@ -181,7 +182,6 @@ sub entryLinks {
       $w->{indiedb_game}      ? [ 'IndieDB',        'https://www.indiedb.com/games/%s', $w->{indiedb_game} ] : (),
       $w->{howlongtobeat}     ? [ 'HowLongToBeat',  'http://howlongtobeat.com/game.php?id=%s', $w->{howlongtobeat} ] : (),
       $obj->{l_renai}         ? [ 'Renai.us',       'https://renai.us/game/%s', $obj->{l_renai} ] : (),
-      $obj->{l_wikidata}      ? [ 'Wikidata',       'https://www.wikidata.org/wiki/Q%d', $obj->{l_wikidata} ] : (),
       $obj->{c_votecount}>=20 ? [ 'VNStat',         'https://vnstat.net/novel/%d', $obj->{id} ] : (),
       #$obj->{l_wp}             ? [ 'Wikipedia', 'http://en.wikipedia.org/wiki/%s', $obj->{l_wp} ] : (), # Superseded by l_wikidata
       #$obj->{l_encubed}        ? [ 'Encubed',   'http://novelnews.net/tag/%s/', $obj->{l_encubed} ] : (), # Seems dead
