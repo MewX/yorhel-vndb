@@ -94,19 +94,14 @@ sub page {
        end;
       end;
     }
-    my @links = (
-      $s->{l_site} ?    [ 'Official page', $s->{l_site} ] : (),
-      $s->{l_wp} ?      [ 'Wikipedia',    "http://en.wikipedia.org/wiki/$s->{l_wp}" ] : (),
-      $s->{l_twitter} ? [ 'Twitter',      "https://twitter.com/$s->{l_twitter}" ] : (),
-      $s->{l_anidb} ?   [ 'AniDB',        "http://anidb.net/cr$s->{l_anidb}" ] : (),
-    );
-    if(@links) {
+    my $links = $self->entryLinks(s => $s);
+    if(@$links) {
       Tr;
        td class => 'key', 'Links';
        td;
-        for(@links) {
+        for(@$links) {
           a href => $_->[1], $_->[0];
-          br if $_ != $links[$#links];
+          br if $_ != $links->[$#$links];
         }
        end;
       end;
