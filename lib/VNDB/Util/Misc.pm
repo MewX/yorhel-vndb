@@ -182,6 +182,7 @@ sub entryLinks {
       $w->{howlongtobeat}     ? [ 'HowLongToBeat',  'http://howlongtobeat.com/game.php?id=%s', $w->{howlongtobeat} ] : (),
       $obj->{l_renai}         ? [ 'Renai.us',       'https://renai.us/game/%s', $obj->{l_renai} ] : (),
       $obj->{l_wikidata}      ? [ 'Wikidata',       'https://www.wikidata.org/wiki/Q%d', $obj->{l_wikidata} ] : (),
+      $obj->{c_votecount}>=20 ? [ 'VNStat',         'https://vnstat.net/novel/%d', $obj->{id} ] : (),
       #$obj->{l_wp}             ? [ 'Wikipedia', 'http://en.wikipedia.org/wiki/%s', $obj->{l_wp} ] : (), # Superseded by l_wikidata
       #$obj->{l_encubed}        ? [ 'Encubed',   'http://novelnews.net/tag/%s/', $obj->{l_encubed} ] : (), # Seems dead
     ) : (),
@@ -206,6 +207,7 @@ sub entryLinks {
       $obj->{website}         ? [ 'Homepage',   $obj->{website} ] : (),
       $w->{mobygames_company} ? [ 'MobyGames', 'https://www.mobygames.com/company/%s', $w->{mobygames_company} ] : (),
       $w->{gamefaqs_company}  ? [ 'GameFAQs',  'https://gamefaqs.gamespot.com/company/%s-', $w->{gamefaqs_company} ] : (),
+                                [ 'VNStat',    'https://vnstat.net/developer/%d', $obj->{id} ],
 
       #$obj->{l_wp} ?      [ 'Wikipedia',    "https://en.wikipedia.org/wiki/$obj->{l_wp}" ] : (), # Superseded by l_wikidata
     ) : (),
