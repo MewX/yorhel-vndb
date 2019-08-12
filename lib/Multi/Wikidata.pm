@@ -34,10 +34,10 @@ sub fetch {
     SELECT id
       FROM wikidata
      WHERE id IN(
-              SELECT l_wikidata FROM producers WHERE l_wp IS NOT NULL AND NOT hidden
-        UNION SELECT l_wikidata FROM staff     WHERE l_wp IS NOT NULL AND NOT hidden
-        UNION SELECT l_wikidata FROM vn        WHERE l_wp IS NOT NULL AND NOT hidden)
-       AND (lastfetch IS NULL OR lastfetch < now()-($1 * '1 second'::interval))
+              SELECT l_wikidata FROM producers WHERE l_wikidata IS NOT NULL AND NOT hidden
+        UNION SELECT l_wikidata FROM staff     WHERE l_wikidata IS NOT NULL AND NOT hidden
+        UNION SELECT l_wikidata FROM vn        WHERE l_wikidata IS NOT NULL AND NOT hidden)
+       AND (lastfetch IS NULL OR lastfetch < date_trunc('hour', now()-($1 * '1 second'::interval)))
      ORDER BY lastfetch NULLS FIRST
      LIMIT $2
   }, [ $C{fetch_interval}, $C{fetch_number} ], sub {
