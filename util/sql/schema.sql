@@ -781,27 +781,27 @@ CREATE TABLE votes (
 CREATE TABLE wikidata (
   id                 integer NOT NULL PRIMARY KEY, -- [pub]
   lastfetch          timestamptz,
-  enwiki             text,    -- [pub]
-  jawiki             text,    -- [pub]
-  website            text,    -- [pub] P856
-  vndb               text,    -- [pub] P3180
-  mobygames          text,    -- [pub] P1933
-  mobygames_company  text,    -- [pub] P4773
-  gamefaqs_game      integer, -- [pub] P4769
-  gamefaqs_company   integer, -- [pub] P6182
-  anidb_anime        integer, -- [pub] P5646
-  anidb_person       integer, -- [pub] P5649
-  ann_anime          integer, -- [pub] P1985
-  ann_manga          integer, -- [pub] P1984
-  musicbrainz_artist uuid,    -- [pub] P434
-  twitter            text,    -- [pub] P2002
-  vgmdb_product      integer, -- [pub] P5659
-  vgmdb_artist       integer, -- [pub] P3435
-  discogs_artist     integer, -- [pub] P1953
-  acdb_char          integer, -- [pub] P7013
-  acdb_source        integer, -- [pub] P7017
-  indiedb_game       text,    -- [pub] P6717
-  howlongtobeat      integer  -- [pub] P2816
+  enwiki             text,      -- [pub]
+  jawiki             text,      -- [pub]
+  website            text[],    -- [pub] P856
+  vndb               text[],    -- [pub] P3180
+  mobygames          text[],    -- [pub] P1933
+  mobygames_company  text[],    -- [pub] P4773
+  gamefaqs_game      integer[], -- [pub] P4769
+  gamefaqs_company   integer[], -- [pub] P6182
+  anidb_anime        integer[], -- [pub] P5646
+  anidb_person       integer[], -- [pub] P5649
+  ann_anime          integer[], -- [pub] P1985
+  ann_manga          integer[], -- [pub] P1984
+  musicbrainz_artist uuid[],    -- [pub] P434
+  twitter            text[],    -- [pub] P2002
+  vgmdb_product      integer[], -- [pub] P5659
+  vgmdb_artist       integer[], -- [pub] P3435
+  discogs_artist     integer[], -- [pub] P1953
+  acdb_char          integer[], -- [pub] P7013
+  acdb_source        integer[], -- [pub] P7017
+  indiedb_game       text[],    -- [pub] P6717
+  howlongtobeat      integer[]  -- [pub] P2816
 );
 
 -- wlists

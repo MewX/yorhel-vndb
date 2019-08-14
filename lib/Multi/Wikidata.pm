@@ -55,27 +55,27 @@ sub fetch {
 }
 
 
-my %props = qw/
-  P856  website
-  P3180 vndb
-  P1933 mobygames
-  P4773 mobygames_company
-  P4769 gamefaqs_game
-  P6182 gamefaqs_company
-  P5646 anidb_anime
-  P5649 anidb_person
-  P1985 ann_anime
-  P1984 ann_manga
-  P434  musicbrainz_artist
-  P2002 twitter
-  P5659 vgmdb_product
-  P3435 vgmdb_artist
-  P1953 discogs_artist
-  P7013 acdb_char
-  P7017 acdb_source
-  P6717 indiedb_game
-  P2816 howlongtobeat
-/;
+my %props = (
+  P856  => [ 'website',            'text'    ],
+  P3180 => [ 'vndb',               'text'    ],
+  P1933 => [ 'mobygames',          'text'    ],
+  P4773 => [ 'mobygames_company',  'text'    ],
+  P4769 => [ 'gamefaqs_game',      'integer' ],
+  P6182 => [ 'gamefaqs_company',   'integer' ],
+  P5646 => [ 'anidb_anime',        'integer' ],
+  P5649 => [ 'anidb_person',       'integer' ],
+  P1985 => [ 'ann_anime',          'integer' ],
+  P1984 => [ 'ann_manga',          'integer' ],
+  P434  => [ 'musicbrainz_artist', 'uuid'    ],
+  P2002 => [ 'twitter',            'text'    ],
+  P5659 => [ 'vgmdb_product',      'integer' ],
+  P3435 => [ 'vgmdb_artist',       'integer' ],
+  P1953 => [ 'discogs_artist',     'integer' ],
+  P7013 => [ 'acdb_char',          'integer' ],
+  P7017 => [ 'acdb_source',        'integer' ],
+  P6717 => [ 'indiedb_game',       'text'    ],
+  P2816 => [ 'howlongtobeat',      'integer' ],
+);
 
 
 sub process {
@@ -104,17 +104,20 @@ sub save {
   my @val = ($id, $data->{sitelinks}{enwiki}{title}, $data->{sitelinks}{jawiki}{title});
 
   for my $p (sort keys %props) {
-    my $v = $data->{claims}{$p};
-    AE::log warn => "Q$id has multiple properties for '$p', storing the first" if $v && @$v > 1;
-
-    $v = $v->[0]{mainsnak}{datavalue}{value};
-    if(ref $v) {
-      AE::log warn => "Q$id has a non-scalar value for '$p'";
-      $v = undef;
+    my @v;
+    for (@{$data->{claims}{$p}}) {
+      my $v = $_->{mainsnak}{datavalue}{value};
+      if(ref $v) {
+        AE::log warn => "Q$id has a non-scalar value for '$p'";
+      } else {
+        push @val, $v;
+        push @v, sprintf '$%d::%s', scalar @val, $props{$p}[1];
+      }
     }
 
-    push @val, $v;
-    push @set, sprintf '%s = $%d', $props{$p}, scalar @val;
+    push @set, @v
+      ? sprintf '%s = ARRAY[%s]', $props{$p}[0], join ',', @v
+      : "$props{$p}[0] = NULL";
   }
 
   my $set = join ', ', @set;

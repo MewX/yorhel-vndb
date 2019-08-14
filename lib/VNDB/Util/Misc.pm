@@ -166,54 +166,51 @@ sub entryLinks {
   my($self, $type, $obj) = @_;
   my $w = $obj->{l_wikidata} ? $self->dbWikidata($obj->{l_wikidata}) : {};
 
+  my @links;
+  my $lnk = sub {
+    my($v, $title, $url, $xform) = @_;
+    push @links, map [ $title, sprintf $url, $xform ? $xform->($_) : $_ ], ref $v ? @$v : $v ? ($v) : ();
+  };
+
+  $lnk->($obj->{l_site},      'Official website',  '%s'); # Homepage always comes first
+  $lnk->($w->{enwiki},        'Wikipedia (en)',    'https://en.wikipedia.org/wiki/%s', sub { shift =~ s/ /_/rg });
+  $lnk->($w->{jawiki},        'Wikipedia (ja)',    'https://ja.wikipedia.org/wiki/%s', sub { shift =~ s/ /_/rg });
+  $lnk->($obj->{l_wikidata},  'Wikidata',          'https://www.wikidata.org/wiki/Q%d');
+
   # Not everything in the wikidata table is actually used, only those links that
   # seem to be directly mappings (i.e. not displaying anime links on VN pages).
-  my @links = (
-    $w->{enwiki}            ? [ 'Wikipedia (en)', 'https://en.wikipedia.org/wiki/%s', $w->{enwiki} =~ s/ /_/rg ] : (),
-    $w->{jawiki}            ? [ 'Wikipedia (ja)', 'https://ja.wikipedia.org/wiki/%s', $w->{jawiki} =~ s/ /_/rg ] : (),
-    $obj->{l_wikidata}      ? [ 'Wikidata',       'https://www.wikidata.org/wiki/Q%d', $obj->{l_wikidata} ] : (),
 
-    # VN links
-    $type eq 'v' ? (
-      $w->{mobygames}         ? [ 'MobyGames',      'https://www.mobygames.com/game/%s', $w->{mobygames} ] : (),
-      $w->{gamefaqs_game}     ? [ 'GameFAQs',       'https://gamefaqs.gamespot.com/-/%s-', $w->{gamefaqs_game} ] : (),
-      $w->{vgmdb_product}     ? [ 'VGMdb',          'https://vgmdb.net/product/%s', $w->{vgmdb_product} ] : (),
-      $w->{acdb_source}       ? [ 'ACDB',           'https://www.animecharactersdatabase.com/source.php?id=%s', $w->{acdb_source} ] : (),
-      $w->{indiedb_game}      ? [ 'IndieDB',        'https://www.indiedb.com/games/%s', $w->{indiedb_game} ] : (),
-      $w->{howlongtobeat}     ? [ 'HowLongToBeat',  'http://howlongtobeat.com/game.php?id=%s', $w->{howlongtobeat} ] : (),
-      $obj->{l_renai}         ? [ 'Renai.us',       'https://renai.us/game/%s', $obj->{l_renai} ] : (),
-      $obj->{c_votecount}>=20 ? [ 'VNStat',         'https://vnstat.net/novel/%d', $obj->{id} ] : (),
-      #$obj->{l_wp}             ? [ 'Wikipedia', 'http://en.wikipedia.org/wiki/%s', $obj->{l_wp} ] : (), # Superseded by l_wikidata
-      #$obj->{l_encubed}        ? [ 'Encubed',   'http://novelnews.net/tag/%s/', $obj->{l_encubed} ] : (), # Seems dead
-    ) : (),
+  # VN links
+  if($type eq 'v') {
+    $lnk->($w->{mobygames},     'MobyGames',      'https://www.mobygames.com/game/%s');
+    $lnk->($w->{gamefaqs_game}, 'GameFAQs',       'https://gamefaqs.gamespot.com/-/%s-');
+    $lnk->($w->{vgmdb_product}, 'VGMdb',          'https://vgmdb.net/product/%s');
+    $lnk->($w->{acdb_source},   'ACDB',           'https://www.animecharactersdatabase.com/source.php?id=%s');
+    $lnk->($w->{indiedb_game},  'IndieDB',        'https://www.indiedb.com/games/%s');
+    $lnk->($w->{howlongtobeat}, 'HowLongToBeat',  'http://howlongtobeat.com/game.php?id=%s');
+    $lnk->($obj->{l_renai},     'Renai.us',       'https://renai.us/game/%s');
+    push @links, [ 'VNStat', sprintf 'https://vnstat.net/novel/%d', $obj->{id} ] if $obj->{c_votecount}>=20;
+  }
 
-    # Staff links
-    $type eq 's' ? (
-      $obj->{l_site} ?    [ 'Official page', $obj->{l_site} ] : (),
-      $obj->{l_twitter} ? [ 'Twitter',       'https://twitter.com/%s', $obj->{l_twitter} ] : (),
-      $obj->{l_anidb} ?   [ 'AniDB',         'https://anidb.net/cr%s', $obj->{l_anidb}   ] : (),
+  # Staff links
+  if($type eq 's') {
+    $lnk->($obj->{l_twitter},        'Twitter',      'https://twitter.com/%s');
+    $lnk->($w->{twitter},            'Twitter',      'https://twitter.com/%s') if !$obj->{l_twitter};
+    $lnk->($obj->{l_anidb},          'AniDB',        'https://anidb.net/cr%s');
+    $lnk->($w->{anidb_person},       'AniDB',        'https://anidb.net/cr%s') if !$obj->{l_anidb};
+    $lnk->($w->{musicbrainz_artist}, 'MusicBrainz',  'https://musicbrainz.org/artist/%s');
+    $lnk->($w->{vgmdb_artist},       'VGMdb',        'https://vgmdb.net/artist/%s');
+    $lnk->($w->{discogs_artist},     'Discogs',      'https://www.discogs.com/artist/%s');
+  }
 
-      !$obj->{l_anidb}   && $w->{anidb_person} ? [ 'AniDB',   'https://anidb,net/cr%s', $w->{anidb_person} ] : (),
-      !$obj->{l_twitter} && $w->{twitter}      ? [ 'Twitter', 'https://twitter.com/%s', $w->{twitter} ] : (),
-      $w->{musicbrainz_artist} ? [ 'MusicBrainz',    'https://musicbrainz.org/artist/%s', $w->{musicbrainz_artist} ] : (),
-      $w->{vgmdb_artist}       ? [ 'VGMdb',          'https://vgmdb.net/artist/%s', $w->{vgmdb_artist} ] : (),
-      $w->{discogs_artist}     ? [ 'Discogs',        'https://www.discogs.com/artist/%s', $w->{discogs_artist} ] : (),
+  # Producer links
+  if($type eq 'p') {
+    $lnk->($w->{mobygames_company}, 'MobyGames', 'https://www.mobygames.com/company/%s');
+    $lnk->($w->{gamefaqs_company},  'GameFAQs',  'https://gamefaqs.gamespot.com/company/%s-');
+    push @links, [ 'VNStat', sprintf 'https://vnstat.net/developer/%d', $obj->{id} ];
+  }
 
-      #$s->{l_wp} ?      [ 'Wikipedia',    "https://en.wikipedia.org/wiki/$s->{l_wp}" ] : (), # Superseded by l_wikidata
-    ) : (),
-
-    # Producer links
-    $type eq 'p' ? (
-      $obj->{website}         ? [ 'Homepage',   $obj->{website} ] : (),
-      $w->{mobygames_company} ? [ 'MobyGames', 'https://www.mobygames.com/company/%s', $w->{mobygames_company} ] : (),
-      $w->{gamefaqs_company}  ? [ 'GameFAQs',  'https://gamefaqs.gamespot.com/company/%s-', $w->{gamefaqs_company} ] : (),
-                                [ 'VNStat',    'https://vnstat.net/developer/%d', $obj->{id} ],
-
-      #$obj->{l_wp} ?      [ 'Wikipedia',    "https://en.wikipedia.org/wiki/$obj->{l_wp}" ] : (), # Superseded by l_wikidata
-    ) : (),
-  );
-
-  [ map [ $_->[0], $_->[2] ? sprintf $_->[1], $_->[2] : $_->[1] ], @links ];
+  \@links
 }
 
 1;
