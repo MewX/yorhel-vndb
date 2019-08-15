@@ -48,28 +48,34 @@ pg_start() {
         return
     fi
 
-    psql postgres -f util/sql/superuser_init.sql
-    echo "ALTER ROLE vndb       LOGIN" | psql postgres
-    echo "ALTER ROLE vndb_site  LOGIN" | psql postgres
-    echo "ALTER ROLE vndb_multi LOGIN" | psql postgres
-
-    make util/sql/editfunc.sql
-    psql -U vndb -f util/sql/all.sql
-
+    echo "============================================================="
     echo
-    echo "You now have a functional, but empty, database."
+    echo "Database has not been initialized yet, doing that now."
     echo "If you want to have some data to play around with,"
     echo "I can download and install a development database for you."
     echo "For information, see https://vndb.org/d8#3"
     echo "(Warning: This will also write images to static/)"
     echo
-    echo "Enter n to keep an empty database, y to download the dev database."
+    echo "Enter n to setup an empty database, y to download the dev database."
+    [ -f dump.sql ] && echo "  Or e to import the existing dump.sql."
     read -p "Choice: " opt
-    if [[ $opt =~ ^[Yy] ]]
+
+    make util/sql/editfunc.sql
+    psql postgres -f util/sql/superuser_init.sql
+    echo "ALTER ROLE vndb       LOGIN" | psql postgres
+    echo "ALTER ROLE vndb_site  LOGIN" | psql postgres
+    echo "ALTER ROLE vndb_multi LOGIN" | psql postgres
+
+    if [[ $opt =~ ^[Ee] ]]
+    then
+        psql -U vndb -f dump.sql
+    elif [[ $opt =~ ^[Yy] ]]
     then
         curl -L https://dl.vndb.org/dump/vndb-dev-latest.tar.gz | tar -xzf-
         psql -U vndb -f dump.sql
         rm dump.sql
+    else
+        psql -U vndb -f util/sql/all.sql
     fi
 
     touch data/docker-pg/vndb-init-done

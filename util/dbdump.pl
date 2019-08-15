@@ -100,7 +100,7 @@ my %tables = (
 
 my @tables = map +{ name => $_, %{$tables{$_}} }, sort keys %tables;
 my $schema = VNDBSchema::schema("$ROOT/util/sql/schema.sql");
-my $types = VNDBSchema::types("$ROOT/util/sql/all.sql");
+my $types = VNDBSchema::types("$ROOT/util/sql/schema.sql");
 my $references = VNDBSchema::references("$ROOT/util/sql/tableattrs.sql");
 
 my $db = DBI->connect('dbi:Pg:dbname=vndb', 'vndb', undef, { RaiseError => 1 });

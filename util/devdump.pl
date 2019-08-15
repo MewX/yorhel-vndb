@@ -83,20 +83,10 @@ sub copy_entry {
     open my $OUT, '>:utf8', 'dump.sql';
     select $OUT;
 
-    # Header
-    my @tables = grep !/^multi_/, sort @{ $db->selectcol_arrayref(
-        "SELECT oid::regclass::text FROM pg_class WHERE relkind = 'r' AND relnamespace = 'public'::regnamespace"
-    ) };
-    print  "\\set ON_ERROR_STOP 1\n";
-    print  "BEGIN;\n";
-    printf "TRUNCATE TABLE %s CASCADE;\n", join ',', @tables;
-    print  "SET CONSTRAINTS ALL DEFERRED;\n";
-    printf "ALTER TABLE %s DISABLE TRIGGER USER;\n", $_ for @tables;
-
-    # Copy over some required defaults
-    open my $F, '<', 'util/sql/data.sql';
-    print while <$F>;
-    close $F;
+    print "-- This file replaces 'util/sql/all.sql'.\n";
+    print "\\set ON_ERROR_STOP 1\n";
+    print "\\i util/sql/schema.sql\n";
+    print "\\i util/sql/data.sql\n";
 
     # Copy over all sequence values
     my @seq = sort @{ $db->selectcol_arrayref(
@@ -161,32 +151,23 @@ sub copy_entry {
     # Releases
     copy_entry r => [qw/releases releases_lang releases_media releases_platforms releases_producers releases_vn/], $releases;
 
-    # Caches
+    print "\\i util/sql/func.sql\n";
+    print "\\i util/sql/editfunc.sql\n";
+    print "\\i util/sql/tableattrs.sql\n";
+
+    # Update some caches
     print "SELECT tag_vn_calc();\n";
     print "SELECT traits_chars_calc();\n";
     print "SELECT update_vncache(id) FROM vn;\n";
+    print "SELECT update_stats_cache_full();\n";
+    print "SELECT update_vnpopularity();\n";
     print "UPDATE users u SET c_votes = (SELECT COUNT(*) FROM votes v WHERE v.uid = u.id);\n";
     print "UPDATE users u SET c_tags = (SELECT COUNT(*) FROM tags_vn v WHERE v.uid = u.id);\n";
     print "UPDATE users u SET c_changes = (SELECT COUNT(*) FROM changes c WHERE c.requester = u.id);\n";
-    # These were copied from Multi::Maintenance
-    print "UPDATE stats_cache SET count = (SELECT COUNT(*) FROM users)-1 WHERE section = 'users';\n";
-    print "UPDATE stats_cache SET count = (SELECT COUNT(*) FROM vn        WHERE hidden = FALSE) WHERE section = 'vn';\n";
-    print "UPDATE stats_cache SET count = (SELECT COUNT(*) FROM releases  WHERE hidden = FALSE) WHERE section = 'releases';\n";
-    print "UPDATE stats_cache SET count = (SELECT COUNT(*) FROM producers WHERE hidden = FALSE) WHERE section = 'producers';\n";
-    print "UPDATE stats_cache SET count = (SELECT COUNT(*) FROM chars     WHERE hidden = FALSE) WHERE section = 'chars';\n";
-    print "UPDATE stats_cache SET count = (SELECT COUNT(*) FROM staff     WHERE hidden = FALSE) WHERE section = 'staff';\n";
-    print "UPDATE stats_cache SET count = (SELECT COUNT(*) FROM tags      WHERE state = 2)      WHERE section = 'tags';\n";
-    print "UPDATE stats_cache SET count = (SELECT COUNT(*) FROM traits    WHERE state = 2)      WHERE section = 'traits';\n";
-    print "UPDATE stats_cache SET count = (SELECT COUNT(*) FROM threads   WHERE hidden = FALSE) WHERE section = 'threads';\n";
-    print "UPDATE stats_cache SET count = (SELECT COUNT(*) FROM threads_posts WHERE hidden = FALSE
-            AND EXISTS(SELECT 1 FROM threads WHERE threads.id = tid AND threads.hidden = FALSE)) WHERE section = 'threads_posts';\n";
-    # TODO: Something with the 'stats_cache' table. The vn.c_* stats are also inconsistent
+    # TODO: The vn.c_rating and vn.c_votecount stats are still inconsistent
 
-    # Footer
-    # Apparently we can't do an ALTER TABLE while the (deferred) foreign key checks
-    # haven't been executed, so do a commit first.
-    print "COMMIT;\n";
-    printf "ALTER TABLE %s ENABLE TRIGGER USER;\n", $_ for @tables;
+    print "\\set ON_ERROR_STOP 0\n";
+    print "\\i util/sql/perms.sql\n";
 
     select STDOUT;
     close $OUT;

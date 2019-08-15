@@ -127,20 +127,9 @@ my %monthlies = (
   # This only takes about 3 seconds to complete
   vncache_full => 'SELECT update_vncache(id) FROM vn',
 
-  # These shouldn't really be necessary, the triggers in PgSQL should keep
-  # these up-to-date nicely.  But these all take less a second to complete,
-  # anyway.
-  stats_users => q|UPDATE stats_cache SET count = (SELECT COUNT(*) FROM users)-1 WHERE section = 'users'|,
-  stats_vn    => q|UPDATE stats_cache SET count = (SELECT COUNT(*) FROM vn        WHERE hidden = FALSE) WHERE section = 'vn'|,
-  stats_rel   => q|UPDATE stats_cache SET count = (SELECT COUNT(*) FROM releases  WHERE hidden = FALSE) WHERE section = 'releases'|,
-  stats_prod  => q|UPDATE stats_cache SET count = (SELECT COUNT(*) FROM producers WHERE hidden = FALSE) WHERE section = 'producers'|,
-  stats_chars => q|UPDATE stats_cache SET count = (SELECT COUNT(*) FROM chars     WHERE hidden = FALSE) WHERE section = 'chars'|,
-  stats_chars => q|UPDATE stats_cache SET count = (SELECT COUNT(*) FROM staff     WHERE hidden = FALSE) WHERE section = 'staff'|,
-  stats_tags  => q|UPDATE stats_cache SET count = (SELECT COUNT(*) FROM tags      WHERE state = 2)      WHERE section = 'tags'|,
-  stats_trait => q|UPDATE stats_cache SET count = (SELECT COUNT(*) FROM traits    WHERE state = 2)      WHERE section = 'traits'|,
-  stats_thread=> q|UPDATE stats_cache SET count = (SELECT COUNT(*) FROM threads   WHERE hidden = FALSE) WHERE section = 'threads'|,
-  stats_posts => q|UPDATE stats_cache SET count = (SELECT COUNT(*) FROM threads_posts WHERE hidden = FALSE
-    AND EXISTS(SELECT 1 FROM threads WHERE threads.id = tid AND threads.hidden = FALSE)) WHERE section = 'threads_posts'|,
+  # This shouldn't really be necessary, the triggers in PgSQL should keep
+  # these up-to-date nicely. But it takes less than a second, anyway.
+  stats_cache  => 'SELECT update_stats_cache_full()',
 );
 
 
