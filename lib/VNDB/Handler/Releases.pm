@@ -15,6 +15,7 @@ TUWF::register(
     => \&edit,
   qr{r/engines}                    => \&engines,
   qr{xml/releases.xml}             => \&relxml,
+  qr{xml/engines.xml}              => \&enginexml,
 );
 
 
@@ -702,6 +703,29 @@ sub relxml {
       tag 'release', id => $_->{id}, lang => join(',', @{$_->{languages}}), $_->{title}
         for (grep (grep $_->{vid} == $v->{id}, @{$_->{vn}}), @$rel);
      end;
+   }
+  end;
+}
+
+
+sub enginexml {
+  my $self = shift;
+
+  # The list of engines happens to be small enough for this to make sense, and
+  # fetching all unique engines from the releases table also happens to be fast
+  # enough right now, but this may need a separate cache or index in the future.
+  my $lst = $self->dbReleaseEngines();
+
+  my $f = $self->formValidate(
+    { get => 'q', required => 1, maxlength => 500 },
+  );
+  return $self->resNotFound if $f->{_err};
+
+  $self->resHeader('Content-type' => 'text/xml; charset=UTF-8');
+  xml;
+  tag 'engines';
+   for(grep $_->{engine} =~ /\Q$f->{q}\E/i, @$lst) {
+     tag 'item', count => $_->{cnt}, $_->{engine};
    }
   end;
 }

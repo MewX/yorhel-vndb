@@ -397,6 +397,20 @@ function filFInput(c, n) {
   ]
 }
 
+function filFEngine(c, n) {
+  var input = tag('input', {type: 'text', 'class': 'text', onfocus: selectField, onchange: serialize});
+  dsInit(input, '/xml/engines.xml?q=',
+    function(item, tr) { tr.appendChild(tag('td', shorten(item.firstChild.nodeValue, 40))); },
+    function(item, obj) { return item.firstChild.nodeValue; },
+    function(o) { selectField(o) }
+  );
+  return [ c, n, input,
+    function (c) { return [c.value] },
+    function (c, f) { c.value = f }
+  ]
+}
+
+
 function filFOptions(c, n, opts) {
   var p = tag('p', {'class':'opts', fil_val:opts[0][0]});
   var sel = function (e) {
@@ -628,7 +642,7 @@ function filReleases() {
       filFSelect('voiced',    'Voiced',          5, VARS.voiced),
       filFSelect('ani_story', 'Story animation', 5, VARS.animated),
       filFSelect('ani_ero',   'Ero animation',   5, VARS.animated),
-      filFInput('engine',     'Engine')
+      filFEngine('engine',    'Engine')
     ]
   ];
 }
