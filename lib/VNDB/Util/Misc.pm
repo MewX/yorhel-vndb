@@ -172,7 +172,8 @@ sub entryLinks {
     push @links, map [ $title, sprintf $url, $xform ? $xform->($_) : $_ ], ref $v ? @$v : $v ? ($v) : ();
   };
 
-  $lnk->($obj->{l_site},      'Official website',  '%s'); # Homepage always comes first
+  $lnk->($obj->{l_site},      'Official website',  '%s'); # (staff) Homepage always comes first
+  $lnk->($obj->{website},     'Official website',  '%s'); # (producers)
   $lnk->($w->{enwiki},        'Wikipedia (en)',    'https://en.wikipedia.org/wiki/%s', sub { shift =~ s/ /_/rg });
   $lnk->($w->{jawiki},        'Wikipedia (ja)',    'https://ja.wikipedia.org/wiki/%s', sub { shift =~ s/ /_/rg });
   $lnk->($obj->{l_wikidata},  'Wikidata',          'https://www.wikidata.org/wiki/Q%d');
