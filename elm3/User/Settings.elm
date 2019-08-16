@@ -176,7 +176,7 @@ view model =
     , card "preferences" "Preferences" [] <|
 
       [ cardRow "Privacy" Nothing <| formGroup
-        [ label [ class "checkbox" ] [ inputCheck "" model.data.hide_list (Set << HideList), text "Hide my visual novel list, vote list and wishlist" ] ]
+        [ label [ class "checkbox" ] [ inputCheck "" model.data.hide_list (Set << HideList), text "Hide my visual novel list, vote list and wishlist and exclude these lists from the database dumps and API" ] ]
 
       , cardRow "NSFW" Nothing <| formGroups
         [ [ label [ class "checkbox" ] [ inputCheck "" model.data.show_nsfw     (Set << ShowNsfw),     text "Disable warnings for images that are not safe for work" ] ]

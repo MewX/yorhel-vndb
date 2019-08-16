@@ -65,7 +65,7 @@ sub Sidebar {
     Doc  7, 'About us';
     Doc  6, 'FAQ';
     Doc  9, 'Discussion board';
-    Doc 17, 'Privacy Policy';
+    Doc 17, 'Privacy Policy & Licensing';
     Doc 11, 'Database API';
     Doc 14, 'Database Dumps';
     Doc  8, 'Development';

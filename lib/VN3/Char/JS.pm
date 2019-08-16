@@ -45,7 +45,8 @@ json_api '/js/char.json', {
 
     for (@$r) {
         $_->{main} = $_->{main} ? { id => $_->{main}, name => $_->{main_name}, original => $_->{main_original} } : undef;
-        delete $_->{main_name}, $_->{main_original};
+        delete $_->{main_name};
+        delete $_->{main_original};
     }
 
     $elm_CharResult->($r);
