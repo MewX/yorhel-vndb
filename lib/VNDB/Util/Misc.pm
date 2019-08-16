@@ -195,8 +195,10 @@ sub entryLinks {
 
   # Release links
   if($type eq 'r') {
-    $lnk->($obj->{l_steam}, 'Steam',   'https://store.steampowered.com/app/%d/');
-    $lnk->($obj->{l_steam}, 'SteamDB', 'https://steamdb.info/app/%d/info');
+    $lnk->($obj->{l_steam},    'Steam',       'https://store.steampowered.com/app/%d/');
+    $lnk->($obj->{l_steam},    'SteamDB',     'https://steamdb.info/app/%d/info');
+    $lnk->($obj->{l_dlsite},   'DLsite (jpn)','https://www.dlsite.com/home/work/=/product_id/%s.html');
+    $lnk->($obj->{l_dlsiteen}, 'DLsite (eng)','https://www.dlsite.com/eng/work/=/product_id/%s.html');
   }
 
   # Staff links

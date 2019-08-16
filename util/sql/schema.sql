@@ -304,7 +304,9 @@ CREATE TABLE releases ( -- dbentry_type=r
   ani_ero    smallint NOT NULL DEFAULT 0, -- [pub]
   uncensored boolean NOT NULL DEFAULT FALSE, -- [pub]
   engine     varchar(50) NOT NULL DEFAULT '', -- [pub]
-  l_steam    integer NOT NULL DEFAULT 0 -- [pub]
+  l_steam    integer NOT NULL DEFAULT 0, -- [pub]
+  l_dlsite   text NOT NULL DEFAULT '', -- [pub]
+  l_dlsiteen text NOT NULL DEFAULT '' -- [pub]
 );
 
 -- releases_hist
@@ -328,7 +330,9 @@ CREATE TABLE releases_hist (
   ani_ero    smallint NOT NULL DEFAULT 0,
   uncensored boolean NOT NULL DEFAULT FALSE,
   engine     varchar(50) NOT NULL DEFAULT '',
-  l_steam    integer NOT NULL DEFAULT 0
+  l_steam    integer NOT NULL DEFAULT 0,
+  l_dlsite   text NOT NULL DEFAULT '',
+  l_dlsiteen text NOT NULL DEFAULT ''
 );
 
 -- releases_lang

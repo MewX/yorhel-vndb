@@ -60,6 +60,8 @@ sub page {
       [ languages  => 'Language',        join => ', ', split => sub { map $self->{languages}{$_}, @{$_[0]} } ],
       [ website    => 'Website' ],
       [ l_steam    => 'Steam AppId',     htmlize   => sub { $_[0] ? sprintf '<a href="https://store.steampowered.com/app/%d/">%1$d</a>', $_[0] : '[empty]' } ],
+      [ l_dlsite   => 'DLsite (jpn)',    htmlize   => sub { $_[0] ? sprintf '<a href="https://www.dlsite.com/home/work/=/product_id/%s.html">%1$s</a>', $_[0] : '[empty]' } ],
+      [ l_dlsiteen => 'DLsite (eng)',    htmlize   => sub { $_[0] ? sprintf '<a href="https://www.dlsite.com/eng/work/=/product_id/%s.html">%1$s</a>', $_[0] : '[empty]' } ],
       [ released   => 'Release date',    htmlize   => \&fmtdatestr ],
       [ minage     => 'Age rating',      serialize => \&minage ],
       [ notes      => 'Notes',           diff => qr/[ ,\n\.]/ ],
@@ -308,7 +310,7 @@ sub edit {
 
   my $vn = $rid ? $r->{vn} : [{ vid => $vid, title => $v->{title} }];
   my %b4 = !$rid ? () : (
-    (map { $_ => $r->{$_} } qw|type title original gtin catalog languages website l_steam released minage
+    (map { $_ => $r->{$_} } qw|type title original gtin catalog languages website l_steam l_dlsite l_dlsiteen released minage
       notes platforms patch resolution voiced freeware doujin uncensored ani_story ani_ero engine ihid ilock|),
     media     => join(',',   sort map "$_->{medium} $_->{qty}", @{$r->{media}}),
     producers => join('|||', map
@@ -335,6 +337,8 @@ sub edit {
       { post => 'languages', multi => 1, enum => [ keys %{$self->{languages}} ] },
       { post => 'website',   required => 0, default => '', maxlength => 250, template => 'weburl' },
       { post => 'l_steam',   required => 0, default => 0, template => 'uint' },
+      { post => 'l_dlsite',  required => 0, default => '', regex => [ qr/^[VR]J[0-9]{6}$/, 'Invalid DLsite ID' ] },
+      { post => 'l_dlsiteen',required => 0, default => '', regex => [ qr/^[VR]E[0-9]{6}$/, 'Invalid DLsite ID' ] },
       { post => 'released',  required => 0, default => 0, template => 'rdate' },
       { post => 'minage' ,   required => 0, default => -1, enum => $self->{age_ratings} },
       { post => 'notes',     required => 0, default => '', maxlength => 10240 },
@@ -387,7 +391,7 @@ sub edit {
 
     if(!$frm->{_err}) {
       my $nrev = $self->dbItemEdit(r => !$copy && $rid ? ($r->{id}, $r->{rev}) : (undef, undef),
-        (map { $_ => $frm->{$_} } qw| type title original gtin catalog languages website l_steam released minage
+        (map { $_ => $frm->{$_} } qw| type title original gtin catalog languages website l_steam l_dlsite l_dlsiteen released minage
           notes platforms resolution editsum patch voiced freeware doujin uncensored ani_story ani_ero engine ihid ilock|),
         vn        => $new_vn,
         producers => $producers,
@@ -435,6 +439,8 @@ sub _form {
     [ input  => short => 'catalog',   name => 'Catalog number' ],
     [ input  => short => 'website',   name => 'Official website' ],
     [ input  => short => 'l_steam',   name => 'Steam AppID', pre => 'https://store.steampowered.com/app/', width => 100 ],
+    [ input  => short => 'l_dlsite',  name => 'DLsite (jpn)', post => ' e.g. "RJ083922"', width => 100 ],
+    [ input  => short => 'l_dlsiteen',name => 'DLsite (eng)', post => ' e.g. "RE083922"', width => 100 ],
     [ date   => short => 'released',  name => 'Release date' ],
     [ static => content => 'Leave month or day blank if they are unknown' ],
     [ select => short => 'minage', name => 'Age rating',
