@@ -201,6 +201,7 @@ sub entryLinks {
     $lnk->($obj->{l_dlsiteen}, 'DLsite (eng)','https://www.dlsite.com/eng/work/=/product_id/%s.html');
     $lnk->($obj->{l_gog},      'GOG',         'https://www.gog.com/game/%s');
     $lnk->($obj->{l_denpa},    'Denpasoft',   'https://denpasoft.com/products/%s');
+    $lnk->($obj->{l_jlist},    'J-List',      'https://www.jlist.com/%s');
   }
 
   # Staff links
