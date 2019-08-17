@@ -4,10 +4,12 @@ ALTER TABLE releases      ADD COLUMN l_steam    integer NOT NULL DEFAULT 0;
 ALTER TABLE releases      ADD COLUMN l_dlsite   text NOT NULL DEFAULT '';
 ALTER TABLE releases      ADD COLUMN l_dlsiteen text NOT NULL DEFAULT '';
 ALTER TABLE releases      ADD COLUMN l_gog      text NOT NULL DEFAULT '';
+ALTER TABLE releases      ADD COLUMN l_denpa    text NOT NULL DEFAULT '';
 ALTER TABLE releases_hist ADD COLUMN l_steam    integer NOT NULL DEFAULT 0;
 ALTER TABLE releases_hist ADD COLUMN l_dlsite   text NOT NULL DEFAULT '';
 ALTER TABLE releases_hist ADD COLUMN l_dlsiteen text NOT NULL DEFAULT '';
 ALTER TABLE releases_hist ADD COLUMN l_gog      text NOT NULL DEFAULT '';
+ALTER TABLE releases_hist ADD COLUMN l_denpa    text NOT NULL DEFAULT '';
 
 \i util/sql/editfunc.sql
 
@@ -80,3 +82,17 @@ SELECT migrate_notes_to_dlsite(id, notes) FROM releases WHERE NOT hidden
     AND id <> 20242 -- odd special case
     AND notes ~* '\s*(?:Also available|Available) (?:on|at|from) \[url=https?://[^\]]+/work/=/product_id/([RV][EJ][0-9]+)[^\]]*\]\s*DLsite\s*(?:english\s*)?\.?\[/url\](?:\,?$|\.\s*)';
 DROP FUNCTION migrate_notes_to_dlsite(integer, text);
+
+
+
+CREATE OR REPLACE FUNCTION migrate_affiliates_to_denpa(rid integer, url text) RETURNS void AS $$
+BEGIN
+    PERFORM edit_r_init(rid, (SELECT MAX(rev) FROM changes WHERE itemid = rid AND type = 'r'));
+    UPDATE edit_releases SET l_denpa = regexp_replace(url, '^.+/([^\/]+)/?$', '\1');
+    UPDATE edit_revision SET requester = 1, ip = '0.0.0.0', comments = 'Automatic conversion of affiliate link to Denpasoft link.';
+    PERFORM edit_r_commit();
+END;
+$$ LANGUAGE plpgsql;
+SELECT migrate_affiliates_to_denpa(rid, url) FROM affiliate_links a WHERE affiliate = 6 AND NOT hidden
+    AND NOT EXISTS(SELECT 1 FROM affiliate_links b WHERE b.id <> a.id AND a.rid = b.rid);
+DROP FUNCTION migrate_affiliates_to_denpa(integer, text);

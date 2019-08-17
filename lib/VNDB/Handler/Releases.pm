@@ -63,6 +63,7 @@ sub page {
       [ l_dlsite   => 'DLsite (jpn)',    htmlize   => sub { $_[0] ? sprintf '<a href="https://www.dlsite.com/home/work/=/product_id/%s.html">%1$s</a>', $_[0] : '[empty]' } ],
       [ l_dlsiteen => 'DLsite (eng)',    htmlize   => sub { $_[0] ? sprintf '<a href="https://www.dlsite.com/eng/work/=/product_id/%s.html">%1$s</a>', $_[0] : '[empty]' } ],
       [ l_gog      => 'GOG.com',         htmlize   => sub { $_[0] ? sprintf '<a href="https://www.gog.com/game/%s">%1$s</a>', $_[0] : '[empty]' } ],
+      [ l_denpa    => 'Denpasoft',       htmlize   => sub { $_[0] ? sprintf '<a href="https://denpasoft.com/products/%s">%1$s</a>', $_[0] : '[empty]' } ],
       [ released   => 'Release date',    htmlize   => \&fmtdatestr ],
       [ minage     => 'Age rating',      serialize => \&minage ],
       [ notes      => 'Notes',           diff => qr/[ ,\n\.]/ ],
@@ -311,7 +312,7 @@ sub edit {
 
   my $vn = $rid ? $r->{vn} : [{ vid => $vid, title => $v->{title} }];
   my %b4 = !$rid ? () : (
-    (map { $_ => $r->{$_} } qw|type title original gtin catalog languages website l_steam l_dlsite l_dlsiteen l_gog released minage
+    (map { $_ => $r->{$_} } qw|type title original gtin catalog languages website l_steam l_dlsite l_dlsiteen l_gog l_denpa released minage
       notes platforms patch resolution voiced freeware doujin uncensored ani_story ani_ero engine ihid ilock|),
     media     => join(',',   sort map "$_->{medium} $_->{qty}", @{$r->{media}}),
     producers => join('|||', map
@@ -341,6 +342,7 @@ sub edit {
       { post => 'l_dlsite',  required => 0, default => '', regex => [ qr/^[VR]J[0-9]{6}$/, 'Invalid DLsite ID' ] },
       { post => 'l_dlsiteen',required => 0, default => '', regex => [ qr/^[VR]E[0-9]{6}$/, 'Invalid DLsite ID' ] },
       { post => 'l_gog',     required => 0, default => '', regex => [ qr/^[a-z0-9_]+$/, 'Invalid GOG.com ID' ] },
+      { post => 'l_denpa',   required => 0, default => '', regex => [ qr/^[a-z0-9-]+$/, 'Invalid Denpasoft ID' ] },
       { post => 'released',  required => 0, default => 0, template => 'rdate' },
       { post => 'minage' ,   required => 0, default => -1, enum => $self->{age_ratings} },
       { post => 'notes',     required => 0, default => '', maxlength => 10240 },
@@ -393,7 +395,7 @@ sub edit {
 
     if(!$frm->{_err}) {
       my $nrev = $self->dbItemEdit(r => !$copy && $rid ? ($r->{id}, $r->{rev}) : (undef, undef),
-        (map { $_ => $frm->{$_} } qw| type title original gtin catalog languages website l_steam l_dlsite l_dlsiteen l_gog released minage
+        (map { $_ => $frm->{$_} } qw| type title original gtin catalog languages website l_steam l_dlsite l_dlsiteen l_gog l_denpa released minage
           notes platforms resolution editsum patch voiced freeware doujin uncensored ani_story ani_ero engine ihid ilock|),
         vn        => $new_vn,
         producers => $producers,
@@ -444,6 +446,7 @@ sub _form {
     [ input  => short => 'l_dlsite',  name => 'DLsite (jpn)', post => ' e.g. "RJ083922"', width => 100 ],
     [ input  => short => 'l_dlsiteen',name => 'DLsite (eng)', post => ' e.g. "RE083922"', width => 100 ],
     [ input  => short => 'l_gog',     name => 'GOG.com', pre => 'https://www.gog.com/game/' ],
+    [ input  => short => 'l_denpa',   name => 'Denpasoft', pre => 'https://denpasoft.com/products/' ],
     [ date   => short => 'released',  name => 'Release date' ],
     [ static => content => 'Leave month or day blank if they are unknown' ],
     [ select => short => 'minage', name => 'Age rating',
