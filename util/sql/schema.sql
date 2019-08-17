@@ -306,7 +306,8 @@ CREATE TABLE releases ( -- dbentry_type=r
   engine     varchar(50) NOT NULL DEFAULT '', -- [pub]
   l_steam    integer NOT NULL DEFAULT 0, -- [pub]
   l_dlsite   text NOT NULL DEFAULT '', -- [pub]
-  l_dlsiteen text NOT NULL DEFAULT '' -- [pub]
+  l_dlsiteen text NOT NULL DEFAULT '', -- [pub]
+  l_gog      text NOT NULL DEFAULT '' -- [pub]
 );
 
 -- releases_hist
@@ -332,7 +333,8 @@ CREATE TABLE releases_hist (
   engine     varchar(50) NOT NULL DEFAULT '',
   l_steam    integer NOT NULL DEFAULT 0,
   l_dlsite   text NOT NULL DEFAULT '',
-  l_dlsiteen text NOT NULL DEFAULT ''
+  l_dlsiteen text NOT NULL DEFAULT '',
+  l_gog      text NOT NULL DEFAULT ''
 );
 
 -- releases_lang

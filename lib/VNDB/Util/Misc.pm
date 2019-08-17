@@ -199,6 +199,7 @@ sub entryLinks {
     $lnk->($obj->{l_steam},    'SteamDB',     'https://steamdb.info/app/%d/info');
     $lnk->($obj->{l_dlsite},   'DLsite (jpn)','https://www.dlsite.com/home/work/=/product_id/%s.html');
     $lnk->($obj->{l_dlsiteen}, 'DLsite (eng)','https://www.dlsite.com/eng/work/=/product_id/%s.html');
+    $lnk->($obj->{l_gog},      'GOG',         'https://www.gog.com/game/%s');
   }
 
   # Staff links

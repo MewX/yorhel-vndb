@@ -3,9 +3,11 @@
 ALTER TABLE releases      ADD COLUMN l_steam    integer NOT NULL DEFAULT 0;
 ALTER TABLE releases      ADD COLUMN l_dlsite   text NOT NULL DEFAULT '';
 ALTER TABLE releases      ADD COLUMN l_dlsiteen text NOT NULL DEFAULT '';
+ALTER TABLE releases      ADD COLUMN l_gog      text NOT NULL DEFAULT '';
 ALTER TABLE releases_hist ADD COLUMN l_steam    integer NOT NULL DEFAULT 0;
 ALTER TABLE releases_hist ADD COLUMN l_dlsite   text NOT NULL DEFAULT '';
 ALTER TABLE releases_hist ADD COLUMN l_dlsiteen text NOT NULL DEFAULT '';
+ALTER TABLE releases_hist ADD COLUMN l_gog      text NOT NULL DEFAULT '';
 
 \i util/sql/editfunc.sql
 
