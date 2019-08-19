@@ -8,6 +8,7 @@ ALTER TABLE releases      ADD COLUMN l_denpa    text NOT NULL DEFAULT '';
 ALTER TABLE releases      ADD COLUMN l_jlist    text NOT NULL DEFAULT '';
 ALTER TABLE releases      ADD COLUMN l_gyutto   integer NOT NULL DEFAULT 0;
 ALTER TABLE releases      ADD COLUMN l_digiket  integer NOT NULL DEFAULT 0;
+ALTER TABLE releases      ADD COLUMN l_melon    integer NOT NULL DEFAULT 0;
 ALTER TABLE releases_hist ADD COLUMN l_steam    integer NOT NULL DEFAULT 0;
 ALTER TABLE releases_hist ADD COLUMN l_dlsite   text NOT NULL DEFAULT '';
 ALTER TABLE releases_hist ADD COLUMN l_dlsiteen text NOT NULL DEFAULT '';
@@ -16,6 +17,7 @@ ALTER TABLE releases_hist ADD COLUMN l_denpa    text NOT NULL DEFAULT '';
 ALTER TABLE releases_hist ADD COLUMN l_jlist    text NOT NULL DEFAULT '';
 ALTER TABLE releases_hist ADD COLUMN l_gyutto   integer NOT NULL DEFAULT 0;
 ALTER TABLE releases_hist ADD COLUMN l_digiket  integer NOT NULL DEFAULT 0;
+ALTER TABLE releases_hist ADD COLUMN l_melon    integer NOT NULL DEFAULT 0;
 
 \i util/sql/editfunc.sql
 
