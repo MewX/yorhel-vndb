@@ -203,6 +203,7 @@ sub entryLinks {
     $lnk->($obj->{l_denpa},    'Denpasoft',   'https://denpasoft.com/products/%s');
     $lnk->($obj->{l_jlist},    'J-List',      'https://www.jlist.com/%s');
     $lnk->($obj->{l_gyutto},   'Gyutto',      'https://gyutto.com/i/item%d');
+    $lnk->($obj->{l_digiket},  'Digiket',     'https://www.digiket.com/work/show/_data/ID=ITM%07d/');
   }
 
   # Staff links

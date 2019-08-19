@@ -310,7 +310,8 @@ CREATE TABLE releases ( -- dbentry_type=r
   l_gog      text NOT NULL DEFAULT '', -- [pub]
   l_denpa    text NOT NULL DEFAULT '', -- [pub]
   l_jlist    text NOT NULL DEFAULT '', -- [pub]
-  l_gyutto   integer NOT NULL DEFAULT 0 -- [pub]
+  l_gyutto   integer NOT NULL DEFAULT 0, -- [pub]
+  l_digiket  integer NOT NULL DEFAULT 0 -- [pub]
 );
 
 -- releases_hist
@@ -340,7 +341,8 @@ CREATE TABLE releases_hist (
   l_gog      text NOT NULL DEFAULT '',
   l_denpa    text NOT NULL DEFAULT '',
   l_jlist    text NOT NULL DEFAULT '',
-  l_gyutto   integer NOT NULL DEFAULT 0
+  l_gyutto   integer NOT NULL DEFAULT 0,
+  l_digiket  integer NOT NULL DEFAULT 0
 );
 
 -- releases_lang

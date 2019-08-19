@@ -85,7 +85,7 @@ sub dbReleaseGet {
   );
 
   my @select = (
-    qw|r.id r.title r.original r.website r.l_steam r.l_dlsite r.l_dlsiteen r.l_gog r.l_denpa r.l_jlist r.l_gyutto r.released r.minage r.type r.patch|,
+    qw|r.id r.title r.original r.website r.l_steam r.l_dlsite r.l_dlsiteen r.l_gog r.l_denpa r.l_jlist r.l_gyutto r.l_digiket r.released r.minage r.type r.patch|,
     $o{what} =~ /extended/ ? qw|r.notes r.catalog r.gtin r.resolution r.voiced r.freeware r.doujin r.uncensored r.ani_story r.ani_ero r.engine r.hidden r.locked| : (),
     $o{pid} ? ('rp.developer', 'rp.publisher') : (),
   );
@@ -123,7 +123,7 @@ sub dbReleaseGetRev {
 
   $o{rev} ||= $self->dbRow('SELECT MAX(rev) AS rev FROM changes WHERE type = \'r\' AND itemid = ?', $o{id})->{rev};
 
-  my $select = 'c.itemid AS id, r.title, r.original, r.website, r.l_steam, r.l_dlsite, r.l_dlsiteen, r.l_gog, r.l_denpa, r.l_jlist, r.l_gyutto, r.released, r.minage, r.type, r.patch';
+  my $select = 'c.itemid AS id, r.title, r.original, r.website, r.l_steam, r.l_dlsite, r.l_dlsiteen, r.l_gog, r.l_denpa, r.l_jlist, r.l_gyutto, r.l_digiket, r.released, r.minage, r.type, r.patch';
   $select .= ', r.notes, r.catalog, r.gtin, r.resolution, r.voiced, r.freeware, r.doujin, r.uncensored, r.ani_story, r.ani_ero, r.engine, ro.hidden, ro.locked' if $o{what} =~ /extended/;
   $select .= ', extract(\'epoch\' from c.added) as added, c.requester, c.comments, u.username, c.rev, c.ihid, c.ilock';
   $select .= ', c.id AS cid, NOT EXISTS(SELECT 1 FROM changes c2 WHERE c2.type = c.type AND c2.itemid = c.itemid AND c2.rev = c.rev+1) AS lastrev';
@@ -214,7 +214,7 @@ sub dbReleaseRevisionInsert {
   my($self, $o) = @_;
 
   my %set = map exists($o->{$_}) ? ("$_ = ?", $o->{$_}) : (),
-    qw|title original gtin catalog website l_steam l_dlsite l_dlsiteen l_gog l_denpa l_jlist l_gyutto released notes minage type
+    qw|title original gtin catalog website l_steam l_dlsite l_dlsiteen l_gog l_denpa l_jlist l_gyutto l_digiket released notes minage type
        patch resolution voiced freeware doujin uncensored ani_story ani_ero engine|;
   $self->dbExec('UPDATE edit_releases !H', \%set) if keys %set;
 
