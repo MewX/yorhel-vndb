@@ -9,6 +9,7 @@ ALTER TABLE releases      ADD COLUMN l_jlist    text NOT NULL DEFAULT '';
 ALTER TABLE releases      ADD COLUMN l_gyutto   integer NOT NULL DEFAULT 0;
 ALTER TABLE releases      ADD COLUMN l_digiket  integer NOT NULL DEFAULT 0;
 ALTER TABLE releases      ADD COLUMN l_melon    integer NOT NULL DEFAULT 0;
+ALTER TABLE releases      ADD COLUMN l_mg       integer NOT NULL DEFAULT 0;
 ALTER TABLE releases_hist ADD COLUMN l_steam    integer NOT NULL DEFAULT 0;
 ALTER TABLE releases_hist ADD COLUMN l_dlsite   text NOT NULL DEFAULT '';
 ALTER TABLE releases_hist ADD COLUMN l_dlsiteen text NOT NULL DEFAULT '';
@@ -18,6 +19,7 @@ ALTER TABLE releases_hist ADD COLUMN l_jlist    text NOT NULL DEFAULT '';
 ALTER TABLE releases_hist ADD COLUMN l_gyutto   integer NOT NULL DEFAULT 0;
 ALTER TABLE releases_hist ADD COLUMN l_digiket  integer NOT NULL DEFAULT 0;
 ALTER TABLE releases_hist ADD COLUMN l_melon    integer NOT NULL DEFAULT 0;
+ALTER TABLE releases_hist ADD COLUMN l_mg       integer NOT NULL DEFAULT 0;
 
 \i util/sql/editfunc.sql
 
@@ -104,3 +106,17 @@ $$ LANGUAGE plpgsql;
 SELECT migrate_affiliates_to_denpa(rid, url) FROM affiliate_links a WHERE affiliate = 6 AND NOT hidden
     AND NOT EXISTS(SELECT 1 FROM affiliate_links b WHERE b.id <> a.id AND a.rid = b.rid);
 DROP FUNCTION migrate_affiliates_to_denpa(integer, text);
+
+
+
+CREATE OR REPLACE FUNCTION migrate_affiliates_to_mg(rid integer, url text) RETURNS void AS $$
+BEGIN
+    PERFORM edit_r_init(rid, (SELECT MAX(rev) FROM changes WHERE itemid = rid AND type = 'r'));
+    UPDATE edit_releases SET l_mg = regexp_replace(url, '^.+product_code=([0-9]+).*$', '\1')::integer;
+    UPDATE edit_revision SET requester = 1, ip = '0.0.0.0', comments = 'Automatic conversion of affiliate link to MangaGamer link.';
+    PERFORM edit_r_commit();
+END;
+$$ LANGUAGE plpgsql;
+SELECT migrate_affiliates_to_mg(rid, url) FROM affiliate_links a WHERE affiliate = 5 AND NOT hidden
+    AND NOT EXISTS(SELECT 1 FROM affiliate_links b WHERE b.id <> a.id AND a.rid = b.rid);
+DROP FUNCTION migrate_affiliates_to_mg(integer, text);

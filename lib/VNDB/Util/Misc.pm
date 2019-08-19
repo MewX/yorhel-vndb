@@ -205,6 +205,7 @@ sub entryLinks {
     $lnk->($obj->{l_gyutto},   'Gyutto',      'https://gyutto.com/i/item%d');
     $lnk->($obj->{l_digiket},  'Digiket',     'https://www.digiket.com/work/show/_data/ID=ITM%07d/');
     $lnk->($obj->{l_melon},    'Melonbooks',  'https://www.melonbooks.com/index.php?main_page=product_info&products_id=IT%010d');
+    $lnk->($obj->{l_mg},       'MangaGamer',  'https://www.mangagamer.com/r18/detail.php?product_code=%d');
   }
 
   # Staff links
