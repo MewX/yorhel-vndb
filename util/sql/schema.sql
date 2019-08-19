@@ -313,7 +313,9 @@ CREATE TABLE releases ( -- dbentry_type=r
   l_gyutto   integer NOT NULL DEFAULT 0, -- [pub]
   l_digiket  integer NOT NULL DEFAULT 0, -- [pub]
   l_melon    integer NOT NULL DEFAULT 0, -- [pub]
-  l_mg       integer NOT NULL DEFAULT 0 -- [pub]
+  l_mg       integer NOT NULL DEFAULT 0, -- [pub]
+  l_getchu   integer NOT NULL DEFAULT 0, -- [pub]
+  l_getchudl integer NOT NULL DEFAULT 0 -- [pub]
 );
 
 -- releases_hist
@@ -346,7 +348,9 @@ CREATE TABLE releases_hist (
   l_gyutto   integer NOT NULL DEFAULT 0,
   l_digiket  integer NOT NULL DEFAULT 0,
   l_melon    integer NOT NULL DEFAULT 0,
-  l_mg       integer NOT NULL DEFAULT 0
+  l_mg       integer NOT NULL DEFAULT 0,
+  l_getchu   integer NOT NULL DEFAULT 0,
+  l_getchudl integer NOT NULL DEFAULT 0
 );
 
 -- releases_lang
