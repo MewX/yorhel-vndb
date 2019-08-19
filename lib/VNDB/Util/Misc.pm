@@ -202,6 +202,7 @@ sub entryLinks {
     $lnk->($obj->{l_gog},      'GOG',         'https://www.gog.com/game/%s');
     $lnk->($obj->{l_denpa},    'Denpasoft',   'https://denpasoft.com/products/%s');
     $lnk->($obj->{l_jlist},    'J-List',      'https://www.jlist.com/%s');
+    $lnk->($obj->{l_gyutto},   'Gyutto',      'https://gyutto.com/i/item%d');
   }
 
   # Staff links
