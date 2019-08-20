@@ -3,7 +3,7 @@ package VNDB::Handler::Releases;
 
 use strict;
 use warnings;
-use TUWF ':html', ':xml', 'uri_escape';
+use TUWF ':html', ':xml', 'uri_escape', 'xml_escape';
 use VNDB::Func;
 
 
@@ -71,6 +71,7 @@ sub page {
       [ l_mg       => 'MangaGamer',      htmlize   => sub { $_[0] ? sprintf '<a href="https://www.mangagamer.com/r18/detail.php?product_code=%d">%1$d</a>', $_[0] : '[empty]' } ],
       [ l_getchu   => 'Getchu',          htmlize   => sub { $_[0] ? sprintf '<a href="http://www.getchu.com/soft.phtml?id=%d">%1$d</a>', $_[0] : '[empty]' } ],
       [ l_getchudl => 'DL.Getchu',       htmlize   => sub { $_[0] ? sprintf '<a href="http://dl.getchu.com/i/item%d">%1$d</a>', $_[0] : '[empty]' } ],
+      [ l_dmm      => 'DMM',             htmlize   => sub { $_[0] ? sprintf '<a href="%s">%1$s</a>', xml_escape $_[0] : '[empty]' } ],
       [ released   => 'Release date',    htmlize   => \&fmtdatestr ],
       [ minage     => 'Age rating',      serialize => \&minage ],
       [ notes      => 'Notes',           diff => qr/[ ,\n\.]/ ],
@@ -320,7 +321,7 @@ sub edit {
   my $vn = $rid ? $r->{vn} : [{ vid => $vid, title => $v->{title} }];
   my %b4 = !$rid ? () : (
     (map { $_ => $r->{$_} } qw|type title original gtin catalog languages website released minage
-      l_steam l_dlsite l_dlsiteen l_gog l_denpa l_jlist l_gyutto l_digiket l_melon l_mg l_getchu l_getchudl
+      l_steam l_dlsite l_dlsiteen l_gog l_denpa l_jlist l_gyutto l_digiket l_melon l_mg l_getchu l_getchudl l_dmm
       notes platforms patch resolution voiced freeware doujin uncensored ani_story ani_ero engine ihid ilock|),
     media     => join(',',   sort map "$_->{medium} $_->{qty}", @{$r->{media}}),
     producers => join('|||', map
@@ -358,6 +359,7 @@ sub edit {
       { post => 'l_mg',      required => 0, default => 0, template => 'uint' },
       { post => 'l_getchu',  required => 0, default => 0, template => 'uint' },
       { post => 'l_getchudl',required => 0, default => 0, template => 'uint' },
+      { post => 'l_dmm',     required => 0, default => '', regex => [ qr{^(?:https?://)?(?:www|dlsoft)\.dmm\.(?:com|co\.jp)/}, 'Invalid DMM URL' ] },
       { post => 'released',  required => 0, default => 0, template => 'rdate' },
       { post => 'minage' ,   required => 0, default => -1, enum => $self->{age_ratings} },
       { post => 'notes',     required => 0, default => '', maxlength => 10240 },
@@ -378,6 +380,11 @@ sub edit {
 
     $frm->{engine} = $frm->{engine_oth} if $frm->{engine} eq '_other_';
     delete $frm->{engine_oth};
+
+    if($frm->{l_dmm}) {
+      $frm->{l_dmm} =~ s{^http://}{https://};
+      $frm->{l_dmm} = "https://$frm->{l_dmm}" if $frm->{l_dmm} !~ /^https:/;
+    }
 
     push @{$frm->{_err}}, [ 'released', 'required', 1 ] if !$frm->{released};
 
@@ -411,7 +418,7 @@ sub edit {
     if(!$frm->{_err}) {
       my $nrev = $self->dbItemEdit(r => !$copy && $rid ? ($r->{id}, $r->{rev}) : (undef, undef),
         (map { $_ => $frm->{$_} } qw| type title original gtin catalog languages website released minage
-          l_steam l_dlsite l_dlsiteen l_gog l_denpa l_jlist l_gyutto l_digiket l_melon l_mg l_getchu l_getchudl
+          l_steam l_dlsite l_dlsiteen l_gog l_denpa l_jlist l_gyutto l_digiket l_melon l_mg l_getchu l_getchudl l_dmm
           notes platforms resolution editsum patch voiced freeware doujin uncensored ani_story ani_ero engine ihid ilock|),
         vn        => $new_vn,
         producers => $producers,
@@ -477,6 +484,7 @@ sub _form {
     [ input  => short => 'l_getchudl',name => 'DL.Getchu', pre => 'dl.getchu.com/i/item', post => ' (item number)', width => 100 ],
     [ input  => short => 'l_getchu',  name => 'Getchu', pre => 'http://www.getchu.com/soft.phtml?id=', width => 100 ],
     [ input  => short => 'l_melon',   name => 'Melonbooks.com', pre => 'www.melonbooks.com/..&products_id=IT', width => 100 ],
+    [ input  => short => 'l_dmm',     name => 'DMM', post => ' (full URL)' ],
 
     [ static => nolabel => 1, content => '<br>' ],
     [ textarea => short => 'notes', name => 'Notes<br /><b class="standout">English please!</b>' ],
