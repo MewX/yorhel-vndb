@@ -126,3 +126,17 @@ $$ LANGUAGE plpgsql;
 SELECT migrate_affiliates_to_mg(rid, url) FROM affiliate_links a WHERE affiliate = 5 AND NOT hidden
     AND NOT EXISTS(SELECT 1 FROM affiliate_links b WHERE b.id <> a.id AND a.rid = b.rid);
 DROP FUNCTION migrate_affiliates_to_mg(integer, text);
+
+
+
+CREATE OR REPLACE FUNCTION migrate_affiliates_to_jlist(rid integer, url text) RETURNS void AS $$
+BEGIN
+    PERFORM edit_r_init(rid, (SELECT MAX(rev) FROM changes WHERE itemid = rid AND type = 'r'));
+    UPDATE edit_releases SET l_jlist = regexp_replace(url, '^.+/([^\/]+)/?$', '\1');
+    UPDATE edit_revision SET requester = 1, ip = '0.0.0.0', comments = 'Automatic conversion of affiliate link to J-List link.';
+    PERFORM edit_r_commit();
+END;
+$$ LANGUAGE plpgsql;
+SELECT migrate_affiliates_to_jlist(rid, url) FROM affiliate_links a WHERE affiliate = 2 AND NOT hidden
+    AND NOT EXISTS(SELECT 1 FROM affiliate_links b WHERE b.id <> a.id AND a.rid = b.rid);
+DROP FUNCTION migrate_affiliates_to_jlist(integer, text);
