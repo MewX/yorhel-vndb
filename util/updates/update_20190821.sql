@@ -29,3 +29,7 @@ SELECT migrate_notes_to_itch(id) FROM releases WHERE NOT hidden AND l_itch = ''
     AND notes ~* '\s*(?:Also available|Available) (?:on|at|from) \[url=https?://([a-z0-9_-]+)\.itch\.io/([a-z0-9_-]+)\]\s*Itch(?:\.io)?\s*\.?\[/url\](?:\,?$|\.\s*)';
     AND id NOT IN(59555, 65209, 60553);
 DROP FUNCTION migrate_notes_to_itch(integer);
+
+
+UPDATE releases      SET l_dmm = regexp_replace(l_dmm, 'https?://', '') where l_dmm <> '';
+UPDATE releases_hist SET l_dmm = regexp_replace(l_dmm, 'https?://', '') where l_dmm <> '';

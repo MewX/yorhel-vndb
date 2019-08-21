@@ -71,7 +71,7 @@ sub page {
       [ l_mg       => 'MangaGamer',      htmlize   => sub { $_[0] ? sprintf qq{<a href="$self->{mg_url}">%1\$d</a>}, $_[0] : '[empty]' } ],
       [ l_getchu   => 'Getchu',          htmlize   => sub { $_[0] ? sprintf '<a href="http://www.getchu.com/soft.phtml?id=%d">%1$d</a>', $_[0] : '[empty]' } ],
       [ l_getchudl => 'DL.Getchu',       htmlize   => sub { $_[0] ? sprintf '<a href="http://dl.getchu.com/i/item%d">%1$d</a>', $_[0] : '[empty]' } ],
-      [ l_dmm      => 'DMM',             htmlize   => sub { $_[0] ? sprintf '<a href="%s">%1$s</a>', xml_escape $_[0] : '[empty]' } ],
+      [ l_dmm      => 'DMM',             htmlize   => sub { $_[0] ? sprintf '<a href="https://%s">%1$s</a>', xml_escape $_[0] : '[empty]' } ],
       [ l_itch     => 'Itch.io',         htmlize   => sub { $_[0] ? sprintf '<a href="https://%s">%1$s</a>', xml_escape $_[0] : '[empty]' } ],
       [ released   => 'Release date',    htmlize   => \&fmtdatestr ],
       [ minage     => 'Age rating',      serialize => \&minage ],
@@ -383,10 +383,7 @@ sub edit {
     $frm->{engine} = $frm->{engine_oth} if $frm->{engine} eq '_other_';
     delete $frm->{engine_oth};
 
-    if($frm->{l_dmm}) {
-      $frm->{l_dmm} =~ s{^http://}{https://};
-      $frm->{l_dmm} = "https://$frm->{l_dmm}" if $frm->{l_dmm} !~ /^https:/;
-    }
+    $frm->{l_dmm} =~ s{^https?://}{};
     $frm->{l_itch} =~ s{^https?://}{};
 
     push @{$frm->{_err}}, [ 'released', 'required', 1 ] if !$frm->{released};

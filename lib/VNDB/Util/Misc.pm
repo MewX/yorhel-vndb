@@ -209,7 +209,7 @@ sub entryLinks {
     $lnk->($obj->{l_mg},       'MangaGamer',  $self->{mg_url});
     $lnk->($obj->{l_getchu},   'Getchu',      'http://www.getchu.com/soft.phtml?id=%d');
     $lnk->($obj->{l_getchudl}, 'DL.Getchu',   'http://dl.getchu.com/i/item%d');
-    $lnk->($obj->{l_dmm},      'DMM',         '%s');
+    $lnk->($obj->{l_dmm},      'DMM',         'https://%s');
   }
 
   # Staff links
