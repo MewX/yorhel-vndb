@@ -272,6 +272,11 @@ our %S;
     Unity
     YU-RIS
   }],
+  dlsite_url   => 'https://www.dlsite.com/home/work/=/product_id/%s.html',
+  dlsiteen_url => 'https://www.dlsite.com/eng/work/=/product_id/%s.html',
+  denpa_url    => 'https://denpasoft.com/products/%s',
+  jlist_url    => 'https://www.jlist.com/%s',
+  mg_url       => 'https://www.mangagamer.com/r18/detail.php?product_code=%d',
 );
 
 
