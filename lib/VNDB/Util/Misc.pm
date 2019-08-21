@@ -200,6 +200,7 @@ sub entryLinks {
     $lnk->($obj->{l_dlsite},   'DLsite (jpn)',$self->{dlsite_url});
     $lnk->($obj->{l_dlsiteen}, 'DLsite (eng)',$self->{dlsiteen_url});
     $lnk->($obj->{l_gog},      'GOG',         'https://www.gog.com/game/%s');
+    $lnk->($obj->{l_itch},     'Itch.io',     'https://%s');
     $lnk->($obj->{l_denpa},    'Denpasoft',   $self->{denpa_url});
     $lnk->($obj->{l_jlist},    'J-List',      $self->{jlist_url});
     $lnk->($obj->{l_gyutto},   'Gyutto',      'https://gyutto.com/i/item%d');
