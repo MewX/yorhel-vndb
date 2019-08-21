@@ -48,7 +48,7 @@ my %tables = (
     chars_traits        => { where => 'id IN(SELECT id FROM chars WHERE NOT hidden) AND tid IN(SELECT id FROM traits WHERE state = 2)' },
     chars_vns           => { where => 'id IN(SELECT id FROM chars WHERE NOT hidden)'
                                 .' AND vid IN(SELECT id FROM vn WHERE NOT hidden)'
-                                .' AND rid IN(SELECT id FROM releases WHERE NOT hidden)'
+                                .' AND (rid IS NULL OR rid IN(SELECT id FROM releases WHERE NOT hidden))'
                            , order => 'id, vid, rid' },
     docs                => { where => 'NOT hidden' },
     producers           => { where => 'NOT hidden' },
