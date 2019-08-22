@@ -146,6 +146,8 @@ sub edit {
       { post => 'ihid',        required => 0 },
       { post => 'ilock',       required => 0 },
     );
+    $frm->{original} = '' if $frm->{original} eq $frm->{title};
+
     # handle image upload
     $frm->{image} = _uploadimage($self, $frm) if !$nosubmit;
 

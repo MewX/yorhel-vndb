@@ -299,6 +299,7 @@ sub edit {
       { post => 'ihid',          required  => 0 },
       { post => 'ilock',         required  => 0 },
     );
+    $frm->{original} = '' if $frm->{original} eq $frm->{name};
     if(!$nosubmit && !$frm->{_err}) {
       # parse
       my $relations = [ map { /^([a-z]+),([0-9]+),(.+)$/ && (!$pid || $2 != $pid) ? [ $1, $2, $3 ] : () } split /\|\|\|/, $frm->{prodrelations} ];

@@ -383,6 +383,7 @@ sub edit {
     $frm->{engine} = $frm->{engine_oth} if $frm->{engine} eq '_other_';
     delete $frm->{engine_oth};
 
+    $frm->{original} = '' if $frm->{original} eq $frm->{title};
     $frm->{l_dmm} =~ s{^https?://}{};
     $frm->{l_itch} =~ s{^https?://}{};
 
