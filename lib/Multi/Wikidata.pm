@@ -109,7 +109,7 @@ sub save {
       my $v = $_->{mainsnak}{datavalue}{value};
       if(ref $v) {
         AE::log warn => "Q$id has a non-scalar value for '$p'";
-      } else {
+      } elsif(defined $v) {
         push @val, $v;
         push @v, sprintf '$%d::%s', scalar @val, $props{$p}[1];
       }
