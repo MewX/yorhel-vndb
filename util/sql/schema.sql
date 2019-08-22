@@ -317,7 +317,8 @@ CREATE TABLE releases ( -- dbentry_type=r
   l_getchu   integer NOT NULL DEFAULT 0, -- [pub]
   l_getchudl integer NOT NULL DEFAULT 0, -- [pub]
   l_dmm      text NOT NULL DEFAULT '', -- [pub]
-  l_itch     text NOT NULL DEFAULT '' -- [pub]
+  l_itch     text NOT NULL DEFAULT '', -- [pub]
+  l_jastusa  text NOT NULL DEFAULT '' -- [pub]
 );
 
 -- releases_hist
@@ -354,7 +355,8 @@ CREATE TABLE releases_hist (
   l_getchu   integer NOT NULL DEFAULT 0,
   l_getchudl integer NOT NULL DEFAULT 0,
   l_dmm      text NOT NULL DEFAULT '',
-  l_itch     text NOT NULL DEFAULT ''
+  l_itch     text NOT NULL DEFAULT '',
+  l_jastusa  text NOT NULL DEFAULT ''
 );
 
 -- releases_lang

@@ -203,6 +203,7 @@ sub entryLinks {
     $lnk->($obj->{l_itch},     'Itch.io',     'https://%s');
     $lnk->($obj->{l_denpa},    'Denpasoft',   $self->{denpa_url});
     $lnk->($obj->{l_jlist},    'J-List',      $self->{jlist_url});
+    $lnk->($obj->{l_jasyusa},  'JAST USA',    'https://jastusa.com/%s');
     $lnk->($obj->{l_gyutto},   'Gyutto',      'https://gyutto.com/i/item%d');
     $lnk->($obj->{l_digiket},  'Digiket',     'https://www.digiket.com/work/show/_data/ID=ITM%07d/');
     $lnk->($obj->{l_melon},    'Melonbooks',  'https://www.melonbooks.com/index.php?main_page=product_info&products_id=IT%010d');

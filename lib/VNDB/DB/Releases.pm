@@ -88,7 +88,7 @@ sub dbReleaseGet {
     qw|r.id r.title r.original r.website r.released r.minage r.type r.patch|,
     $o{what} =~ /extended/ ? qw|
         r.notes r.catalog r.gtin r.resolution r.voiced r.freeware r.doujin r.uncensored r.ani_story r.ani_ero r.engine r.hidden r.locked
-        r.l_steam r.l_dlsite r.l_dlsiteen r.l_gog r.l_denpa r.l_jlist r.l_gyutto r.l_digiket r.l_melon r.l_mg r.l_getchu r.l_getchudl r.l_dmm r.l_itch
+        r.l_steam r.l_dlsite r.l_dlsiteen r.l_gog r.l_denpa r.l_jlist r.l_gyutto r.l_digiket r.l_melon r.l_mg r.l_getchu r.l_getchudl r.l_dmm r.l_itch r.l_jastusa
     | : (),
     $o{pid} ? ('rp.developer', 'rp.publisher') : (),
   );
@@ -128,7 +128,7 @@ sub dbReleaseGetRev {
 
   my $select = 'c.itemid AS id, r.title, r.original, r.website, r.released, r.minage, r.type, r.patch';
   $select .= ', r.notes, r.catalog, r.gtin, r.resolution, r.voiced, r.freeware, r.doujin, r.uncensored, r.ani_story, r.ani_ero, r.engine, ro.hidden, ro.locked' if $o{what} =~ /extended/;
-  $select .= ', r.l_steam, r.l_dlsite, r.l_dlsiteen, r.l_gog, r.l_denpa, r.l_jlist, r.l_gyutto, r.l_digiket, r.l_melon, r.l_mg, r.l_getchu, r.l_getchudl, r.l_dmm, r.l_itch' if $o{what} =~ /extended/;
+  $select .= ', r.l_steam, r.l_dlsite, r.l_dlsiteen, r.l_gog, r.l_denpa, r.l_jlist, r.l_gyutto, r.l_digiket, r.l_melon, r.l_mg, r.l_getchu, r.l_getchudl, r.l_dmm, r.l_itch, r.l_jastusa' if $o{what} =~ /extended/;
   $select .= ', extract(\'epoch\' from c.added) as added, c.requester, c.comments, u.username, c.rev, c.ihid, c.ilock';
   $select .= ', c.id AS cid, NOT EXISTS(SELECT 1 FROM changes c2 WHERE c2.type = c.type AND c2.itemid = c.itemid AND c2.rev = c.rev+1) AS lastrev';
 
@@ -219,7 +219,7 @@ sub dbReleaseRevisionInsert {
 
   my %set = map exists($o->{$_}) ? ("$_ = ?", $o->{$_}) : (),
     qw|title original gtin catalog website released notes minage type
-       l_steam l_dlsite l_dlsiteen l_gog l_denpa l_jlist l_gyutto l_digiket l_melon l_mg l_getchu l_getchudl l_dmm l_itch
+       l_steam l_dlsite l_dlsiteen l_gog l_denpa l_jlist l_gyutto l_digiket l_melon l_mg l_getchu l_getchudl l_dmm l_itch l_jastusa
        patch resolution voiced freeware doujin uncensored ani_story ani_ero engine|;
   $self->dbExec('UPDATE edit_releases !H', \%set) if keys %set;
 
