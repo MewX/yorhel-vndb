@@ -477,6 +477,15 @@ CREATE TABLE shop_jlist (
   price     text NOT NULL DEFAULT '' -- empty when unknown or not in stock
 );
 
+-- shop_mg
+CREATE TABLE shop_mg (
+  id        integer NOT NULL PRIMARY KEY,
+  lastfetch timestamptz,
+  found     boolean NOT NULL DEFAULT false,
+  r18       boolean NOT NULL DEFAULT true,
+  price     text NOT NULL DEFAULT ''
+);
+
 -- staff
 CREATE TABLE staff ( -- dbentry_type=s
   id         SERIAL PRIMARY KEY, -- [pub]
