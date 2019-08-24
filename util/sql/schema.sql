@@ -468,6 +468,15 @@ CREATE TABLE sessions (
   PRIMARY KEY (uid, token)
 );
 
+-- shop_jlist
+CREATE TABLE shop_jlist (
+  id        text NOT NULL PRIMARY KEY,
+  lastfetch timestamptz,
+  found     boolean NOT NULL DEFAULT false,
+  jbox      boolean NOT NULL DEFAULT false,
+  price     text NOT NULL DEFAULT '' -- empty when unknown or not in stock
+);
+
 -- staff
 CREATE TABLE staff ( -- dbentry_type=s
   id         SERIAL PRIMARY KEY, -- [pub]
