@@ -294,6 +294,7 @@ our %M = (
     #Wikidata    => {},  # disabled by default, no need to bother the Wikidata API when debugging
     #JList       => {},
     #MG          => {},
+    #Denpa       => { api => '', user => '', pass => '' },
   },
 );
 

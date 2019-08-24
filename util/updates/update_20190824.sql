@@ -14,5 +14,14 @@ CREATE TABLE shop_mg (
   price     text NOT NULL DEFAULT ''
 );
 
+CREATE TABLE shop_denpa (
+  id        text NOT NULL PRIMARY KEY,
+  lastfetch timestamptz,
+  found     boolean NOT NULL DEFAULT false,
+  sku       text NOT NULL DEFAULT '',
+  price     text NOT NULL DEFAULT ''
+);
+
 GRANT SELECT, INSERT, UPDATE, DELETE ON shop_jlist               TO vndb_multi;
 GRANT SELECT, INSERT, UPDATE, DELETE ON shop_mg                  TO vndb_multi;
+GRANT SELECT, INSERT, UPDATE, DELETE ON shop_denpa               TO vndb_multi;

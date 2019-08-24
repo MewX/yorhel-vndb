@@ -468,6 +468,15 @@ CREATE TABLE sessions (
   PRIMARY KEY (uid, token)
 );
 
+-- shop_denpa
+CREATE TABLE shop_denpa (
+  id        text NOT NULL PRIMARY KEY,
+  lastfetch timestamptz,
+  found     boolean NOT NULL DEFAULT false,
+  sku       text NOT NULL DEFAULT '',
+  price     text NOT NULL DEFAULT ''
+);
+
 -- shop_jlist
 CREATE TABLE shop_jlist (
   id        text NOT NULL PRIMARY KEY,
