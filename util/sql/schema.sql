@@ -477,6 +477,15 @@ CREATE TABLE shop_denpa (
   price     text NOT NULL DEFAULT ''
 );
 
+-- shop_dlsite
+CREATE TABLE shop_dlsite (
+  id        text NOT NULL PRIMARY KEY,
+  lastfetch timestamptz,
+  found     boolean NOT NULL DEFAULT false,
+  shop      text NOT NULL DEFAULT '',
+  price     text NOT NULL DEFAULT ''
+);
+
 -- shop_jlist
 CREATE TABLE shop_jlist (
   id        text NOT NULL PRIMARY KEY,
