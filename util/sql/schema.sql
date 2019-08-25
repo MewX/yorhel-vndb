@@ -504,6 +504,21 @@ CREATE TABLE shop_mg (
   price     text NOT NULL DEFAULT ''
 );
 
+-- shop_playasia
+CREATE TABLE shop_playasia (
+  pax       text NOT NULL PRIMARY KEY,
+  gtin      bigint NOT NULL,
+  lastfetch timestamptz,
+  url       text NOT NULL DEFAULT '',
+  price     text NOT NULL DEFAULT ''
+);
+
+-- shop_playasia_gtin
+CREATE TABLE shop_playasia_gtin (
+  gtin      bigint NOT NULL PRIMARY KEY,
+  lastfetch timestamptz
+);
+
 -- staff
 CREATE TABLE staff ( -- dbentry_type=s
   id         SERIAL PRIMARY KEY, -- [pub]

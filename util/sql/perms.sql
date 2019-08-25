@@ -125,6 +125,8 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON shop_denpa               TO vndb_multi;
 GRANT SELECT, INSERT, UPDATE, DELETE ON shop_dlsite              TO vndb_multi;
 GRANT SELECT, INSERT, UPDATE, DELETE ON shop_jlist               TO vndb_multi;
 GRANT SELECT, INSERT, UPDATE, DELETE ON shop_mg                  TO vndb_multi;
+GRANT SELECT, INSERT, UPDATE, DELETE ON shop_playasia            TO vndb_multi;
+GRANT SELECT, INSERT, UPDATE, DELETE ON shop_playasia_gtin       TO vndb_multi;
 GRANT SELECT                         ON staff                    TO vndb_multi;
 GRANT SELECT                         ON staff_alias              TO vndb_multi;
 GRANT SELECT                         ON staff_alias_hist         TO vndb_multi;
