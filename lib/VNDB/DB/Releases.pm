@@ -50,7 +50,7 @@ sub dbReleaseFilters {
 
 # Options: id vid pid released page results what med sort reverse date_before date_after
 #   plat prod_inc prod_exc lang olang type minage search resolution freeware doujin voiced uncensored ani_story ani_ero hidden_only
-# What: extended vn producers platforms media affiliates
+# What: extended vn producers platforms media
 # Sort: title released minage
 sub dbReleaseGet {
   my($self, %o) = @_;
@@ -118,7 +118,7 @@ sub dbReleaseGet {
 
 
 # options: id, rev, what
-# what: extended vn producers platforms media affiliates
+# what: extended vn producers platforms media
 sub dbReleaseGetRev {
   my $self = shift;
   my %o = (what => '', @_);

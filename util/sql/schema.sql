@@ -73,20 +73,6 @@ CREATE SEQUENCE charimg_seq;
 
 
 
--- affiliate_links
-CREATE TABLE affiliate_links (
-  id SERIAL PRIMARY KEY,
-  rid integer NOT NULL,
-  hidden boolean NOT NULL DEFAULT false,
-  priority smallint NOT NULL DEFAULT 0,
-  affiliate smallint NOT NULL DEFAULT 0,
-  url varchar NOT NULL,
-  version varchar NOT NULL DEFAULT '',
-  lastfetch timestamptz,
-  price varchar NOT NULL DEFAULT '',
-  data varchar NOT NULL DEFAULT ''
-);
-
 -- anime
 CREATE TABLE anime (
   id integer NOT NULL PRIMARY KEY, -- [pub]

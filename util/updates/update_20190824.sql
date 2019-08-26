@@ -64,3 +64,8 @@ INSERT INTO shop_playasia (pax, gtin, lastfetch, url, price)
     JOIN releases ON affiliate_links.rid = releases.id
    WHERE affiliate = 0 AND NOT affiliate_links.hidden AND price <> 'US$ 0.00'
    GROUP BY data;
+
+
+-- Whenever:
+-- DROP TABLE affiliate_links;
+-- DROP TABLE multi_affiliate_gtin;

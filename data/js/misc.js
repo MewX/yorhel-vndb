@@ -236,25 +236,6 @@ if(byId('batchedit'))
 })();
 
 
-// mouse-over price information / disclaimer
-(function(){
-  if(byId('buynow')) {
-    var l = byClass(byId('buynow'), 'abbr', 'pricenote');
-    for(var i=0; i<l.length; i++) {
-      l[i].buynow_last = l[i].title;
-      l[i].title = null;
-      ddInit(l[i], 'bottom', function(acr) {
-        return tag('p', {onmouseover:ddHide, style:'padding: 3px'},
-          acr.buynow_last, tag('br', null),
-          '* The displayed price only serves as an indication and',
-          tag('br', null), 'usually excludes shipping. Actual price may differ.'
-        );
-      });
-    }
-  }
-})();
-
-
 // set note input box (/u+/list)
 if(byId('not') && byId('vns'))
   byId('vns').onchange = function () {

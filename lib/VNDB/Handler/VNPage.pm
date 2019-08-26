@@ -338,7 +338,7 @@ sub page {
   )->[0];
   return $self->resNotFound if !$v->{id};
 
-  my $r = $self->dbReleaseGet(vid => $vid, what => 'extended producers platforms media', results => 200);
+  my $r = $self->dbReleaseGet(vid => $vid, what => 'extended links producers platforms media', results => 200);
 
   my $metadata = {
     'og:title' => $v->{title},
@@ -753,32 +753,21 @@ sub _useroptions {
 
 sub _affiliate_links {
   my($self, $r) = @_;
-  return if !keys @$r;
-  my %r = map +($_->{id}, $_), @$r;
-  my $links = $self->dbAffiliateGet(rids => [ keys %r ], hidden => 0);
-  return if !@$links;
 
-  $links = [ sort { $b->{priority}||$self->{affiliates}[$b->{affiliate}]{default_prio} <=> $a->{priority}||$self->{affiliates}[$a->{affiliate}]{default_prio} } @$links ];
+  # url => [$title, $url, $price]
+  my %links = map +($_->[1],$_), grep $_->[2], map @{$self->entryLinks(r => $_)}, @$r;
+  return if !keys %links;
 
+  use utf8;
   Tr id => 'buynow';
-   td 'Available at';
+   td 'Shops';
    td;
-    for my $link (@$links) {
-      my $f = $self->{affiliates}[$link->{affiliate}];
-      my $rel = $r{$link->{rid}};
-      my $plat = join(' and ', map $self->{platforms}{$_}, @{$rel->{platforms}});
-      my $version = join(' and ', map $self->{languages}{$_}, @{$rel->{languages}}).' '.$plat.' version';
-
-      a rel => 'nofollow', href => $f->{link_format} ? $f->{link_format}->($link->{url}) : $link->{url};
-       use utf8;
-       txt $link->{version}
-         || ($f->{default_version} && $f->{default_version}->($self, $link, $rel))
-         || $version;
-       txt " at $f->{name}";
-       abbr class => 'pricenote', title =>
-           $link->{lastfetch} ? sprintf('Last updated: %s.', fmtage($link->{lastfetch})) : '', " for $link->{price}"
-         if $link->{price};
-       txt ' »';
+    for my $l (sort { $a->[0] cmp $b->[0] || $a->[2] cmp $b->[2] } values %links) {
+      b class => 'standout', '» ';
+      a href => $l->[1];
+       txt $l->[2];
+       b class => 'grayedout', " @ ";
+       txt $l->[0];
       end;
       br;
     }
@@ -846,7 +835,6 @@ sub _releases {
           }
          end;
          td class => 'tc6';
-          a href => "/affiliates/new?rid=$rel->{id}", 'a' if $self->authCan('affiliate');
           if($rel->{website}) {
             a href => $rel->{website}, rel => 'nofollow';
              cssicon 'external', 'External link';

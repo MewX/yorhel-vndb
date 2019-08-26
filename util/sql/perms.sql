@@ -5,7 +5,6 @@ GRANT CONNECT, TEMP ON DATABASE :DBNAME TO vndb_site;
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO vndb_site;
 GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO vndb_site;
 
-GRANT SELECT, INSERT, UPDATE, DELETE ON affiliate_links          TO vndb_site;
 GRANT SELECT, INSERT                 ON anime                    TO vndb_site;
 GRANT SELECT, INSERT                 ON changes                  TO vndb_site;
 GRANT SELECT, INSERT, UPDATE         ON chars                    TO vndb_site;
@@ -99,7 +98,6 @@ GRANT CONNECT, TEMP ON DATABASE :DBNAME TO vndb_multi;
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO vndb_multi;
 GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO vndb_multi;
 
-GRANT SELECT, INSERT, UPDATE         ON affiliate_links          TO vndb_multi;
 GRANT SELECT,         UPDATE         ON anime                    TO vndb_multi;
 GRANT SELECT                         ON changes                  TO vndb_multi;
 GRANT SELECT                         ON chars                    TO vndb_multi;

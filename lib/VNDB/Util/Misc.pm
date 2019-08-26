@@ -161,15 +161,15 @@ sub bbSubstLinks {
 }
 
 
-# Returns an arrayref of links, each link being [$title, $url]
+# Returns an arrayref of links, each link being [$title, $url, $price]
 sub entryLinks {
   my($self, $type, $obj) = @_;
   my $w = $obj->{l_wikidata} ? $self->dbWikidata($obj->{l_wikidata}) : {};
 
   my @links;
   my $lnk = sub {
-    my($v, $title, $url, $xform) = @_;
-    push @links, map [ $title, sprintf $url, $xform ? $xform->($_) : $_ ], ref $v ? @$v : $v ? ($v) : ();
+    my($v, $title, $url, $xform, $price) = @_;
+    push @links, map [ $title, sprintf($url, $xform ? $xform->($_) : $_), $price ], ref $v ? @$v : $v ? ($v) : ();
   };
 
   $lnk->($obj->{l_site},      'Official website',  '%s'); # (staff) Homepage always comes first
@@ -197,22 +197,21 @@ sub entryLinks {
   if($type eq 'r') {
     $lnk->($obj->{l_steam},    'Steam',       'https://store.steampowered.com/app/%d/');
     $lnk->($obj->{l_steam},    'SteamDB',     'https://steamdb.info/app/%d/info');
-    $lnk->($obj->{l_dlsite},   'DLsite (jpn)',sprintf $self->{dlsite_url}, $obj->{l_dlsite_shop}||'home');
-    $lnk->($obj->{l_dlsiteen}, 'DLsite (eng)',sprintf $self->{dlsite_url}, $obj->{l_dlsiteen_shop}||'eng');
+    $lnk->($obj->{l_dlsite},   'DLsite (jpn)',sprintf($self->{dlsite_url}, $obj->{l_dlsite_shop}||'home'), undef, $obj->{l_dlsite_price});
+    $lnk->($obj->{l_dlsiteen}, 'DLsite (eng)',sprintf($self->{dlsite_url}, $obj->{l_dlsiteen_shop}||'eng'), undef, $obj->{l_dlsiteen_price});
     $lnk->($obj->{l_gog},      'GOG',         'https://www.gog.com/game/%s');
     $lnk->($obj->{l_itch},     'Itch.io',     'https://%s');
-    $lnk->($obj->{l_denpa},    'Denpasoft',   $self->{denpa_url});
-    $lnk->($obj->{l_jlist},    'J-List',      $self->{jlist_url}) if !$obj->{l_jlist_jbox};
-    $lnk->($obj->{l_jlist},    'JBOX',        $self->{jbox_url}) if $obj->{l_jlist_jbox};
+    $lnk->($obj->{l_denpa},    'Denpasoft',   $self->{denpa_url}, undef, $obj->{l_denpa_price});
+    $lnk->($obj->{l_jlist},    $obj->{l_jlist_jbox} ? 'JBOX' : 'J-List', $self->{ $obj->{l_jlist_jbox} ? 'jbox_url' : 'jlist_url' }, undef, $obj->{l_jlist_price});
     $lnk->($obj->{l_jastusa},  'JAST USA',    'https://jastusa.com/%s');
     $lnk->($obj->{l_gyutto},   'Gyutto',      'https://gyutto.com/i/item%d');
     $lnk->($obj->{l_digiket},  'Digiket',     'https://www.digiket.com/work/show/_data/ID=ITM%07d/');
     $lnk->($obj->{l_melon},    'Melonbooks',  'https://www.melonbooks.com/index.php?main_page=product_info&products_id=IT%010d');
-    $lnk->($obj->{l_mg},       'MangaGamer',  !defined($obj->{l_mg_r18}) || $obj->{l_mg_r18} ? $self->{mg_r18_url} : $self->{mg_main_url});
+    $lnk->($obj->{l_mg},       'MangaGamer',  !defined($obj->{l_mg_r18}) || $obj->{l_mg_r18} ? $self->{mg_r18_url} : $self->{mg_main_url}, undef, $obj->{l_mg_price});
     $lnk->($obj->{l_getchu},   'Getchu',      'http://www.getchu.com/soft.phtml?id=%d');
     $lnk->($obj->{l_getchudl}, 'DL.Getchu',   'http://dl.getchu.com/i/item%d');
     $lnk->($obj->{l_dmm},      'DMM',         'https://%s');
-    push @links, map [ 'PlayAsia', $_->{url} ], @{$obj->{l_playasia}} if $obj->{l_playasia};
+    push @links, map [ 'PlayAsia', $_->{url}, $_->{price} ], @{$obj->{l_playasia}} if $obj->{l_playasia};
   }
 
   # Staff links
