@@ -43,6 +43,12 @@ CREATE TABLE shop_playasia_gtin (
   lastfetch timestamptz
 );
 
+GRANT SELECT                         ON shop_denpa               TO vndb_site;
+GRANT SELECT                         ON shop_dlsite              TO vndb_site;
+GRANT SELECT                         ON shop_jlist               TO vndb_site;
+GRANT SELECT                         ON shop_mg                  TO vndb_site;
+GRANT SELECT                         ON shop_playasia            TO vndb_site;
+
 GRANT SELECT, INSERT, UPDATE, DELETE ON shop_jlist               TO vndb_multi;
 GRANT SELECT, INSERT, UPDATE, DELETE ON shop_mg                  TO vndb_multi;
 GRANT SELECT, INSERT, UPDATE, DELETE ON shop_denpa               TO vndb_multi;

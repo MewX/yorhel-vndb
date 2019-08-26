@@ -25,7 +25,7 @@ sub page {
   my $method = $rev ? 'dbReleaseGetRev' : 'dbReleaseGet';
   my $r = $self->$method(
     id => $rid,
-    what => 'vn extended producers platforms media',
+    what => 'vn extended links producers platforms media',
     $rev ? (rev => $rev) : (),
   )->[0];
   return $self->resNotFound if !$r->{id};
@@ -42,7 +42,7 @@ sub page {
   if($rev) {
     my $prev = $rev && $rev > 1 && $self->dbReleaseGetRev(
       id => $rid, rev => $rev-1,
-      what => 'vn extended producers platforms media changes'
+      what => 'vn extended links producers platforms media changes'
     )->[0];
     $self->htmlRevision('r', $prev, $r,
       [ vn         => 'Relations',       join => '<br />', split => sub {
@@ -60,15 +60,15 @@ sub page {
       [ languages  => 'Language',        join => ', ', split => sub { map $self->{languages}{$_}, @{$_[0]} } ],
       [ website    => 'Website' ],
       [ l_steam    => 'Steam AppId',     htmlize   => sub { $_[0] ? sprintf '<a href="https://store.steampowered.com/app/%d/">%1$d</a>', $_[0] : '[empty]' } ],
-      [ l_dlsite   => 'DLsite (jpn)',    htmlize   => sub { $_[0] ? sprintf qq{<a href="$self->{dlsite_url}">%1\$s</a>}, $_[0] : '[empty]' } ],
-      [ l_dlsiteen => 'DLsite (eng)',    htmlize   => sub { $_[0] ? sprintf qq{<a href="$self->{dlsiteen_url}">%1\$s</a>}, $_[0] : '[empty]' } ],
+      [ l_dlsite   => 'DLsite (jpn)',    htmlize   => sub { $_[0] ? sprintf '<a href="'.sprintf($self->{dlsite_url}, 'home').'">%1$s</a>', $_[0] : '[empty]' } ],
+      [ l_dlsiteen => 'DLsite (eng)',    htmlize   => sub { $_[0] ? sprintf '<a href="'.sprintf($self->{dlsite_url}, 'eng').'">%1$s</a>', $_[0] : '[empty]' } ],
       [ l_gog      => 'GOG.com',         htmlize   => sub { $_[0] ? sprintf '<a href="https://www.gog.com/game/%s">%1$s</a>', $_[0] : '[empty]' } ],
       [ l_denpa    => 'Denpasoft',       htmlize   => sub { $_[0] ? sprintf qq{<a href="$self->{denpa_url}">%1\$s</a>}, $_[0] : '[empty]' } ],
       [ l_jlist    => 'J-List',          htmlize   => sub { $_[0] ? sprintf qq{<a href="$self->{jlist_url}">%1\$s</a>}, $_[0] : '[empty]' } ],
       [ l_gyutto   => 'Gyutto',          htmlize   => sub { $_[0] ? sprintf '<a href="https://gyutto.com/i/item%d">%1$d</a>', $_[0] : '[empty]' } ],
       [ l_digiket  => 'Digiket',         htmlize   => sub { $_[0] ? sprintf '<a href="https://www.digiket.com/work/show/_data/ID=ITM%07d/">%1$d</a>', $_[0] : '[empty]' } ],
       [ l_melon    => 'Melonbooks',      htmlize   => sub { $_[0] ? sprintf '<a href="https://www.melonbooks.com/index.php?main_page=product_info&products_id=IT%010d">%1$d</a>', $_[0] : '[empty]' } ],
-      [ l_mg       => 'MangaGamer',      htmlize   => sub { $_[0] ? sprintf qq{<a href="$self->{mg_url}">%1\$d</a>}, $_[0] : '[empty]' } ],
+      [ l_mg       => 'MangaGamer',      htmlize   => sub { $_[0] ? sprintf qq{<a href="$self->{mg_r18_url}">%1\$d</a>}, $_[0] : '[empty]' } ],
       [ l_getchu   => 'Getchu',          htmlize   => sub { $_[0] ? sprintf '<a href="http://www.getchu.com/soft.phtml?id=%d">%1$d</a>', $_[0] : '[empty]' } ],
       [ l_getchudl => 'DL.Getchu',       htmlize   => sub { $_[0] ? sprintf '<a href="http://dl.getchu.com/i/item%d">%1$d</a>', $_[0] : '[empty]' } ],
       [ l_dmm      => 'DMM',             htmlize   => sub { $_[0] ? sprintf '<a href="https://%s">%1$s</a>', xml_escape $_[0] : '[empty]' } ],
@@ -310,7 +310,7 @@ sub edit {
     $rid = 0;
   }
 
-  my $r = $rid && $self->dbReleaseGetRev(id => $rid, what => 'vn extended producers platforms media', $rev ? (rev => $rev) : ())->[0];
+  my $r = $rid && $self->dbReleaseGetRev(id => $rid, what => 'vn extended links producers platforms media', $rev ? (rev => $rev) : ())->[0];
   return $self->resNotFound if $rid && !$r->{id};
   $rev = undef if !$r || $r->{lastrev};
 

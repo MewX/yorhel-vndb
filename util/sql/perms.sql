@@ -39,6 +39,11 @@ GRANT SELECT                         ON relgraphs                TO vndb_site;
 GRANT SELECT, INSERT, UPDATE, DELETE ON rlists                   TO vndb_site;
 GRANT SELECT, INSERT, UPDATE         ON screenshots              TO vndb_site;
 -- No access to the 'sessions' table, managed by the user_* functions.
+GRANT SELECT                         ON shop_denpa               TO vndb_site;
+GRANT SELECT                         ON shop_dlsite              TO vndb_site;
+GRANT SELECT                         ON shop_jlist               TO vndb_site;
+GRANT SELECT                         ON shop_mg                  TO vndb_site;
+GRANT SELECT                         ON shop_playasia            TO vndb_site;
 GRANT SELECT, INSERT, UPDATE         ON staff                    TO vndb_site;
 GRANT SELECT, INSERT,         DELETE ON staff_alias              TO vndb_site;
 GRANT SELECT, INSERT                 ON staff_alias_hist         TO vndb_site;

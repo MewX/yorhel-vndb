@@ -88,7 +88,6 @@ sub dbReleaseGet {
     qw|r.id r.title r.original r.website r.released r.minage r.type r.patch|,
     $o{what} =~ /extended/ ? qw|
         r.notes r.catalog r.gtin r.resolution r.voiced r.freeware r.doujin r.uncensored r.ani_story r.ani_ero r.engine r.hidden r.locked
-        r.l_steam r.l_dlsite r.l_dlsiteen r.l_gog r.l_denpa r.l_jlist r.l_gyutto r.l_digiket r.l_melon r.l_mg r.l_getchu r.l_getchudl r.l_dmm r.l_itch r.l_jastusa
     | : (),
     $o{pid} ? ('rp.developer', 'rp.publisher') : (),
   );
@@ -128,7 +127,6 @@ sub dbReleaseGetRev {
 
   my $select = 'c.itemid AS id, r.title, r.original, r.website, r.released, r.minage, r.type, r.patch';
   $select .= ', r.notes, r.catalog, r.gtin, r.resolution, r.voiced, r.freeware, r.doujin, r.uncensored, r.ani_story, r.ani_ero, r.engine, ro.hidden, ro.locked' if $o{what} =~ /extended/;
-  $select .= ', r.l_steam, r.l_dlsite, r.l_dlsiteen, r.l_gog, r.l_denpa, r.l_jlist, r.l_gyutto, r.l_digiket, r.l_melon, r.l_mg, r.l_getchu, r.l_getchudl, r.l_dmm, r.l_itch, r.l_jastusa' if $o{what} =~ /extended/;
   $select .= ', extract(\'epoch\' from c.added) as added, c.requester, c.comments, u.username, c.rev, c.ihid, c.ilock';
   $select .= ', c.id AS cid, NOT EXISTS(SELECT 1 FROM changes c2 WHERE c2.type = c.type AND c2.itemid = c.itemid AND c2.rev = c.rev+1) AS lastrev';
 
@@ -205,6 +203,36 @@ sub _enrich {
           WHERE $colname IN(!l)",
         [ keys %r ]
       )});
+    }
+
+    if($what =~ /links/ && $what =~ /extended/) {
+      $r->[ delete $r{$_->{xid}} ] = { %{$r->[$r{ $_->{xid} }]}, %$_ } for (@{$self->dbAll("
+        SELECT r.$colname AS xid, r.l_steam, r.l_gog, r.l_gyutto, r.l_digiket, r.l_melon, r.l_getchu, r.l_getchudl, r.l_dmm, r.l_itch, r.l_jastusa
+             , r.l_mg,             smg.price AS l_mg_price,       smg.r18 AS l_mg_r18
+             , r.l_denpa,       sdenpa.price AS l_denpa_price
+             , r.l_jlist,       sjlist.price AS l_jlist_price,    sjlist.jbox AS l_jlist_jbox
+             , r.l_dlsite,     sdlsite.price AS l_dlsite_price,   sdlsite.shop AS l_dlsite_shop
+             , r.l_dlsiteen, sdlsiteen.price AS l_dlsiteen_price, sdlsiteen.shop AS l_dlsiteen_shop
+          FROM releases$hist r
+          LEFT JOIN shop_denpa  sdenpa    ON    sdenpa.id = r.l_denpa    AND    sdenpa.found
+          LEFT JOIN shop_dlsite sdlsite   ON   sdlsite.id = r.l_dlsite   AND   sdlsite.found
+          LEFT JOIN shop_dlsite sdlsiteen ON sdlsiteen.id = r.l_dlsiteen AND sdlsiteen.found
+          LEFT JOIN shop_jlist  sjlist    ON    sjlist.id = r.l_jlist    AND    sjlist.found
+          LEFT JOIN shop_mg     smg       ON       smg.id = r.l_mg       AND       smg.found
+         WHERE r.$colname IN(!l)",
+        [ keys %r ]
+      )});
+
+      my %p = map {
+        $r->[$_]{l_playasia} = [];
+        $r->[$_]{gtin} ? ($r->[$_]{gtin}, $_) : ()
+      } 0..$#$r;
+      if(keys %p) {
+        push(@{$r->[$p{$_->{gtin}}]{l_playasia}}, $_) for (@{$self->dbAll("
+          SELECT gtin, price, url FROM shop_playasia WHERE gtin IN(!l)",
+          [ keys %p ]
+        )});
+      }
     }
   }
 

@@ -272,11 +272,12 @@ our %S;
     Unity
     YU-RIS
   }],
-  dlsite_url   => 'https://www.dlsite.com/home/work/=/product_id/%s.html',
-  dlsiteen_url => 'https://www.dlsite.com/eng/work/=/product_id/%s.html',
+  dlsite_url   => 'https://www.dlsite.com/%s/work/=/product_id/%%s.html',
   denpa_url    => 'https://denpasoft.com/products/%s',
   jlist_url    => 'https://www.jlist.com/%s',
-  mg_url       => 'https://www.mangagamer.com/r18/detail.php?product_code=%d',
+  jbox_url     => 'https://www.jbox.com/%s',
+  mg_r18_url   => 'https://www.mangagamer.com/r18/detail.php?product_code=%d',
+  mg_main_url  => 'https://www.mangagamer.com/detail.php?product_code=%d',
 );
 
 

@@ -197,20 +197,22 @@ sub entryLinks {
   if($type eq 'r') {
     $lnk->($obj->{l_steam},    'Steam',       'https://store.steampowered.com/app/%d/');
     $lnk->($obj->{l_steam},    'SteamDB',     'https://steamdb.info/app/%d/info');
-    $lnk->($obj->{l_dlsite},   'DLsite (jpn)',$self->{dlsite_url});
-    $lnk->($obj->{l_dlsiteen}, 'DLsite (eng)',$self->{dlsiteen_url});
+    $lnk->($obj->{l_dlsite},   'DLsite (jpn)',sprintf $self->{dlsite_url}, $obj->{l_dlsite_shop}||'home');
+    $lnk->($obj->{l_dlsiteen}, 'DLsite (eng)',sprintf $self->{dlsite_url}, $obj->{l_dlsiteen_shop}||'eng');
     $lnk->($obj->{l_gog},      'GOG',         'https://www.gog.com/game/%s');
     $lnk->($obj->{l_itch},     'Itch.io',     'https://%s');
     $lnk->($obj->{l_denpa},    'Denpasoft',   $self->{denpa_url});
-    $lnk->($obj->{l_jlist},    'J-List',      $self->{jlist_url});
+    $lnk->($obj->{l_jlist},    'J-List',      $self->{jlist_url}) if !$obj->{l_jlist_jbox};
+    $lnk->($obj->{l_jlist},    'JBOX',        $self->{jbox_url}) if $obj->{l_jlist_jbox};
     $lnk->($obj->{l_jastusa},  'JAST USA',    'https://jastusa.com/%s');
     $lnk->($obj->{l_gyutto},   'Gyutto',      'https://gyutto.com/i/item%d');
     $lnk->($obj->{l_digiket},  'Digiket',     'https://www.digiket.com/work/show/_data/ID=ITM%07d/');
     $lnk->($obj->{l_melon},    'Melonbooks',  'https://www.melonbooks.com/index.php?main_page=product_info&products_id=IT%010d');
-    $lnk->($obj->{l_mg},       'MangaGamer',  $self->{mg_url});
+    $lnk->($obj->{l_mg},       'MangaGamer',  !defined($obj->{l_mg_r18}) || $obj->{l_mg_r18} ? $self->{mg_r18_url} : $self->{mg_main_url});
     $lnk->($obj->{l_getchu},   'Getchu',      'http://www.getchu.com/soft.phtml?id=%d');
     $lnk->($obj->{l_getchudl}, 'DL.Getchu',   'http://dl.getchu.com/i/item%d');
     $lnk->($obj->{l_dmm},      'DMM',         'https://%s');
+    push @links, map [ 'PlayAsia', $_->{url} ], @{$obj->{l_playasia}} if $obj->{l_playasia};
   }
 
   # Staff links
