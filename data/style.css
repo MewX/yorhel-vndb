@@ -411,6 +411,9 @@ div#vntags                    { margin: 0 30px 0 30px; border-top: 1px solid $bo
 .releases td.tc5 a     { color: $maintext$; border: 0; }
 .releases td.tc6       { text-align: right; width: 25px; padding: 0; }
 
+.rllinks_dd a { text-align: right; padding: 3px }
+.rllinks_dd span { color: $maintext$; padding-right: 10px }
+
 #screenshots p.rel {
   background: url($_boxbg$) repeat;
   margin: 0;

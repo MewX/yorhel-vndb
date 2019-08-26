@@ -236,6 +236,24 @@ if(byId('batchedit'))
 })();
 
 
+// external links dropdown for releases (/v+)
+(function(){
+  var l = byClass('rllinks');
+  for(var i=0; i<l.length; i++) {
+    var o = byName(l[i].parentNode, 'ul')[0];
+    if(o) {
+      l[i].links_ul = l[i].parentNode.removeChild(o);
+      setClass(l[i].links_ul, 'hidden', false);
+      ddInit(l[i], 'left', function(acr) {
+        return acr.links_ul;
+      });
+      if(l[i].href.match(/#$/)) {
+        l[i].onclick = function() { return false; };
+      }
+    }
+  }
+})();
+
 // set note input box (/u+/list)
 if(byId('not') && byId('vns'))
   byId('vns').onchange = function () {
