@@ -205,9 +205,9 @@ sub _enrich {
       )});
     }
 
-    if($what =~ /links/ && $what =~ /extended/) {
+    if($what =~ /links/) {
       $r->[ delete $r{$_->{xid}} ] = { %{$r->[$r{ $_->{xid} }]}, %$_ } for (@{$self->dbAll("
-        SELECT r.$colname AS xid, r.l_steam, r.l_gog, r.l_gyutto, r.l_digiket, r.l_melon, r.l_getchu, r.l_getchudl, r.l_dmm, r.l_itch, r.l_jastusa
+        SELECT r.$colname AS xid, r.gtin, r.l_steam, r.l_gog, r.l_gyutto, r.l_digiket, r.l_melon, r.l_getchu, r.l_getchudl, r.l_dmm, r.l_itch, r.l_jastusa
              , r.l_mg,             smg.price AS l_mg_price,       smg.r18 AS l_mg_r18
              , r.l_denpa,       sdenpa.price AS l_denpa_price
              , r.l_jlist,       sjlist.price AS l_jlist_price,    sjlist.jbox AS l_jlist_jbox

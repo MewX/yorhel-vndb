@@ -835,28 +835,7 @@ sub _releases {
           }
          end;
          td class => 'tc6';
-          my $links = $self->entryLinks(r => $rel);
-          my $has_dd = @$links > ($rel->{website} ? 1 : 0);
-          if(@$links) {
-            a href => $rel->{website}||'#', class => 'rllinks';
-             txt scalar @$links if $has_dd;
-             cssicon 'external', 'External link';
-            end;
-            if($has_dd) {
-              ul class => 'hidden rllinks_dd';
-               for (@$links) {
-                 li;
-                  a href => $_->[1];
-                   span $_->[2] if $_->[2];
-                   txt $_->[0];
-                  end;
-                 end;
-               };
-              end;
-            }
-          } else {
-            txt ' ';
-          }
+          $self->releaseExtLinks($rel);
          end;
         end 'tr';
       }

@@ -136,7 +136,7 @@ sub _releases {
   my($self, $p) = @_;
 
   # prodpage_(dev|pub)
-  my $r = $self->dbReleaseGet(pid => $p->{id}, results => 999, what => 'vn platforms');
+  my $r = $self->dbReleaseGet(pid => $p->{id}, results => 999, what => 'vn platforms links');
   div class => 'mainbox';
    a href => '#', id => 'expandprodrel', 'collapse';
    h1 'Releases';
@@ -186,13 +186,7 @@ sub _releases {
          td class => 'tc5', join ', ',
            ($rel->{developer} ? 'developer' : ()), ($rel->{publisher} ? 'publisher' : ());
          td class => 'tc6';
-          if($rel->{website}) {
-            a href => $rel->{website}, rel => 'nofollow';
-             cssicon 'external', 'External link';
-            end;
-          } else {
-            txt ' ';
-          }
+          $self->releaseExtLinks($rel);
          end;
         end 'tr';
       }

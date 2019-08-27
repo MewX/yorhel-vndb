@@ -5,6 +5,9 @@ use strict;
 use warnings;
 use TUWF ':html', ':xml', 'uri_escape', 'xml_escape';
 use VNDB::Func;
+use Exporter 'import';
+
+our @EXPORT = ('releaseExtLinks');
 
 
 TUWF::register(
@@ -789,6 +792,33 @@ sub enginexml {
   end;
 }
 
+
+# Generate the html for an 'external links' dropdown
+sub releaseExtLinks {
+  my($self, $r) = @_;
+  my $links = $self->entryLinks(r => $r);
+  my $has_dd = @$links > ($r->{website} ? 1 : 0);
+  if(@$links) {
+    a href => $r->{website}||'#', class => 'rllinks';
+     txt scalar @$links if $has_dd;
+     cssicon 'external', 'External link';
+    end;
+    if($has_dd) {
+      ul class => 'hidden rllinks_dd';
+       for (@$links) {
+         li;
+          a href => $_->[1];
+           span $_->[2] if $_->[2];
+           txt $_->[0];
+          end;
+         end;
+       };
+      end;
+    }
+  } else {
+    txt ' ';
+  }
+}
 
 1;
 
