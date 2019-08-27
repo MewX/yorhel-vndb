@@ -433,10 +433,10 @@ sub page {
         end;
        end;
      }
+     _affiliate_links($self, $r);
 
      _anime($self, $v) if @{$v->{anime}};
      _useroptions($self, $v, $r) if $self->authInfo->{id};
-     _affiliate_links($self, $r);
 
      Tr class => 'nostripe';
       td class => 'vndesc', colspan => 2;
