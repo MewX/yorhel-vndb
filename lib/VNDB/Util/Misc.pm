@@ -227,6 +227,7 @@ sub entryLinks {
 
   # Producer links
   if($type eq 'p') {
+    $lnk->($w->{twitter},           'Twitter',   'https://twitter.com/%s');
     $lnk->($w->{mobygames_company}, 'MobyGames', 'https://www.mobygames.com/company/%s');
     $lnk->($w->{gamefaqs_company},  'GameFAQs',  'https://gamefaqs.gamespot.com/company/%s-');
     push @links, [ 'VNStat', sprintf 'https://vnstat.net/developer/%d', $obj->{id} ];
