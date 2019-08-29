@@ -11,7 +11,7 @@ use AnyEvent::HTTP;
 my %C = (
   url => 'https://www.dlsite.com/%s/work/=/product_id/%s.html',
   clean_timeout => 48*3600,
-  check_timeout => 10*60,
+  check_timeout => 5*60,
 );
 
 

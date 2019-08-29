@@ -7,7 +7,7 @@ use AnyEvent::HTTP;
 
 my %C = (
   api               => '',
-  gtin_timeout      =>  2*60,
+  gtin_timeout      =>  1*60,
   info_timeout      =>  3*60,
   sync_gtin_timeout => 24*3600,
 );
