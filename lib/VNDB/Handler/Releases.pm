@@ -325,9 +325,12 @@ sub edit {
 
   my $vn = $rid ? $r->{vn} : [{ vid => $vid, title => $v->{title} }];
   my %b4 = !$rid ? () : (
-    (map { $_ => $r->{$_} } qw|type title original gtin catalog languages website released minage
-      l_steam l_dlsite l_dlsiteen l_gog l_denpa l_jlist l_gyutto l_digiket l_melon l_mg l_getchu l_getchudl l_dmm l_itch l_jastusa
-      notes platforms patch resolution voiced freeware doujin uncensored ani_story ani_ero engine ihid ilock|),
+    (map { $_ => $r->{$_} } (qw|type title original languages website released minage
+      notes platforms patch resolution voiced freeware doujin uncensored ani_story ani_ero engine ihid ilock|,
+      $copy ? () : (qw|
+        gtin catalog l_steam l_dlsite l_dlsiteen l_gog l_denpa l_jlist l_gyutto l_digiket l_melon l_mg l_getchu l_getchudl l_dmm l_itch l_jastusa
+      |)
+    )),
     media     => join(',',   sort map "$_->{medium} $_->{qty}", @{$r->{media}}),
     producers => join('|||', map
       sprintf('%d,%d,%s', $_->{id}, ($_->{developer}?1:0)+($_->{publisher}?2:0), $_->{name}),
