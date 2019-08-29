@@ -754,8 +754,11 @@ sub _useroptions {
 sub _affiliate_links {
   my($self, $r) = @_;
 
-  # url => [$title, $url, $price]
-  my %links = map +($_->[1],$_), grep $_->[2], map @{$self->entryLinks(r => $_)}, @$r;
+  # url => [$title, $url, $price, $rel]
+  my %links;
+  for my $rel (@$r) {
+    $links{$_->[1]} = $_ for map [@$_, $rel], grep $_->[2], @{$self->entryLinks(r => $rel)};
+  }
   return if !keys %links;
 
   use utf8;
@@ -768,6 +771,7 @@ sub _affiliate_links {
        txt $l->[2];
        b class => 'grayedout', " @ ";
        txt $l->[0];
+       b class => 'grayedout', ' (patch)' if $l->[3]{patch};
       end;
       br;
     }
