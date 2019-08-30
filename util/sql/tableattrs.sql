@@ -1,6 +1,5 @@
 -- Constraints
 
-ALTER TABLE affiliate_links          ADD CONSTRAINT affiliate_links_rid_fkey           FOREIGN KEY (rid)       REFERENCES releases      (id);
 ALTER TABLE changes                  ADD CONSTRAINT changes_requester_fkey             FOREIGN KEY (requester) REFERENCES users         (id) ON DELETE SET DEFAULT;
 ALTER TABLE chars                    ADD CONSTRAINT chars_main_fkey                    FOREIGN KEY (main)      REFERENCES chars         (id);
 ALTER TABLE chars_hist               ADD CONSTRAINT chars_hist_chid_fkey               FOREIGN KEY (chid)      REFERENCES changes       (id) ON DELETE CASCADE;
@@ -106,7 +105,6 @@ ALTER TABLE wlists                   ADD CONSTRAINT wlists_vid_fkey             
 
 -- Indices
 
-CREATE        INDEX affiliate_links_rid    ON affiliate_links (rid) WHERE NOT hidden;
 CREATE        INDEX chars_main             ON chars (main) WHERE main IS NOT NULL AND NOT hidden; -- Only used on /c+
 CREATE        INDEX chars_vns_vid          ON chars_vns (vid);
 CREATE        INDEX notifications_uid      ON notifications (uid);
