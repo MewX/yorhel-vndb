@@ -107,6 +107,7 @@ sub page {
      li; a href => '/d17', 'Privacy Policy & Licensing'; end;
      li; a href => '/d11', 'Database API'; end;
      li; a href => '/d14', 'Database Dumps'; end;
+     li; a href => '/d20', 'Database Querying'; end;
      li; a href => '/d8',  'Development'; end;
     end;
     lit _html $d->{content};

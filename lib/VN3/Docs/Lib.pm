@@ -68,6 +68,7 @@ sub Sidebar {
     Doc 17, 'Privacy Policy & Licensing';
     Doc 11, 'Database API';
     Doc 14, 'Database Dumps';
+    Doc 20, 'Database Querying';
     Doc  8, 'Development';
 
     Cat 'Guidelines';
