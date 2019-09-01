@@ -207,7 +207,7 @@ sub _enrich {
 
     if($what =~ /links/) {
       $r->[ delete $r{$_->{xid}} ] = { %{$r->[$r{ $_->{xid} }]}, %$_ } for (@{$self->dbAll("
-        SELECT r.$colname AS xid, r.gtin, r.l_steam, r.l_gog, r.l_gyutto, r.l_digiket, r.l_melon, r.l_getchu, r.l_getchudl, r.l_dmm, r.l_itch, r.l_jastusa, l_egs
+        SELECT r.$colname AS xid, r.gtin, r.l_steam, r.l_gog, r.l_gyutto, r.l_digiket, r.l_melon, r.l_getchu, r.l_getchudl, r.l_dmm, r.l_itch, r.l_jastusa, l_egs, l_erotrail
              , r.l_mg,             smg.price AS l_mg_price,       smg.r18 AS l_mg_r18
              , r.l_denpa,       sdenpa.price AS l_denpa_price
              , r.l_jlist,       sjlist.price AS l_jlist_price,    sjlist.jbox AS l_jlist_jbox
@@ -247,7 +247,7 @@ sub dbReleaseRevisionInsert {
 
   my %set = map exists($o->{$_}) ? ("$_ = ?", $o->{$_}) : (),
     qw|title original gtin catalog website released notes minage type
-       l_steam l_dlsite l_dlsiteen l_gog l_denpa l_jlist l_gyutto l_digiket l_melon l_mg l_getchu l_getchudl l_dmm l_itch l_jastusa l_egs
+       l_steam l_dlsite l_dlsiteen l_gog l_denpa l_jlist l_gyutto l_digiket l_melon l_mg l_getchu l_getchudl l_dmm l_itch l_jastusa l_egs l_erotrail
        patch resolution voiced freeware doujin uncensored ani_story ani_ero engine|;
   $self->dbExec('UPDATE edit_releases !H', \%set) if keys %set;
 

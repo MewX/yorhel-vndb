@@ -195,7 +195,8 @@ sub entryLinks {
 
   # Release links
   if($type eq 'r') {
-    $lnk->($obj->{l_egs},      'EGS',         'https://erogamescape.dyndns.org/~ap2/ero/toukei_kaiseki/game.php?game=%d');
+    $lnk->($obj->{l_egs},      'ErogameScape', 'https://erogamescape.dyndns.org/~ap2/ero/toukei_kaiseki/game.php?game=%d');
+    $lnk->($obj->{l_erotrail}, 'ErogeTrailers','http://erogetrailers.com/soft/%d');
     $lnk->($obj->{l_steam},    'Steam',       'https://store.steampowered.com/app/%d/');
     $lnk->($obj->{l_steam},    'SteamDB',     'https://steamdb.info/app/%d/info');
     $lnk->($obj->{l_dlsite},   'DLsite (jpn)',sprintf($self->{dlsite_url}, $obj->{l_dlsite_shop}||'home'), undef, $obj->{l_dlsite_price});
