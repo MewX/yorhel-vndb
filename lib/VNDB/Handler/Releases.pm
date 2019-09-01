@@ -62,6 +62,7 @@ sub page {
       [ catalog    => 'Catalog number',  serialize => sub { $_[0]||'[empty]' } ],
       [ languages  => 'Language',        join => ', ', split => sub { map $self->{languages}{$_}, @{$_[0]} } ],
       [ website    => 'Website' ],
+      [ l_egs      => 'ErogameScape',    htmlize   => sub { $_[0] ? sprintf '<a href="https://erogamescape.dyndns.org/~ap2/ero/toukei_kaiseki/game.php?game=%d">%1$d</a>', $_[0] : '[empty]' } ],
       [ l_steam    => 'Steam AppId',     htmlize   => sub { $_[0] ? sprintf '<a href="https://store.steampowered.com/app/%d/">%1$d</a>', $_[0] : '[empty]' } ],
       [ l_dlsite   => 'DLsite (jpn)',    htmlize   => sub { $_[0] ? sprintf '<a href="'.sprintf($self->{dlsite_url}, 'home').'">%1$s</a>', $_[0] : '[empty]' } ],
       [ l_dlsiteen => 'DLsite (eng)',    htmlize   => sub { $_[0] ? sprintf '<a href="'.sprintf($self->{dlsite_url}, 'eng').'">%1$s</a>', $_[0] : '[empty]' } ],
@@ -328,7 +329,7 @@ sub edit {
     (map { $_ => $r->{$_} } (qw|type title original languages website released minage
       notes platforms patch resolution voiced freeware doujin uncensored ani_story ani_ero engine ihid ilock|,
       $copy ? () : (qw|
-        gtin catalog l_steam l_dlsite l_dlsiteen l_gog l_denpa l_jlist l_gyutto l_digiket l_melon l_mg l_getchu l_getchudl l_dmm l_itch l_jastusa
+        gtin catalog l_steam l_dlsite l_dlsiteen l_gog l_denpa l_jlist l_gyutto l_digiket l_melon l_mg l_getchu l_getchudl l_dmm l_itch l_jastusa l_egs
       |)
     )),
     media     => join(',',   sort map "$_->{medium} $_->{qty}", @{$r->{media}}),
@@ -370,6 +371,7 @@ sub edit {
       { post => 'l_dmm',     required => 0, default => '', regex => [ qr{^(?:https?://)?(?:www|dlsoft)\.dmm\.(?:com|co\.jp)/}, 'Invalid DMM URL' ] },
       { post => 'l_itch',    required => 0, default => '', regex => [ qr{^(?:https?://)?([a-z0-9_-]+)\.itch\.io/([a-z0-9_-]+)$}, 'Invalid Itch.io URL' ] },
       { post => 'l_jastusa', required => 0, default => '', regex => [ qr/^[a-z0-9-]+$/, 'Invalid JAST USA ID' ] },
+      { post => 'l_egs',     required => 0, default => 0, template => 'uint' },
       { post => 'released',  required => 0, default => 0, template => 'rdate' },
       { post => 'minage' ,   required => 0, default => -1, enum => $self->{age_ratings} },
       { post => 'notes',     required => 0, default => '', maxlength => 10240 },
@@ -427,7 +429,7 @@ sub edit {
     if(!$frm->{_err}) {
       my $nrev = $self->dbItemEdit(r => !$copy && $rid ? ($r->{id}, $r->{rev}) : (undef, undef),
         (map { $_ => $frm->{$_} } qw| type title original gtin catalog languages website released minage
-          l_steam l_dlsite l_dlsiteen l_gog l_denpa l_jlist l_gyutto l_digiket l_melon l_mg l_getchu l_getchudl l_dmm l_itch l_jastusa
+          l_steam l_dlsite l_dlsiteen l_gog l_denpa l_jlist l_gyutto l_digiket l_melon l_mg l_getchu l_getchudl l_dmm l_itch l_jastusa l_egs
           notes platforms resolution editsum patch voiced freeware doujin uncensored ani_story ani_ero engine ihid ilock|),
         vn        => $new_vn,
         producers => $producers,
@@ -480,7 +482,8 @@ sub _form {
       options => [ map [ $_, minage $_, 1 ], @{$self->{age_ratings}} ] ],
     [ check  => short => 'uncensored',name => 'No mosaic or other optical censoring (only check if this release has erotic content)' ],
 
-    [ static => nolabel => 1, content => '<br><b>Webshop links</b>' ],
+    [ static => nolabel => 1, content => '<br><b>Links</b>' ],
+    [ input  => short => 'l_egs',     name => 'ErogameScape', pre => 'erogamescape.dyndns.org/..?game=', width => 100 ],
     [ input  => short => 'l_steam',   name => 'Steam AppID', pre => 'store.steampowered.com/app/', width => 100 ],
     [ input  => short => 'l_jlist',   name => 'J-List', pre => 'www.jlist.com/', post => ' (the last part of the URL, e.g. "np004")', width => 100 ],
     [ input  => short => 'l_jastusa', name => 'JAST USA', pre => 'jastusa.com/' ],
@@ -493,7 +496,7 @@ sub _form {
     [ input  => short => 'l_digiket', name => 'Digiket', pre => 'www.digiket.com/work/show/_data/ID=ITM', width => 100 ],
     [ input  => short => 'l_gyutto',  name => 'Gyutto', pre => 'gyutto.com/i/item', post => ' (item number)', width => 100 ],
     [ input  => short => 'l_getchudl',name => 'DL.Getchu', pre => 'dl.getchu.com/i/item', post => ' (item number)', width => 100 ],
-    [ input  => short => 'l_getchu',  name => 'Getchu', pre => 'http://www.getchu.com/soft.phtml?id=', width => 100 ],
+    [ input  => short => 'l_getchu',  name => 'Getchu', pre => 'www.getchu.com/soft.phtml?id=', width => 100 ],
     [ input  => short => 'l_melon',   name => 'Melonbooks.com', pre => 'www.melonbooks.com/..&products_id=IT', width => 100 ],
     [ input  => short => 'l_dmm',     name => 'DMM', post => ' (full URL)' ],
 
