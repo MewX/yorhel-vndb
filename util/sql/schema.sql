@@ -296,13 +296,13 @@ CREATE TABLE releases ( -- dbentry_type=r
   l_gog      text NOT NULL DEFAULT '', -- [pub]
   l_denpa    text NOT NULL DEFAULT '', -- [pub]
   l_jlist    text NOT NULL DEFAULT '', -- [pub]
-  l_gyutto   integer NOT NULL DEFAULT 0, -- [pub]
+  l_gyutto   integer[] NOT NULL DEFAULT '{}', -- [pub]
   l_digiket  integer NOT NULL DEFAULT 0, -- [pub]
   l_melon    integer NOT NULL DEFAULT 0, -- [pub]
   l_mg       integer NOT NULL DEFAULT 0, -- [pub]
   l_getchu   integer NOT NULL DEFAULT 0, -- [pub]
   l_getchudl integer NOT NULL DEFAULT 0, -- [pub]
-  l_dmm      text NOT NULL DEFAULT '', -- [pub]
+  l_dmm      text[] NOT NULL DEFAULT '{}', -- [pub]
   l_itch     text NOT NULL DEFAULT '', -- [pub]
   l_jastusa  text NOT NULL DEFAULT '', -- [pub]
   l_egs      integer NOT NULL DEFAULT 0, -- [pub]
@@ -336,13 +336,13 @@ CREATE TABLE releases_hist (
   l_gog      text NOT NULL DEFAULT '',
   l_denpa    text NOT NULL DEFAULT '',
   l_jlist    text NOT NULL DEFAULT '',
-  l_gyutto   integer NOT NULL DEFAULT 0,
+  l_gyutto   integer[] NOT NULL DEFAULT '{}',
   l_digiket  integer NOT NULL DEFAULT 0,
   l_melon    integer NOT NULL DEFAULT 0,
   l_mg       integer NOT NULL DEFAULT 0,
   l_getchu   integer NOT NULL DEFAULT 0,
   l_getchudl integer NOT NULL DEFAULT 0,
-  l_dmm      text NOT NULL DEFAULT '',
+  l_dmm      text[] NOT NULL DEFAULT '{}',
   l_itch     text NOT NULL DEFAULT '',
   l_jastusa  text NOT NULL DEFAULT '',
   l_egs      integer NOT NULL DEFAULT 0,

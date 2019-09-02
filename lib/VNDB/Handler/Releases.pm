@@ -70,13 +70,13 @@ sub page {
       [ l_gog      => 'GOG.com',         htmlize   => sub { $_[0] ? sprintf '<a href="https://www.gog.com/game/%s">%1$s</a>', $_[0] : '[empty]' } ],
       [ l_denpa    => 'Denpasoft',       htmlize   => sub { $_[0] ? sprintf qq{<a href="$self->{denpa_url}">%1\$s</a>}, $_[0] : '[empty]' } ],
       [ l_jlist    => 'J-List',          htmlize   => sub { $_[0] ? sprintf qq{<a href="$self->{jlist_url}">%1\$s</a>}, $_[0] : '[empty]' } ],
-      [ l_gyutto   => 'Gyutto',          htmlize   => sub { $_[0] ? sprintf '<a href="https://gyutto.com/i/item%d">%1$d</a>', $_[0] : '[empty]' } ],
+      [ l_gyutto   => 'Gyutto',          htmlize   => sub { join ', ', map sprintf('<a href="https://gyutto.com/i/item%d">%1$s</a>', xml_escape $_), sort @{$_[0]} } ],
       [ l_digiket  => 'Digiket',         htmlize   => sub { $_[0] ? sprintf '<a href="https://www.digiket.com/work/show/_data/ID=ITM%07d/">%1$d</a>', $_[0] : '[empty]' } ],
       [ l_melon    => 'Melonbooks',      htmlize   => sub { $_[0] ? sprintf '<a href="https://www.melonbooks.com/index.php?main_page=product_info&products_id=IT%010d">%1$d</a>', $_[0] : '[empty]' } ],
       [ l_mg       => 'MangaGamer',      htmlize   => sub { $_[0] ? sprintf qq{<a href="$self->{mg_r18_url}">%1\$d</a>}, $_[0] : '[empty]' } ],
       [ l_getchu   => 'Getchu',          htmlize   => sub { $_[0] ? sprintf '<a href="http://www.getchu.com/soft.phtml?id=%d">%1$d</a>', $_[0] : '[empty]' } ],
       [ l_getchudl => 'DL.Getchu',       htmlize   => sub { $_[0] ? sprintf '<a href="http://dl.getchu.com/i/item%d">%1$d</a>', $_[0] : '[empty]' } ],
-      [ l_dmm      => 'DMM',             htmlize   => sub { $_[0] ? sprintf '<a href="https://%s">%1$s</a>', xml_escape $_[0] : '[empty]' } ],
+      [ l_dmm      => 'DMM',             htmlize   => sub { join ', ', map sprintf('<a href="https://%s">%1$s</a>', xml_escape $_), sort @{$_[0]} } ],
       [ l_itch     => 'Itch.io',         htmlize   => sub { $_[0] ? sprintf '<a href="https://%s">%1$s</a>', xml_escape $_[0] : '[empty]' } ],
       [ l_jastusa  => 'JAST USA',        htmlize   => sub { $_[0] ? sprintf '<a href="https://jastusa.com/%s">%1$s</a>', xml_escape $_[0] : '[empty]' } ],
       [ released   => 'Release date',    htmlize   => \&fmtdatestr ],
@@ -330,9 +330,13 @@ sub edit {
     (map { $_ => $r->{$_} } (qw|type title original languages website released minage
       notes platforms patch resolution voiced freeware doujin uncensored ani_story ani_ero engine ihid ilock|,
       $copy ? () : (qw|
-        gtin catalog l_steam l_dlsite l_dlsiteen l_gog l_denpa l_jlist l_gyutto l_digiket l_melon l_mg l_getchu l_getchudl l_dmm l_itch l_jastusa l_egs l_erotrail
+        gtin catalog l_steam l_dlsite l_dlsiteen l_gog l_denpa l_jlist l_digiket l_melon l_mg l_getchu l_getchudl l_itch l_jastusa l_egs l_erotrail
       |)
     )),
+    $copy ? () : (
+      l_gyutto => join(' ', sort @{$r->{l_gyutto}}),
+      l_dmm    => join(' ', sort @{$r->{l_dmm}}),
+    ),
     media     => join(',',   sort map "$_->{medium} $_->{qty}", @{$r->{media}}),
     producers => join('|||', map
       sprintf('%d,%d,%s', $_->{id}, ($_->{developer}?1:0)+($_->{publisher}?2:0), $_->{name}),
@@ -345,6 +349,7 @@ sub edit {
 
   if($self->reqMethod eq 'POST') {
     return if !$self->authCheckCode;
+    my $dmm_re = qr{(?:https?://)?(?:www|dlsoft)\.dmm\.(?:com|co\.jp)/[^\s]+};
     $frm = $self->formValidate(
       { post => 'type',      enum => $self->{release_types} },
       { post => 'patch',     required => 0, default => 0 },
@@ -363,13 +368,13 @@ sub edit {
       { post => 'l_gog',     required => 0, default => '', regex => [ qr/^[a-z0-9_]+$/, 'Invalid GOG.com ID' ] },
       { post => 'l_denpa',   required => 0, default => '', regex => [ qr/^[a-z0-9-]+$/, 'Invalid Denpasoft ID' ] },
       { post => 'l_jlist',   required => 0, default => '', regex => [ qr/^[a-z0-9-]+$/, 'Invalid J-List ID' ] },
-      { post => 'l_gyutto',  required => 0, default => 0, template => 'uint' },
+      { post => 'l_gyutto',  required => 0, default => '', regex => [ qr/^([0-9]+(\s+[0-9]+)*)?$/, 'Invalid Gyutto id' ] },
       { post => 'l_digiket', required => 0, default => 0, func => [ sub { $_[0] =~ s/^(?:ITM)?0+//; $_[0] =~ /^[0-9]+$/ }, 'Invalid Digiket ID' ] },
       { post => 'l_melon',   required => 0, default => 0, func => [ sub { $_[0] =~ s/^(?:IT)?0+//; $_[0] =~ /^[0-9]+$/ }, 'Invalid Melonbooks.com ID' ] },
       { post => 'l_mg',      required => 0, default => 0, template => 'uint' },
       { post => 'l_getchu',  required => 0, default => 0, template => 'uint' },
       { post => 'l_getchudl',required => 0, default => 0, template => 'uint' },
-      { post => 'l_dmm',     required => 0, default => '', regex => [ qr{^(?:https?://)?(?:www|dlsoft)\.dmm\.(?:com|co\.jp)/}, 'Invalid DMM URL' ] },
+      { post => 'l_dmm',     required => 0, default => '', regex => [ qr/^($dmm_re(\s+$dmm_re)*)?$/, 'Invalid DMM URL' ] },
       { post => 'l_itch',    required => 0, default => '', regex => [ qr{^(?:https?://)?([a-z0-9_-]+)\.itch\.io/([a-z0-9_-]+)$}, 'Invalid Itch.io URL' ] },
       { post => 'l_jastusa', required => 0, default => '', regex => [ qr/^[a-z0-9-]+$/, 'Invalid JAST USA ID' ] },
       { post => 'l_egs',     required => 0, default => 0, template => 'uint' },
@@ -395,8 +400,11 @@ sub edit {
     $frm->{engine} = $frm->{engine_oth} if $frm->{engine} eq '_other_';
     delete $frm->{engine_oth};
 
+    my $l_dmm    = [ split /\s+/, $frm->{l_dmm} ];
+    my $l_gyutto = [ split /\s+/, $frm->{l_gyutto} ];
+
     $frm->{original} = '' if $frm->{original} eq $frm->{title};
-    $frm->{l_dmm} =~ s{^https?://}{};
+    $_ =~ s{^https?://}{} for @$l_dmm;
     $frm->{l_itch} =~ s{^https?://}{};
 
     push @{$frm->{_err}}, [ 'released', 'required', 1 ] if !$frm->{released};
@@ -417,6 +425,8 @@ sub edit {
         $frm->{engine} = '';
       }
       $frm->{uncensored} = 0 if $frm->{minage} != 18;
+      $frm->{l_dmm}    = join ' ', sort @$l_dmm;
+      $frm->{l_gyutto} = join ' ', sort @$l_gyutto;
 
       my $same = $rid &&
           (join(',', sort @{$b4{platforms}}) eq join(',', sort @{$frm->{platforms}})) &&
@@ -431,8 +441,10 @@ sub edit {
     if(!$frm->{_err}) {
       my $nrev = $self->dbItemEdit(r => !$copy && $rid ? ($r->{id}, $r->{rev}) : (undef, undef),
         (map { $_ => $frm->{$_} } qw| type title original gtin catalog languages website released minage
-          l_steam l_dlsite l_dlsiteen l_gog l_denpa l_jlist l_gyutto l_digiket l_melon l_mg l_getchu l_getchudl l_dmm l_itch l_jastusa l_egs l_erotrail
+          l_steam l_dlsite l_dlsiteen l_gog l_denpa l_jlist l_digiket l_melon l_mg l_getchu l_getchudl l_itch l_jastusa l_egs l_erotrail
           notes platforms resolution editsum patch voiced freeware doujin uncensored ani_story ani_ero engine ihid ilock|),
+        l_gyutto  => $l_gyutto,
+        l_dmm     => $l_dmm,
         vn        => $new_vn,
         producers => $producers,
         media     => $media,
@@ -497,11 +509,11 @@ sub _form {
     [ input  => short => 'l_dlsiteen',name => 'DLsite (eng)', pre => 'www.dlsite.com/../product_id/', post => ' e.g. "RE083922"', width => 100 ],
     [ input  => short => 'l_dlsite',  name => 'DLsite (jpn)', pre => 'www.dlsite.com/../product_id/', post => ' e.g. "RJ083922"', width => 100 ],
     [ input  => short => 'l_digiket', name => 'Digiket', pre => 'www.digiket.com/work/show/_data/ID=ITM', width => 100 ],
-    [ input  => short => 'l_gyutto',  name => 'Gyutto', pre => 'gyutto.com/i/item', post => ' (item number)', width => 100 ],
+    [ input  => short => 'l_gyutto',  name => 'Gyutto', pre => 'gyutto.com/i/item', post => ' (item number, space separated)', width => 100 ],
     [ input  => short => 'l_getchudl',name => 'DL.Getchu', pre => 'dl.getchu.com/i/item', post => ' (item number)', width => 100 ],
     [ input  => short => 'l_getchu',  name => 'Getchu', pre => 'www.getchu.com/soft.phtml?id=', width => 100 ],
     [ input  => short => 'l_melon',   name => 'Melonbooks.com', pre => 'www.melonbooks.com/..&products_id=IT', width => 100 ],
-    [ input  => short => 'l_dmm',     name => 'DMM', post => ' (full URL)' ],
+    [ input  => short => 'l_dmm',     name => 'DMM', post => ' (full URL, space separated)', width => 400 ],
 
     [ static => nolabel => 1, content => '<br>' ],
     [ textarea => short => 'notes', name => 'Notes<br /><b class="standout">English please!</b>' ],

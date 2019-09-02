@@ -247,8 +247,10 @@ sub dbReleaseRevisionInsert {
 
   my %set = map exists($o->{$_}) ? ("$_ = ?", $o->{$_}) : (),
     qw|title original gtin catalog website released notes minage type
-       l_steam l_dlsite l_dlsiteen l_gog l_denpa l_jlist l_gyutto l_digiket l_melon l_mg l_getchu l_getchudl l_dmm l_itch l_jastusa l_egs l_erotrail
+       l_steam l_dlsite l_dlsiteen l_gog l_denpa l_jlist l_digiket l_melon l_mg l_getchu l_getchudl l_itch l_jastusa l_egs l_erotrail
        patch resolution voiced freeware doujin uncensored ani_story ani_ero engine|;
+  $set{'l_dmm    = ARRAY[!l]::text[]'}    = [ $o->{l_dmm}    ] if exists $o->{l_dmm};
+  $set{'l_gyutto = ARRAY[!l]::integer[]'} = [ $o->{l_gyutto} ] if exists $o->{l_gyutto};
   $self->dbExec('UPDATE edit_releases !H', \%set) if keys %set;
 
   if($o->{languages}) {
