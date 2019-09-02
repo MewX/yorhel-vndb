@@ -241,7 +241,7 @@ sub edit {
       $frm->{desc}   = $self->bbSubstLinks($frm->{desc});
       return $self->resRedirect("/s$sid", 'post') if $sid && !form_compare(\%b4, $frm);
 
-      my $nrev = $self->dbItemEdit(s => $sid ? ($s->{id}, $s->{rev}) : (undef, undef), %$frm, l_wp => $s->{l_wp}||'');
+      my $nrev = $self->dbItemEdit(s => $sid ? ($s->{id}, $s->{rev}) : (undef, undef), %$frm);
       return $self->resRedirect("/s$nrev->{itemid}.$nrev->{rev}", 'post');
     }
   }

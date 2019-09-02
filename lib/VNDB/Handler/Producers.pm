@@ -309,7 +309,7 @@ sub edit {
         if $pid && !grep +(($frm->{$_}//'') ne ($b4{$_}//'')), keys %b4;
 
       $frm->{relations} = $relations;
-      my $nrev = $self->dbItemEdit(p => $pid||undef, $pid ? $p->{rev} : undef, %$frm, l_wp => $p->{l_wp}||undef);
+      my $nrev = $self->dbItemEdit(p => $pid||undef, $pid ? $p->{rev} : undef, %$frm);
 
       # update reverse relations
       if(!$pid && $#$relations >= 0 || $pid && $frm->{prodrelations} ne $b4{prodrelations}) {

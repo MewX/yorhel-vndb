@@ -225,7 +225,7 @@ CREATE TABLE producers ( -- dbentry_type=p
   lang       language NOT NULL DEFAULT 'ja', -- [pub]
   "desc"     text NOT NULL DEFAULT '', -- [pub]
   alias      varchar(500) NOT NULL DEFAULT '', -- [pub]
-  l_wp       varchar(150), -- [pub]
+  l_wp       varchar(150), -- [pub] (deprecated)
   rgraph     integer, -- relgraphs.id
   l_wikidata integer -- [pub]
 );
@@ -518,7 +518,7 @@ CREATE TABLE staff ( -- dbentry_type=s
   gender     gender NOT NULL DEFAULT 'unknown', -- [pub]
   lang       language NOT NULL DEFAULT 'ja', -- [pub]
   "desc"     text NOT NULL DEFAULT '', -- [pub]
-  l_wp       varchar(150) NOT NULL DEFAULT '', -- [pub]
+  l_wp       varchar(150) NOT NULL DEFAULT '', -- [pub] (deprecated)
   l_site     varchar(250) NOT NULL DEFAULT '', -- [pub]
   l_twitter  varchar(16) NOT NULL DEFAULT '', -- [pub]
   l_anidb    integer, -- [pub]
@@ -741,8 +741,8 @@ CREATE TABLE vn ( -- dbentry_type=v
   img_nsfw   boolean NOT NULL DEFAULT FALSE, -- [pub]
   image      integer NOT NULL DEFAULT 0, -- [pub]
   "desc"     text NOT NULL DEFAULT '', -- [pub]
-  l_wp       varchar(150) NOT NULL DEFAULT '', -- [pub]
-  l_encubed  varchar(100) NOT NULL DEFAULT '', -- [pub]
+  l_wp       varchar(150) NOT NULL DEFAULT '', -- [pub] (deprecated)
+  l_encubed  varchar(100) NOT NULL DEFAULT '', -- [pub] (deprecated)
   l_renai    varchar(100) NOT NULL DEFAULT '', -- [pub]
   rgraph     integer, -- relgraphs.id
   c_released integer NOT NULL DEFAULT 0,
