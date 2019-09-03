@@ -1,1 +1,0 @@
-ALTER TYPE resolution ADD VALUE '960x640' AFTER '960x600';

@@ -1,3 +1,0 @@
-
-ALTER TABLE vn_rev ADD COLUMN original VARCHAR(250) NOT NULL DEFAULT '';
-
