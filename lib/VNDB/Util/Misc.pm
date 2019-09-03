@@ -189,6 +189,7 @@ sub entryLinks {
     $lnk->($w->{acdb_source},   'ACDB',           'https://www.animecharactersdatabase.com/source.php?id=%s');
     $lnk->($w->{indiedb_game},  'IndieDB',        'https://www.indiedb.com/games/%s');
     $lnk->($w->{howlongtobeat}, 'HowLongToBeat',  'http://howlongtobeat.com/game.php?id=%s');
+    $lnk->($w->{igdb_game},     'IGDB',           'https://www.igdb.com/games/%s');
     $lnk->($obj->{l_renai},     'Renai.us',       'https://renai.us/game/%s');
     push @links, [ 'VNStat', sprintf 'https://vnstat.net/novel/%d', $obj->{id} ] if $obj->{c_votecount}>=20;
   }
@@ -222,6 +223,7 @@ sub entryLinks {
     $lnk->($w->{twitter},            'Twitter',      'https://twitter.com/%s') if !$obj->{l_twitter};
     $lnk->($obj->{l_anidb},          'AniDB',        'https://anidb.net/cr%s');
     $lnk->($w->{anidb_person},       'AniDB',        'https://anidb.net/cr%s') if !$obj->{l_anidb};
+    $lnk->($w->{pixiv_user},         'Pixiv',        'https://www.pixiv.net/member.php?id=%d');
     $lnk->($w->{musicbrainz_artist}, 'MusicBrainz',  'https://musicbrainz.org/artist/%s');
     $lnk->($w->{vgmdb_artist},       'VGMdb',        'https://vgmdb.net/artist/%s');
     $lnk->($w->{discogs_artist},     'Discogs',      'https://www.discogs.com/artist/%s');

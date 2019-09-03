@@ -75,6 +75,13 @@ my %props = (
   P7017 => [ 'acdb_source',        'integer' ],
   P6717 => [ 'indiedb_game',       'text'    ],
   P2816 => [ 'howlongtobeat',      'integer' ],
+  P4110 => [ 'crunchyroll',        'text'    ],
+  P5794 => [ 'igdb_game',          'text'    ],
+  P5247 => [ 'giantbomb',          'text'    ],
+  P6337 => [ 'pcgamingwiki ',      'text'    ],
+  P1733 => [ 'steam',              'integer' ],
+  P2725 => [ 'gog',                'text'    ],
+  P5435 => [ 'pixiv_user',         'integer' ],
 );
 
 

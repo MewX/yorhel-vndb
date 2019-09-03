@@ -901,7 +901,14 @@ CREATE TABLE wikidata (
   acdb_char          integer[], -- [pub] P7013
   acdb_source        integer[], -- [pub] P7017
   indiedb_game       text[],    -- [pub] P6717
-  howlongtobeat      integer[]  -- [pub] P2816
+  howlongtobeat      integer[], -- [pub] P2816
+  crunchyroll        text[],    -- [pub] P4110
+  igdb_game          text[],    -- [pub] P5794
+  giantbomb          text[],    -- [pub] P5247
+  pcgamingwiki       text[],    -- [pub] P6337
+  steam              integer[], -- [pub] P1733
+  gog                text[],    -- [pub] P2725
+  pixiv_user         integer[]  -- [pub] P5435
 );
 
 -- wlists
