@@ -223,7 +223,8 @@ sub entryLinks {
     $lnk->($w->{twitter},            'Twitter',      'https://twitter.com/%s') if !$obj->{l_twitter};
     $lnk->($obj->{l_anidb},          'AniDB',        'https://anidb.net/cr%s');
     $lnk->($w->{anidb_person},       'AniDB',        'https://anidb.net/cr%s') if !$obj->{l_anidb};
-    $lnk->($w->{pixiv_user},         'Pixiv',        'https://www.pixiv.net/member.php?id=%d');
+    $lnk->($obj->{l_pixiv},          'Pixiv',        'https://www.pixiv.net/member.php?id=%d');
+    $lnk->($w->{pixiv_user},         'Pixiv',        'https://www.pixiv.net/member.php?id=%d') if !$obj->{l_pixiv};
     $lnk->($w->{musicbrainz_artist}, 'MusicBrainz',  'https://musicbrainz.org/artist/%s');
     $lnk->($w->{vgmdb_artist},       'VGMdb',        'https://vgmdb.net/artist/%s');
     $lnk->($w->{discogs_artist},     'Discogs',      'https://www.discogs.com/artist/%s');

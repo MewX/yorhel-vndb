@@ -522,7 +522,8 @@ CREATE TABLE staff ( -- dbentry_type=s
   l_site     varchar(250) NOT NULL DEFAULT '', -- [pub]
   l_twitter  varchar(16) NOT NULL DEFAULT '', -- [pub]
   l_anidb    integer, -- [pub]
-  l_wikidata integer -- [pub]
+  l_wikidata integer, -- [pub]
+  l_pixiv    integer NOT NULL DEFAULT 0 -- [pub]
 );
 
 -- staff_hist
@@ -536,7 +537,8 @@ CREATE TABLE staff_hist (
   l_site     varchar(250) NOT NULL DEFAULT '',
   l_twitter  varchar(16) NOT NULL DEFAULT '',
   l_anidb    integer,
-  l_wikidata integer
+  l_wikidata integer,
+  l_pixiv    integer NOT NULL DEFAULT 0
 );
 
 -- staff_alias

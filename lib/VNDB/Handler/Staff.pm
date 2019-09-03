@@ -44,12 +44,11 @@ sub page {
       [ gender    => 'Gender',           serialize => sub { $self->{genders}{$_[0]} } ],
       [ lang      => 'Language',         serialize => sub { "$_[0] ($self->{languages}{$_[0]})" } ],
       [ l_site    => 'Official page',    diff => 1 ],
-      [ l_wp      => 'Wikipedia link',   htmlize => sub {
-        $_[0] ? sprintf '<a href="http://en.wikipedia.org/wiki/%s">%1$s</a>', xml_escape $_[0] : '[empty]'
-      }],
+      [ l_wp      => 'Wikipedia link',   htmlize => sub { $_[0] ? sprintf '<a href="http://en.wikipedia.org/wiki/%s">%1$s</a>', xml_escape $_[0] : '[empty]' }],
       [ l_wikidata=> 'Wikidata ID',      htmlize => sub { $_[0] ? sprintf '<a href="https://www.wikidata.org/wiki/Q%d">Q%1$d</a>', $_[0] : '[empty]' } ],
       [ l_twitter => 'Twitter account',  diff => 1 ],
       [ l_anidb   => 'AniDB creator ID', serialize => sub { $_[0] // '' } ],
+      [ l_pixiv   => 'Pixiv',            htmlize => sub { $_[0] ? sprintf '<a href="https://www.pixiv.net/member.php?id=%d">%1$d</a>', $_[0] : '[empty]' } ],
       [ desc      => 'Description',      diff => qr/[ ,\n\.]/ ],
       [ aliases   => 'Aliases',          join => '<br />', split => sub {
         map xml_escape(sprintf('%s%s', $_->{name}, $_->{original} ? ' ('.$_->{original}.')' : '')), @{$_[0]};
@@ -189,7 +188,7 @@ sub edit {
     || $sid && (($s->{locked} || $s->{hidden}) && !$self->authCan('dbmod'));
 
   my %b4 = !$sid ? () : (
-    (map { $_ => $s->{$_} } qw|name original gender lang desc l_site l_wikidata l_twitter l_anidb ihid ilock|),
+    (map { $_ => $s->{$_} } qw|name original gender lang desc l_site l_wikidata l_twitter l_anidb l_pixiv ihid ilock|),
     primary => $s->{aid},
     aliases => [
       map +{ aid => $_->{aid}, name => $_->{name}, orig => $_->{original} },
@@ -211,6 +210,7 @@ sub edit {
       { post => 'l_wikidata',    required => 0, template => 'wikidata' },
       { post => 'l_twitter',     required => 0, maxlength => 16, default => '', regex => [ qr/^\S+$/, 'Invalid twitter username' ] },
       { post => 'l_anidb',       required => 0, template => 'id', default => undef },
+      { post => 'l_pixiv',       required => 0, default => 0, template => 'uint' },
       { post => 'aliases',       template => 'json', json_sort => ['name','orig'], json_fields => [
         { field => 'name', required => 1, maxlength => 200 },
         { field => 'orig', required => 0, maxlength => 200, default => '' },
@@ -287,6 +287,7 @@ sub edit {
     ],
     [ input  => name => 'Twitter username', short => 'l_twitter' ],
     [ input  => name => 'AniDB creator ID', short => 'l_anidb' ],
+    [ input  => name => 'Pixiv ID',         short => 'l_pixiv' ],
     [ static => content => '<br />' ],
   ]);
 
