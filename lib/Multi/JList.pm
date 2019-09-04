@@ -51,7 +51,7 @@ sub data {
 
   my $found = $hdr->{Status} ne '404' && $body =~ /fancybox mainProductImage/;
   my $outofstock = $body =~ /<div class="statusBox-detail">[\s\r\n]*Out of stock[\s\r\n]*<\/div>/im;
-  my $price = $body =~ /<span class="price">\$(\d+\.\d+)(?:\/\$\d+\.\d+)?<\/span>/ ? sprintf('US$ %.2f', $1) : '';
+  my $price = $body =~ /<span class="price"(?: id="product-price-\d+")?>\s*\$(\d+\.\d+)(?:\/\$\d+\.\d+)?\s*<\/span>/ ? sprintf('US$ %.2f', $1) : '';
 
   return AE::log warn => "$prefix Product found, but no price" if !$price && $found && !$outofstock;
 
