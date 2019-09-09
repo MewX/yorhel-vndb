@@ -959,7 +959,7 @@ p.filselect i { font-style: normal }
 /****** Icons *******/
 
 .icons {
-  background: url(/f/icons.png?$version$) no-repeat;
+  background: url(/f/icons.png?$icons_version$) no-repeat;
   width: 16px;
   height: 14px;
   margin: 0 2px 0 0;

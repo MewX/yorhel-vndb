@@ -2,7 +2,10 @@
 #   Create all the necessary directories, javascript, css, etc.
 #
 # prod
-#   Create static assets for production (v3 only).
+#   Create static assets for production. Requires the following additional dependencies:
+#   - CSS::Minifier::XS
+#   - uglifyjs
+#   - zopfli
 #
 # chmod
 #   For when the http process is run from a different user than the files are
@@ -36,7 +39,9 @@ ALL_CLEAN=\
 PROD=\
 	static/v3/elm-opt.js \
 	static/v3/min.js static/v3/min.js.gz \
-	static/v3/min.css static/v3/min.css.gz
+	static/v3/min.css static/v3/min.css.gz \
+	$(shell ls static/s | sed -e 's/\(.\+\)/static\/s\/\1\/style.min.css/g') \
+	$(shell ls static/s | sed -e 's/\(.\+\)/static\/s\/\1\/style.min.css.gz/g')
 
 all: ${ALL_KEEP} ${ALL_CLEAN}
 prod: ${PROD}
@@ -44,7 +49,6 @@ prod: ${PROD}
 clean:
 	rm -f ${ALL_CLEAN} ${PROD}
 	rm -f static/f/icons.png
-	rm -f static/s/*/style.css.gz static/s/*/boxbg.png
 	rm -f elm3/Lib/Gen.elm
 	rm -rf elm3/elm-stuff/build-artifacts
 
@@ -80,6 +84,12 @@ data/icons/icons.css: data/icons/*.png data/icons/*/*.png util/spritegen.pl | st
 static/s/%/style.css: static/s/%/conf util/skingen.pl data/style.css data/icons/icons.css
 	util/skingen.pl $*
 
+static/s/%/style.min.css: static/s/%/style.css
+	perl -MCSS::Minifier::XS -e 'undef $$/; print CSS::Minifier::XS::minify(scalar <>)' <$< >$@
+
+static/s/%/style.min.css.gz: static/s/%/style.min.css
+	zopfli $<
+
 elm3/Lib/Gen.elm: lib/VN3/*.pm lib/VN3/*/*.pm data/config3.pl
 	util/vndb3.pl elmgen >$@
 
@@ -88,7 +98,7 @@ static/v3/elm.js: elm3/*.elm elm3/*/*.elm elm3/Lib/Gen.elm | static/f
 	sed -i 's/var author\$$project\$$Lib\$$Ffi\$$/var __unused__/g' $@
 	sed -Ei 's/author\$$project\$$Lib\$$Ffi\$$([a-zA-Z0-9_]+)/window.elmFfi_\1(_Json_wrap)/g' $@
 
-static/v3/elm-opt.js: elm/*.elm elm/*/*.elm elm/Lib/Gen.elm | static/f
+static/v3/elm-opt.js: elm3/*.elm elm3/*/*.elm elm3/Lib/Gen.elm | static/f
 	cd elm3 && ELM_HOME=elm-stuff elm make --optimize *.elm */*.elm --output ../$@
 	sed -i 's/var author\$$project\$$Lib\$$Ffi\$$/var __unused__/g' $@
 	sed -Ei 's/author\$$project\$$Lib\$$Ffi\$$([a-zA-Z0-9_]+)/window.elmFfi_\1(_Json_wrap)/g' $@
@@ -111,7 +121,7 @@ static/v3/style.css: ${CSS} | static/f
 	cat $^ >$@
 
 static/v3/min.css: static/v3/style.css
-	uglifycss $^ >$@
+	perl -MCSS::Minifier::XS -e 'undef $$/; print CSS::Minifier::XS::minify(scalar <>)' <$< >$@
 
 static/v3/min.css.gz: static/v3/min.css
 	zopfli $<

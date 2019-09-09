@@ -1,19 +1,14 @@
 #!/usr/bin/perl
 
-package VNDB;
-
-use strict;
+use v5.12;
 use warnings;
 use Cwd 'abs_path';
-eval { require CSS::Minifier::XS };
 
 our($ROOT, %S);
 BEGIN { ($ROOT = abs_path $0) =~ s{/util/skingen\.pl$}{}; }
 
 use lib "$ROOT/lib";
 use SkinFile;
-
-require $ROOT.'/data/global.pl';
 
 
 my $iconcss = do {
@@ -49,6 +44,8 @@ sub blend {
     ($f[2] * $f[3] + $b[2] * (1 - $f[3]))*255;
 }
 
+sub mtime($) { [stat("$ROOT/static$_[0]")]->[9] }
+
 
 sub writeskin { # $name
   my $name = shift;
@@ -60,14 +57,15 @@ sub writeskin { # $name
   if($o{imgrighttop}) {
     my $path = "/s/$name/$o{imgrighttop}";
     my($h, $w) = imgsize "$ROOT/static$path";
-    $o{_bgright} = sprintf 'background: url(%s?%s) no-repeat; width: %dpx; height: %dpx', $path, $S{version}, $w, $h;
+    $o{_bgright} = sprintf 'background: url(%s?%s) no-repeat; width: %dpx; height: %dpx', $path, mtime $path, $w, $h;
   } else {
     $o{_bgright} = 'display: none';
   }
 
   # body background
   if($o{imglefttop}) {
-    $o{_bodybg} = sprintf 'background: %s url(/s/%s/%s?%s) no-repeat', $o{bodybg}, $name, $o{imglefttop}, $S{version};
+    my $path = "/s/$name/$o{imglefttop}";
+    $o{_bodybg} = sprintf 'background: %s url(%s?%s) no-repeat', $o{bodybg}, $path, mtime $path;
   } else {
     $o{_bodybg} = sprintf 'background-color: %s', $o{bodybg};
   }
@@ -76,25 +74,20 @@ sub writeskin { # $name
   $o{_blendbg} = blend $o{boxbg}, $o{bodybg};
 
   # version
-  $o{version} = $S{version};
+  $o{icons_version} = mtime '/f/icons.png';
 
   # write the CSS
   open my $CSS, '<', "$ROOT/data/style.css" or die $!;
-  my $css = join '', <$CSS>;
+  local $/=undef;
+  my $css = <$CSS>;
   close $CSS;
-  $css =~ s/\$$_\$/$o{$_}/g for (keys %o);
 
   my $f = "$ROOT/static/s/$name/style.css";
   open my $SKIN, '>', "$f~" or die $!;
-  print $SKIN $CSS::Minifier::XS::VERSION ? CSS::Minifier::XS::minify($css) : $css;
+  print $SKIN $css =~ s{\$([a-z_]+)\$}{$o{$1} // die "Unknown variable $1"}egr;
   close $SKIN;
 
   rename "$f~", $f;
-
-  if($VNDB::SKINGEN{gzip}) {
-    `$VNDB::SKINGEN{gzip} -c '$f' >'$f.gz~'`;
-    rename "$f.gz~", "$f.gz";
-  }
 }
 
 
