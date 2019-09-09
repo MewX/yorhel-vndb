@@ -67,36 +67,10 @@ sub readjs {
 
 sub save {
   my($f, $body) = @_;
-  my $content = encode_utf8($body);
-
-  unlink "$f~";
-  if(!$VNDB::JSGEN{compress}) {
-    open my $F, '>', "$f~" or die $!;
-    print $F $content;
-    close $F;
-
-  } elsif($VNDB::JSGEN{compress} eq 'JavaScript::Minifier::XS') {
-    require JavaScript::Minifier::XS;
-    open my $F, '>', "$f~" or die $!;
-    print $F JavaScript::Minifier::XS::minify($content);
-    close $F;
-
-  } elsif($VNDB::JSGEN{compress} =~ /^\|/) { # External command
-    (my $cmd = $VNDB::JSGEN{compress}) =~ s/^\|//;
-    open my $C, '|-', "$cmd >'$f~'" or die $!;
-    print $C $content;
-    close $C or die $!;
-
-  } else {
-    die "Unrecognized compression option: '$VNDB::JSGEN{compress}'\n";
-  }
-
+  open my $F, '>', "$f~" or die $!;
+  print $F encode_utf8($body);
+  close $F;
   rename "$f~", $f or die $!;
-
-  if($VNDB::JSGEN{gzip}) {
-    `$VNDB::JSGEN{gzip} -c '$f' >'$f.gz~'`;
-    rename "$f.gz~", "$f.gz";
-  }
 }
 
 

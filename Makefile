@@ -40,6 +40,7 @@ PROD=\
 	static/v3/elm-opt.js \
 	static/v3/min.js static/v3/min.js.gz \
 	static/v3/min.css static/v3/min.css.gz \
+	static/f/vndb.min.js static/f/vndb.min.js.gz \
 	$(shell ls static/s | sed -e 's/\(.\+\)/static\/s\/\1\/style.min.css/g') \
 	$(shell ls static/s | sed -e 's/\(.\+\)/static\/s\/\1\/style.min.css.gz/g')
 
@@ -75,8 +76,14 @@ data/config3.pl:
 	echo 'User-agent: *' > $@
 	echo 'Disallow: /' >> $@
 
+%.gz: %
+	zopfli $<
+
 static/f/vndb.js: data/js/*.js util/jsgen.pl data/config.pl data/global.pl | static/f
 	util/jsgen.pl
+
+static/f/vndb.min.js: static/f/vndb.js
+	uglifyjs $< --compress --mangle -o $@
 
 data/icons/icons.css: data/icons/*.png data/icons/*/*.png util/spritegen.pl | static/f
 	util/spritegen.pl
@@ -86,9 +93,6 @@ static/s/%/style.css: static/s/%/conf util/skingen.pl data/style.css data/icons/
 
 static/s/%/style.min.css: static/s/%/style.css
 	perl -MCSS::Minifier::XS -e 'undef $$/; print CSS::Minifier::XS::minify(scalar <>)' <$< >$@
-
-static/s/%/style.min.css.gz: static/s/%/style.min.css
-	zopfli $<
 
 elm3/Lib/Gen.elm: lib/VN3/*.pm lib/VN3/*/*.pm data/config3.pl
 	util/vndb3.pl elmgen >$@
@@ -106,9 +110,6 @@ static/v3/elm-opt.js: elm3/*.elm elm3/*/*.elm elm3/Lib/Gen.elm | static/f
 static/v3/min.js: static/v3/elm-opt.js static/v3/vndb.js
 	uglifyjs $^ --compress 'pure_funcs="F2,F3,F4,F5,F6,F7,F8,F9,A2,A3,A4,A5,A6,A7,A8,A9",pure_getters,keep_fargs=false,unsafe_comps,unsafe' | uglifyjs --mangle -o $@
 
-static/v3/min.js.gz: static/v3/min.js
-	zopfli $<
-
 
 CSS=\
 	css3/framework/base.css\
@@ -123,8 +124,6 @@ static/v3/style.css: ${CSS} | static/f
 static/v3/min.css: static/v3/style.css
 	perl -MCSS::Minifier::XS -e 'undef $$/; print CSS::Minifier::XS::minify(scalar <>)' <$< >$@
 
-static/v3/min.css.gz: static/v3/min.css
-	zopfli $<
 
 chmod: all
 	chmod -R a-x+rwX static/{ch,cv,sf,st}

@@ -41,13 +41,6 @@ $M{db_login} = { dbname => 'vndb', user => 'vndb_multi', password => 'vndb_multi
 #};
 
 
-# Uncomment the compression method to use for the generated Javascript (or just leave as-is to disable compression)
-#$JSGEN{compress} = 'JavaScript::Minifier::XS';
-#$JSGEN{compress} = "|/usr/bin/uglifyjs --compress --mangle";
-
-# Uncomment to create pre-compressed css and js files using zopfli
-#$JSGEN{gzip} = $SKINGEN{gzip} = "/usr/bin/zopfli";
-
 # Uncomment to generate an extra small icons.png
 # (note: using zopflipng or pngcrush with the slow option is *really* slow, but compresses awesomely)
 #$SPRITEGEN{crush} = '/usr/bin/pngcrush -q';
