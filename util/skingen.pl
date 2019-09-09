@@ -1,12 +1,10 @@
 #!/usr/bin/perl
 
-
 package VNDB;
 
 use strict;
 use warnings;
 use Cwd 'abs_path';
-use Image::Magick;
 eval { require CSS::Minifier::XS };
 
 our($ROOT, %S);
@@ -25,6 +23,33 @@ my $iconcss = do {
 };
 
 
+sub imgsize {
+  open my $IMG, '<', $_[0] or die $!;
+  sysread $IMG, my $buf, 1024 or die $!;
+  $buf =~ /\xFF\xC0...(....)/s ? unpack('nn', $1) : $buf =~ /IHDR(.{8})/s ? unpack('NN', $1) : die;
+}
+
+
+sub rdcolor {
+  length $_[0] == 4 ? map hex($_)/15,  $_[0] =~ /#(.)(.)(.)/ : #RGB
+  length $_[0] == 7 ? map hex($_)/255, $_[0] =~ /#(..)(..)(..)/ : #RRGGBB
+  length $_[0] == 9 ? map hex($_)/255, $_[0] =~ /#(..)(..)(..)(..)/ : #RRGGBBAA
+  die;
+}
+
+
+sub blend {
+  my($f, $b) = @_;
+  my @f = rdcolor $f;
+  my @b = rdcolor $b;
+  $f[3] //= 1;
+  sprintf '#%02x%02x%02x',
+    ($f[0] * $f[3] + $b[0] * (1 - $f[3]))*255,
+    ($f[1] * $f[3] + $b[1] * (1 - $f[3]))*255,
+    ($f[2] * $f[3] + $b[2] * (1 - $f[3]))*255;
+}
+
+
 sub writeskin { # $name
   my $name = shift;
   my $skin = SkinFile->new("$ROOT/static/s", $name);
@@ -34,10 +59,8 @@ sub writeskin { # $name
   # get the right top image
   if($o{imgrighttop}) {
     my $path = "/s/$name/$o{imgrighttop}";
-    my $img = Image::Magick->new;
-    $img->Read("$ROOT/static$path");
-    $o{_bgright} = sprintf 'background: url(%s?%s) no-repeat; width: %dpx; height: %dpx',
-      $path, $S{version}, $img->Get('width'), $img->Get('height');
+    my($h, $w) = imgsize "$ROOT/static$path";
+    $o{_bgright} = sprintf 'background: url(%s?%s) no-repeat; width: %dpx; height: %dpx', $path, $S{version}, $w, $h;
   } else {
     $o{_bgright} = 'display: none';
   }
@@ -49,20 +72,8 @@ sub writeskin { # $name
     $o{_bodybg} = sprintf 'background-color: %s', $o{bodybg};
   }
 
-  # main title
-  $o{_maintitle} = $o{maintitle} ? "color: ".$o{maintitle} : 'display: none';
-
-  # create boxbg.png
-  my $img = Image::Magick->new(size => '1x1');
-  $img->Read("xc:$o{boxbg}");
-  $img->Write(filename => "$ROOT/static/s/$name/boxbg.png");
-  $o{_boxbg} = "/s/$name/boxbg.png?$S{version}";
-
-  # get the blend color
-  $img = Image::Magick->new(size => '1x1');
-  $img->Read("xc:$o{bodybg}", "xc:$o{boxbg}");
-  $img = $img->Flatten();
-  $o{_blendbg} = '#'.join '', map sprintf('%02x', $_*255), $img->GetPixel(x=>1,y=>1);
+  # boxbg blended with bodybg
+  $o{_blendbg} = blend $o{boxbg}, $o{bodybg};
 
   # version
   $o{version} = $S{version};

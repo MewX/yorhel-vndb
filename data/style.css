@@ -14,7 +14,7 @@ a:hover,
 
 table tr.odd,
 table.stripe tbody tr:nth-child(odd):not(.nostripe),
-.docs table tbody tr:nth-child(odd) { background: url($_boxbg$) repeat; }
+.docs table tbody tr:nth-child(odd) { background: $boxbg$; }
 
 #bgright { position: absolute; top: 0px; right: 0px; $_bgright$ }
 #header  { position: absolute; top: 80px; left: 400px; }
@@ -23,7 +23,7 @@ table.stripe tbody tr:nth-child(odd):not(.nostripe),
   font-size: 24px;
   font-style: italic;
   border: none!important;
-  $_maintitle$
+  color: $maintitle$;
 }
 #footer   { margin: 15px auto 0 auto; text-align: center; color: $footer$; }
 #footer a { color: $footer$; text-decoration: underline; }
@@ -64,7 +64,7 @@ div.warning h2, div.notice h2 { font-size: 12px; font-weight: bold; margin: 0; }
 #dd_box li b       { display: block; font-weight: normal; padding-left: 5px; }
 #dd_box li i       { display: block; font-style: normal; padding-left: 10px; padding-right: 5px }
 #dd_box li a       { display: block; padding-left: 10px; border: 0; padding-right: 5px }
-#dd_box li a:hover { background: url($_boxbg$) repeat }
+#dd_box li a:hover { background: $boxbg$ }
 
 /* dropdown search */
 #ds_box {
@@ -77,7 +77,7 @@ div.warning h2, div.notice h2 { font-size: 12px; font-weight: bold; margin: 0; }
   z-index: 2
 }
 #ds_box b           { padding: 2px 0 0 10px; }
-#ds_box tr.selected { background: url($_boxbg$) repeat; }
+#ds_box tr.selected { background: $boxbg$; }
 #ds_box table       { width: 100%; }
 
 
@@ -117,7 +117,7 @@ pre {
   border: 1px dotted $border$;
   border-right: none;
   border-left: 1px solid $border$;
-  background: url($_boxbg$) repeat;
+  background: $boxbg$;
   overflow-x: auto;
 }
 
@@ -136,7 +136,7 @@ input.text, input.submit, select, textarea {
 form, fieldset           { border: 0; display: block; }
 legend                   { display: none; }
 optgroup option          { padding-left: 10px; font-style: normal; }
-input.submit             { background: url($_boxbg$) repeat; padding: 1px; }
+input.submit             { background: $boxbg$; padding: 1px; }
 input.text, select       { width: 200px; }
 fieldset.submit          { width: 100%; text-align: center; margin: 5px; }
 fieldset.submit input    { width: 150px; }
@@ -159,9 +159,9 @@ table.formtable tr.newpart td { padding-top: 20px; font-weight: bold; }
 #menulist a                  { color: $maintext$; text-decoration: none; }
 #menulist a:hover            { border-bottom: 1px dotted $maintext$; }
 #menulist                    { position: absolute; left: 30px; top: 190px; width: 150px; }
-#menulist div.menubox        { margin: 0 0 10px 0; border: 1px solid $border$; background: url($_boxbg$) repeat; }
+#menulist div.menubox        { margin: 0 0 10px 0; border: 1px solid $border$; background: $boxbg$; }
 #menulist div.menubox div    { padding: 2px 7px; }
-#menulist h2                 { border-bottom: 1px solid $border$; background: url($_boxbg$) repeat; padding: 1px 3px; }
+#menulist h2                 { border-bottom: 1px solid $border$; background: $boxbg$; padding: 1px 3px; }
 #menulist h2, #menulist h2 a { font-size: 12px; color: $maintext$; }
 #menulist h2 #lang_select    { float: right; padding-top: 1px; }
 #menulist dt                 { display: block; float: left; width: 93px; font-style: italic; }
@@ -196,7 +196,7 @@ div.mainbox, table.mainbox td {
   border: 1px solid $border$;
   margin: 21px 0 -10px 0;
   padding: 5px;
-  background: url($_boxbg$) repeat;
+  background: $boxbg$;
 }
 .mainbox h1          { color: $boxtitle$; font-size: 21px; margin: -5px 0 15px 0; }
 .mainbox h2.alttitle { color: $alttitle$; margin: -17px 0 15px 15px; font-weight: normal; }
@@ -244,7 +244,7 @@ ul.maintabs li.left b            { float: left; margin-left: 0; margin-right: 10
 ul.maintabs li b                 { margin-left: -2px; margin-right: -7px }
 ul.maintabs li.left b            { margin-left: -7px; margin-right: -2px }
 ul.maintabs li.tabselected a,
-ul.maintabs li a:hover           { background-color: $_blendbg$; color: $maintext$; padding-bottom: 6px }
+ul.maintabs li a:hover           { background: $_blendbg$; color: $maintext$; padding-bottom: 6px }
 ul.maintabs.bottom li.tabselected a,
 ul.maintabs.bottom li a:hover    { padding-bottom: 2px; padding-top: 5px; margin-top: 9px }
 ul.maintabs.browsetabs li a      { margin-left: 5px; color: $maintext$ }
@@ -288,7 +288,7 @@ p#searchtabs a:hover, p#searchtabs a.sel {
   border: 1px solid $secborder$;
   border-bottom: none;
   padding: 1px 5px 2px 5px;
-  background: $secbg$ url($_boxbg$) repeat;
+  background: $boxbg$;
 }
 #q { width: 600px }
 #bq { width: 300px }
@@ -402,7 +402,7 @@ div#vntags                    { margin: 0 30px 0 30px; border-top: 1px solid $bo
 .releases table,
 #screenshots table     { width: 100%; }
 .releases tr.lang td,
-#screenshots tr.rel td { background: url($_boxbg$) repeat; font-weight: bold; }
+#screenshots tr.rel td { background: $boxbg$; font-weight: bold; }
 .releases td.tc1       { padding-left: 30px; width: 80px; }
 .releases td.tc2       { text-align: center; width: 50px; }
 .releases td.tc3       { text-align: right; padding: 0; width: 90px; }
@@ -415,7 +415,7 @@ div#vntags                    { margin: 0 30px 0 30px; border-top: 1px solid $bo
 .rllinks_dd span { color: $maintext$; padding-right: 10px }
 
 #screenshots p.rel {
-  background: url($_boxbg$) repeat;
+  background: $boxbg$;
   margin: 0;
   padding: 2px;
   font-weight: bold;
@@ -432,7 +432,7 @@ div#vntags                    { margin: 0 30px 0 30px; border-top: 1px solid $bo
 .summarize_more {
   margin-top: 9px; margin-bottom: -10px; padding: 0; height: 15px;
   border: 1px solid $border$; border-top: none;
-  background: url($_boxbg$) repeat;
+  background: $boxbg$;
   text-align: center
 }
 
@@ -497,9 +497,9 @@ div.scr_uploader     { visibility: hidden; overflow: hidden; width: 1px; height:
 
 .releases_compare table     { margin: 0 auto; }
 .releases_compare td        { margin: 0 auto; border: 1px solid $border$; }
-.releases_compare td.bg     { background: url($_boxbg$) repeat; }
+.releases_compare td.bg     { background: $boxbg$; }
 .releases_compare td.multi  { vertical-align:middle; }
-.releases_compare .key      { background: url($_boxbg$) repeat; }
+.releases_compare .key      { background: $boxbg$; }
 
 /****** VN browse ********/
 
@@ -517,7 +517,7 @@ div.scr_uploader     { visibility: hidden; overflow: hidden; width: 1px; height:
 /***** Producer page/list *******/
 
 #prodrel              { width:  100%; }
-#prodrel tr.vn td     { background: url($_boxbg$) repeat; font-weight: bold; }
+#prodrel tr.vn td     { background: $boxbg$; font-weight: bold; }
 #prodrel tr.vn i,
 #prodrel tr.vn span   { display: none }
 #prodrel.collapse tr.vn td   { padding: 1px; background: none; font-weight: normal }
@@ -678,7 +678,7 @@ div.charsum_list .name  i { float: right }
 div.charsum_list .actor { border-top: 1px solid $border$; padding-top: 3px }
 div.charsum_list .actor b.grayedout { margin-left: 10px }
 div.charsum_list .charsum_bubble {
-  background: url($_boxbg$) repeat;
+  background: $boxbg$;
   display: inline-block;
   text-align: left;
   vertical-align: top;
@@ -735,7 +735,7 @@ div.charsum_list .charsum_bubble {
 .docs td[colspan]+td,
 .docs td[colspan]+td+td { white-space: normal }
 .docs p + p         { padding-top: 10px }
-.docs ul.index      { display: block; float: right; width: 170px; padding: 2px; margin: 0 0 10px 5px; background: url($_boxbg$) repeat; border: 1px solid $border$; }
+.docs ul.index      { display: block; float: right; width: 170px; padding: 2px; margin: 0 0 10px 5px; background: $boxbg$; border: 1px solid $border$; }
 .docs ul.index li   { list-style-type: none; }
 .docs ul.index li a { margin: 0 0 0 10px; }
 .docs img           { margin: 5px }
@@ -886,7 +886,7 @@ div#iv_view {
   position: absolute;
   top: 0px;
   left: 0px;
-  background: url($_boxbg$) repeat;
+  background: $boxbg$;
   border: 1px solid $border$;
   padding: 5px;
   text-align: center;
