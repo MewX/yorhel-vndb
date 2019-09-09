@@ -20,7 +20,7 @@
 #   other environments. Patches to improve the portability are always welcome.
 
 
-.PHONY: all chmod multi-stop multi-start multi-restart
+.PHONY: all prod chmod multi-stop multi-start multi-restart
 
 ALL_KEEP=\
 	static/ch static/cv static/sf static/st \
@@ -41,6 +41,7 @@ PROD=\
 	static/v3/min.js static/v3/min.js.gz \
 	static/v3/min.css static/v3/min.css.gz \
 	static/f/vndb.min.js static/f/vndb.min.js.gz \
+	static/f/icons.opt.png \
 	$(shell ls static/s | sed -e 's/\(.\+\)/static\/s\/\1\/style.min.css/g') \
 	$(shell ls static/s | sed -e 's/\(.\+\)/static\/s\/\1\/style.min.css.gz/g')
 
@@ -85,8 +86,12 @@ static/f/vndb.js: data/js/*.js util/jsgen.pl data/config.pl data/global.pl | sta
 static/f/vndb.min.js: static/f/vndb.js
 	uglifyjs $< --compress --mangle -o $@
 
-data/icons/icons.css: data/icons/*.png data/icons/*/*.png util/spritegen.pl | static/f
+data/icons/icons.css static/f/icons.png: data/icons/*.png data/icons/*/*.png util/spritegen.pl | static/f
 	util/spritegen.pl
+static/f/icons.png: data/icons/icons.css
+
+static/f/icons.opt.png: static/f/icons.png
+	zopflipng -m --lossy_transparent $< $@
 
 static/s/%/style.css: static/s/%/conf util/skingen.pl data/style.css data/icons/icons.css
 	util/skingen.pl $*

@@ -1,7 +1,5 @@
 #!/usr/bin/perl
 
-package VNDB;
-
 use strict;
 use warnings;
 use Image::Magick;
@@ -9,7 +7,6 @@ use Cwd 'abs_path';
 
 our $ROOT;
 BEGIN { ($ROOT = abs_path $0) =~ s{/util/spritegen\.pl$}{}; }
-require $ROOT.'/data/global.pl';
 
 my $path = "$ROOT/data/icons";
 my $icons = "$ROOT/static/f/icons.png";
@@ -86,8 +83,7 @@ sub minstrip {
   my($optsize, $w, $h, $optw, $opth) = (1e9, $maxwidth);
   while($w >= $minwidth) {
     ($w, $h) = genstrip($w);
-    # Optimize for file size rather than pixel count if slow is set
-    my $size = $VNDB::SPRITEGEN{slow} ? img($w, $h) : $w*$h;
+    my $size = $w*$h;
     if($size < $optsize) {
       $optw = $w;
       $opth = $h;
@@ -110,11 +106,6 @@ sub img {
   }
   print $img->Write("png32:$ticons");
   undef $img;
-
-  if($VNDB::SPRITEGEN{crush}) {
-    `$VNDB::SPRITEGEN{crush} "$ticons" "$ticons~"`;
-    rename "$ticons~", $ticons or die $!;
-  }
 
   my $size = -s $ticons;
   #printf "Dim: %dx%d, size: %d, pixels wasted: %d\n", $w, $h, $size, $w*$h-$minpixels;

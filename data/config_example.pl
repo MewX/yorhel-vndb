@@ -39,10 +39,3 @@ $M{db_login} = { dbname => 'vndb', user => 'vndb_multi', password => 'vndb_multi
 #  pass    => '<nickserv-password>',
 #  masters => [ 'yorhel!~Ayo@your.hell' ],
 #};
-
-
-# Uncomment to generate an extra small icons.png
-# (note: using zopflipng or pngcrush with the slow option is *really* slow, but compresses awesomely)
-#$SPRITEGEN{crush} = '/usr/bin/pngcrush -q';
-#$SPRITEGEN{crush} = '/usr/bin/zopflipng -m --lossy_transparent';
-#$SPRITEGEN{slow} = 1;
