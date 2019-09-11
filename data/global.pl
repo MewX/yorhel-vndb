@@ -48,42 +48,6 @@ our %S;
   permissions     => {qw| board 1  boardmod 2  edit 4  tag 16  dbmod 32  tagmod 64  usermod 128 |},
   default_perm    => 1+4+16, # Keep synchronised with the default value of users.perm
   default_tags_cat=> 'cont,tech',
-  languages       => ordhash(grep !/^ *$/, split /[\s\r\n]*([^ ]+) +(.+)/, q{
-    ar Arabic
-    bg Bulgarian
-    ca Catalan
-    cs Czech
-    da Danish
-    de German
-    el Greek
-    en English
-    eo Esperanto
-    es Spanish
-    fi Finnish
-    fr French
-    he Hebrew
-    hr Croatian
-    hu Hungarian
-    id Indonesian
-    it Italian
-    ja Japanese
-    ko Korean
-    nl Dutch
-    no Norwegian
-    pl Polish
-    pt-br Portuguese (Brazil)
-    pt-pt Portuguese (Portugal)
-    ro Romanian
-    ru Russian
-    sk Slovak
-    sv Swedish
-    ta Tagalog
-    th Thai
-    tr Turkish
-    uk Ukrainian
-    vi Vietnamese
-    zh Chinese
-  }),
   producer_types  => ordhash(
     co => 'Company',
     in => 'Individual',

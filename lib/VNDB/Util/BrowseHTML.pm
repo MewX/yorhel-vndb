@@ -6,6 +6,7 @@ use warnings;
 use TUWF ':html', 'xml_escape';
 use Exporter 'import';
 use VNDB::Func;
+use VNDB::Types;
 use POSIX 'ceil';
 
 
@@ -202,7 +203,7 @@ sub htmlBrowseVN {
           for (sort @{$l->{c_platforms}});
        end;
        td class => 'tc3';
-        cssicon "lang $_", $self->{languages}{$_}
+        cssicon "lang $_", $LANGUAGE{$_}
           for (reverse sort @{$l->{c_languages}});
        end;
        td class => 'tc4';

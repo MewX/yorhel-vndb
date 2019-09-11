@@ -55,7 +55,7 @@ sub DetailsTable {
             Dd sub {
                 Join \&Br, sub {
                     Lang $_[0]{lang};
-                    Txt " $LANG{$_[0]{lang}}";
+                    Txt " $LANGUAGE{$_[0]{lang}}";
                 }, @{$e->{lang}};
             }
         },

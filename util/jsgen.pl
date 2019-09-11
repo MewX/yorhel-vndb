@@ -39,7 +39,7 @@ sub vars {
     rlist_status  => $S{rlist_status},
     cookie_prefix => $O{cookie_prefix},
     age_ratings   => [ map [ $_, $_ == -1 ? 'Unknown' : $_ == 0 ? 'All ages' : "$_+" ], @{$S{age_ratings}} ],
-    languages     => [ map [ $_, $S{languages}{$_} ], keys %{$S{languages}} ],
+    languages     => [ map [ $_, $LANGUAGE{$_} ], keys %LANGUAGE ],
     platforms     => [ map [ $_, $S{platforms}{$_} ], keys %{$S{platforms}} ],
     char_roles    => [ map [ $_, $S{char_roles}{$_}[0] ], keys %{$S{char_roles}} ],
     media         => [ map [ $_, $S{media}{$_}[1], $S{media}{$_}[0] ], keys %{$S{media}} ],

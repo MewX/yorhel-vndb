@@ -38,7 +38,7 @@ sub Top {
                 Div class => 'vn-header__sep', '';
                 Txt vn_length_time $vn->{length};
                 Div class => 'vn-header__sep', '';
-                Txt join ', ', map $LANG{$_}, @{$vn->{c_languages}};
+                Txt join ', ', map $LANGUAGE{$_}, @{$vn->{c_languages}};
                 Debug $vn;
             };
         };
@@ -218,7 +218,7 @@ sub Releases {
     for my $lang (@lang) {
         Div class => 'relsm__language', sub {
             Lang $lang;
-            Txt " $LANG{$lang}";
+            Txt " $LANGUAGE{$lang}";
         };
         Div class => 'relsm__table', sub {
             Div class => 'relsm__rel', sub {

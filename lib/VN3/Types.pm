@@ -13,7 +13,7 @@ use Exporter 'import';
 our @EXPORT = qw/
     $UID_RE $VID_RE $RID_RE $SID_RE $CID_RE $PID_RE $IID_RE $DOC_RE
     $VREV_RE $RREV_RE $PREV_RE $SREV_RE $CREV_RE $DREV_RE
-    %LANG Lang
+    Lang
     %PLATFORMS Platform
     %MEDIA media_display
     %PRODUCER_TYPES
@@ -53,44 +53,6 @@ our $SREV_RE = qr{$SID_RE(?:\.(?<rev>$num))?};
 our $CREV_RE = qr{$CID_RE(?:\.(?<rev>$num))?};
 our $DREV_RE = qr{$DOC_RE(?:\.(?<rev>$num))?};
 
-
-our %LANG;
-tie %LANG, 'Tie::IxHash', grep !/^ *$/, split /[\s\r\n]*([^ ]+) +(.+)/, q{
-    ar Arabic
-    bg Bulgarian
-    ca Catalan
-    cs Czech
-    da Danish
-    de German
-    el Greek
-    en English
-    eo Esperanto
-    es Spanish
-    fi Finnish
-    fr French
-    he Hebrew
-    hr Croatian
-    hu Hungarian
-    id Indonesian
-    it Italian
-    ja Japanese
-    ko Korean
-    nl Dutch
-    no Norwegian
-    pl Polish
-    pt-br Portuguese (Brazil)
-    pt-pt Portuguese (Portugal)
-    ro Romanian
-    ru Russian
-    sk Slovak
-    sv Swedish
-    ta Tagalog
-    th Thai
-    tr Turkish
-    uk Ukrainian
-    vi Vietnamese
-    zh Chinese
-};
 
 sub Lang {
     Span class => 'lang-badge', uc $_[0];

@@ -44,7 +44,7 @@ sub DetailsTable {
             Dt 'Language';
             Dd sub {
                 Lang $e->{lang};
-                Txt " $LANG{$e->{lang}}";
+                Txt " $LANGUAGE{$e->{lang}}";
             }
         },
 

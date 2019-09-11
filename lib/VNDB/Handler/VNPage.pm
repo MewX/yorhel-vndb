@@ -78,7 +78,7 @@ my @rel_cols = (
     has_data      => sub { !!@{$_[0]{languages}} },
     draw          => sub {
       for(@{$_[0]{languages}}) {
-        cssicon "lang $_", $TUWF::OBJ->{languages}{$_};
+        cssicon "lang $_", $LANGUAGE{$_};
         br if $_ ne $_[0]{languages}[$#{$_[0]{languages}}];
       }
     },
@@ -199,7 +199,7 @@ sub releases {
     { get => 'o',    required => 0, default => 0, enum => [0,1] },
     { get => 's',    required => 0, default => 'released', enum => [ map $_->{sort_field}, grep $_->{sort_field}, @rel_cols ]},
     { get => 'os',   required => 0, default => 'all',      enum => [ 'all', keys %{$self->{platforms}} ] },
-    { get => 'lang', required => 0, default => 'all',      enum => [ 'all', keys %{$self->{languages}} ] },
+    { get => 'lang', required => 0, default => 'all',      enum => [ 'all', keys %LANGUAGE ] },
   );
   return $self->resNotFound if $f->{_err};
 
@@ -261,7 +261,7 @@ sub _releases_buttons {
     end 'p';
   };
   $plat_lang_draw->('platforms', 'os',  $self->{platforms}, '')     if $f->{pla};
-  $plat_lang_draw->('languages', 'lang',$self->{languages}, 'lang') if $f->{lan};
+  $plat_lang_draw->('languages', 'lang',\%LANGUAGE, 'lang') if $f->{lan};
 }
 
 
@@ -626,7 +626,7 @@ sub _producers {
         my %p = map $_->{publisher} ? ($_->{id} => $_) : (), map @{$_->{producers}}, grep grep($_ eq $l, @{$_->{languages}}), @$r;
         my @p = sort { $a->{name} cmp $b->{name} } values %p;
         next if !@p;
-        cssicon "lang $l", $self->{languages}{$l};
+        cssicon "lang $l", $LANGUAGE{$l};
         for (@p) {
           a href => "/p$_->{id}", title => $_->{original}||$_->{name}, shorten $_->{name}, 30;
           txt ' & ' if $_ != $p[$#p];
@@ -807,8 +807,8 @@ sub _releases {
     for my $l (@lang) {
       Tr class => 'lang';
        td colspan => 7;
-        cssicon "lang $l", $self->{languages}{$l};
-        txt $self->{languages}{$l};
+        cssicon "lang $l", $LANGUAGE{$l};
+        txt $LANGUAGE{$l};
        end;
       end;
       for my $rel (grep grep($_ eq $l, @{$_->{languages}}), @$r) {
@@ -927,7 +927,7 @@ sub _screenshots {
      my @scr = grep $_->{rid} && $rel->{id} == $_->{rid}, @{$v->{screenshots}};
      next if !@scr;
      p class => 'rel';
-      cssicon "lang $_", $self->{languages}{$_} for (@{$rel->{languages}});
+      cssicon "lang $_", $LANGUAGE{$_} for (@{$rel->{languages}});
       cssicon $_, $TUWF::OBJ->{platforms}{$_} for (@{$rel->{platforms}});
       a href => "/r$rel->{id}", $rel->{title};
      end;

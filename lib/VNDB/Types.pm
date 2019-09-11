@@ -22,6 +22,45 @@ sub fun($&) {
 
 
 
+# SQL: ENUM language
+hash LANGUAGE =>
+    ar => 'Arabic',
+    bg => 'Bulgarian',
+    ca => 'Catalan',
+    cs => 'Czech',
+    da => 'Danish',
+    de => 'German',
+    el => 'Greek',
+    en => 'English',
+    eo => 'Esperanto',
+    es => 'Spanish',
+    fi => 'Finnish',
+    fr => 'French',
+    he => 'Hebrew',
+    hr => 'Croatian',
+    hu => 'Hungarian',
+    id => 'Indonesian',
+    it => 'Italian',
+    ja => 'Japanese',
+    ko => 'Korean',
+    nl => 'Dutch',
+    no => 'Norwegian',
+    pl => 'Polish',
+    'pt-br' => 'Portuguese (Brazil)',
+    'pt-pt' => 'Portuguese (Portugal)',
+    ro => 'Romanian',
+    ru => 'Russian',
+    sk => 'Slovak',
+    sv => 'Swedish',
+    ta => 'Tagalog',
+    th => 'Thai',
+    tr => 'Turkish',
+    uk => 'Ukrainian',
+    vi => 'Vietnamese',
+    zh => 'Chinese';
+
+
+
 # SQL: ENUM credit_type
 hash CREDIT_TYPE =>
     scenario   => 'Scenario',

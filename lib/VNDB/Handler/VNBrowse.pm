@@ -5,6 +5,7 @@ use strict;
 use warnings;
 use TUWF ':html', 'uri_escape';
 use VNDB::Func;
+use VNDB::Types;
 
 
 TUWF::register(
@@ -131,7 +132,7 @@ sub _fil_compat {
   my $self = shift;
   my %c;
   my $f = $self->formValidate(
-    { get => 'ln', required => 0, multi => 1, enum => [ keys %{$self->{languages}} ], default => '' },
+    { get => 'ln', required => 0, multi => 1, enum => [ keys %LANGUAGE ], default => '' },
     { get => 'pl', required => 0, multi => 1, enum => [ keys %{$self->{platforms}} ], default => '' },
     { get => 'sp', required => 0, default => ($self->reqCookie('tagspoil')||'') =~ /^([0-2])$/ ? $1 : 0, enum => [0..2] },
   );

@@ -5,6 +5,7 @@ use strict;
 use warnings;
 use TUWF ':html', ':xml', 'xml_escape', 'html_escape';
 use VNDB::Func;
+use VNDB::Types;
 
 
 TUWF::register(
@@ -66,7 +67,7 @@ sub page {
       [ name      => 'Name (romaji)', diff => 1 ],
       [ original  => 'Original name', diff => 1 ],
       [ alias     => 'Aliases',       diff => qr/[ ,\n\.]/ ],
-      [ lang      => 'Language',      serialize => sub { "$_[0] ($self->{languages}{$_[0]})" } ],
+      [ lang      => 'Language',      serialize => sub { "$_[0] ($LANGUAGE{$_[0]})" } ],
       [ website   => 'Website',       diff => 1 ],
       [ l_wp      => 'Wikipedia link',htmlize => sub {
         $_[0] ? sprintf '<a href="http://en.wikipedia.org/wiki/%s">%1$s</a>', xml_escape $_[0] : '[empty]'
@@ -87,7 +88,7 @@ sub page {
    h1 $p->{name};
    h2 class => 'alttitle', $p->{original} if $p->{original};
    p class => 'center';
-    txt "$self->{languages}{$p->{lang}} $self->{producer_types}{$p->{type}}";
+    txt "$LANGUAGE{$p->{lang}} $self->{producer_types}{$p->{type}}";
     if($p->{alias}) {
       (my $alias = $p->{alias}) =~ s/\n/, /g;
       br;
@@ -176,7 +177,7 @@ sub _releases {
             next if $_ eq 'oth';
             cssicon $_, $self->{platforms}{$_};
           }
-          cssicon "lang $_", $self->{languages}{$_} for (@{$rel->{languages}});
+          cssicon "lang $_", $LANGUAGE{$_} for (@{$rel->{languages}});
           cssicon "rt$rel->{type}", $rel->{type};
          end;
          td class => 'tc4';
@@ -284,7 +285,7 @@ sub edit {
       { post => 'name',          maxlength => 200 },
       { post => 'original',      required  => 0, maxlength => 200,  default => '' },
       { post => 'alias',         required  => 0, maxlength => 500,  default => '' },
-      { post => 'lang',          required  => !$nosubmit, enum => [ keys %{$self->{languages}} ] },
+      { post => 'lang',          required  => !$nosubmit, enum => [ keys %LANGUAGE ] },
       { post => 'website',       required  => 0, maxlength => 250,  default => '', template => 'weburl' },
       { post => 'l_wikidata',    required  => 0, template => 'wikidata' },
       { post => 'desc',          required  => 0, maxlength => 5000, default => '' },
@@ -340,7 +341,7 @@ sub edit {
     [ textarea => short => 'alias', name => 'Aliases', rows => 4 ],
     [ static => content => '(Un)official aliases, separated by a newline.' ],
     [ select => name => 'Primary language', short => 'lang',
-      options => [ map [ $_, "$_ ($self->{languages}{$_})" ], keys %{$self->{languages}} ] ],
+      options => [ map [ $_, "$_ ($LANGUAGE{$_})" ], keys %LANGUAGE ] ],
     [ input  => name => 'Website', short => 'website' ],
     [ input  => short => 'l_wikidata',name => 'Wikidata ID',
         value => $frm->{l_wikidata} ? "Q$frm->{l_wikidata}" : '',
@@ -450,7 +451,7 @@ sub list {
        ul;
        for ($perlist*$c..($perlist*($c+1))-1) {
          li;
-          cssicon 'lang '.$list->[$_]{lang}, $self->{languages}{$list->[$_]{lang}};
+          cssicon 'lang '.$list->[$_]{lang}, $LANGUAGE{$list->[$_]{lang}};
           a href => "/p$list->[$_]{id}", title => $list->[$_]{original}, $list->[$_]{name};
          end;
        }

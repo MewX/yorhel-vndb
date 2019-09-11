@@ -5,6 +5,7 @@ use strict;
 use warnings;
 use TUWF ':html', ':xml', 'uri_escape', 'xml_escape';
 use VNDB::Func;
+use VNDB::Types;
 use Exporter 'import';
 
 our @EXPORT = ('releaseExtLinks');
@@ -60,7 +61,7 @@ sub page {
       [ original   => 'Original title',  diff => 1 ],
       [ gtin       => 'JAN/UPC/EAN',     serialize => sub { $_[0]||'[empty]' } ],
       [ catalog    => 'Catalog number',  serialize => sub { $_[0]||'[empty]' } ],
-      [ languages  => 'Language',        join => ', ', split => sub { map $self->{languages}{$_}, @{$_[0]} } ],
+      [ languages  => 'Language',        join => ', ', split => sub { map $LANGUAGE{$_}, @{$_[0]} } ],
       [ website    => 'Website' ],
       [ l_egs      => 'ErogameScape',    htmlize   => sub { $_[0] ? sprintf '<a href="https://erogamescape.dyndns.org/~ap2/ero/toukei_kaiseki/game.php?game=%d">%1$d</a>', $_[0] : '[empty]' } ],
       [ l_erotrail => 'ErogeTrailers',   htmlize   => sub { $_[0] ? sprintf '<a href="http://erogetrailers.com/soft/%d">%1$d</a>', $_[0] : '[empty]' } ],
@@ -153,8 +154,8 @@ sub _infotable {
     td 'Language';
     td;
      for (@{$r->{languages}}) {
-       cssicon "lang $_", $self->{languages}{$_};
-       txt ' '.$self->{languages}{$_};
+       cssicon "lang $_", $LANGUAGE{$_};
+       txt ' '.$LANGUAGE{$_};
        br if $_ ne $r->{languages}[$#{$r->{languages}}];
      }
     end;
@@ -360,7 +361,7 @@ sub edit {
       { post => 'original',  required => 0, default => '', maxlength => 250 },
       { post => 'gtin',      required => 0, default => '0', template => 'gtin' },
       { post => 'catalog',   required => 0, default => '', maxlength => 50 },
-      { post => 'languages', multi => 1, enum => [ keys %{$self->{languages}} ] },
+      { post => 'languages', multi => 1, enum => [ keys %LANGUAGE ] },
       { post => 'website',   required => 0, default => '', maxlength => 250, template => 'weburl' },
       { post => 'l_steam',   required => 0, default => 0, template => 'uint' },
       { post => 'l_dlsite',  required => 0, default => '', regex => [ qr/^[VR]J[0-9]{6}$/, 'Invalid DLsite ID' ] },
@@ -486,7 +487,7 @@ sub _form {
     [ input  => short => 'original',  name => 'Original title', width => 450 ],
     [ static => content => 'The original title of this release, leave blank if it already is in the Latin alphabet.' ],
     [ select => short => 'languages', name => 'Language(s)', multi => 1,
-      options => [ map [ $_, "$_ ($self->{languages}{$_})" ], keys %{$self->{languages}} ] ],
+      options => [ map [ $_, "$_ ($LANGUAGE{$_})" ], keys %LANGUAGE ] ],
     [ input  => short => 'gtin',      name => 'JAN/UPC/EAN' ],
     [ input  => short => 'catalog',   name => 'Catalog number' ],
     [ input  => short => 'website',   name => 'Official website' ],
@@ -679,7 +680,7 @@ sub browse {
        td class => 'tc2', $l->{minage} < 0 ? '' : minage $l->{minage};
        td class => 'tc3';
         $_ ne 'oth' && cssicon $_, $self->{platforms}{$_} for (@{$l->{platforms}});
-        cssicon "lang $_", $self->{languages}{$_} for (@{$l->{languages}});
+        cssicon "lang $_", $LANGUAGE{$_} for (@{$l->{languages}});
         cssicon "rt$l->{type}", $l->{type};
        end;
        td class => 'tc4';
@@ -712,7 +713,7 @@ sub _fil_compat {
   my $self = shift;
   my %c;
   my $f = $self->formValidate(
-    { get => 'ln', required => 0, multi => 1, default => '', enum => [ keys %{$self->{languages}} ] },
+    { get => 'ln', required => 0, multi => 1, default => '', enum => [ keys %LANGUAGE ] },
     { get => 'pl', required => 0, multi => 1, default => '', enum => [ keys %{$self->{platforms}} ] },
     { get => 'me', required => 0, multi => 1, default => '', enum => [ keys %{$self->{media}} ] },
     { get => 'tp', required => 0, default => '', enum => [ '', @{$self->{release_types}} ] },

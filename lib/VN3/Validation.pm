@@ -28,7 +28,7 @@ TUWF::set custom_validations => {
     producer_relation => { enum => \%PRODUCER_RELATIONS },
     staff_role  => { enum => \%CREDIT_TYPE },
     char_role   => { enum => \%CHAR_ROLES },
-    language    => { enum => \%LANG },
+    language    => { enum => \%LANGUAGE },
     platform    => { enum => \%PLATFORMS },
     medium      => { enum => \%MEDIA },
     resolution  => { enum => \%RESOLUTIONS },

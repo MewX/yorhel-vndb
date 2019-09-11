@@ -43,7 +43,7 @@ sub page {
       [ name      => 'Name (romaji)',    diff => 1 ],
       [ original  => 'Original name',    diff => 1 ],
       [ gender    => 'Gender',           serialize => sub { $self->{genders}{$_[0]} } ],
-      [ lang      => 'Language',         serialize => sub { "$_[0] ($self->{languages}{$_[0]})" } ],
+      [ lang      => 'Language',         serialize => sub { "$_[0] ($LANGUAGE{$_[0]})" } ],
       [ l_site    => 'Official page',    diff => 1 ],
       [ l_wp      => 'Wikipedia link',   htmlize => sub { $_[0] ? sprintf '<a href="http://en.wikipedia.org/wiki/%s">%1$s</a>', xml_escape $_[0] : '[empty]' }],
       [ l_wikidata=> 'Wikidata ID',      htmlize => sub { $_[0] ? sprintf '<a href="https://www.wikidata.org/wiki/Q%d">Q%1$d</a>', $_[0] : '[empty]' } ],
@@ -75,7 +75,7 @@ sub page {
     end;
     Tr;
      td class => 'key', 'Language';
-     td $self->{languages}{$s->{lang}};
+     td $LANGUAGE{$s->{lang}};
     end;
     if(@{$s->{aliases}}) {
       Tr;
@@ -206,7 +206,7 @@ sub edit {
       { post => 'primary',       required  => 0, template => 'id', default => 0 },
       { post => 'desc',          required  => 0, maxlength => 5000, default => '' },
       { post => 'gender',        required  => 0, default => 'unknown', enum => [qw|unknown m f|] },
-      { post => 'lang',          enum      => [ keys %{$self->{languages}} ] },
+      { post => 'lang',          enum      => [ keys %LANGUAGE ] },
       { post => 'l_site',        required => 0, template => 'weburl', maxlength => 250, default => '' },
       { post => 'l_wikidata',    required => 0, template => 'wikidata' },
       { post => 'l_twitter',     required => 0, maxlength => 16, default => '', regex => [ qr/^\S+$/, 'Invalid twitter username' ] },
@@ -280,7 +280,7 @@ sub edit {
     [ select => name => 'Gender',short => 'gender', options => [
        map [ $_, $self->{genders}{$_} ], qw(unknown m f) ] ],
     [ select => name => 'Primary language', short => 'lang',
-      options => [ map [ $_, "$_ ($self->{languages}{$_})" ], keys %{$self->{languages}} ] ],
+      options => [ map [ $_, "$_ ($LANGUAGE{$_})" ], keys %LANGUAGE ] ],
     [ input  => name => 'Official page', short => 'l_site' ],
     [ input    => short => 'l_wikidata',name => 'Wikidata ID',
         value => $frm->{l_wikidata} ? "Q$frm->{l_wikidata}" : '',
@@ -355,7 +355,7 @@ sub list {
         for ($perlist*$c..($perlist*($c+1))-1) {
           li;
             my $gender = $list->[$_]{gender};
-            cssicon 'lang '.$list->[$_]{lang}, $self->{languages}{$list->[$_]{lang}};
+            cssicon 'lang '.$list->[$_]{lang}, $LANGUAGE{$list->[$_]{lang}};
             a href => "/s$list->[$_]{id}",
               title => $list->[$_]{original}, $list->[$_]{name};
           end;

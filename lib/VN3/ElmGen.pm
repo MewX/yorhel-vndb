@@ -170,7 +170,7 @@ def vnLengths         => 'List (Int, String)'    => list map tuple($_, string vn
 def vnRelations       => 'List (String, String)' => list map tuple(string $_, string vn_relation_display $_), vn_relations;
 def producerRelations => 'List (String, String)' => list map tuple(string $_, string producer_relation_display $_), keys %PRODUCER_RELATIONS;
 def creditType        => 'List (String, String)' => list map tuple(string $_, string $CREDIT_TYPE{$_}), keys %CREDIT_TYPE;
-def languages         => 'List (String, String)' => list map tuple(string $_, string $LANG{$_}), sort { $LANG{$a} cmp $LANG{$b} } keys %LANG;
+def languages         => 'List (String, String)' => list map tuple(string $_, string $LANGUAGE{$_}), sort { $LANGUAGE{$a} cmp $LANGUAGE{$b} } keys %LANGUAGE;
 def platforms         => 'List (String, String)' => list map tuple(string $_, string $PLATFORMS{$_}), keys %PLATFORMS;
 def releaseTypes      => 'List String'           => list map string($_), release_types;
 def producerTypes     => 'List (String, String)' => list map tuple(string $_, string $PRODUCER_TYPES{$_}), keys %PRODUCER_TYPES;

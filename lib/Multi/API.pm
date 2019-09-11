@@ -16,6 +16,7 @@ use Encode 'encode_utf8', 'decode_utf8';
 use Crypt::URandom 'urandom';
 use Crypt::ScryptKDF 'scrypt_raw';;
 use VNDBUtil 'normalize_query', 'norm_ip';
+use VNDB::Types;
 use JSON::XS;
 use PWLookup;
 
@@ -1193,7 +1194,7 @@ sub get_filters {
       y/%//;
       $v = "%$v%";
     } elsif(${$o{process}} eq 'lang') {
-      return cerr $c, filter => 'Invalid language code', %e if !$VNDB::S{languages}{$v};
+      return cerr $c, filter => 'Invalid language code', %e if !$LANGUAGE{$v};
     } elsif(${$o{process}} eq 'plat') {
       return cerr $c, filter => 'Invalid platform code', %e if !$VNDB::S{platforms}{$v};
     }
