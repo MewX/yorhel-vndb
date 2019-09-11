@@ -6,6 +6,7 @@ use strict;
 use warnings;
 use TUWF ':html', ':xml', 'xml_escape';
 use VNDB::Func;
+use VNDB::Types;
 
 
 TUWF::register(
@@ -99,7 +100,7 @@ sub tagpage {
    p class => 'center';
     b 'Category';
     br;
-    txt $self->{tag_categories}{$t->{cat}};
+    txt $TAG_CATEGORY{$t->{cat}};
    end;
    if(@{$t->{aliases}}) {
      p class => 'center';
@@ -167,7 +168,7 @@ sub tagedit {
     $frm = $self->formValidate(
       { post => 'name',        required => 1, maxlength => 250, regex => [ qr/^[^,]+$/, 'A comma is not allowed in tag names' ] },
       { post => 'state',       required => 0, default => 0,  enum => [ 0..2 ] },
-      { post => 'cat',         required => 1, enum => [ keys %{$self->{tag_categories}} ] },
+      { post => 'cat',         required => 1, enum => [ keys %TAG_CATEGORY ] },
       { post => 'catrec',      required => 0 },
       { post => 'searchable',  required => 0, default => 0 },
       { post => 'applicable',  required => 0, default => 0 },
@@ -259,7 +260,7 @@ sub tagedit {
       [ checkbox => short => 'applicable', name => 'Applicable (people can apply this tag to VNs)' ],
     ) : (),
     [ select   => short => 'cat', name => 'Category', options => [
-      map [$_, $self->{tag_categories}{$_}], keys %{$self->{tag_categories}} ] ],
+      map [$_, $TAG_CATEGORY{$_}], keys %TAG_CATEGORY ] ],
     $self->authCan('tagmod') && $tag ? (
       [ checkbox => short => 'catrec', name => 'Also edit all child tags to have this category' ],
       [ static => content => 'WARNING: This will overwrite the category field for all child tags, this action can not be reverted!' ],
@@ -622,11 +623,11 @@ sub _tagmod_list {
 
   my %my = map +($_->{tag} => $_), @$my;
 
-  for my $cat (keys %{$self->{tag_categories}}) {
+  for my $cat (keys %TAG_CATEGORY) {
     my @tags = grep $_->{cat} eq $cat, @$tags;
     next if !@tags;
     Tr class => 'tagmod_cat';
-     td colspan => 7, $self->{tag_categories}{$cat};
+     td colspan => 7, $TAG_CATEGORY{$cat};
     end;
     for my $t (@tags) {
       my $m = $my{$t->{id}};

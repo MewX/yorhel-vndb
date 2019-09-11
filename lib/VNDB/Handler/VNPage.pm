@@ -457,9 +457,9 @@ sub page {
    if(@$t) {
      div id => 'tagops';
       my $tags_cat = $self->authPref('tags_cat') || $self->{default_tags_cat};
-      for (keys %{$self->{tag_categories}}) {
+      for (keys %TAG_CATEGORY) {
         input id => "cat_$_", type => 'checkbox', class => 'visuallyhidden', $tags_cat =~ /\Q$_/ ? (checked => 'checked') : ();
-        label for => "cat_$_", lc $self->{tag_categories}{$_};
+        label for => "cat_$_", lc $TAG_CATEGORY{$_};
       }
       my $spoiler = $self->authPref('spoilers') || 0;
       input id => 'tag_spoil_none', type => 'radio', class => 'visuallyhidden', name => 'tag_spoiler', $spoiler == 0 ? (checked => 'checked') : ();
@@ -694,7 +694,7 @@ sub _anime {
          txt '] ';
         end;
         abbr title => $_->{title_kanji}||$_->{title_romaji}, shorten $_->{title_romaji}, 50;
-        b ' ('.(defined $_->{type} ? $self->{anime_types}{$_->{type}}.', ' : '').$_->{year}.')';
+        b ' ('.(defined $_->{type} ? $ANIME_TYPE{$_->{type}}.', ' : '').$_->{year}.')';
         br;
       }
     }

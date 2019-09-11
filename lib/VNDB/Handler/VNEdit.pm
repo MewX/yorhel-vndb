@@ -120,7 +120,7 @@ sub edit {
       { post => 'original',    required => 0, maxlength => 250, default => '' },
       { post => 'alias',       required => 0, maxlength => 500, default => '' },
       { post => 'desc',        required => 0, default => '', maxlength => 10240 },
-      { post => 'length',      required => 0, default => 0,  enum => [ 0..$#{$self->{vn_lengths}} ] },
+      { post => 'length',      required => 0, default => 0,  enum => [ keys %VN_LENGTH ] },
       { post => 'l_renai',     required => 0, default => '', maxlength => 100 },
       { post => 'l_wikidata',  required => 0, template => 'wikidata' },
       { post => 'anime',       required => 0, default => '' },
@@ -270,7 +270,7 @@ sub _form {
         'Short description of the main story. Please do not include spoilers, and don\'t forget to list'
        .' the source in case you didn\'t write the description yourself. Formatting codes are allowed.' ],
     [ select   => short => 'length',    name => 'Length', width => 450, options =>
-      [ map [ $_ => fmtvnlen $_, 2 ], 0..$#{$self->{vn_lengths}} ] ],
+      [ map [ $_ => fmtvnlen $_, 2 ], keys %VN_LENGTH ] ],
 
     [ input    => short => 'l_wikidata',name => 'Wikidata ID',
         pre   => 'https://www.wikidata.org/wiki/',

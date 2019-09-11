@@ -5,6 +5,7 @@ use strict;
 use warnings;
 use TUWF ':html', 'xml_escape';
 use VNDB::Func;
+use VNDB::Types;
 use POSIX 'floor';
 use PWLookup;
 
@@ -530,7 +531,7 @@ sub edit {
     [ check  => short => 'traits_sexual', name => 'Show sexual traits by default on character pages.' ],
     [ check  => short => 'tags_all', name => 'Show all tags by default on visual novel pages.' ],
     [ select => short => 'tags_cat', name => 'Tag categories', multi => 1, size => 3,
-      options => [ map [ $_, $self->{tag_categories}{$_} ], keys %{$self->{tag_categories}} ] ],
+      options => [ map [ $_, $TAG_CATEGORY{$_} ], keys %TAG_CATEGORY ] ],
     [ select => short => 'spoilers', name => 'Spoiler level', options => [
        [0, 'Hide spoilers'], [1, 'Show only minor spoilers'], [2, 'Show all spoilers']  ]],
     [ select => short => 'skin', name => 'Preferred skin', width => 300, options => [

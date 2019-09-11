@@ -11,6 +11,7 @@ use Multi::Core;
 use AnyEvent::Socket;
 use AnyEvent::Util;
 use Encode 'decode_utf8', 'encode_utf8';
+use VNDB::Types;
 
 
 sub LOGIN_ACCEPTED         () { 200 }
@@ -57,17 +58,6 @@ my %C = (
   lm => 0,    # timestamp of last outgoing message
   aid => 0,   # anime ID of the last sent ANIME command
   tag => int(rand()*50000),
-  # anime types as returned by AniDB (lowercased)
-  anime_types => {
-    'unknown'     => undef, # NULL
-    'tv series'   => 'tv',
-    'ova'         => 'ova',
-    'movie'       => 'mov',
-    'other'       => 'oth',
-    'web'         => 'web',
-    'tv special'  => 'spe',
-    'music video' => 'mv',
-  },
 );
 
 
@@ -245,7 +235,7 @@ sub update_anime {
   $col[1] = undef if !$col[1];
   $col[2] = undef if !$col[2] || $col[2] =~ /^0,/;
   $col[3] = $col[3] =~ /^([0-9]+)/ ? $1 : undef;
-  $col[4] = $O{anime_types}{ lc($col[4]) };
+  ($col[4]) = grep lc($col[4]) eq lc($ANIME_TYPE{$_}{anidb}), keys %ANIME_TYPE;
   $col[5] = undef if !$col[5];
   $col[6] = undef if !$col[6];
 

@@ -8,6 +8,7 @@ use Exporter 'import';
 use POSIX 'strftime', 'ceil', 'floor';
 use JSON::XS;
 use VNDBUtil;
+use VNDB::Types;
 use VNDB::BBCode;
 our @EXPORT = (@VNDBUtil::EXPORT, 'bb2html', 'bb2text', qw|
   clearfloat cssicon tagscore mt minage fil_parse fil_serialize parenttags
@@ -219,10 +220,10 @@ sub fmtmedia {
 # Formats a VN length (xtra = 1 for time indication, 2 for examples)
 sub fmtvnlen {
   my($len, $xtra) = @_;
-  $len = $TUWF::OBJ->{vn_lengths}[$len];
-  $len->[0].
-    ($xtra && $xtra == 1 && $len->[1] ? " ($len->[1])" : '').
-    ($xtra && $xtra == 2 && $len->[2] ? " ($len->[2])" : '');
+  $len = $VN_LENGTH{$len};
+  $len->{txt}.
+    ($xtra && $xtra == 1 && $len->{time} ? " ($len->{time})" : '').
+    ($xtra && $xtra == 2 && $len->{example} ? " ($len->{example})" : '');
 }
 
 # Formats a UNIX timestamp as a '<number> <unit> ago' string

@@ -150,6 +150,35 @@ hash CREDIT_TYPE =>
 
 
 
+hash VN_LENGTH =>
+    0 => { txt => 'Unknown',    time => '',              example => ''                                                  },
+    1 => { txt => 'Very short', time => '< 2 hours',     example => 'OMGWTFOTL, Jouka no Monshou, The world to reverse' },
+    2 => { txt => 'Short',      time => '2 - 10 hours',  example => 'Narcissu, Saya no Uta, Planetarian'                },
+    3 => { txt => 'Medium',     time => '10 - 30 hours', example => 'Yume Miru Kusuri, Cross†Channel, Crescendo'        },
+    4 => { txt => 'Long',       time => '30 - 50 hours', example => 'Tsukihime, Ever17, Demonbane'                      },
+    5 => { txt => 'Very long',  time => '> 50 hours',    example => 'Clannad, Umineko, Fate/Stay Night'                 };
+
+
+
+# SQL: ENUM anime_type
+hash ANIME_TYPE => # anidb = what the UDP API returns, lowercased
+    tv  => { txt => 'TV Series',    anidb => 'tv series'   },
+    ova => { txt => 'OVA',          anidb => 'ova'         },
+    mov => { txt => 'Movie',        anidb => 'movie'       },
+    oth => { txt => 'Other',        anidb => 'other'       },
+    web => { txt => 'Web',          anidb => 'web'         },
+    spe => { txt => 'TV Special',   anidb => 'tv special'  },
+    mv  => { txt => 'Music Video',  anidb => 'music video' };
+
+
+
+# SQL: ENUM tag_category
+hash TAG_CATEGORY =>
+    cont => 'Content',
+    ero  => 'Sexual content',
+    tech => 'Technical';
+
+
 
 hash WISHLIST_STATUS =>
     0 => 'High',

@@ -46,7 +46,7 @@ sub vars {
     release_types => [ map [ $_, ucfirst $_ ], @{$S{release_types}} ],
     animated      => [ map [ $_, $S{animated}[$_] ], 0..$#{$S{animated}} ],
     voiced        => [ map [ $_, $S{voiced}[$_] ], 0..$#{$S{voiced}} ],
-    vn_lengths    => [ map [ $_, $S{vn_lengths}[$_][0] ], 0..$#{$S{vn_lengths}} ],
+    vn_lengths    => [ map [ $_, $VN_LENGTH{$_}{txt} ], keys %VN_LENGTH ],
     blood_types   => [ map [ $_, $BLOOD_TYPE{$_} ], keys %BLOOD_TYPE ],
     genders       => [ map [ $_, $GENDER{$_} ], keys %GENDER ],
     credit_type   => [ map [ $_, $CREDIT_TYPE{$_} ], keys %CREDIT_TYPE ],
