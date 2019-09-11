@@ -300,25 +300,6 @@ our %M = (
 );
 
 
-# Options for jsgen.pl
-our %JSGEN = (
-  compress => undef,
-  gzip => undef,
-);
-
-
-# Options for spritegen.pl
-our %SPRITEGEN = (
-  slow => 0,
-  crush => undef,
-);
-
-# Options for skingen.pl
-our %SKINGEN = (
-  gzip => undef,
-);
-
-
 # allow the settings to be overwritten in config.pl
 require $ROOT.'/data/config.pl' if -f $ROOT.'/data/config.pl';
 

@@ -39,18 +39,6 @@ can stop the container and run:
   rm -rf data/docker-pg static/{ch,cv,sf,st}
 ```
 
-## Development database
-
-There is a development database available for download at
-[https://vndb.org/d8#3](https://vndb.org/d8#3).
-When you first run the docker image, you will be asked whether you want to
-download and import this database.  If you do not use docker, you can import
-this database manually as follows:
-
-- Follow the steps below to setup PostgreSQL and initialze the database
-- Download and extract the development database
-- psql -U vndb -f dump.sql
-
 
 ## Requirements (when not using Docker)
 
@@ -88,12 +76,10 @@ util/multi.pl (application server, optional):
 - graphviz (/usr/bin/dot is used by default)
 
 
-## Setup
+## Manual setup
 
 - Make sure all the required dependencies (see above) are installed. Hint: See
   the Docker file for Ubuntu commands. For non-root setup: Use cpanm & local::lib.
-- Create a suitable data/config.pl, using data/config_example.pl as base.
-  (For v3, you may also want a config3.pl based on config3_example.pl)
 - Run the build system:
 
 ```
@@ -112,14 +98,17 @@ util/multi.pl (application server, optional):
   echo "ALTER ROLE vndb_site  LOGIN PASSWORD 'pwd2'" | psql -U postgres
   echo "ALTER ROLE vndb_multi LOGIN PASSWORD 'pwd3'" | psql -U postgres
 
-  # Now import the rest
+  # OPTION 1: Create an empty database:
   psql -U vndb -f util/sql/all.sql
+
+  # OPTION 2: Import the development database (https://vndb.org/d8#3):
+  curl -L https://dl.vndb.org/dump/vndb-dev-latest.tar.gz | tar -xzf-
+  psql -U vndb -f dump.sql
+  rm dump.sql
 ```
 
-- Update the vndb_site password in data/config.pl to whatever you set it in
-  the previous step.
-- (Optional) Do the same for vndb_multi if Multi is needed.
-- (Optional) Import the "Development database" as explained above.
+- Update `data/config.pl` and optionally `config3.pl` with the proper
+  credentials for *vndb_site* and *vndb_multi*.
 - Now simply run:
 
 ```
@@ -155,6 +144,6 @@ To run version 3 instead of 2:
   docker run -ti --name vndb -p 3000:3000 -v "`pwd`":/var/www --rm vndb /var/www/util/docker-init.sh 3
 ```
 
-## License
+# License
 
 GNU AGPL, see COPYING file for details.
