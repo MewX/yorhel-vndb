@@ -287,10 +287,10 @@ sub _infotable {
       td 'User options';
       td;
        Select id => 'listsel', name => $self->authGetCode("/r$r->{id}/list");
-        option value => -2, !$rl ? 'not on your list' : "Status: $self->{rlist_status}[$rl->{status}]";
+        option value => -2, !$rl ? 'not on your list' : "Status: $RLIST_STATUS{$rl->{status}}";
         optgroup label => 'Set status';
-         option value => $_, $self->{rlist_status}[$_]
-           for (0..$#{$self->{rlist_status}});
+         option value => $_, $RLIST_STATUS{$_}
+           for (keys %RLIST_STATUS);
         end;
         option value => -1, 'remove from list' if $rl;
        end;

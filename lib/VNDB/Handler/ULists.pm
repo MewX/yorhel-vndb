@@ -5,6 +5,7 @@ use strict;
 use warnings;
 use TUWF ':html', ':xml';
 use VNDB::Func;
+use VNDB::Types;
 
 
 TUWF::register(
@@ -47,7 +48,7 @@ sub vnwish {
 
   return if !$self->authCheckCode;
   my $f = $self->formValidate(
-    { get => 's', enum => [ -1..$#{$self->{wishlist_status}} ] },
+    { get => 's', enum => [ -1, keys %WISHLIST_STATUS ] },
     { get => 'ref', required => 0, default => "/v$id" }
   );
   return $self->resNotFound if $f->{_err};
@@ -67,7 +68,7 @@ sub vnlist_e {
 
   return if !$self->authCheckCode;
   my $f = $self->formValidate(
-    { get => 'e', enum => [ -1..$#{$self->{vnlist_status}} ] },
+    { get => 'e', enum => [ -1, keys %VNLIST_STATUS ] },
     { get => 'ref', required => 0, default => "/v$id" }
   );
   return $self->resNotFound if $f->{_err};
@@ -94,7 +95,7 @@ sub rlist_e {
 
   return if !$self->authCheckCode;
   my $f = $self->formValidate(
-    { get => 'e', required => 1, enum => [ -1..$#{$self->{rlist_status}} ] },
+    { get => 'e', required => 1, enum => [ -1, keys %RLIST_STATUS ] },
     { get => 'ref', required => 0, default => "/r$rid" }
   );
   return $self->resNotFound if $f->{_err};
@@ -238,7 +239,7 @@ sub wishlist {
     { get => 'p', required => 0, default => 1, template => 'page' },
     { get => 'o', required => 0, default => 'd', enum => [ 'a', 'd' ] },
     { get => 's', required => 0, default => 'wstat', enum => [qw|title added wstat|] },
-    { get => 'f', required => 0, default => -1, enum => [ -1..$#{$self->{wishlist_status}} ] },
+    { get => 'f', required => 0, default => -1, enum => [ -1, keys %WISHLIST_STATUS ] },
   );
   return $self->resNotFound if $f->{_err};
 
@@ -246,7 +247,7 @@ sub wishlist {
     return if !$self->authCheckCode;
     my $frm = $self->formValidate(
       { post => 'sel', required => 0, default => 0, multi => 1, template => 'id' },
-      { post => 'batchedit', required => 1, enum => [ -1..$#{$self->{wishlist_status}} ] },
+      { post => 'batchedit', required => 1, enum => [ -1, keys %WISHLIST_STATUS ] },
     );
     $frm->{sel} = [ grep $_, @{$frm->{sel}} ]; # weed out "select all" checkbox
     if(!$frm->{_err} && @{$frm->{sel}} && $frm->{sel}[0]) {
@@ -276,8 +277,8 @@ sub wishlist {
    }
    p class => 'browseopts';
     a $f->{f} == $_ ? (class => 'optselected') : (), href => "/u$uid/wish?f=$_",
-        $_ == -1 ? 'All priorities' : $self->{wishlist_status}[$_]
-      for (-1..$#{$self->{wishlist_status}});
+        $_ == -1 ? 'All priorities' : $WISHLIST_STATUS{$_}
+      for (-1, keys %WISHLIST_STATUS);
    end;
   end 'div';
 
@@ -306,7 +307,7 @@ sub wishlist {
           if $own;
         a href => "/v$i->{vid}", title => $i->{original}||$i->{title}, ' '.shorten $i->{title}, 70;
        end;
-       td class => 'tc2', $self->{wishlist_status}[$i->{wstat}];
+       td class => 'tc2', $WISHLIST_STATUS{$i->{wstat}};
        td class => 'tc3', fmtdate $i->{added}, 'compact';
       end;
     },
@@ -318,8 +319,8 @@ sub wishlist {
         Select name => 'batchedit', id => 'batchedit';
          option '-- with selected --';
          optgroup label => 'Change priority';
-          option value => $_, $self->{wishlist_status}[$_]
-            for (0..$#{$self->{wishlist_status}});
+          option value => $_, $WISHLIST_STATUS{$_}
+            for (keys %WISHLIST_STATUS);
          end;
          option value => -1, 'remove from wishlist';
         end;
@@ -345,7 +346,7 @@ sub vnlist {
     { get => 's',  required => 0, default => 'title', enum => [ 'title', 'vote' ] },
     { get => 'c',  required => 0, default => 'all', enum => [ 'all', 'a'..'z', 0 ] },
     { get => 'v',  required => 0, default => 0, enum => [ -1..1  ] },
-    { get => 't',  required => 0, default => -1, enum => [ -1..$#{$self->{vnlist_status}} ] },
+    { get => 't',  required => 0, default => -1, enum => [ -1, keys %VNLIST_STATUS ] },
   );
   return $self->resNotFound if $f->{_err};
 
@@ -355,8 +356,8 @@ sub vnlist {
       { post => 'vid', required => 0, default => 0, multi => 1, template => 'id' },
       { post => 'rid', required => 0, default => 0, multi => 1, template => 'id' },
       { post => 'not', required => 0, default => '', maxlength => 2000 },
-      { post => 'vns', required => 1, enum => [ -2..$#{$self->{vnlist_status}}, 999 ] },
-      { post => 'rel', required => 1, enum => [ -2..$#{$self->{rlist_status}} ] },
+      { post => 'vns', required => 1, enum => [ -2, -1, keys %VNLIST_STATUS, 999 ] },
+      { post => 'rel', required => 1, enum => [ -2, -1, keys %RLIST_STATUS ] },
     );
     my @vid = grep $_ > 0, @{$frm->{vid}};
     my @rid = grep $_ > 0, @{$frm->{rid}};
@@ -414,7 +415,7 @@ sub vnlist {
    end;
    p class => 'browseopts';
     a href => $url->(t => -1), -1 == $f->{t} ? (class => 'optselected') : (), 'All';
-    a href => $url->(t => $_), $_ == $f->{t} ? (class => 'optselected') : (), $self->{vnlist_status}[$_] for 0..$#{$self->{vnlist_status}};
+    a href => $url->(t => $_), $_ == $f->{t} ? (class => 'optselected') : (), $VNLIST_STATUS{$_} for keys %VNLIST_STATUS;
    end;
   end 'div';
 
@@ -460,7 +461,7 @@ sub _vnlist_browse {
         a href => "/v$i->{vid}", title => $i->{original}||$i->{title}, shorten $i->{title}, 70;
         b class => 'grayedout', $i->{notes} if $i->{notes};
        end;
-       td class => 'tc6', $i->{status} ? $self->{vnlist_status}[$i->{status}] : '';
+       td class => 'tc6', $i->{status} ? $VNLIST_STATUS{$i->{status}} : '';
        td class => 'tc7';
         my $obtained = grep $_->{status}==2, @{$i->{rels}};
         my $total = scalar @{$i->{rels}};
@@ -482,13 +483,13 @@ sub _vnlist_browse {
           lit fmtdatestr $_->{released};
          end;
          td class => 'tc4';
-          cssicon "lang $_", $self->{languages}{$_} for @{$_->{languages}};
+          cssicon "lang $_", $LANGUAGE{$_} for @{$_->{languages}};
           cssicon "rt$_->{type}", $_->{type};
          end;
          td class => 'tc5';
           a href => "/r$_->{rid}", title => $_->{original}||$_->{title}, shorten $_->{title}, 50;
          end;
-         td class => 'tc6', $_->{status} ? $self->{rlist_status}[$_->{status}] : '';
+         td class => 'tc6', $_->{status} ? $RLIST_STATUS{$_->{status}} : '';
          td class => 'tc7_8', colspan => 2, '';
         end 'tr';
       }
@@ -502,8 +503,8 @@ sub _vnlist_browse {
         Select id => 'vns', name => 'vns';
          option value => -2, '-- with selected VNs --';
          optgroup label => 'Change status';
-          option value => $_, $self->{vnlist_status}[$_]
-            for (0..$#{$self->{vnlist_status}});
+          option value => $_, $VNLIST_STATUS{$_}
+            for (keys %VNLIST_STATUS);
          end;
          option value => 999, 'Set note';
          option value => -1, 'remove from list';
@@ -511,8 +512,8 @@ sub _vnlist_browse {
         Select id => 'rel', name => 'rel';
          option value => -2, '-- with selected releases --';
          optgroup label => 'Change status';
-          option value => $_, $self->{rlist_status}[$_]
-            for (0..$#{$self->{rlist_status}});
+          option value => $_, $RLIST_STATUS{$_}
+            for (keys %RLIST_STATUS);
          end;
          option value => -1, 'remove from list';
         end;

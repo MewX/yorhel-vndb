@@ -20,11 +20,11 @@ sub SideBar {
     Div class => 'fixed-size-left-sidebar-xl', sub {
         Div class => 'vertical-selector-label', 'Status';
         Div class => 'vertical-selector', sub {
-            for (-1..$#VNLIST_STATUS) {
+            for (-1, keys %VNLIST_STATUS) {
                 A href => mkurl($opt, t => $_, p => 1), mkclass(
                     'vertical-selector__item' => 1,
                     'vertical-selector__item--active' => $_ == $opt->{t}
-                ), $_ < 0 ? 'All' : $VNLIST_STATUS[$_];
+                ), $_ < 0 ? 'All' : $VNLIST_STATUS{$_};
             }
         };
     };
@@ -100,11 +100,11 @@ sub VNTable {
                         Td class => 'table-edit-overlay-base', sub {
                             Div 'data-elm-module' => 'UVNList.Status',
                                 'data-elm-flags'  => JSON::XS->new->encode({uid => int $u->{id}, vid => int $l->{id}, status => int $l->{status}||0}),
-                                $VNLIST_STATUS[$l->{status}||0];
+                                $VNLIST_STATUS{$l->{status}||0};
                         };
                     } else {
                         Td vote_display $l->{vote};
-                        Td $VNLIST_STATUS[$l->{status}||0];
+                        Td $VNLIST_STATUS{$l->{status}||0};
                     }
 
                     # Release info
@@ -140,7 +140,7 @@ sub VNTable {
                                                 A href => "/v$r->{rid}", title => $r->{original}||$r->{title}, $r->{title};
                                             };
                                             # TODO: Editabe
-                                            Td width => '20%', $RLIST_STATUS[$l->{status}];
+                                            Td width => '20%', $RLIST_STATUS{$l->{status}};
                                             Td width => '15%', ''; # TODO: Edit menu
                                         }
                                     }

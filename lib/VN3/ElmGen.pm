@@ -181,7 +181,7 @@ def animated          => 'List String'           => list map string($_), @ANIMAT
 def genders           => 'List (String, String)' => list map tuple(string $_, string gender_display $_), keys %GENDERS;
 def bloodTypes        => 'List (String, String)' => list map tuple(string $_, string blood_type_display $_), keys %BLOOD_TYPES;
 def charRoles         => 'List (String, String)' => list map tuple(string $_, string char_role_display $_), keys %CHAR_ROLES;
-def vnlistStatus      => 'List (Int, String)'    => list map tuple($_, string $VNLIST_STATUS[$_]), 0..$#VNLIST_STATUS;
+def vnlistStatus      => 'List (Int, String)'    => list map tuple($_, string $VNLIST_STATUS{$_}), keys %VNLIST_STATUS;
 
 def emailPattern      => String                  => string { tuwf->compile({ email  => 1 })->analyze->html5_validation() }->{pattern};
 def weburlPattern     => String                  => string { tuwf->compile({ weburl => 1 })->analyze->html5_validation() }->{pattern};

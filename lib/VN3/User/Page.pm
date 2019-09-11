@@ -103,7 +103,7 @@ sub List {
                             A href => "/v$i->{vid}", title => $i->{original}||$i->{title}, $i->{title};
                         };
                         Td vote_display $i->{vote};
-                        Td $i->{status} ? $VNLIST_STATUS[$i->{status}] : '';
+                        Td $i->{status} ? $VNLIST_STATUS{$i->{status}} : '';
                     };
                 }
             };

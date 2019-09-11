@@ -36,7 +36,7 @@ sub resolutions {
 
 sub vars {
   my %vars = (
-    rlist_status  => $S{rlist_status},
+    rlist_status  => [ map [ $_, $RLIST_STATUS{$_} ], keys %RLIST_STATUS ],
     cookie_prefix => $O{cookie_prefix},
     age_ratings   => [ map [ $_, $_ == -1 ? 'Unknown' : $_ == 0 ? 'All ages' : "$_+" ], @{$S{age_ratings}} ],
     languages     => [ map [ $_, $LANGUAGE{$_} ], keys %LANGUAGE ],

@@ -7,9 +7,9 @@ function dropdown(lnk) {
   var o = tag('ul', null);
   for(var i=0; i<VARS.rlist_status.length; i++) {
     var val = VARS.rlist_status[i];
-    o.appendChild(tag('li', st == val
-      ? tag('i', val)
-      : tag('a', {href:'#', rl_rid:relid, rl_act:i, onclick:change}, val)));
+    o.appendChild(tag('li', st == val[1]
+      ? tag('i', val[1])
+      : tag('a', {href:'#', rl_rid:relid, rl_act:val[0], onclick:change}, val[1])));
   }
   if(st != '--')
     o.appendChild(tag('li', tag('a', {href:'#', rl_rid:relid, rl_act:-1, onclick:change}, 'Remove from list')));
@@ -24,7 +24,7 @@ function change() {
   ddHide();
   setContent(lnk, tag('b', {'class': 'grayedout'}, 'Loading...'));
   ajax('/xml/rlist.xml?formcode='+code+';id='+this.rl_rid+';e='+act, function(hr) {
-    setText(lnk, act == -1 ? '--' : VARS.rlist_status[act]);
+    setText(lnk, act == -1 ? '--' : VARS.rlist_status[act][1]);
   });
   return false;
 }

@@ -40,7 +40,7 @@ TUWF::set custom_validations => {
     voiced      => { uint => 1, range => [ 0, $#VOICED ] },
     rdate       => { uint => 1, func => \&_validate_rdate },
     spoiler     => { uint => 1, range => [ 0, 2 ] },
-    vnlist_status=>{ uint => 1, range => [ 0, $#VNLIST_STATUS ] },
+    vnlist_status=>{ enum => \%VNLIST_STATUS },
     # Accepts a user-entered vote string (or '-' or empty) and converts that into a DB vote number (or undef)
     vnvote      => { regex => qr/^(?:|-|[1-9]|10|[1-9]\.[0-9]|10\.0)$/, required => 0, func => sub { $_[0] = $_[0] eq '-' ? undef : 10*$_[0]; 1 } },
     # Sort an array by the listed hash keys, using string comparison on each key

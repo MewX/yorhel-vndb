@@ -33,7 +33,6 @@ our @EXPORT = qw/
     @ANIMATED
     %GENDERS gender_display gender_icon
     %BLOOD_TYPES blood_type_display
-    @VNLIST_STATUS @RLIST_STATUS
 /;
 
 
@@ -270,8 +269,5 @@ tie %BLOOD_TYPES, 'Tie::IxHash', qw/unknown Unknown o O a A b B ab AB/;
 
 sub blood_type_display { $BLOOD_TYPES{$_[0]} }
 
-
-our @VNLIST_STATUS = ('Unknown', 'Playing', 'Finished', 'Stalled', 'Dropped');
-our @RLIST_STATUS  = ('Unknown', 'Pending', 'Obtained', 'On loan', 'Deleted');
 
 1;

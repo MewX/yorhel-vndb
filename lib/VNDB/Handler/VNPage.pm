@@ -730,9 +730,9 @@ sub _useroptions {
     }
 
     Select id => 'listsel', name => $self->authGetCode("/v$v->{id}/list");
-     option $list ? "VN list: $self->{vnlist_status}[$list->{status}]" : 'not on your VN list';
+     option $list ? "VN list: $VNLIST_STATUS{$list->{status}}" : 'not on your VN list';
      optgroup label => $list ? 'Change status' : 'Add to VN list';
-      option value => $_, $self->{vnlist_status}[$_] for (0..$#{$self->{vnlist_status}});
+      option value => $_, $VNLIST_STATUS{$_} for (keys %VNLIST_STATUS);
      end;
      option value => -1, 'remove from VN list' if $list;
     end;
@@ -740,9 +740,9 @@ sub _useroptions {
 
     if(!$vote || $wish) {
       Select id => 'wishsel', name => $self->authGetCode("/v$v->{id}/wish");
-       option $wish ? "wishlist: $self->{wishlist_status}[$wish->{wstat}]" : 'not on your wishlist';
+       option $wish ? "wishlist: $WISHLIST_STATUS{$wish->{wstat}}" : 'not on your wishlist';
        optgroup label => $wish ? 'Change status' : 'Add to wishlist';
-        option value => $_, $self->{wishlist_status}[$_] for (0..$#{$self->{wishlist_status}});
+        option value => $_, $WISHLIST_STATUS{$_} for (keys %WISHLIST_STATUS);
        end;
        option value => -1, 'remove from wishlist' if $wish;
       end;
@@ -834,7 +834,7 @@ sub _releases {
          td class => 'tc5';
           if($self->authInfo->{id}) {
             a href => "/r$rel->{id}", id => "rlsel_$rel->{id}", class => 'vnrlsel',
-             $rel->{ulist} ? $self->{rlist_status}[ $rel->{ulist}{status} ] : '--';
+             $rel->{ulist} ? $RLIST_STATUS{ $rel->{ulist}{status} } : '--';
           } else {
             txt ' ';
           }

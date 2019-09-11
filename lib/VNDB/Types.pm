@@ -14,6 +14,12 @@ sub hash {
     push @EXPORT, "%$name";
 }
 
+sub array {
+    my $name = shift;
+    $name->@* = @_;
+    push @EXPORT, "\@$name";
+}
+
 sub fun($&) {
     my($name, $code) = @_;
     *$name = $code;
@@ -141,3 +147,27 @@ hash CREDIT_TYPE =>
     songs      => 'Vocals',
     director   => 'Director',
     staff      => 'Staff';
+
+
+
+
+hash WISHLIST_STATUS =>
+    0 => 'High',
+    1 => 'Medium',
+    2 => 'Low',
+    3 => 'Blacklist';
+
+# 0 = hardcoded "unknown", 2 = hardcoded 'OK'
+hash RLIST_STATUS =>
+    0 => 'Unknown',
+    1 => 'Pending',
+    2 => 'Obtained',
+    3 => 'On loan',
+    4 => 'Deleted';
+
+hash VNLIST_STATUS =>
+    0 => 'Unknown',
+    1 => 'Playing',
+    2 => 'Finished',
+    3 => 'Stalled',
+    4 => 'Dropped';
