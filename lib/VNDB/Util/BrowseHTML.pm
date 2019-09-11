@@ -199,7 +199,7 @@ sub htmlBrowseVN {
        }
        td class => 'tc8', defined($l->{wstat}) ? $self->{wishlist_status}[$l->{wstat}] : '' if $f->{wish};
        td class => 'tc2';
-        $_ ne 'oth' && cssicon $_, $self->{platforms}{$_}
+        $_ ne 'oth' && cssicon $_, $PLATFORM{$_}
           for (sort @{$l->{c_platforms}});
        end;
        td class => 'tc3';

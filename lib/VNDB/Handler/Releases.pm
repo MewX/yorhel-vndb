@@ -83,7 +83,7 @@ sub page {
       [ released   => 'Release date',    htmlize   => \&fmtdatestr ],
       [ minage     => 'Age rating',      serialize => \&minage ],
       [ notes      => 'Notes',           diff => qr/[ ,\n\.]/ ],
-      [ platforms  => 'Platforms',       join => ', ', split => sub { map $self->{platforms}{$_}, @{$_[0]} } ],
+      [ platforms  => 'Platforms',       join => ', ', split => sub { map $PLATFORM{$_}, @{$_[0]} } ],
       [ media      => 'Media',           join => ', ', split => sub { map fmtmedia($_->{medium}, $_->{qty}), @{$_[0]} } ],
       [ resolution => 'Resolution',      serialize => sub { $self->{resolutions}{$_[0]}[0]; } ],
       [ voiced     => 'Voiced',          serialize => sub { $self->{voiced}[$_[0]] } ],
@@ -173,8 +173,8 @@ sub _infotable {
       td 'Platform'.(@{$r->{platforms}} == 1 ? '' : 's');
       td;
        for(@{$r->{platforms}}) {
-         cssicon $_, $self->{platforms}{$_};
-         txt ' '.$self->{platforms}{$_};
+         cssicon $_, $PLATFORM{$_};
+         txt ' '.$PLATFORM{$_};
          br if $_ ne $r->{platforms}[$#{$r->{platforms}}];
        }
       end;
@@ -383,7 +383,7 @@ sub edit {
       { post => 'released',  required => 0, default => 0, template => 'rdate' },
       { post => 'minage' ,   required => 0, default => -1, enum => $self->{age_ratings} },
       { post => 'notes',     required => 0, default => '', maxlength => 10240 },
-      { post => 'platforms', required => 0, default => '', multi => 1, enum => [ keys %{$self->{platforms}} ] },
+      { post => 'platforms', required => 0, default => '', multi => 1, enum => [ keys %PLATFORM ] },
       { post => 'media',     required => 0, default => '' },
       { post => 'resolution',required => 0, default => 0, enum => [ keys %{$self->{resolutions}} ] },
       { post => 'voiced',    required => 0, default => 0, enum => [ 0..$#{$self->{voiced}} ] },
@@ -547,13 +547,13 @@ sub _form {
     [ static => nolabel => 1, content => sub {
       h2 'Platforms';
       div class => 'platforms';
-       for my $p (sort keys %{$self->{platforms}}) {
+       for my $p (sort keys %PLATFORM) {
          span;
           input type => 'checkbox', name => 'platforms', value => $p, id => $p,
             $frm->{platforms} && grep($_ eq $p, @{$frm->{platforms}}) ? (checked => 'checked') : ();
           label for => $p;
-           cssicon $p, $self->{platforms}{$p};
-           txt ' '.$self->{platforms}{$p};;
+           cssicon $p, $PLATFORM{$p};
+           txt ' '.$PLATFORM{$p};;
           end;
          end;
        }
@@ -679,7 +679,7 @@ sub browse {
        end;
        td class => 'tc2', $l->{minage} < 0 ? '' : minage $l->{minage};
        td class => 'tc3';
-        $_ ne 'oth' && cssicon $_, $self->{platforms}{$_} for (@{$l->{platforms}});
+        $_ ne 'oth' && cssicon $_, $PLATFORM{$_} for (@{$l->{platforms}});
         cssicon "lang $_", $LANGUAGE{$_} for (@{$l->{languages}});
         cssicon "rt$l->{type}", $l->{type};
        end;
@@ -714,7 +714,7 @@ sub _fil_compat {
   my %c;
   my $f = $self->formValidate(
     { get => 'ln', required => 0, multi => 1, default => '', enum => [ keys %LANGUAGE ] },
-    { get => 'pl', required => 0, multi => 1, default => '', enum => [ keys %{$self->{platforms}} ] },
+    { get => 'pl', required => 0, multi => 1, default => '', enum => [ keys %PLATFORM ] },
     { get => 'me', required => 0, multi => 1, default => '', enum => [ keys %{$self->{media}} ] },
     { get => 'tp', required => 0, default => '', enum => [ '', @{$self->{release_types}} ] },
     { get => 'pa', required => 0, default => 0, enum => [ 0..2 ] },

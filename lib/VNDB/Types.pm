@@ -61,6 +61,49 @@ hash LANGUAGE =>
 
 
 
+# SQL: ENUM platform
+# The 'unk' platform is used to mean "Unknown" in various places (not in the DB).
+hash PLATFORM =>
+    win => 'Windows',
+    dos => 'DOS',
+    lin => 'Linux',
+    mac => 'Mac OS',
+    ios => 'Apple iProduct',
+    and => 'Android',
+    dvd => 'DVD Player',
+    bdp => 'Blu-ray Player',
+    fmt => 'FM Towns',
+    gba => 'Game Boy Advance',
+    gbc => 'Game Boy Color',
+    msx => 'MSX',
+    nds => 'Nintendo DS',
+    nes => 'Famicom',
+    p88 => 'PC-88',
+    p98 => 'PC-98',
+    pce => 'PC Engine',
+    pcf => 'PC-FX',
+    psp => 'PlayStation Portable',
+    ps1 => 'PlayStation 1',
+    ps2 => 'PlayStation 2',
+    ps3 => 'PlayStation 3',
+    ps4 => 'PlayStation 4',
+    psv => 'PlayStation Vita',
+    drc => 'Dreamcast',
+    sat => 'Sega Saturn',
+    sfc => 'Super Nintendo',
+    swi => 'Nintendo Switch',
+    wii => 'Nintendo Wii',
+    wiu => 'Nintendo Wii U',
+    n3d => 'Nintendo 3DS',
+    x68 => 'X68000',
+    xb1 => 'Xbox',
+    xb3 => 'Xbox 360',
+    xbo => 'Xbox One',
+    web => 'Website',
+    oth => 'Other';
+
+
+
 # SQL: ENUM credit_type
 hash CREDIT_TYPE =>
     scenario   => 'Scenario',

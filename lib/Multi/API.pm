@@ -1196,7 +1196,7 @@ sub get_filters {
     } elsif(${$o{process}} eq 'lang') {
       return cerr $c, filter => 'Invalid language code', %e if !$LANGUAGE{$v};
     } elsif(${$o{process}} eq 'plat') {
-      return cerr $c, filter => 'Invalid platform code', %e if !$VNDB::S{platforms}{$v};
+      return cerr $c, filter => 'Invalid platform code', %e if !$PLATFORM{$v};
     }
   }
 

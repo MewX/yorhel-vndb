@@ -175,7 +175,7 @@ sub _releases {
          td class => 'tc3';
           for (sort @{$rel->{platforms}}) {
             next if $_ eq 'oth';
-            cssicon $_, $self->{platforms}{$_};
+            cssicon $_, $PLATFORM{$_};
           }
           cssicon "lang $_", $LANGUAGE{$_} for (@{$rel->{languages}});
           cssicon "rt$rel->{type}", $rel->{type};

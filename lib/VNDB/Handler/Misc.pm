@@ -158,7 +158,7 @@ sub homepage {
         li;
          lit fmtdatestr $_->{released};
          txt ' ';
-         cssicon $_, $self->{platforms}{$_} for (@{$_->{platforms}});
+         cssicon $_, $PLATFORM{$_} for (@{$_->{platforms}});
          cssicon "lang $_", $LANGUAGE{$_} for (@{$_->{languages}});
          txt ' ';
          a href => "/r$_->{id}", title => $_->{original}||$_->{title}, shorten $_->{title}, 30;
@@ -178,7 +178,7 @@ sub homepage {
         li;
          lit fmtdatestr $_->{released};
          txt ' ';
-         cssicon $_, $self->{platforms}{$_} for (@{$_->{platforms}});
+         cssicon $_, $PLATFORM{$_} for (@{$_->{platforms}});
          cssicon "lang $_", $LANGUAGE{$_} for (@{$_->{languages}});
          txt ' ';
          a href => "/r$_->{id}", title => $_->{original}||$_->{title}, shorten $_->{title}, 30;

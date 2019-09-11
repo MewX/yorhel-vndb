@@ -40,7 +40,7 @@ sub vars {
     cookie_prefix => $O{cookie_prefix},
     age_ratings   => [ map [ $_, $_ == -1 ? 'Unknown' : $_ == 0 ? 'All ages' : "$_+" ], @{$S{age_ratings}} ],
     languages     => [ map [ $_, $LANGUAGE{$_} ], keys %LANGUAGE ],
-    platforms     => [ map [ $_, $S{platforms}{$_} ], keys %{$S{platforms}} ],
+    platforms     => [ map [ $_, $PLATFORM{$_} ], keys %PLATFORM ],
     char_roles    => [ map [ $_, $S{char_roles}{$_}[0] ], keys %{$S{char_roles}} ],
     media         => [ map [ $_, $S{media}{$_}[1], $S{media}{$_}[0] ], keys %{$S{media}} ],
     release_types => [ map [ $_, ucfirst $_ ], @{$S{release_types}} ],

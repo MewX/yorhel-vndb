@@ -77,7 +77,7 @@ sub DetailsTable {
             Dd sub {
                 Join \&Br, sub {
                     Platform $_[0]{platform};
-                    Txt " $PLATFORMS{$_[0]{platform}}";
+                    Txt " $PLATFORM{$_[0]{platform}}";
                 }, @{$e->{platforms}};
             }
         } : (),

@@ -99,7 +99,7 @@ my @rel_cols = (
     has_data      => sub { !!@{$_[0]{platforms}} },
     draw          => sub {
       for(@{$_[0]{platforms}}) {
-        cssicon $_, $TUWF::OBJ->{platforms}{$_};
+        cssicon $_, $PLATFORM{$_};
         br if $_ ne $_[0]{platforms}[$#{$_[0]{platforms}}];
       }
       txt 'Unknown' if !@{$_[0]{platforms}};
@@ -198,7 +198,7 @@ sub releases {
     { get => 'cw',   required => 0, default => 0, enum => [0,1] },
     { get => 'o',    required => 0, default => 0, enum => [0,1] },
     { get => 's',    required => 0, default => 'released', enum => [ map $_->{sort_field}, grep $_->{sort_field}, @rel_cols ]},
-    { get => 'os',   required => 0, default => 'all',      enum => [ 'all', keys %{$self->{platforms}} ] },
+    { get => 'os',   required => 0, default => 'all',      enum => [ 'all', keys %PLATFORM ] },
     { get => 'lang', required => 0, default => 'all',      enum => [ 'all', keys %LANGUAGE ] },
   );
   return $self->resNotFound if $f->{_err};
@@ -260,7 +260,7 @@ sub _releases_buttons {
      }
     end 'p';
   };
-  $plat_lang_draw->('platforms', 'os',  $self->{platforms}, '')     if $f->{pla};
+  $plat_lang_draw->('platforms', 'os',  \%PLATFORM, '')     if $f->{pla};
   $plat_lang_draw->('languages', 'lang',\%LANGUAGE, 'lang') if $f->{lan};
 }
 
@@ -818,7 +818,7 @@ sub _releases {
          td class => 'tc3';
           for (sort @{$rel->{platforms}}) {
             next if $_ eq 'oth';
-            cssicon $_, $self->{platforms}{$_};
+            cssicon $_, $PLATFORM{$_};
           }
           cssicon "rt$rel->{type}", $rel->{type};
          end;
@@ -928,7 +928,7 @@ sub _screenshots {
      next if !@scr;
      p class => 'rel';
       cssicon "lang $_", $LANGUAGE{$_} for (@{$rel->{languages}});
-      cssicon $_, $TUWF::OBJ->{platforms}{$_} for (@{$rel->{platforms}});
+      cssicon $_, $PLATFORM{$_} for (@{$rel->{platforms}});
       a href => "/r$rel->{id}", $rel->{title};
      end;
      div class => 'scr';

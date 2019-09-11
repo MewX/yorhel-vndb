@@ -29,7 +29,7 @@ TUWF::set custom_validations => {
     staff_role  => { enum => \%CREDIT_TYPE },
     char_role   => { enum => \%CHAR_ROLES },
     language    => { enum => \%LANGUAGE },
-    platform    => { enum => \%PLATFORMS },
+    platform    => { enum => \%PLATFORM },
     medium      => { enum => \%MEDIA },
     resolution  => { enum => \%RESOLUTIONS },
     gender      => { enum => \%GENDERS },

@@ -9,12 +9,13 @@ use Tie::IxHash;
 use TUWF ':Html5';
 use POSIX 'strftime', 'ceil';
 use Exporter 'import';
+use VNDB::Types;
 
 our @EXPORT = qw/
     $UID_RE $VID_RE $RID_RE $SID_RE $CID_RE $PID_RE $IID_RE $DOC_RE
     $VREV_RE $RREV_RE $PREV_RE $SREV_RE $CREV_RE $DREV_RE
     Lang
-    %PLATFORMS Platform
+    Platform
     %MEDIA media_display
     %PRODUCER_TYPES
     ReleaseDate
@@ -60,51 +61,9 @@ sub Lang {
 
 
 
-# The 'unk' platform is reserved for "unknown" in release filters.
-our %PLATFORMS;
-tie %PLATFORMS, 'Tie::IxHash', grep !/^ *$/, split /[\s\r\n]*([^ ]+) +(.+)/, q{
-    win Windows
-    dos DOS
-    lin Linux
-    mac Mac OS
-    ios Apple iProduct
-    and Android
-    dvd DVD Player
-    bdp Blu-ray Player
-    fmt FM Towns
-    gba Game Boy Advance
-    gbc Game Boy Color
-    msx MSX
-    nds Nintendo DS
-    nes Famicom
-    p88 PC-88
-    p98 PC-98
-    pce PC Engine
-    pcf PC-FX
-    psp PlayStation Portable
-    ps1 PlayStation 1
-    ps2 PlayStation 2
-    ps3 PlayStation 3
-    ps4 PlayStation 4
-    psv PlayStation Vita
-    drc Dreamcast
-    sat Sega Saturn
-    sfc Super Nintendo
-    swi Nintendo Switch
-    wii Nintendo Wii
-    wiu Nintendo Wii U
-    n3d Nintendo 3DS
-    x68 X68000
-    xb1 Xbox
-    xb3 Xbox 360
-    xbo Xbox One
-    web Website
-    oth Other
-};
-
 sub Platform {
     # TODO: Icons
-    Img class => 'svg-icon', src => tuwf->conf->{url_static}.'/v3/windows.svg', title => $PLATFORMS{$_[0]};
+    Img class => 'svg-icon', src => tuwf->conf->{url_static}.'/v3/windows.svg', title => $PLATFORM{$_[0]};
 }
 
 
