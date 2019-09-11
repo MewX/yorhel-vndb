@@ -10,6 +10,7 @@
 #  use Time::HiRes 'time';
 #
 #  use VNDBUtil;
+#  use VNDB::Types;
 #  use VN3::HTML;
 #  use VN3::Auth;
 #  use VN3::DB;
@@ -47,6 +48,7 @@ sub import {
     use Time::HiRes 'time';
 
     use VNDBUtil;
+    use VNDB::Types;
     use VN3::HTML;
     use VN3::Auth;
     use VN3::DB;

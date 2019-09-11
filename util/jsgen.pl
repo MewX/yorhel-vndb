@@ -12,6 +12,9 @@ our($ROOT, %S, %O);
 BEGIN { ($ROOT = abs_path $0) =~ s{/util/jsgen\.pl$}{}; }
 require $ROOT.'/data/global.pl';
 
+use lib "$ROOT/lib";
+use VNDB::Types;
+
 
 # screen resolution information, suitable for usage in filFSelect()
 sub resolutions {
@@ -46,7 +49,7 @@ sub vars {
     vn_lengths    => [ map [ $_, $S{vn_lengths}[$_][0] ], 0..$#{$S{vn_lengths}} ],
     blood_types   => [ map [ $_, $S{blood_types}{$_} ], keys %{$S{blood_types}} ],
     genders       => [ map [ $_, $S{genders}{$_} ], keys %{$S{genders}} ],
-    staff_roles   => [ map [ $_, $S{staff_roles}{$_} ], keys %{$S{staff_roles}} ],
+    credit_type   => [ map [ $_, $CREDIT_TYPE{$_} ], keys %CREDIT_TYPE ],
     resolutions   => scalar resolutions(),
   );
   JSON::XS->new->encode(\%vars);

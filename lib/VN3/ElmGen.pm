@@ -11,6 +11,7 @@ use Exporter 'import';
 use List::Util 'max';
 use VN3::Auth;
 use VN3::Types;
+use VNDB::Types;
 
 our @EXPORT = qw/
     elm_form elm_api
@@ -168,7 +169,7 @@ def userPerms         => 'List (Int, String)'    => list map tuple($perms->{$_},
 def vnLengths         => 'List (Int, String)'    => list map tuple($_, string vn_length_display $_), 0..$#VN_LENGTHS;
 def vnRelations       => 'List (String, String)' => list map tuple(string $_, string vn_relation_display $_), vn_relations;
 def producerRelations => 'List (String, String)' => list map tuple(string $_, string producer_relation_display $_), keys %PRODUCER_RELATIONS;
-def staffRoles        => 'List (String, String)' => list map tuple(string $_, string $STAFF_ROLES{$_}), keys %STAFF_ROLES;
+def creditType        => 'List (String, String)' => list map tuple(string $_, string $CREDIT_TYPE{$_}), keys %CREDIT_TYPE;
 def languages         => 'List (String, String)' => list map tuple(string $_, string $LANG{$_}), sort { $LANG{$a} cmp $LANG{$b} } keys %LANG;
 def platforms         => 'List (String, String)' => list map tuple(string $_, string $PLATFORMS{$_}), keys %PLATFORMS;
 def releaseTypes      => 'List String'           => list map string($_), release_types;

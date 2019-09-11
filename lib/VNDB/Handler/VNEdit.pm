@@ -6,6 +6,7 @@ use warnings;
 use TUWF ':html', ':xml';
 use Image::Magick;
 use VNDB::Func;
+use VNDB::Types;
 
 
 TUWF::register(
@@ -127,7 +128,7 @@ sub edit {
       { post => 'img_nsfw',    required => 0, default => 0 },
       { post => 'credits', required => 0, template => 'json', json_unique => ['aid','role'], json_sort => ['aid','role'], json_fields => [
         { field => 'aid',  required => 1, template => 'id' },
-        { field => 'role', required => 1, enum => [ keys %{$self->{staff_roles}} ] },
+        { field => 'role', required => 1, enum => [ keys %CREDIT_TYPE ] },
         { field => 'note', required => 0, maxlength => 250, default => '' },
       ]},
       { post => 'seiyuu', required => 0, template => 'json', json_unique => ['aid','cid'], json_sort => ['aid','cid'], json_fields => [

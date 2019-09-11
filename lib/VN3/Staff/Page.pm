@@ -94,7 +94,7 @@ sub Roles {
                 Td sub {
                     A href => "/v$r->{vid}", title => $r->{t_original}||$r->{title}, $r->{title};
                 };
-                Td $STAFF_ROLES{$r->{role}};
+                Td $CREDIT_TYPE{$r->{role}};
                 Td title => $r->{original}||$r->{name}, $r->{name};
                 Td $r->{note};
             };

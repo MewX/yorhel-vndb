@@ -27,7 +27,7 @@ function vnsAdd(staff, role, note) {
   var tbl = byId('credits_tbl');
 
   var rlist = tag('select', {onchange:vnsSerialize});
-  var r = VARS.staff_roles;
+  var r = VARS.credit_type;
   for (var i = 0; i<r.length; i++)
     rlist.appendChild(tag('option', {value:r[i][0], selected:r[i][0]==role}, r[i][1]));
 

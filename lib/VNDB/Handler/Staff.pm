@@ -5,6 +5,7 @@ use strict;
 use warnings;
 use TUWF qw(:html :xml uri_escape xml_escape);
 use VNDB::Func;
+use VNDB::Types;
 use List::Util qw(first);
 
 TUWF::register(
@@ -139,7 +140,7 @@ sub _roles {
       Tr;
        td class => 'tc1'; a href => "/v$l->{vid}", title => $l->{t_original}||$l->{title}, shorten $l->{title}, 60; end;
        td class => 'tc2'; lit fmtdatestr $l->{c_released}; end;
-       td class => 'tc3', $self->{staff_roles}{$l->{role}};
+       td class => 'tc3', $CREDIT_TYPE{$l->{role}};
        td class => 'tc4', title => $l->{original}||$l->{name}, $l->{name};
        td class => 'tc5', $l->{note};
       end;

@@ -691,7 +691,7 @@ function filStaff() {
   var gend = VARS.genders.slice(0, 3);
 
   // Insert seiyuu into the list of roles, before the "staff" role.
-  var roles = VARS.staff_roles;
+  var roles = VARS.credit_type;
   roles.splice(-1, 0, ['seiyuu', 'Voice actor']);
 
   return [

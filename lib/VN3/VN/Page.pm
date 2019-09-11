@@ -258,7 +258,7 @@ sub Staff {
         return if !@staff;
 
         Div class => 'staff-credits__section', sub {
-            Div class => 'staff-credits__section-title', $STAFF_ROLES{$role};
+            Div class => 'staff-credits__section-title', $CREDIT_TYPE{$role};
             Div class => 'staff-credits__item', sub {
                 A href => "/s$_->{id}", title => $_->{original}||$_->{name}, $_->{name};
                 Span class => 'staff-credits__note', " $_->{note}" if $_->{note};
@@ -269,7 +269,7 @@ sub Staff {
     Div class => 'section', id => 'staff', sub {
         H2 class => 'section__title', 'Staff';
         Div class => 'staff-credits js-columnize', 'data-columns' => 3, sub {
-            $Role->($_) for keys %STAFF_ROLES;
+            $Role->($_) for keys %CREDIT_TYPE;
         };
     };
 }

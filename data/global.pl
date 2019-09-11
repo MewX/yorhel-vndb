@@ -245,15 +245,6 @@ our %S;
     changes       => [ 25, 'VNDB Recent Changes', '/hist' ],
     posts         => [ 25, 'VNDB Recent Posts', '/t' ],
   },
-  staff_roles     => ordhash(
-    scenario   => 'Scenario',
-    chardesign => 'Character design',
-    art        => 'Artist',
-    music      => 'Composer',
-    songs      => 'Vocals',
-    director   => 'Director',
-    staff      => 'Staff',
-  ),
   poll_options    => 20, # max number of options in discussion board polls
   engines => [ grep $_, split /\s*\n\s*/, q{
     BGI/Ethornell

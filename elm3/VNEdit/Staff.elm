@@ -52,7 +52,7 @@ update msg model =
         Nothing -> ({ model | search = nm }, c)
         Just r  ->
           let
-            role = List.head Gen.staffRoles |> Maybe.map Tuple.first |> Maybe.withDefault ""
+            role = List.head Gen.creditType |> Maybe.map Tuple.first |> Maybe.withDefault ""
             nrow = { aid = r.aid, id = r.id, name = r.name, role = role, note = "" }
           in (validate { model | search = A.clear nm, staff = model.staff ++ [nrow] }, c)
 
@@ -65,7 +65,7 @@ view model =
       [ editListField 1 "col-form-label single-line"
         [ a [href <| "/s" ++ String.fromInt e.id, target "_blank" ] [text e.name ] ]
       , editListField 1 ""
-        [ inputSelect [onInput (SetRole n)] e.role Gen.staffRoles ]
+        [ inputSelect [onInput (SetRole n)] e.role Gen.creditType ]
       , editListField 2 ""
         [ inputText "" e.note (SetNote n) [placeholder "Note", maxlength 250] ]
       , editListField 0 "" [ removeButton (Del n) ]

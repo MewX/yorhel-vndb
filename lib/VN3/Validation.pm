@@ -6,6 +6,7 @@ use strict;
 use warnings;
 use TUWF;
 use VNDBUtil;
+use VNDB::Types;
 use VN3::DB;
 use VN3::Auth;
 use VN3::Types;
@@ -25,7 +26,7 @@ TUWF::set custom_validations => {
     vn_length   => { required => 0, default => 0, uint => 1, range => [ 0, $#VN_LENGTHS ] },
     vn_relation => { enum => \%VN_RELATIONS },
     producer_relation => { enum => \%PRODUCER_RELATIONS },
-    staff_role  => { enum => \%STAFF_ROLES },
+    staff_role  => { enum => \%CREDIT_TYPE },
     char_role   => { enum => \%CHAR_ROLES },
     language    => { enum => \%LANG },
     platform    => { enum => \%PLATFORMS },

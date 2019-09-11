@@ -5,6 +5,7 @@ use strict;
 use warnings;
 use TUWF ':html', 'xml_escape';
 use VNDB::Func;
+use VNDB::Types;
 use List::Util 'min';
 use POSIX 'strftime';
 
@@ -553,7 +554,7 @@ sub _revision {
     }],
     [ credits     => 'Credits', join => '<br />', split => sub {
       my @r = map sprintf('<a href="/s%d" title="%s">%s</a> [%s]%s', $_->{id},
-          xml_escape($_->{original}||$_->{name}), xml_escape($_->{name}), xml_escape($self->{staff_roles}{$_->{role}}),
+          xml_escape($_->{original}||$_->{name}), xml_escape($_->{name}), xml_escape($CREDIT_TYPE{$_->{role}}),
           $_->{note} ? ' ['.xml_escape($_->{note}).']' : ''),
         sort { $a->{id} <=> $b->{id} || $a->{role} cmp $b->{role} } @{$_[0]};
       return @r ? @r : ('[empty]');
@@ -1040,11 +1041,11 @@ sub _staff {
 
   div class => 'mainbox staff summarize', 'data-summarize-height' => 200, id => 'staff';
    h1 'Staff';
-   for my $r (keys %{$self->{staff_roles}}) {
+   for my $r (keys %CREDIT_TYPE) {
      my @s = grep $_->{role} eq $r, @{$v->{credits}};
      next if !@s;
      ul;
-      li; b $self->{staff_roles}{$r}; end;
+      li; b $CREDIT_TYPE{$r}; end;
       for(@s) {
         li;
          a href => "/s$_->{id}", title => $_->{original}||$_->{name}, $_->{name};

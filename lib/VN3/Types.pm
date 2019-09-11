@@ -18,7 +18,6 @@ our @EXPORT = qw/
     %MEDIA media_display
     %PRODUCER_TYPES
     ReleaseDate
-    %STAFF_ROLES
     @VN_LENGTHS vn_length_time vn_length_display
     %CHAR_ROLES char_roles char_role_display
     vote_display vote_string
@@ -193,18 +192,6 @@ sub ReleaseDate {
     Txt $str if !$future;
     B class => 'future', $str if $future;
 }
-
-
-
-our %STAFF_ROLES;
-tie %STAFF_ROLES, 'Tie::IxHash',
-    scenario   => 'Scenario',
-    chardesign => 'Character design',
-    art        => 'Artist',
-    music      => 'Composer',
-    songs      => 'Vocals',
-    director   => 'Director',
-    staff      => 'Staff';
 
 
 
