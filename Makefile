@@ -80,7 +80,7 @@ data/config3.pl:
 %.gz: %
 	zopfli $<
 
-static/f/vndb.js: data/js/*.js util/jsgen.pl data/config.pl data/global.pl | static/f
+static/f/vndb.js: data/js/*.js lib/VNDB/Types.pm util/jsgen.pl data/config.pl data/global.pl | static/f
 	util/jsgen.pl
 
 static/f/vndb.min.js: static/f/vndb.js

@@ -68,7 +68,7 @@ sub DetailsTable {
                     }, @{$rel{$r}}
                 }
             }
-        } grep $rel{$_}, keys %PRODUCER_RELATIONS)
+        } grep $rel{$_}, keys %PRODUCER_RELATION)
     );
 
     Div class => 'row', sub {

@@ -76,7 +76,7 @@ sub page {
       [ desc      => 'Description', diff => qr/[ ,\n\.]/ ],
       [ relations => 'Relations',   join => '<br />', split => sub {
         my @r = map sprintf('%s: <a href="/p%d" title="%s">%s</a>',
-          $self->{prod_relations}{$_->{relation}}[1], $_->{id}, xml_escape($_->{original}||$_->{name}), xml_escape shorten $_->{name}, 40
+          $PRODUCER_RELATION{$_->{relation}}{txt}, $_->{id}, xml_escape($_->{original}||$_->{name}), xml_escape shorten $_->{name}, 40
         ), sort { $a->{id} <=> $b->{id} } @{$_[0]};
         return @r ? @r : ('[empty]');
       }],
@@ -109,9 +109,9 @@ sub page {
        for (sort { $a->{name} cmp $b->{name} } @{$p->{relations}});
      p class => 'center';
       br;
-      for my $r (keys %{$self->{prod_relations}}) {
+      for my $r (keys %PRODUCER_RELATION) {
         next if !$rel{$r};
-        txt $self->{prod_relations}{$r}[1].': ';
+        txt $PRODUCER_RELATION{$r}{txt}.': ';
         for (@{$rel{$r}}) {
           a href => "/p$_->{id}", title => $_->{original}||$_->{name}, shorten $_->{name}, 40;
           txt ', ' if $_ ne $rel{$r}[$#{$rel{$r}}];
@@ -366,8 +366,8 @@ sub edit {
         end;
         td class => 'tc_rel';
          Select;
-          option value => $_, $self->{prod_relations}{$_}[1]
-            for (keys %{$self->{prod_relations}});
+          option value => $_, $PRODUCER_RELATION{$_}{txt}
+            for (keys %PRODUCER_RELATION);
          end;
         end;
         td class => 'tc_add';
@@ -389,7 +389,7 @@ sub _updreverse {
     if(exists $$old{$_} and !exists $$new{$_}) {
       $upd{$_} = undef;
     } elsif((!exists $$old{$_} and exists $$new{$_}) || ($$old{$_} ne $$new{$_})) {
-      $upd{$_} = $self->{prod_relations}{$$new{$_}}[0];
+      $upd{$_} = $PRODUCER_RELATION{$$new{$_}}{reverse};
     }
   }
   return if !keys %upd;

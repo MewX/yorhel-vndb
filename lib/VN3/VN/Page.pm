@@ -85,7 +85,7 @@ sub SidebarRel {
     Dt 'Relations';
     Dd sub {
         Dl sub {
-            for my $type (vn_relations) {
+            for my $type (keys %VN_RELATION) {
                 my @rel = grep $_->{relation} eq $type, @{$vn->{relations}};
                 next if !@rel;
                 Dt vn_relation_display $type;

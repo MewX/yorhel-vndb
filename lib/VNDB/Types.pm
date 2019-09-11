@@ -104,6 +104,34 @@ hash PLATFORM =>
 
 
 
+# SQL: ENUM vn_relation
+hash VN_RELATION =>
+    seq  => { reverse => 'preq', txt => 'Sequel'              },
+    preq => { reverse => 'seq',  txt => 'Prequel'             },
+    set  => { reverse => 'set',  txt => 'Same setting'        },
+    alt  => { reverse => 'alt',  txt => 'Alternative version' },
+    char => { reverse => 'char', txt => 'Shares characters'   },
+    side => { reverse => 'par',  txt => 'Side story'          },
+    par  => { reverse => 'side', txt => 'Parent story'        },
+    ser  => { reverse => 'ser',  txt => 'Same series'         },
+    fan  => { reverse => 'orig', txt => 'Fandisc'             },
+    orig => { reverse => 'fan',  txt => 'Original game'       };
+
+
+
+# SQL: ENUM producer_relation
+hash PRODUCER_RELATION =>
+    old => { reverse => 'new', txt => 'Formerly'        },
+    new => { reverse => 'old', txt => 'Succeeded by'    },
+    spa => { reverse => 'ori', txt => 'Spawned'         },
+    ori => { reverse => 'spa', txt => 'Originated from' },
+    sub => { reverse => 'par', txt => 'Subsidiary'      },
+    par => { reverse => 'sub', txt => 'Parent producer' },
+    imp => { reverse => 'ipa', txt => 'Imprint'         },
+    ipa => { reverse => 'imp', txt => 'Parent brand '   };
+
+
+
 # SQL: ENUM credit_type
 hash CREDIT_TYPE =>
     scenario   => 'Scenario',

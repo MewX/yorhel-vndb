@@ -568,7 +568,7 @@ sub _revision {
     }],
     [ relations   => 'Relations', join => '<br />', split => sub {
       my @r = map sprintf('[%s] %s: <a href="/v%d" title="%s">%s</a>',
-        $_->{official} ? 'official' : 'unofficial', $self->{vn_relations}{$_->{relation}}[1],
+        $_->{official} ? 'official' : 'unofficial', $VN_RELATION{$_->{relation}}{txt},
         $_->{id}, xml_escape($_->{original}||$_->{title}), xml_escape shorten $_->{title}, 40
       ), sort { $a->{id} <=> $b->{id} } @{$_[0]};
       return @r ? @r : ('[empty]');
@@ -652,7 +652,7 @@ sub _relations {
    td class => 'relations';
     dl;
      for(sort keys %rel) {
-       dt $self->{vn_relations}{$_}[1];
+       dt $VN_RELATION{$_}{txt};
        dd;
         for (@{$rel{$_}}) {
           b class => 'grayedout', '[unofficial] ' if !$_->{official};

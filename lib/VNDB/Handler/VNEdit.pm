@@ -392,8 +392,8 @@ sub _form {
          input type => 'checkbox', id => 'official', checked => 'checked';
          label for => 'official', 'official';
          Select;
-          option value => $_, $self->{vn_relations}{$_}[1]
-            for (keys %{$self->{vn_relations}});
+          option value => $_, $VN_RELATION{$_}{txt}
+            for (keys %VN_RELATION);
          end;
          txt ' of';
         end;
@@ -452,7 +452,7 @@ sub _updreverse {
     if(exists $$old{$_} and !exists $$new{$_}) {
       $upd{$_} = undef;
     } elsif((!exists $$old{$_} and exists $$new{$_}) || ($$old{$_}[0] ne $$new{$_}[0] || !$$old{$_}[1] != !$$new{$_}[1])) {
-      $upd{$_} = [ $self->{vn_relations}{ $$new{$_}[0] }[0], $$new{$_}[1] ];
+      $upd{$_} = [ $VN_RELATION{ $$new{$_}[0] }{reverse}, $$new{$_}[1] ];
     }
   }
   return if !keys %upd;

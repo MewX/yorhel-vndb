@@ -23,8 +23,8 @@ our @EXPORT = qw/
     %CHAR_ROLES char_roles char_role_display
     vote_display vote_string
     date_display
-    %VN_RELATIONS vn_relations vn_relation_reverse vn_relation_display
-    %PRODUCER_RELATIONS producer_relation_reverse producer_relation_display
+    vn_relation_reverse vn_relation_display
+    producer_relation_reverse producer_relation_display
     spoil_display
     release_types
     @MINAGE minage_display minage_display_full
@@ -179,40 +179,13 @@ sub date_display {
 
 
 
-our %VN_RELATIONS;
-tie %VN_RELATIONS, 'Tie::IxHash',
-#   id        reverse  name
-    seq  => [ 'preq', 'Sequel'              ],
-    preq => [ 'seq',  'Prequel'             ],
-    set  => [ 'set',  'Same setting'        ],
-    alt  => [ 'alt',  'Alternative version' ],
-    char => [ 'char', 'Shares characters'   ],
-    side => [ 'par',  'Side story'          ],
-    par  => [ 'side', 'Parent story'        ],
-    ser  => [ 'ser',  'Same series'         ],
-    fan  => [ 'orig', 'Fandisc'             ],
-    orig => [ 'fan',  'Original game'       ];
-
-sub vn_relations { keys %VN_RELATIONS }
-sub vn_relation_reverse { $VN_RELATIONS{$_[0]}[0] }
-sub vn_relation_display { $VN_RELATIONS{$_[0]}[1] }
+sub vn_relation_reverse { $VN_RELATION{$_[0]}{reverse} }
+sub vn_relation_display { $VN_RELATION{$_[0]}{txt} }
 
 
 
-our %PRODUCER_RELATIONS;
-tie %PRODUCER_RELATIONS, 'Tie::IxHash',
-#   id      reverse  name
-    old => [ 'new', 'Formerly'        ],
-    new => [ 'old', 'Succeeded by'    ],
-    spa => [ 'ori', 'Spawned'         ],
-    ori => [ 'spa', 'Originated from' ],
-    sub => [ 'par', 'Subsidiary'      ],
-    par => [ 'sub', 'Parent producer' ],
-    imp => [ 'ipa', 'Imprint'         ],
-    ipa => [ 'imp', 'Parent brand'    ];
-
-sub producer_relation_reverse { $PRODUCER_RELATIONS{$_[0]}[0] }
-sub producer_relation_display { $PRODUCER_RELATIONS{$_[0]}[1] }
+sub producer_relation_reverse { $PRODUCER_RELATION{$_[0]}{reverse} }
+sub producer_relation_display { $PRODUCER_RELATION{$_[0]}{txt} }
 
 
 
