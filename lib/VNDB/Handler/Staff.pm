@@ -42,7 +42,7 @@ sub page {
     $self->htmlRevision('s', $prev, $s,
       [ name      => 'Name (romaji)',    diff => 1 ],
       [ original  => 'Original name',    diff => 1 ],
-      [ gender    => 'Gender',           serialize => sub { $self->{genders}{$_[0]} } ],
+      [ gender    => 'Gender',           serialize => sub { $GENDER{$_[0]} } ],
       [ lang      => 'Language',         serialize => sub { "$_[0] ($LANGUAGE{$_[0]})" } ],
       [ l_site    => 'Official page',    diff => 1 ],
       [ l_wp      => 'Wikipedia link',   htmlize => sub { $_[0] ? sprintf '<a href="http://en.wikipedia.org/wiki/%s">%1$s</a>', xml_escape $_[0] : '[empty]' }],
@@ -69,7 +69,7 @@ sub page {
       td colspan => 2;
        b style => 'margin-right: 10px', $s->{name};
        b class => 'grayedout', style => 'margin-right: 10px', $s->{original} if $s->{original};
-       cssicon "gen $s->{gender}", $self->{genders}{$s->{gender}} if $s->{gender} ne 'unknown';
+       cssicon "gen $s->{gender}", $GENDER{$s->{gender}} if $s->{gender} ne 'unknown';
       end;
      end;
     end;
@@ -278,7 +278,7 @@ sub edit {
     [ static => content => '<br />' ],
     [ text   => name => 'Staff note<br /><b class="standout">English please!</b>', short => 'desc', rows => 4 ],
     [ select => name => 'Gender',short => 'gender', options => [
-       map [ $_, $self->{genders}{$_} ], qw(unknown m f) ] ],
+       map [ $_, $GENDER{$_} ], qw(unknown m f) ] ],
     [ select => name => 'Primary language', short => 'lang',
       options => [ map [ $_, "$_ ($LANGUAGE{$_})" ], keys %LANGUAGE ] ],
     [ input  => name => 'Official page', short => 'l_site' ],
@@ -354,7 +354,6 @@ sub list {
         ul;
         for ($perlist*$c..($perlist*($c+1))-1) {
           li;
-            my $gender = $list->[$_]{gender};
             cssicon 'lang '.$list->[$_]{lang}, $LANGUAGE{$list->[$_]{lang}};
             a href => "/s$list->[$_]{id}",
               title => $list->[$_]{original}, $list->[$_]{name};

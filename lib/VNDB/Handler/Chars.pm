@@ -6,6 +6,7 @@ use warnings;
 use TUWF ':html', 'uri_escape';
 use Exporter 'import';
 use VNDB::Func;
+use VNDB::Types;
 use List::Util 'min';
 
 our @EXPORT = ('charOps', 'charTable', 'charBrowseTable');
@@ -46,7 +47,7 @@ sub page {
       [ original  => 'Original name', diff => 1 ],
       [ alias     => 'Aliases',       diff => qr/[ ,\n\.]/ ],
       [ desc      => 'Description',   diff => qr/[ ,\n\.]/ ],
-      [ gender    => 'Sex',           serialize => sub { $self->{genders}{$_[0]} } ],
+      [ gender    => 'Sex',           serialize => sub { $GENDER{$_[0]} } ],
       [ b_month   => 'Birthday/month',serialize => sub { $_[0]||'[empty]' } ],
       [ b_day     => 'Birthday/day',  serialize => sub { $_[0]||'[empty]' } ],
       [ s_bust    => 'Bust',          serialize => sub { $_[0]||'[empty]' } ],
@@ -54,7 +55,7 @@ sub page {
       [ s_hip     => 'Hip',           serialize => sub { $_[0]||'[empty]' } ],
       [ height    => 'Height',        serialize => sub { $_[0]||'[empty]' } ],
       [ weight    => 'Weight',        serialize => sub { $_[0]//'[empty]' } ],
-      [ bloodt    => 'Blood type',    serialize => sub { $self->{blood_types}{$_[0]} } ],
+      [ bloodt    => 'Blood type',    serialize => sub { $BLOOD_TYPE{$_[0]} } ],
       [ main      => 'Main character',htmlize => sub { $_[0] ? sprintf '<a href="/c%d">c%d</a>', $_[0], $_[0] : '[empty]' } ],
       [ main_spoil=> 'Spoiler',       serialize => \&fmtspoil ],
       [ image     => 'Image', htmlize => sub {
@@ -67,7 +68,7 @@ sub page {
       [ vns       => 'Visual novels', join => '<br />', split => sub {
         map sprintf('<a href="/v%d">v%d</a> %s %s (%s)', $_->{vid}, $_->{vid},
           $_->{rid}?sprintf('[<a href="/r%d">r%d</a>]', $_->{rid}, $_->{rid}):'',
-          $self->{char_roles}{$_->{role}}[0], fmtspoil $_->{spoil}), @{$_[0]};
+          $CHAR_ROLE{$_->{role}}{txt}, fmtspoil $_->{spoil}), @{$_[0]};
       }],
     );
   }
@@ -157,8 +158,8 @@ sub charTable {
          b style => 'margin-right: 10px', $r->{name};
        }
        b class => 'grayedout', style => 'margin-right: 10px', $r->{original} if $r->{original};
-       cssicon "gen $r->{gender}", $self->{genders}{$r->{gender}} if $r->{gender} ne 'unknown';
-       span $self->{blood_types}{$r->{bloodt}} if $r->{bloodt} ne 'unknown';
+       cssicon "gen $r->{gender}", $GENDER{$r->{gender}} if $r->{gender} ne 'unknown';
+       span $BLOOD_TYPE{$r->{bloodt}} if $r->{bloodt} ne 'unknown';
       end;
      end;
     end;
@@ -224,7 +225,7 @@ sub charTable {
           # special case: all releases, no exceptions
           if(!$vn && @r == 1 && !$r[0]{rid}) {
             span class => charspoil $r[0]{spoil};
-             txt $self->{char_roles}{$r[0]{role}}[0].' - ';
+             txt $CHAR_ROLE{$r[0]{role}}{txt}.' - ';
              a href => "/v$r[0]{vid}/chars", $r[0]{vntitle};
             end;
             next;
@@ -238,7 +239,7 @@ sub charTable {
              span class => charspoil $_->{spoil};
               br if !$vn || $_ != $r[0];
               b class => 'grayedout', '> ';
-              txt $self->{char_roles}{$_->{role}}[0].' - ';
+              txt $CHAR_ROLE{$_->{role}}{txt}.' - ';
               if($_->{rid}) {
                 b class => 'grayedout', "r$_->{rid}:";
                 a href => "/r$_->{rid}", $_->{rtitle};
@@ -318,7 +319,7 @@ sub edit {
       { post => 'original',      required  => 0, maxlength => 200,  default => '' },
       { post => 'alias',         required  => 0, maxlength => 500,  default => '' },
       { post => 'desc',          required  => 0, maxlength => 5000, default => '' },
-      { post => 'gender',        required  => 0, default => 'unknown', enum => [ keys %{$self->{genders}} ] },
+      { post => 'gender',        required  => 0, default => 'unknown', enum => [ keys %GENDER ] },
       { post => 'image',         required  => 0, default => 0,  template => 'id' },
       { post => 'bday',          required  => 0, default => '', regex => [ qr/^(?:[01]?[0-9])-(?:[0123]?[0-9])$/, 'Birthday must be in MM-DD format.' ] },
       { post => 's_bust',        required  => 0, default => 0, template => 'uint', max => 32767 },
@@ -326,7 +327,7 @@ sub edit {
       { post => 's_hip',         required  => 0, default => 0, template => 'uint', max => 32767 },
       { post => 'height',        required  => 0, default => 0, template => 'uint', max => 32767 },
       { post => 'weight',        required  => 0, default => undef, template => 'uint', max => 32767 },
-      { post => 'bloodt',        required  => 0, default => 'unknown', enum => [ keys %{$self->{blood_types}} ] },
+      { post => 'bloodt',        required  => 0, default => 'unknown', enum => [ keys %BLOOD_TYPE ] },
       { post => 'main',          required  => 0, default => 0, template => 'id' },
       { post => 'main_spoil',    required  => 0, default => 0, enum => [ 0..2 ] },
       { post => 'traits',        required  => 0, default => '', regex => [ qr/^(?:[1-9]\d*-[0-2])(?: +[1-9]\d*-[0-2])*$/, 'Incorrect trait format.' ] },
@@ -404,7 +405,7 @@ sub edit {
     [ static => content => '(Un)official aliases, separated by a newline.' ],
     [ text   => name => 'Description<br /><b class="standout">English please!</b>', short => 'desc', rows => 6 ],
     [ select => name => 'Sex',       short => 'gender', options => [
-       map [ $_, $self->{genders}{$_} ], keys %{$self->{genders}} ] ],
+       map [ $_, $GENDER{$_} ], keys %GENDER ] ],
     [ input  => name => 'Birthday',  short => 'bday',   width => 100,post => ' MM-DD (e.g. "01-26" for the 26th of January)'  ],
     [ input  => name => 'Bust',      short => 's_bust', width => 50, post => ' cm' ],
     [ input  => name => 'Waist',     short => 's_waist',width => 50, post => ' cm' ],
@@ -412,7 +413,7 @@ sub edit {
     [ input  => name => 'Height',    short => 'height', width => 50, post => ' cm' ],
     [ input  => name => 'Weight',    short => 'weight', width => 50, post => ' kg', allow0 => 1 ],
     [ select => name => 'Blood type',short => 'bloodt', options => [
-       map [ $_, $self->{blood_types}{$_} ], keys %{$self->{blood_types}} ] ],
+       map [ $_, $BLOOD_TYPE{$_} ], keys %BLOOD_TYPE ] ],
     [ static => content => '<br />' ],
     [ input  => name => 'Instance of',short => 'main', width => 50, post => ' ID of the main character - the character of which this is an instance of.' ],
     [ select => name => 'Spoiler',  short => 'main_spoil', options => [
@@ -580,7 +581,7 @@ sub charBrowseTable {
       my($s, $n, $l) = @_;
       Tr;
        td class => 'tc1';
-        cssicon "gen $l->{gender}", $self->{genders}{$l->{gender}} if $l->{gender} ne 'unknown';
+        cssicon "gen $l->{gender}", $GENDER{$l->{gender}} if $l->{gender} ne 'unknown';
        end;
        td class => 'tc2';
         a href => "/c$l->{id}", title => $l->{original}||$l->{name}, shorten $l->{name}, 50;

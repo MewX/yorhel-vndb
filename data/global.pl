@@ -130,14 +130,6 @@ our %S;
   icons_ero_animated    => [ 'unknown', 'ero_not_animated',   'ero_simple_animated',   'ero_some_fully_animated',    'ero_all_fully_animated'    ],
   voiced          => [ 'Unknown', 'Not voiced', 'Only ero scenes voiced', 'Partially voiced', 'Fully voiced' ],
   icons_voiced    => [ 'unknown', 'not_voiced', 'ero_voiced',             'partially_voiced', 'fully_voiced' ],
-  blood_types     => ordhash(qw{unknown Unknown o O a A b B ab AB}),
-  genders         => ordhash(unknown => 'Unknown or N/A', qw{m Male  f Female  b Both}),
-  char_roles      => ordhash(
-    main    => [ 'Protagonist',         'Protagonists' ],
-    primary => [ 'Main character',      'Main characters' ],
-    side    => [ 'Side character',      'Side characters' ],
-    appears => [ 'Makes an appearance', 'Make an appearance' ],
-  ),
   atom_feeds => { # num_entries, title, id
     announcements => [ 10, 'VNDB Site Announcements', '/t/an' ],
     changes       => [ 25, 'VNDB Recent Changes', '/hist' ],

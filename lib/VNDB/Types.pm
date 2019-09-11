@@ -171,3 +171,27 @@ hash VNLIST_STATUS =>
     2 => 'Finished',
     3 => 'Stalled',
     4 => 'Dropped';
+
+
+
+# SQL: ENUM blood_type
+hash BLOOD_TYPE =>
+    unknown => 'Unknown',
+    o       => 'O',
+    a       => 'A',
+    b       => 'B',
+    ab      => 'AB';
+
+# SQL: ENUM blood_type
+hash GENDER =>
+    unknown => 'Unknown or N/A',
+    m       => 'Male',
+    f       => 'Female',
+    b       => 'Both';
+
+# SQL: ENUM char_role
+hash CHAR_ROLE =>
+    main    => { txt => 'Protagonist',         plural => 'Protagonists'       },
+    primary => { txt => 'Main character',      plural => 'Main characters'    },
+    side    => { txt => 'Side character',      plural => 'Side characters'    },
+    appears => { txt => 'Makes an appearance', plural => 'Make an appearance' };

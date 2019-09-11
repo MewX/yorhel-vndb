@@ -343,7 +343,7 @@ sub CharacterList {
         A mkclass('character-browser__char' => 1, 'character-browser__char--active' => $_->{id} == $first_char),
             href => "/c$_->{id}", title => $_->{original}||$_->{name}, 'data-character' => $_->{id}, $_->{name}
             for @{$roles->{$_}};
-    } for grep @{$roles->{$_}}, char_roles;
+    } for grep @{$roles->{$_}}, keys %CHAR_ROLE;
 }
 
 
@@ -464,9 +464,9 @@ sub Characters {
     my %roles = map {
         my $r = $_;
         ($r, [ grep grep($_->{role} eq $r, @{$_->{releases}}) && !$done{$_->{id}}++, @$chars ]);
-    } char_roles;
+    } keys %CHAR_ROLE;
 
-    my($first_char) = map @{$roles{$_}} ? $roles{$_}[0]{id} : (), char_roles;
+    my($first_char) = map @{$roles{$_}} ? $roles{$_}[0]{id} : (), keys %CHAR_ROLE;
 
     Div class => 'section', id => 'characters', sub {
         H2 class => 'section__title', sub { Txt 'Characters'; Debug \%roles };

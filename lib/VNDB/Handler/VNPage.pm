@@ -976,15 +976,15 @@ sub _chars {
   return if !@$l;
   my %done;
   my %rol;
-  for my $r (keys %{$self->{char_roles}}) {
+  for my $r (keys %CHAR_ROLE) {
     $rol{$r} = [ grep grep($_->{role} eq $r, @{$_->{vns}}) && !$done{$_->{id}}++, @$l ];
   }
   div class => 'charops', id => 'charops';
    $self->charOps(1, 'chars');
-   for my $r (keys %{$self->{char_roles}}) {
+   for my $r (keys %CHAR_ROLE) {
      next if !@{$rol{$r}};
      div class => 'mainbox';
-      h1 $self->{char_roles}{$r}[ @{$rol{$r}} > 1 ? 1 : 0 ];
+      h1 $CHAR_ROLE{$r}{ @{$rol{$r}} > 1 ? 'plural' : 'txt' };
       $self->charTable($_, 1, $_ != $rol{$r}[0], 1, _charspoillvl $v->{id}, $_) for (@{$rol{$r}});
      end;
    }
@@ -997,7 +997,7 @@ sub _charsum {
   return if !@$l;
 
   my(@l, %done, $has_spoilers);
-  for my $r (keys %{$self->{char_roles}}) {
+  for my $r (keys %CHAR_ROLE) {
     last if $r eq 'appears';
     for (grep grep($_->{role} eq $r, @{$_->{vns}}) && !$done{$_->{id}}++, @$l) {
       $_->{role} = $r;
@@ -1013,8 +1013,8 @@ sub _charsum {
     for my $c (@l) {
       div class => 'charsum_bubble'.($has_spoilers ? ' '.charspoil(_charspoillvl $v->{id}, $c) : '');
        div class => 'name';
-        i $self->{char_roles}{$c->{role}}[0];
-        cssicon "gen $c->{gender}", $self->{genders}{$c->{gender}} if $c->{gender} ne 'unknown';
+        i $CHAR_ROLE{$c->{role}}{txt};
+        cssicon "gen $c->{gender}", $GENDER{$c->{gender}} if $c->{gender} ne 'unknown';
         a href => "/c$c->{id}", title => $c->{original}||$c->{name}, $c->{name};
        end;
        if(@{$c->{seiyuu}}) {

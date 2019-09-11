@@ -20,7 +20,7 @@ our @EXPORT = qw/
     %PRODUCER_TYPES
     ReleaseDate
     @VN_LENGTHS vn_length_time vn_length_display
-    %CHAR_ROLES char_roles char_role_display
+    char_roles char_role_display
     vote_display vote_string
     date_display
     vn_relation_reverse vn_relation_display
@@ -31,8 +31,8 @@ our @EXPORT = qw/
     %RESOLUTIONS resolution_display_full
     @VOICED
     @ANIMATED
-    %GENDERS gender_display gender_icon
-    %BLOOD_TYPES blood_type_display
+    gender_display gender_icon
+    blood_type_display
 /;
 
 
@@ -137,18 +137,9 @@ sub vn_length_display {
 
 
 
-our %CHAR_ROLES;
-tie %CHAR_ROLES, 'Tie::IxHash',
-    main    => [ 'Protagonist',         'Protagonists'       ],
-    primary => [ 'Main character',      'Main characters'    ],
-    side    => [ 'Side character',      'Side characters'    ],
-    appears => [ 'Makes an appearance', 'Make an appearance' ];
-
-sub char_roles { keys %CHAR_ROLES }
-
 sub char_role_display {
     my($role, $num) = @_;
-    $CHAR_ROLES{$role}[!$num || $num == 1 ? 0 : 1];
+    $CHAR_ROLE{$role}{!$num || $num == 1 ? 'txt' : 'plural'};
 }
 
 
@@ -252,22 +243,12 @@ our @ANIMATED = ('Unknown', 'No animations', 'Simple animations', 'Some fully an
 
 
 
-our %GENDERS;
-tie %GENDERS, 'Tie::IxHash',
-    unknown => [ 'Unknown', '' ],
-    m       => [ 'Male', '♂' ],
-    f       => [ 'Female', '♀' ],
-    mf      => [ 'Both', '♂♀' ];
-
-sub gender_display { $GENDERS{$_[0]}[0] }
-sub gender_icon { $GENDERS{$_[0]}[1] }
+sub gender_display { $GENDER{$_[0]} }
+sub gender_icon { +{qw/m ♂ f ♀ mf ♂♀/}->{$_[0]}||'' }
 
 
 
-our %BLOOD_TYPES;
-tie %BLOOD_TYPES, 'Tie::IxHash', qw/unknown Unknown o O a A b B ab AB/;
-
-sub blood_type_display { $BLOOD_TYPES{$_[0]} }
+sub blood_type_display { $BLOOD_TYPE{$_[0]} }
 
 
 1;
