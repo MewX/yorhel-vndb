@@ -119,7 +119,7 @@ sub homepage {
      my $posts = $self->dbThreadGet(what => 'lastpost boardtitles', results => 10, sort => 'lastpost', reverse => 1, notusers => 1);
      ul;
       for (@$posts) {
-        my $boards = join ', ', map $self->{discussion_boards}{$_->{type}}.($_->{iid}?' > '.$_->{title}:''), @{$_->{boards}};
+        my $boards = join ', ', map $BOARD_TYPE{$_->{type}}{txt}.($_->{iid}?' > '.$_->{title}:''), @{$_->{boards}};
         li;
          txt fmtage($_->{ldate}).' ';
          a href => "/t$_->{id}.$_->{count}", title => "Posted in $boards", shorten $_->{title}, 25;

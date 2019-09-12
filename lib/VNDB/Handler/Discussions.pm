@@ -6,6 +6,7 @@ use warnings;
 use TUWF ':html', 'xml_escape', 'uri_escape';
 use POSIX 'ceil';
 use VNDB::Func;
+use VNDB::Types;
 use List::Util qw(first max);
 
 
@@ -51,7 +52,7 @@ sub thread {
    ul;
     for (sort { $a->{type}.$a->{iid} cmp $b->{type}.$b->{iid} } @{$t->{boards}}) {
       li;
-       a href => "/t/$_->{type}", $self->{discussion_boards}{$_->{type}};
+       a href => "/t/$_->{type}", $BOARD_TYPE{$_->{type}}{txt};
        if($_->{iid}) {
          txt ' > ';
          a style => 'font-weight: bold', href => "/t/$_->{type}$_->{iid}", "$_->{type}$_->{iid}";
@@ -215,14 +216,14 @@ sub edit {
       for (split /[ ,]/, $frm->{boards}) {
         my($ty, $id) = ($1, $2) if /^([a-z]{1,2})([0-9]*)$/;
         push @boards, [ $ty, $id ] if !grep $_->[0].$_->[1] eq $ty.$id, @boards;
+        my $bt = $BOARD_TYPE{$ty};
         push @{$frm->{_err}}, "Wrong board: $_" if
-             !$ty || !$self->{discussion_boards}{$ty}
-          || $ty eq 'an' && ($id || !$self->authCan('boardmod'))
-          || $ty eq 'db' && $id
-          || $ty eq 'ge' && $id
-          || $ty eq 'v'  && (!$id || !$self->dbVNGet(id => $id)->[0]{id})
-          || $ty eq 'p'  && (!$id || !$self->dbProducerGet(id => $id)->[0]{id})
-          || $ty eq 'u'  && (!$id || !$self->dbUserGet(uid => $id)->[0]{id});
+             !$ty || !$bt
+          || !$self->authCan($bt->{post_perm})
+          || !$bt->{dbitem} && $id || $bt->{dbitem} && !$id
+          || $ty eq 'v' && !$self->dbVNGet(id => $id)->[0]{id}
+          || $ty eq 'p' && !$self->dbProducerGet(id => $id)->[0]{id}
+          || $ty eq 'u' && !$self->dbUserGet(uid => $id)->[0]{id};
       }
     }
 
@@ -380,7 +381,7 @@ sub vote {
 sub board {
   my($self, $type, $iid) = @_;
   $iid ||= '';
-  return $self->resNotFound if $type =~ /(db|an|ge|all)/ && $iid;
+  return $self->resNotFound if ($type eq 'all' || !$BOARD_TYPE{$type}{dbitem}) && $iid;
 
   my $f = $self->formValidate(
     { get => 'p', required => 0, default => 1, template => 'page' },
@@ -393,7 +394,7 @@ sub board {
                    $self->dbVNGet(id => $iid)->[0];
   return $self->resNotFound if $iid && !$obj;
   my $ititle = $obj && ($obj->{title}||$obj->{name}||$obj->{username});
-  my $title = !$obj ? $self->{discussion_boards}{$type} || 'All boards' : "Related discussions for $ititle";
+  my $title = $obj ? "Related discussions for $ititle" : $type eq 'all' ? 'All boards' : $BOARD_TYPE{$type}{txt};
 
   my($list, $np) = $self->dbThreadGet(
     $type ne 'all' ? (type => $type) : (),
@@ -414,7 +415,7 @@ sub board {
     p;
      a href => '/t', 'Discussion board';
      txt ' > ';
-     a href => "/t/$type", $self->{discussion_boards}{$type}||'All boards';
+     a href => "/t/$type", $type eq 'all' ? 'All boards' : $BOARD_TYPE{$type}{txt};
      if($iid) {
        txt ' > ';
        a style => 'font-weight: bold', href => "/t/$type$iid", "$type$iid";
@@ -434,8 +435,8 @@ sub board {
        b 'No related threads found';
        br; br;
        a href => "/t/$type$iid/new", 'Why not create one yourself?';
-     } else {
-       a href => '/t/'.($iid ? $type.$iid : $type ne 'ge' ? 'db' : $type).'/new', 'Start a new thread' if $type ne 'all';
+     } elsif($type ne 'all' && $self->authCan($BOARD_TYPE{$type}{post_perm})) {
+       a href => '/t/'.($iid ? $type.$iid : $type).'/new', 'Start a new thread';
      }
     end;
    end 'div';
@@ -460,23 +461,22 @@ sub index {
     end 'fieldset';
     p class => 'browseopts';
      a href => '/t/all', 'All boards';
-     a href => '/t/'.$_, $self->{discussion_boards}{$_}
-       for (keys %{$self->{discussion_boards}});
+     a href => '/t/'.$_, $BOARD_TYPE{$_}{txt} for (keys %BOARD_TYPE);
     end;
    end;
   end;
 
-  for (keys %{$self->{discussion_boards}}) {
+  for (keys %BOARD_TYPE) {
     my $list = $self->dbThreadGet(
       type => $_,
-      results => /^(db|v|ge)$/ ? 10 : 5,
+      results => $BOARD_TYPE{$_}{index_rows},
       page => 1,
       what => 'firstpost lastpost boardtitles',
       sort => 'lastpost', reverse => 1,
       asuser => $self->authInfo()->{id},
     );
     h1 class => 'boxtitle';
-     a href => "/t/$_", $self->{discussion_boards}{$_};
+     a href => "/t/$_", $BOARD_TYPE{$_}{txt};
     end;
     _threadlist($self, $list, {p=>1}, 0, "/t", $_);
   }
@@ -490,7 +490,7 @@ sub search {
 
   my $frm = $self->formValidate(
     { get => 'bq', required => 0, maxlength => 100 },
-    { get => 'b',  required => 0, multi => 1, enum => [ keys %{$self->{discussion_boards}} ] },
+    { get => 'b',  required => 0, multi => 1, enum => [ keys %BOARD_TYPE ] },
     { get => 't',  required => 0 },
     { get => 'p',  required => 0, default => 1, template => 'page' },
   );
@@ -500,8 +500,8 @@ sub search {
   $self->htmlForm({ frm => $frm, action => '/t/search', method => 'get', nosubmit => 1, noformcode => 1 }, 'boardsearch' => ['Search the discussion board',
     [ input  => short => 'bq', name => 'Query' ],
     [ check  => short => 't',  name => 'Only search thread titles' ],
-    [ select => short => 'b',  name => 'Boards', multi => 1, size => scalar keys %{$self->{discussion_boards}},
-      options => [ map [$_,$self->{discussion_boards}{$_}], keys %{$self->{discussion_boards}} ] ],
+    [ select => short => 'b',  name => 'Boards', multi => 1, size => scalar keys %BOARD_TYPE,
+      options => [ map [$_,$BOARD_TYPE{$_}{txt}], keys %BOARD_TYPE ] ],
     [ static => content => sub {
       input type => 'submit', class => 'submit', tabindex => 10, value => 'Search!';
     } ],
@@ -509,7 +509,7 @@ sub search {
   return $self->htmlFooter if !$frm->{bq};
 
   my %boards = map +($_,1), @{$frm->{b}};
-  %boards = () if keys %boards == keys %{$self->{discussion_boards}};
+  %boards = () if keys %boards == keys %BOARD_TYPE;
 
   my($l, $np);
   if($frm->{t}) {
@@ -625,8 +625,8 @@ sub _threadlist {
            last if $i++ > 4;
            txt ', ' if $i > 2;
            a href => "/t/$_->{type}".($_->{iid}||''),
-             title => $_->{original}||$self->{discussion_boards}{$_->{type}},
-             shorten $_->{title}||$self->{discussion_boards}{$_->{type}}, 30;
+             title => $_->{original}||$BOARD_TYPE{$_->{type}}{txt},
+             shorten $_->{title}||$BOARD_TYPE{$_->{type}}{txt}, 30;
          }
          txt ', ...' if @boards > 4;
         end;

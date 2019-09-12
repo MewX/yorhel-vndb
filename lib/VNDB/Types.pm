@@ -210,6 +210,16 @@ hash VNLIST_STATUS =>
     4 => 'Dropped';
 
 
+# SQL: ENUM board_type
+hash BOARD_TYPE =>
+    an => { txt => 'Announcements',       post_perm => 'boardmod', index_rows =>  5, dbitem => 0 },
+    db => { txt => 'VNDB discussions',    post_perm => 'board',    index_rows => 10, dbitem => 0 },
+    ge => { txt => 'General discussions', post_perm => 'board',    index_rows => 10, dbitem => 0 },
+    v  => { txt => 'Visual novels',       post_perm => 'board',    index_rows => 10, dbitem => 1 },
+    p  => { txt => 'Producers',           post_perm => 'board',    index_rows =>  5, dbitem => 1 },
+    u  => { txt => 'Users',               post_perm => 'board',    index_rows =>  5, dbitem => 1 };
+
+
 
 # SQL: ENUM blood_type
 hash BLOOD_TYPE =>
