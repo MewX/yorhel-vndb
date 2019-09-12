@@ -11,7 +11,7 @@ use VNDBUtil;
 use VNDB::Types;
 use VNDB::BBCode;
 our @EXPORT = (@VNDBUtil::EXPORT, 'bb2html', 'bb2text', qw|
-  clearfloat cssicon tagscore mt minage fil_parse fil_serialize parenttags
+  clearfloat cssicon tagscore minage fil_parse fil_serialize parenttags
   childtags charspoil imgpath imgurl
   fmtvote fmtmedia fmtvnlen fmtage fmtdatestr fmtdate fmtuser fmtrating fmtspoil
   json_encode json_decode script_json
@@ -67,24 +67,10 @@ sub tagscore {
 }
 
 
-# short wrapper around maketext()
-sub mt {
-  return $TUWF::OBJ->{l10n}->maketext(@_);
-}
-
-
 sub minage {
   my($a, $ex) = @_;
-  my $str = $a == -1 ? 'Unknown' : !$a ? 'All ages' : sprintf '%d+', $a;
-  $ex = !defined($a) ? '' : {
-     0 => 'CERO A',
-    12 => 'CERO B',
-    15 => 'CERO C',
-    17 => 'CERO D',
-    18 => 'CERO Z',
-  }->{$a} if $ex;
-  return $str if !$ex;
-  return "$str (e.g. $ex)";
+  $a = $AGE_RATING{$a};
+  $ex && $a->{ex} ? "$a->{txt} (e.g. $a->{ex})" : $a->{txt}
 }
 
 

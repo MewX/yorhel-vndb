@@ -697,7 +697,7 @@ my %GET_RELEASE = (
     doujin   => [ [ bool => 'r.doujin = :value:',   {'=',1} ] ],
     type => [
       [ str   => 'r.type :op: :value:', {qw|= =  != <>|},
-        process => sub { !grep($_ eq $_[0], @{$VNDB::S{release_types}}) ? \'No such release type' : $_[0] } ],
+        process => sub { !$RELEASE_TYPE{$_[0]} ? \'No such release type' : $_[0] } ],
     ],
     gtin => [
       [ 'int' => 'r.gtin :op: :value:', {qw|= =  != <>|}, process => sub { length($_[0]) > 14 ? \'Too long GTIN code' : $_[0] } ],

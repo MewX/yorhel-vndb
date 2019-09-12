@@ -206,6 +206,35 @@ hash VOICED =>
 
 
 
+# TODO: For some reason the minage column in SQL is nullable but still stores 'unknown' as -1.
+# This should be cleaned up at some point.
+hash AGE_RATING =>
+    -1 => { txt => 'Unknown',  ex => '' },
+     0 => { txt => 'All ages', ex => 'CERO A' },
+     6 => { txt => '6+',       ex => '' },
+     7 => { txt => '7+',       ex => '' },
+     8 => { txt => '8+',       ex => '' },
+     9 => { txt => '9+',       ex => '' },
+    10 => { txt => '10+',      ex => '' },
+    11 => { txt => '11+',      ex => '' },
+    12 => { txt => '12+',      ex => 'CERO B' },
+    13 => { txt => '13+',      ex => '' },
+    14 => { txt => '14+',      ex => '' },
+    15 => { txt => '15+',      ex => 'CERO C' },
+    16 => { txt => '16+',      ex => '' },
+    17 => { txt => '17+',      ex => 'CERO D' },
+    18 => { txt => '18+',      ex => 'CERO Z' };
+
+
+
+# SQL: ENUM release_type
+hash RELEASE_TYPE =>
+    complete => 'Complete',
+    partial  => 'Partial',
+    trial    => 'Trial';
+
+
+
 hash WISHLIST_STATUS =>
     0 => 'High',
     1 => 'Medium',

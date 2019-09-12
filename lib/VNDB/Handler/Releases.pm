@@ -146,7 +146,7 @@ sub _infotable {
     td 'Type';
     td;
      cssicon "rt$r->{type}", $r->{type};
-     txt sprintf ' %s%s', ucfirst($r->{type}), $r->{patch} ? ', patch' : '';
+     txt sprintf ' %s%s', $RELEASE_TYPE{$r->{type}}, $r->{patch} ? ', patch' : '';
     end;
    end;
 
@@ -352,7 +352,7 @@ sub edit {
     return if !$self->authCheckCode;
     my $dmm_re = qr{(?:https?://)?(?:www|dlsoft)\.dmm\.(?:com|co\.jp)/[^\s]+};
     $frm = $self->formValidate(
-      { post => 'type',      enum => $self->{release_types} },
+      { post => 'type',      enum => [ keys %RELEASE_TYPE ] },
       { post => 'patch',     required => 0, default => 0 },
       { post => 'freeware',  required => 0, default => 0 },
       { post => 'doujin',    required => 0, default => 0 },
@@ -381,7 +381,7 @@ sub edit {
       { post => 'l_egs',     required => 0, default => 0, template => 'uint' },
       { post => 'l_erotrail',required => 0, default => 0, template => 'uint' },
       { post => 'released',  required => 0, default => 0, template => 'rdate' },
-      { post => 'minage' ,   required => 0, default => -1, enum => $self->{age_ratings} },
+      { post => 'minage' ,   required => 0, default => -1, enum => [ keys %AGE_RATING ] },
       { post => 'notes',     required => 0, default => '', maxlength => 10240 },
       { post => 'platforms', required => 0, default => '', multi => 1, enum => [ keys %PLATFORM ] },
       { post => 'media',     required => 0, default => '' },
@@ -479,7 +479,7 @@ sub _form {
   $self->htmlForm({ frm => $frm, action => $r ? "/r$r->{id}/".($copy ? 'copy' : 'edit') : "/v$v->{id}/add", editsum => 1 },
   rel_geninfo => [ 'General info',
     [ select => short => 'type',      name => 'Type',
-      options => [ map [ $_, ucfirst $_ ], @{$self->{release_types}} ] ],
+      options => [ map [ $_, $RELEASE_TYPE{$_} ], keys %RELEASE_TYPE ] ],
     [ check  => short => 'patch',     name => 'This release is a patch to another release.' ],
     [ check  => short => 'freeware',  name => 'Freeware (i.e. available at no cost)' ],
     [ check  => short => 'doujin',    name => 'Doujin (self-published, not by a company)' ],
@@ -494,7 +494,7 @@ sub _form {
     [ date   => short => 'released',  name => 'Release date' ],
     [ static => content => 'Leave month or day blank if they are unknown' ],
     [ select => short => 'minage', name => 'Age rating',
-      options => [ map [ $_, minage $_, 1 ], @{$self->{age_ratings}} ] ],
+      options => [ map [ $_, minage $_, 1 ], keys %AGE_RATING ] ],
     [ check  => short => 'uncensored',name => 'No mosaic or other optical censoring (only check if this release has erotic content)' ],
 
     [ static => nolabel => 1, content => '<br><b>Links</b>' ],
@@ -716,17 +716,17 @@ sub _fil_compat {
     { get => 'ln', required => 0, multi => 1, default => '', enum => [ keys %LANGUAGE ] },
     { get => 'pl', required => 0, multi => 1, default => '', enum => [ keys %PLATFORM ] },
     { get => 'me', required => 0, multi => 1, default => '', enum => [ keys %{$self->{media}} ] },
-    { get => 'tp', required => 0, default => '', enum => [ '', @{$self->{release_types}} ] },
+    { get => 'tp', required => 0, default => '', enum => [ '', keys %RELEASE_TYPE ] },
     { get => 'pa', required => 0, default => 0, enum => [ 0..2 ] },
     { get => 'fw', required => 0, default => 0, enum => [ 0..2 ] },
     { get => 'do', required => 0, default => 0, enum => [ 0..2 ] },
     { get => 'ma_m', required => 0, default => 0, enum => [ 0, 1 ] },
-    { get => 'ma_a', required => 0, default => 0, enum => $self->{age_ratings} },
+    { get => 'ma_a', required => 0, default => 0, enum => [ keys %AGE_RATING ] },
     { get => 'mi', required => 0, default => 0, template => 'uint' },
     { get => 'ma', required => 0, default => 99999999, template => 'uint' },
   );
   return () if $f->{_err};
-  $c{minage} = [ grep $_ >= 0 && ($f->{ma_m} ? $f->{ma_a} >= $_ : $f->{ma_a} <= $_), @{$self->{age_ratings}} ] if $f->{ma_a} || $f->{ma_m};
+  $c{minage} = [ grep $_ >= 0 && ($f->{ma_m} ? $f->{ma_a} >= $_ : $f->{ma_a} <= $_), keys %AGE_RATING ] if $f->{ma_a} || $f->{ma_m};
   $c{date_after} = $f->{mi}  if $f->{mi};
   $c{date_before} = $f->{ma} if $f->{ma} < 99990000;
   $c{plat} = $f->{pl}        if $f->{pl}[0];

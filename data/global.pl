@@ -49,8 +49,6 @@ our %S;
   default_perm    => 1+4+16, # Keep synchronised with the default value of users.perm
   default_tags_cat=> 'cont,tech',
   board_edit_time => 7*24*3600,
-  age_ratings     => [-1, 0, 6..18],
-  release_types   => [qw|complete partial trial|],
   media           => ordhash(
    #DB     qty  txt                      plural (if qty)           icon
     cd  => [ 1, 'CD',                    'CDs',                    'disk'     ],

@@ -26,7 +26,7 @@ our @EXPORT = qw/
     producer_relation_reverse producer_relation_display
     spoil_display
     release_types
-    @MINAGE minage_display minage_display_full
+    minage_display minage_display_full
     %RESOLUTIONS resolution_display_full
     gender_display gender_icon
     blood_type_display
@@ -182,22 +182,8 @@ my @RELEASE_TYPES = qw/complete partial trial/;
 sub release_types { @RELEASE_TYPES }
 
 
-
-# XXX: Apparently, unknown is stored in the DB as -1 rather than NULL, even
-# though the column is marked as nullable; probably needs some fixing for
-# consistency.
-our @MINAGE = (0, 6..18);
-my %MINAGE_EX = (
-     0 => 'CERO A',
-    12 => 'CERO B',
-    15 => 'CERO C',
-    17 => 'CERO D',
-    18 => 'CERO Z',
-);
-
-sub minage_display { !defined $_[0] || $_[0] < 0 ? 'Unknown' : !$_[0] ? 'All ages' : sprintf '%d+', $_[0] }
-
-sub minage_display_full { my $e = $MINAGE_EX{$_[0]||''}; minage_display($_[0]).($e ? " (e.g. $e)" : '') };
+sub minage_display { $AGE_RATING{$_[0]}{txt} }
+sub minage_display_full { my $e = $AGE_RATING{$_[0]}; $e->{txt}.($e->{ex} ? " (e.g. $e->{ex})" : '') };
 
 
 

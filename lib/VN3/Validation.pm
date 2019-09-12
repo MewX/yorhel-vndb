@@ -35,7 +35,7 @@ TUWF::set custom_validations => {
     gender      => { enum => \%GENDER },
     blood_type  => { enum => \%BLOOD_TYPE },
     gtin        => { uint => 1, func => sub { $_[0] eq 0 || gtintype($_[0]) } },
-    minage      => { uint => 1, enum => \@MINAGE },
+    minage      => { uint => 1, enum => \%AGE_RATING },
     animated    => { uint => 1, enum => \%ANIMATED },
     voiced      => { uint => 1, enum => \%VOICED },
     rdate       => { uint => 1, func => \&_validate_rdate },

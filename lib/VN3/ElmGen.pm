@@ -174,7 +174,7 @@ def languages         => 'List (String, String)' => list map tuple(string $_, st
 def platforms         => 'List (String, String)' => list map tuple(string $_, string $PLATFORM{$_}), keys %PLATFORM;
 def releaseTypes      => 'List String'           => list map string($_), release_types;
 def producerTypes     => 'List (String, String)' => list map tuple(string $_, string $PRODUCER_TYPE{$_}), keys %PRODUCER_TYPE;
-def minAges           => 'List (Int, String)'    => list map tuple($_, string minage_display_full $_), @MINAGE;
+def minAges           => 'List (Int, String)'    => list map tuple($_, string minage_display_full $_), keys %AGE_RATING;
 def resolutions       => 'List (String, String)' => list map tuple(string $_, string resolution_display_full $_), keys %RESOLUTIONS;
 def voiced            => 'List (Int, String)'    => list map tuple($_, string($VOICED{$_})), keys %VOICED;
 def animated          => 'List (Int, String)'    => list map tuple($_, string($ANIMATED{$_})), keys %ANIMATED;
