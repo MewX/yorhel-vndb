@@ -232,7 +232,7 @@ sub gv_prodnode {
         q|<TR><TD ALIGN="CENTER"> %s </TD><TD ALIGN="CENTER"> %s </TD></TR>|.
       qq|</TABLE>> ]\n|,
     $n->{id}, encode_utf8($tooltip), $O{fsize}[2], encode_utf8($name),
-      $LANGUAGE{$n->{lang}}, $VNDB::S{producer_types}{$n->{type}};
+      $LANGUAGE{$n->{lang}}, $PRODUCER_TYPE{$n->{type}};
 }
 
 

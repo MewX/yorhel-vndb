@@ -40,7 +40,7 @@ sub DetailsTable {
 
         sub {
             Dt 'Type';
-            Dd $PRODUCER_TYPES{$e->{type}};
+            Dd $PRODUCER_TYPE{$e->{type}};
         },
 
         sub {

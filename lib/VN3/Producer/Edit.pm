@@ -12,7 +12,7 @@ my $FORM = {
     locked      => { anybool => 1 },
     original    => { required => 0, default => '', maxlength => 200 },
     name        => { maxlength => 200 },
-    ptype       => { enum => \%PRODUCER_TYPES }, # This is 'type' in the database, but renamed for Elm compat
+    ptype       => { enum => \%PRODUCER_TYPE }, # This is 'type' in the database, but renamed for Elm compat
     relations   => { maxlength => 50, sort_keys => 'pid', aoh => {
         pid       => { id => 1 }, # X
         relation  => { producer_relation => 1 },

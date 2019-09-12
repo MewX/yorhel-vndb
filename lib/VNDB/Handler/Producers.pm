@@ -63,7 +63,7 @@ sub page {
   if($rev) {
     my $prev = $rev && $rev > 1 && $self->dbProducerGetRev(id => $pid, rev => $rev-1, what => 'extended relations')->[0];
     $self->htmlRevision('p', $prev, $p,
-      [ type      => 'Type',          serialize => sub { $self->{producer_types}{$_[0]} } ],
+      [ type      => 'Type',          serialize => sub { $PRODUCER_TYPE{$_[0]} } ],
       [ name      => 'Name (romaji)', diff => 1 ],
       [ original  => 'Original name', diff => 1 ],
       [ alias     => 'Aliases',       diff => qr/[ ,\n\.]/ ],
@@ -88,7 +88,7 @@ sub page {
    h1 $p->{name};
    h2 class => 'alttitle', $p->{original} if $p->{original};
    p class => 'center';
-    txt "$LANGUAGE{$p->{lang}} $self->{producer_types}{$p->{type}}";
+    txt "$LANGUAGE{$p->{lang}} $PRODUCER_TYPE{$p->{type}}";
     if($p->{alias}) {
       (my $alias = $p->{alias}) =~ s/\n/, /g;
       br;
@@ -281,7 +281,7 @@ sub edit {
   if($self->reqMethod eq 'POST') {
     return if !$nosubmit && !$self->authCheckCode;
     $frm = $self->formValidate(
-      { post => 'type',          required  => !$nosubmit, enum => [ keys %{$self->{producer_types}} ] },
+      { post => 'type',          required  => !$nosubmit, enum => [ keys %PRODUCER_TYPE ] },
       { post => 'name',          maxlength => 200 },
       { post => 'original',      required  => 0, maxlength => 200,  default => '' },
       { post => 'alias',         required  => 0, maxlength => 500,  default => '' },
@@ -334,7 +334,7 @@ sub edit {
   $self->htmlForm({ frm => $frm, action => $pid ? "/p$pid/edit" : '/p/new', editsum => 1 },
   'pedit_geninfo' => [ 'General info',
     [ select => name => 'Type', short => 'type',
-      options => [ map [ $_, $self->{producer_types}{$_} ], keys %{$self->{producer_types}} ] ],
+      options => [ map [ $_, $PRODUCER_TYPE{$_} ], keys %PRODUCER_TYPE ] ],
     [ input  => name => 'Name (romaji)', short => 'name' ],
     [ input  => name => 'Original name', short => 'original' ],
     [ static => content => 'The original name of the producer, leave blank if it is already in the Latin alphabet.' ],

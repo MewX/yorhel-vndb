@@ -777,7 +777,7 @@ my %GET_PRODUCER = (
     ],
     type => [
       [ str   => 'p.type :op: :value:', {qw|= =  != <>|},
-        process => sub { !$VNDB::S{producer_types}{$_[0]} ? \'No such producer type' : $_[0] } ],
+        process => sub { !$PRODUCER_TYPE{$_[0]} ? \'No such producer type' : $_[0] } ],
     ],
     language => [
       [ str   => 'p.lang :op: :value:', {qw|= =  != <>|}, process => \'lang' ],

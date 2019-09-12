@@ -138,6 +138,14 @@ hash PRODUCER_RELATION =>
 
 
 
+# SQL: ENUM producer_type
+hash PRODUCER_TYPE =>
+    co => 'Company',
+    in => 'Individual',
+    ng => 'Amateur group';
+
+
+
 # SQL: ENUM credit_type
 hash CREDIT_TYPE =>
     scenario   => 'Scenario',

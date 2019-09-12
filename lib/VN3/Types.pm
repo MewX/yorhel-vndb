@@ -17,7 +17,6 @@ our @EXPORT = qw/
     Lang
     Platform
     %MEDIA media_display
-    %PRODUCER_TYPES
     ReleaseDate
     @VN_LENGTHS vn_length_time vn_length_display
     char_roles char_role_display
@@ -89,13 +88,6 @@ sub media_display {
     sprintf '%d %s', $qty, $qty == 1 ? $med->{single} : $med->{plural};
 }
 
-
-
-our %PRODUCER_TYPES;
-tie %PRODUCER_TYPES, 'Tie::IxHash',
-    co => 'Company',
-    in => 'Individual',
-    ng => 'Amateur group';
 
 
 

@@ -173,7 +173,7 @@ def creditType        => 'List (String, String)' => list map tuple(string $_, st
 def languages         => 'List (String, String)' => list map tuple(string $_, string $LANGUAGE{$_}), sort { $LANGUAGE{$a} cmp $LANGUAGE{$b} } keys %LANGUAGE;
 def platforms         => 'List (String, String)' => list map tuple(string $_, string $PLATFORM{$_}), keys %PLATFORM;
 def releaseTypes      => 'List String'           => list map string($_), release_types;
-def producerTypes     => 'List (String, String)' => list map tuple(string $_, string $PRODUCER_TYPES{$_}), keys %PRODUCER_TYPES;
+def producerTypes     => 'List (String, String)' => list map tuple(string $_, string $PRODUCER_TYPE{$_}), keys %PRODUCER_TYPE;
 def minAges           => 'List (Int, String)'    => list map tuple($_, string minage_display_full $_), @MINAGE;
 def resolutions       => 'List (String, String)' => list map tuple(string $_, string resolution_display_full $_), keys %RESOLUTIONS;
 def voiced            => 'List String'           => list map string($_), @VOICED;
