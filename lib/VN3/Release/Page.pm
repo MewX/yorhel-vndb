@@ -89,17 +89,17 @@ sub DetailsTable {
 
         $e->{voiced} ? sub {
             Dt 'Voiced';
-            Dd $VOICED[$e->{voiced}];
+            Dd $VOICED{$e->{voiced}}{txt};
         } : (),
 
         $e->{ani_story} ? sub {
             Dt 'Story animation';
-            Dd $ANIMATED[$e->{ani_story}];
+            Dd $ANIMATED{$e->{ani_story}}{txt};
         } : (),
 
         $e->{ani_ero} ? sub {
             Dt 'Ero animation';
-            Dd $ANIMATED[$e->{ani_ero}];
+            Dd $ANIMATED{$e->{ani_ero}}{txt};
         } : (),
 
         $e->{minage} && $e->{minage} == 18 ? sub {

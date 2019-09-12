@@ -28,8 +28,6 @@ our @EXPORT = qw/
     release_types
     @MINAGE minage_display minage_display_full
     %RESOLUTIONS resolution_display_full
-    @VOICED
-    @ANIMATED
     gender_display gender_icon
     blood_type_display
 /;
@@ -226,13 +224,6 @@ tie %RESOLUTIONS, 'Tie::IxHash',
     '1920x1080' => [ '1920x1080',    'widescreen' ];
 
 sub resolution_display_full { my $e = $RESOLUTIONS{$_[0]}; ($e->[1] ? ucfirst "$e->[1]: " : '').$e->[0] }
-
-
-
-our @VOICED = ('Unknown', 'Not voiced', 'Only ero scenes voiced', 'Partially voiced', 'Fully voiced');
-
-our @ANIMATED = ('Unknown', 'No animations', 'Simple animations', 'Some fully animated scenes', 'All scenes fully animated');
-
 
 
 sub gender_display { $GENDER{$_[0]} }

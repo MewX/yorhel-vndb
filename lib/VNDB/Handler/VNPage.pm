@@ -139,7 +139,7 @@ my @rel_cols = (
     default       => 1,
     what          => 'extended',
     has_data      => sub { !!$_[0]{voiced} },
-    draw          => sub { txt $TUWF::OBJ->{voiced}[$_[0]{voiced}] },
+    draw          => sub { txt $VOICED{$_[0]{voiced}}{txt} },
   }, { # Animation
     id            => 'ani',
     sort_field    => 'ani_ero',
@@ -151,8 +151,8 @@ my @rel_cols = (
     has_data      => sub { !!($_[0]{ani_story} || $_[0]{ani_ero}) },
     draw          => sub {
       txt join ', ',
-        $_[0]{ani_story} ? "Story: $TUWF::OBJ->{animated}[$_[0]{ani_story}]"   :(),
-        $_[0]{ani_ero}   ? "Ero scenes: $TUWF::OBJ->{animated}[$_[0]{ani_ero}]":();
+        $_[0]{ani_story} ? "Story: $ANIMATED{$_[0]{ani_story}}{txt}"   :(),
+        $_[0]{ani_ero}   ? "Ero scenes: $ANIMATED{$_[0]{ani_ero}}{txt}":();
       txt 'Unknown' if !$_[0]{ani_story} && !$_[0]{ani_ero};
     },
   }, { # Released
@@ -863,14 +863,14 @@ sub _release_icons {
 
   # Voice column
   my $voice = $rel->{voiced};
-  _release_icon $self->{icons_voiced}[$voice], $self->{voiced}[$voice], 'voiced' if $voice;
+  _release_icon $VOICED{$voice}{icon}, $VOICED{$voice}{txt}, 'voiced' if $voice;
 
   # Animations columns
   my $story_anim = $rel->{ani_story};
-  _release_icon $self->{icons_story_animated}[$story_anim], "Story: $self->{animated}[$story_anim]", 'story_animated' if $story_anim;
+  _release_icon $ANIMATED{$story_anim}{story_icon}, "Story: $ANIMATED{$story_anim}{txt}", 'story_animated' if $story_anim;
 
   my $ero_anim = $rel->{ani_ero};
-  _release_icon $self->{icons_ero_animated}[$ero_anim], "Ero: $self->{animated}[$ero_anim]", 'ero_animated' if $ero_anim;
+  _release_icon $ANIMATED{$ero_anim}{ero_icon}, "Ero: $ANIMATED{$ero_anim}{txt}", 'ero_animated' if $ero_anim;
 
   # Cost column
   _release_icon 'freeware', 'Freeware', 'free' if $rel->{freeware};

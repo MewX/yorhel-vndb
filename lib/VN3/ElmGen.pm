@@ -176,8 +176,8 @@ def releaseTypes      => 'List String'           => list map string($_), release
 def producerTypes     => 'List (String, String)' => list map tuple(string $_, string $PRODUCER_TYPE{$_}), keys %PRODUCER_TYPE;
 def minAges           => 'List (Int, String)'    => list map tuple($_, string minage_display_full $_), @MINAGE;
 def resolutions       => 'List (String, String)' => list map tuple(string $_, string resolution_display_full $_), keys %RESOLUTIONS;
-def voiced            => 'List String'           => list map string($_), @VOICED;
-def animated          => 'List String'           => list map string($_), @ANIMATED;
+def voiced            => 'List (Int, String)'    => list map tuple($_, string($VOICED{$_})), keys %VOICED;
+def animated          => 'List (Int, String)'    => list map tuple($_, string($ANIMATED{$_})), keys %ANIMATED;
 def genders           => 'List (String, String)' => list map tuple(string $_, string gender_display $_), keys %GENDER;
 def bloodTypes        => 'List (String, String)' => list map tuple(string $_, string blood_type_display $_), keys %BLOOD_TYPE;
 def charRoles         => 'List (String, String)' => list map tuple(string $_, string char_role_display $_), keys %CHAR_ROLE;

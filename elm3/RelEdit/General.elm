@@ -223,13 +223,13 @@ format model = card "format" "Format" [] <|
       , inputSelect [id "resolution", onInput Resolution] model.resolution resolutions
       ]
     , [ label [for "voiced"] [text "Voiced"]
-      , inputSelect [id "voiced", onInput Voiced] (String.fromInt model.voiced) <| List.indexedMap (\a b -> (String.fromInt a, b)) voiced
+      , inputSelect [id "voiced", onInput Voiced] (String.fromInt model.voiced) <| List.map (\(a,b) -> (String.fromInt a, b)) voiced
       ]
     , [ label [for "ani_story"] [text "Story animation"]
-      , inputSelect [id "ani_story", onInput AniStory] (String.fromInt model.aniStory) <| List.indexedMap (\a b -> (String.fromInt a, b)) animated
+      , inputSelect [id "ani_story", onInput AniStory] (String.fromInt model.aniStory) <| List.map (\(a,b) -> (String.fromInt a, b)) animated
       ]
     , [ label [for "ani_ero"] [text "Ere scene animation"]
-      , inputSelect [id "ani_ero", onInput AniEro] (String.fromInt model.aniEro) <| List.indexedMap (\a b -> (String.fromInt a, if a == 0 then "Unknown / no ero scenes" else b)) animated
+      , inputSelect [id "ani_ero", onInput AniEro] (String.fromInt model.aniEro) <| List.map (\(a,b) -> (String.fromInt a, if a == 0 then "Unknown / no ero scenes" else b)) animated
       ]
     ]
   ]) ++

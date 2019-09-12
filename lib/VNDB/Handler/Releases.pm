@@ -86,9 +86,9 @@ sub page {
       [ platforms  => 'Platforms',       join => ', ', split => sub { map $PLATFORM{$_}, @{$_[0]} } ],
       [ media      => 'Media',           join => ', ', split => sub { map fmtmedia($_->{medium}, $_->{qty}), @{$_[0]} } ],
       [ resolution => 'Resolution',      serialize => sub { $self->{resolutions}{$_[0]}[0]; } ],
-      [ voiced     => 'Voiced',          serialize => sub { $self->{voiced}[$_[0]] } ],
-      [ ani_story  => 'Story animation', serialize => sub { $self->{animated}[$_[0]] } ],
-      [ ani_ero    => 'Ero animation',   serialize => sub { $self->{animated}[$_[0]] } ],
+      [ voiced     => 'Voiced',          serialize => sub { $VOICED{$_[0]}{txt} } ],
+      [ ani_story  => 'Story animation', serialize => sub { $ANIMATED{$_[0]}{txt} } ],
+      [ ani_ero    => 'Ero animation',   serialize => sub { $ANIMATED{$_[0]}{txt} } ],
       [ engine     => 'Engine' ],
       [ producers  => 'Producers',       join => '<br />', split => sub {
         map sprintf('<a href="/p%d" title="%s">%s</a> (%s)', $_->{id}, $_->{original}||$_->{name}, shorten($_->{name}, 50),
@@ -198,7 +198,7 @@ sub _infotable {
    if($r->{voiced}) {
      Tr;
       td 'Voiced';
-      td $self->{voiced}[$r->{voiced}];
+      td $VOICED{$r->{voiced}}{txt};
      end;
    }
 
@@ -206,8 +206,8 @@ sub _infotable {
      Tr;
       td 'Animation';
       td join ', ',
-        $r->{ani_story} ? "Story: $self->{animated}[$r->{ani_story}]" : (),
-        $r->{ani_ero}   ? "Ero scenes: $self->{animated}[$r->{ani_ero}]" : ();
+        $r->{ani_story} ? "Story: $ANIMATED{$r->{ani_story}}{txt}" : (),
+        $r->{ani_ero}   ? "Ero scenes: $ANIMATED{$r->{ani_ero}}{txt}" : ();
      end;
    }
 
@@ -386,9 +386,9 @@ sub edit {
       { post => 'platforms', required => 0, default => '', multi => 1, enum => [ keys %PLATFORM ] },
       { post => 'media',     required => 0, default => '' },
       { post => 'resolution',required => 0, default => 0, enum => [ keys %{$self->{resolutions}} ] },
-      { post => 'voiced',    required => 0, default => 0, enum => [ 0..$#{$self->{voiced}} ] },
-      { post => 'ani_story', required => 0, default => 0, enum => [ 0..$#{$self->{animated}} ] },
-      { post => 'ani_ero',   required => 0, default => 0, enum => [ 0..$#{$self->{animated}} ] },
+      { post => 'voiced',    required => 0, default => 0, enum => [ keys %VOICED ] },
+      { post => 'ani_story', required => 0, default => 0, enum => [ keys %ANIMATED ] },
+      { post => 'ani_ero',   required => 0, default => 0, enum => [ keys %ANIMATED ] },
       { post => 'engine',    required => 0, default => '', maxlength => 50 },
       { post => 'engine_oth',required => 0, default => '', maxlength => 50 },
       { post => 'producers', required => 0, default => '' },
@@ -537,11 +537,11 @@ sub _form {
     } ],
     [ static => content => 'Try to use a name from the <a href="/r/engines">engine list</a>.' ],
     [ select => short => 'voiced',     name => 'Voiced', options => [
-      map [ $_, $self->{voiced}[$_] ], 0..$#{$self->{voiced}} ] ],
+      map [ $_, $VOICED{$_}{txt} ], keys %VOICED ] ],
     [ select => short => 'ani_story',  name => 'Story animation', options => [
-      map [ $_, $self->{animated}[$_] ], 0..$#{$self->{animated}} ] ],
+      map [ $_, $ANIMATED{$_}{txt} ], keys %ANIMATED ] ],
     [ select => short => 'ani_ero',  name => 'Ero animation', options => [
-      map [ $_, $_ ? $self->{animated}[$_] : 'Unknown / no ero scenes' ], 0..$#{$self->{animated}} ] ],
+      map [ $_, $_ ? $ANIMATED{$_}{txt} : 'Unknown / no ero scenes' ], keys %ANIMATED ] ],
     [ static => content => 'Animation in erotic scenes, leave to unknown if there are no ero scenes.' ],
     [ hidden => short => 'media' ],
     [ static => nolabel => 1, content => sub {
