@@ -197,10 +197,10 @@ sub fmtvote {
 # Formats a media string ("1 CD", "2 CDs", "Internet download", etc)
 sub fmtmedia {
   my($med, $qty) = @_;
-  $med = $TUWF::OBJ->{media}{$med};
+  $med = $MEDIUM{$med};
   join ' ',
-    ($med->[0] ? ($qty) : ()),
-    $med->[ $med->[0] && $qty > 1 ? 2 : 1 ];
+    ($med->{qty} ? ($qty) : ()),
+    $med->{ $med->{qty} && $qty > 1 ? 'plural' : 'txt' };
 }
 
 # Formats a VN length (xtra = 1 for time indication, 2 for examples)

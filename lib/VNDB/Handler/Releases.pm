@@ -85,7 +85,7 @@ sub page {
       [ notes      => 'Notes',           diff => qr/[ ,\n\.]/ ],
       [ platforms  => 'Platforms',       join => ', ', split => sub { map $PLATFORM{$_}, @{$_[0]} } ],
       [ media      => 'Media',           join => ', ', split => sub { map fmtmedia($_->{medium}, $_->{qty}), @{$_[0]} } ],
-      [ resolution => 'Resolution',      serialize => sub { $self->{resolutions}{$_[0]}[0]; } ],
+      [ resolution => 'Resolution',      serialize => sub { $RESOLUTION{$_[0]}{txt}; } ],
       [ voiced     => 'Voiced',          serialize => sub { $VOICED{$_[0]}{txt} } ],
       [ ani_story  => 'Story animation', serialize => sub { $ANIMATED{$_[0]}{txt} } ],
       [ ani_ero    => 'Ero animation',   serialize => sub { $ANIMATED{$_[0]}{txt} } ],
@@ -191,7 +191,7 @@ sub _infotable {
    if($r->{resolution} ne 'unknown') {
      Tr;
       td 'Resolution';
-      td $self->{resolutions}{$r->{resolution}}[0];
+      td $RESOLUTION{$r->{resolution}}{txt};
      end;
    }
 
@@ -385,7 +385,7 @@ sub edit {
       { post => 'notes',     required => 0, default => '', maxlength => 10240 },
       { post => 'platforms', required => 0, default => '', multi => 1, enum => [ keys %PLATFORM ] },
       { post => 'media',     required => 0, default => '' },
-      { post => 'resolution',required => 0, default => 0, enum => [ keys %{$self->{resolutions}} ] },
+      { post => 'resolution',required => 0, default => 0, enum => [ keys %RESOLUTION ] },
       { post => 'voiced',    required => 0, default => 0, enum => [ keys %VOICED ] },
       { post => 'ani_story', required => 0, default => 0, enum => [ keys %ANIMATED ] },
       { post => 'ani_ero',   required => 0, default => 0, enum => [ keys %ANIMATED ] },
@@ -525,7 +525,7 @@ sub _form {
 
   rel_format => [ 'Format',
     [ select => short => 'resolution', name => 'Resolution', options => [
-      map [ $_, @{$self->{resolutions}{$_}} ], keys %{$self->{resolutions}} ] ],
+      map [ $_, $RESOLUTION{$_}{txt}, $RESOLUTION{$_}{cat} ], keys %RESOLUTION ] ],
     [ static => label => 'Engine', content => sub {
       my $other = $frm->{engine} && !grep($_ eq $frm->{engine}, @{$self->{engines}});
       Select name => 'engine', id => 'engine', tabindex => 10;
@@ -715,7 +715,7 @@ sub _fil_compat {
   my $f = $self->formValidate(
     { get => 'ln', required => 0, multi => 1, default => '', enum => [ keys %LANGUAGE ] },
     { get => 'pl', required => 0, multi => 1, default => '', enum => [ keys %PLATFORM ] },
-    { get => 'me', required => 0, multi => 1, default => '', enum => [ keys %{$self->{media}} ] },
+    { get => 'me', required => 0, multi => 1, default => '', enum => [ keys %MEDIUM ] },
     { get => 'tp', required => 0, default => '', enum => [ '', keys %RELEASE_TYPE ] },
     { get => 'pa', required => 0, default => 0, enum => [ 0..2 ] },
     { get => 'fw', required => 0, default => 0, enum => [ 0..2 ] },

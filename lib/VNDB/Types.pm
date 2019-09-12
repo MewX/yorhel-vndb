@@ -7,23 +7,10 @@ use Exporter 'import';
 use Tie::IxHash;
 
 our @EXPORT;
-
 sub hash {
     my $name = shift;
     tie $name->%*, 'Tie::IxHash', @_;
     push @EXPORT, "%$name";
-}
-
-sub array {
-    my $name = shift;
-    $name->@* = @_;
-    push @EXPORT, "\@$name";
-}
-
-sub fun($&) {
-    my($name, $code) = @_;
-    *$name = $code;
-    push @EXPORT, $name;
 }
 
 
@@ -227,6 +214,46 @@ hash AGE_RATING =>
 
 
 
+# SQL: ENUM medium
+# The 'unk' medium is used in release filters to mean "unknown".
+hash MEDIUM =>
+    cd  => { qty => 1, txt => 'CD',                    plural => 'CDs',                    icon => 'disk'      },
+    dvd => { qty => 1, txt => 'DVD',                   plural => 'DVDs',                   icon => 'disk'      },
+    gdr => { qty => 1, txt => 'GD-ROM',                plural => 'GD-ROMs',                icon => 'disk'      },
+    blr => { qty => 1, txt => 'Blu-ray disc',          plural => 'Blu-ray discs',          icon => 'disk'      },
+    flp => { qty => 1, txt => 'Floppy',                plural => 'Floppies',               icon => 'cartridge' },
+    mrt => { qty => 1, txt => 'Cartridge',             plural => 'Cartridges',             icon => 'cartridge' },
+    mem => { qty => 1, txt => 'Memory card',           plural => 'Memory cards',           icon => 'cartridge' },
+    umd => { qty => 1, txt => 'UMD',                   plural => 'UMDs',                   icon => 'disk'      },
+    nod => { qty => 1, txt => 'Nintendo Optical Disc', plural => 'Nintendo Optical Discs', icon => 'disk'      },
+    in  => { qty => 0, txt => 'Internet download',     plural => '',                       icon => 'download'  },
+    otc => { qty => 0, txt => 'Other',                 plural => '',                       icon => 'cartridge' };
+
+
+
+# SQL: ENUM resolution
+hash RESOLUTION =>
+    unknown     => { txt => 'Unknown / console / handheld', cat => '' }, # hardcoded in many places
+    nonstandard => { txt => 'Non-standard', cat => ''                 }, # hardcoded in VNPage.pm
+    '640x480'   => { txt => '640x480',      cat => '4:3'              },
+    '800x600'   => { txt => '800x600',      cat => '4:3'              },
+    '1024x768'  => { txt => '1024x768',     cat => '4:3'              },
+    '1280x960'  => { txt => '1280x960',     cat => '4:3'              },
+    '1600x1200' => { txt => '1600x1200',    cat => '4:3'              },
+    '640x400'   => { txt => '640x400',      cat => 'widescreen'       },
+    '960x600'   => { txt => '960x600',      cat => 'widescreen'       },
+    '960x640'   => { txt => '960x640',      cat => 'widescreen'       },
+    '1024x576'  => { txt => '1024x576',     cat => 'widescreen'       },
+    '1024x600'  => { txt => '1024x600',     cat => 'widescreen'       },
+    '1024x640'  => { txt => '1024x640',     cat => 'widescreen'       },
+    '1280x720'  => { txt => '1280x720',     cat => 'widescreen'       },
+    '1280x800'  => { txt => '1280x800',     cat => 'widescreen'       },
+    '1366x768'  => { txt => '1366x768',     cat => 'widescreen'       },
+    '1600x900'  => { txt => '1600x900',     cat => 'widescreen'       },
+    '1920x1080' => { txt => '1920x1080',    cat => 'widescreen'       };
+
+
+
 # SQL: ENUM release_type
 hash RELEASE_TYPE =>
     complete => 'Complete',
@@ -241,6 +268,8 @@ hash WISHLIST_STATUS =>
     2 => 'Low',
     3 => 'Blacklist';
 
+
+
 # 0 = hardcoded "unknown", 2 = hardcoded 'OK'
 hash RLIST_STATUS =>
     0 => 'Unknown',
@@ -249,12 +278,15 @@ hash RLIST_STATUS =>
     3 => 'On loan',
     4 => 'Deleted';
 
+
+
 hash VNLIST_STATUS =>
     0 => 'Unknown',
     1 => 'Playing',
     2 => 'Finished',
     3 => 'Stalled',
     4 => 'Dropped';
+
 
 
 # SQL: ENUM board_type
@@ -276,6 +308,8 @@ hash BLOOD_TYPE =>
     b       => 'B',
     ab      => 'AB';
 
+
+
 # SQL: ENUM gender
 hash GENDER =>
     unknown => 'Unknown or N/A',
@@ -283,9 +317,13 @@ hash GENDER =>
     f       => 'Female',
     b       => 'Both';
 
+
+
 # SQL: ENUM char_role
 hash CHAR_ROLE =>
     main    => { txt => 'Protagonist',         plural => 'Protagonists'       },
     primary => { txt => 'Main character',      plural => 'Main characters'    },
     side    => { txt => 'Side character',      plural => 'Side characters'    },
     appears => { txt => 'Makes an appearance', plural => 'Make an appearance' };
+
+1;

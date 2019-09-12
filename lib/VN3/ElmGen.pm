@@ -175,7 +175,7 @@ def platforms         => 'List (String, String)' => list map tuple(string $_, st
 def releaseTypes      => 'List String'           => list map string($_), release_types;
 def producerTypes     => 'List (String, String)' => list map tuple(string $_, string $PRODUCER_TYPE{$_}), keys %PRODUCER_TYPE;
 def minAges           => 'List (Int, String)'    => list map tuple($_, string minage_display_full $_), keys %AGE_RATING;
-def resolutions       => 'List (String, String)' => list map tuple(string $_, string resolution_display_full $_), keys %RESOLUTIONS;
+def resolutions       => 'List (String, String)' => list map tuple(string $_, string resolution_display_full $_), keys %RESOLUTION;
 def voiced            => 'List (Int, String)'    => list map tuple($_, string($VOICED{$_})), keys %VOICED;
 def animated          => 'List (Int, String)'    => list map tuple($_, string($ANIMATED{$_})), keys %ANIMATED;
 def genders           => 'List (String, String)' => list map tuple(string $_, string gender_display $_), keys %GENDER;
@@ -190,8 +190,8 @@ def vnvotePattern     => String                  => string { tuwf->compile({ vnv
 def media => 'List (String, Medium)' =>
     list map tuple(
         string($_),
-        sprintf('{ qty = %s, single = %s, plural = %s }', bool($MEDIA{$_}{qty}), string($MEDIA{$_}{single}), string($MEDIA{$_}{plural}))
-    ), keys %MEDIA;
+        sprintf('{ qty = %s, single = %s, plural = %s }', bool($MEDIUM{$_}{qty}), string($MEDIUM{$_}{txt}), string($MEDIUM{$_}{plural}))
+    ), keys %MEDIUM;
 
 
 1;

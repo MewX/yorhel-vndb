@@ -49,40 +49,6 @@ our %S;
   default_perm    => 1+4+16, # Keep synchronised with the default value of users.perm
   default_tags_cat=> 'cont,tech',
   board_edit_time => 7*24*3600,
-  media           => ordhash(
-   #DB     qty  txt                      plural (if qty)           icon
-    cd  => [ 1, 'CD',                    'CDs',                    'disk'     ],
-    dvd => [ 1, 'DVD',                   'DVDs',                   'disk'     ],
-    gdr => [ 1, 'GD-ROM',                'GD-ROMs',                'disk'     ],
-    blr => [ 1, 'Blu-ray disc',          'Blu-ray discs',          'disk'     ],
-    flp => [ 1, 'Floppy',                'Floppies',               'cartridge'],
-    mrt => [ 1, 'Cartridge',             'Cartridges',             'cartridge'],
-    mem => [ 1, 'Memory card',           'Memory cards',           'cartridge'],
-    umd => [ 1, 'UMD',                   'UMDs',                   'disk'     ],
-    nod => [ 1, 'Nintendo Optical Disc', 'Nintendo Optical Discs', 'disk'     ],
-    in  => [ 0, 'Internet download',     '',                       'download' ],
-    otc => [ 0, 'Other',                 '',                       'cartridge'],
-  ),
-  resolutions     => ordhash(
-    unknown     => [ 'Unknown / console / handheld', '' ], # hardcoded in many places
-    nonstandard => [ 'Non-standard', '' ],                 # hardcoded in VNPage.pm
-    '640x480'   => [ '640x480',      '4:3' ],
-    '800x600'   => [ '800x600',      '4:3' ],
-    '1024x768'  => [ '1024x768',     '4:3' ],
-    '1280x960'  => [ '1280x960',     '4:3' ],
-    '1600x1200' => [ '1600x1200',    '4:3' ],
-    '640x400'   => [ '640x400',      'widescreen' ],
-    '960x600'   => [ '960x600',      'widescreen' ],
-    '960x640'   => [ '960x640',      'widescreen' ],
-    '1024x576'  => [ '1024x576',     'widescreen' ],
-    '1024x600'  => [ '1024x600',     'widescreen' ],
-    '1024x640'  => [ '1024x640',     'widescreen' ],
-    '1280x720'  => [ '1280x720',     'widescreen' ],
-    '1280x800'  => [ '1280x800',     'widescreen' ],
-    '1366x768'  => [ '1366x768',     'widescreen' ],
-    '1600x900'  => [ '1600x900',     'widescreen' ],
-    '1920x1080' => [ '1920x1080',    'widescreen' ],
-  ),
   atom_feeds => { # num_entries, title, id
     announcements => [ 10, 'VNDB Site Announcements', '/t/an' ],
     changes       => [ 25, 'VNDB Recent Changes', '/hist' ],

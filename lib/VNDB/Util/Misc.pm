@@ -6,6 +6,7 @@ use warnings;
 use Exporter 'import';
 use TUWF ':html';
 use VNDB::Func;
+use VNDB::Types;
 use VNDB::BBCode ();
 
 our @EXPORT = qw|filFetchDB filCompat bbSubstLinks entryLinks|;
@@ -102,7 +103,7 @@ sub filCompat {
     $fil->{resolution} = [ map {
       if(/^[0-9]+$/) {
         $mod++;
-        (keys %{$self->{resolutions}})[$_] || 'unknown'
+        (keys %RESOLUTION)[$_] || 'unknown'
       } else { $_ }
     } ref $fil->{resolution} ? @{$fil->{resolution}} : $fil->{resolution} ];
   }

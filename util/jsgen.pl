@@ -21,14 +21,14 @@ sub resolutions {
   my $cat = '';
   my @r;
   my $push = \@r;
-  for my $i (keys %{$S{resolutions}}) {
-    my $r = $S{resolutions}{$i};
-    if($cat ne $r->[1]) {
-      push @r, [$r->[1]];
-      $cat = $r->[1];
+  for my $i (keys %RESOLUTION) {
+    my $r = $RESOLUTION{$i};
+    if($cat ne $r->{cat}) {
+      push @r, [$r->{cat}];
+      $cat = $r->{cat};
       $push = $r[$#r];
     }
-    push @$push, [$i, $r->[0]];
+    push @$push, [$i, $r->{txt}];
   }
   \@r
 }
@@ -42,7 +42,7 @@ sub vars {
     languages     => [ map [ $_, $LANGUAGE{$_} ], keys %LANGUAGE ],
     platforms     => [ map [ $_, $PLATFORM{$_} ], keys %PLATFORM ],
     char_roles    => [ map [ $_, $CHAR_ROLE{$_}{txt} ], keys %CHAR_ROLE ],
-    media         => [ map [ $_, $S{media}{$_}[1], $S{media}{$_}[0] ], keys %{$S{media}} ],
+    media         => [ map [ $_, $MEDIUM{$_}{txt}, $MEDIUM{$_}{qty} ], keys %MEDIUM ],
     release_types => [ map [ $_, $RELEASE_TYPE{$_} ], keys %RELEASE_TYPE ],
     animated      => [ map [ $_, $ANIMATED{$_}{txt} ], keys %ANIMATED ],
     voiced        => [ map [ $_, $VOICED{$_}{txt} ], keys %VOICED ],

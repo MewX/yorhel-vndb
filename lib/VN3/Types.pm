@@ -16,7 +16,7 @@ our @EXPORT = qw/
     $VREV_RE $RREV_RE $PREV_RE $SREV_RE $CREV_RE $DREV_RE
     Lang
     Platform
-    %MEDIA media_display
+    media_display
     ReleaseDate
     @VN_LENGTHS vn_length_time vn_length_display
     char_roles char_role_display
@@ -27,7 +27,7 @@ our @EXPORT = qw/
     spoil_display
     release_types
     minage_display minage_display_full
-    %RESOLUTIONS resolution_display_full
+    resolution_display_full
     gender_display gender_icon
     blood_type_display
 /;
@@ -63,27 +63,11 @@ sub Platform {
 }
 
 
-
-# The 'unk' medium is reserved for "unknown" in release filters.
-our %MEDIA;
-tie %MEDIA, 'Tie::IxHash',
-    cd  => { qty => 1, single => 'CD',                    plural => 'CDs',                   },
-    dvd => { qty => 1, single => 'DVD',                   plural => 'DVDs',                  },
-    gdr => { qty => 1, single => 'GD-ROM',                plural => 'GD-ROMs',               },
-    blr => { qty => 1, single => 'Blu-ray disc',          plural => 'Blu-ray discs',         },
-    flp => { qty => 1, single => 'Floppy',                plural => 'Floppies',              },
-    mrt => { qty => 1, single => 'Cartridge',             plural => 'Cartridges',            },
-    mem => { qty => 1, single => 'Memory card',           plural => 'Memory cards',          },
-    umd => { qty => 1, single => 'UMD',                   plural => 'UMDs',                  },
-    nod => { qty => 1, single => 'Nintendo Optical Disc', plural => 'Nintendo Optical Discs' },
-    in  => { qty => 0, single => 'Internet download',     plural => '',                      },
-    otc => { qty => 0, single => 'Other',                 plural => '',                      };
-
 sub media_display {
     my($media, $qty) = @_;
-    my $med = $MEDIA{$media};
-    return $med->{single} if !$med->{qty};
-    sprintf '%d %s', $qty, $qty == 1 ? $med->{single} : $med->{plural};
+    my $med = $MEDIUM{$media};
+    return $med->{txt} if !$med->{qty};
+    sprintf '%d %s', $qty, $qty == 1 ? $med->{txt} : $med->{plural};
 }
 
 
@@ -187,29 +171,7 @@ sub minage_display_full { my $e = $AGE_RATING{$_[0]}; $e->{txt}.($e->{ex} ? " (e
 
 
 
-our %RESOLUTIONS;
-tie %RESOLUTIONS, 'Tie::IxHash',
-    # DB             # Display       # Category
-    unknown     => [ 'Unknown / console / handheld', '' ],
-    nonstandard => [ 'Non-standard', '' ],
-    '640x480'   => [ '640x480',      '4:3' ],
-    '800x600'   => [ '800x600',      '4:3' ],
-    '1024x768'  => [ '1024x768',     '4:3' ],
-    '1280x960'  => [ '1280x960',     '4:3' ],
-    '1600x1200' => [ '1600x1200',    '4:3' ],
-    '640x400'   => [ '640x400',      'widescreen' ],
-    '960x600'   => [ '960x600',      'widescreen' ],
-    '960x640'   => [ '960x640',      'widescreen' ],
-    '1024x576'  => [ '1024x576',     'widescreen' ],
-    '1024x600'  => [ '1024x600',     'widescreen' ],
-    '1024x640'  => [ '1024x640',     'widescreen' ],
-    '1280x720'  => [ '1280x720',     'widescreen' ],
-    '1280x800'  => [ '1280x800',     'widescreen' ],
-    '1366x768'  => [ '1366x768',     'widescreen' ],
-    '1600x900'  => [ '1600x900',     'widescreen' ],
-    '1920x1080' => [ '1920x1080',    'widescreen' ];
-
-sub resolution_display_full { my $e = $RESOLUTIONS{$_[0]}; ($e->[1] ? ucfirst "$e->[1]: " : '').$e->[0] }
+sub resolution_display_full { my $e = $RESOLUTION{$_[0]}; ($e->{cat} ? ucfirst "$e->{cat}: " : '').$e->{txt} }
 
 
 sub gender_display { $GENDER{$_[0]} }

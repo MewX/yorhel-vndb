@@ -127,7 +127,7 @@ my @rel_cols = (
     what          => 'extended',
     has_data      => sub { $_[0]{resolution} ne 'unknown' },
     draw          => sub {
-      txt $_[0]{resolution} eq 'unknown' ? 'Unknown' : $TUWF::OBJ->{resolutions}{$_[0]{resolution}}[0];
+      txt $_[0]{resolution} eq 'unknown' ? 'Unknown' : $RESOLUTION{$_[0]{resolution}}{txt};
     },
   }, { # Voiced
     id            => 'voi',
@@ -885,15 +885,15 @@ sub _release_icons {
   # Resolution column
   my $resolution = $rel->{resolution};
   if($resolution ne 'unknown') {
-    my $resolution_type = $resolution eq 'nonstandard' ? 'custom' : $self->{resolutions}{$resolution}[1] eq 'widescreen' ? '16-9' : '4-3';
+    my $resolution_type = $resolution eq 'nonstandard' ? 'custom' : $RESOLUTION{$resolution}{cat} eq 'widescreen' ? '16-9' : '4-3';
     # Ugly workaround: PC-98 has non-square pixels, thus not widescreen
     $resolution_type = '4-3' if $resolution_type eq '16-9' && grep $_ eq 'p98', @{$rel->{platforms}};
-    _release_icon "res$resolution_type", $self->{resolutions}{$resolution}[0], "resolution_$resolution_type";
+    _release_icon "res$resolution_type", $RESOLUTION{$resolution}{txt}, "resolution_$resolution_type";
   }
 
   # Media column
   if(@{$rel->{media}}) {
-    my $icon = $self->{media}{ $rel->{media}[0]{medium} }[3];
+    my $icon = $MEDIUM{ $rel->{media}[0]{medium} }{icon};
     my $media_detail = join ', ', map fmtmedia($_->{medium}, $_->{qty}), @{$rel->{media}};
     _release_icon $icon, $media_detail, $icon;
   }

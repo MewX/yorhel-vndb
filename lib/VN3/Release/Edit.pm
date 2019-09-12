@@ -112,7 +112,7 @@ json_api qr{/(?:$RID_RE/edit|r/add)}, $FORM_IN, sub {
     $data->{doujin} = $data->{voiced} = $data->{ani_story} = $data->{ani_ero} = 0 if $data->{patch};
     $data->{resolution} = 'unknown' if $data->{patch};
     $data->{uncensored} = 0 if !$data->{minage} || $data->{minage} != 18;
-    $_->{qty} = $MEDIA{$_->{medium}}{qty} ? $_->{qty}||1 : 0 for @{$data->{media}};
+    $_->{qty} = $MEDIUM{$_->{medium}}{qty} ? $_->{qty}||1 : 0 for @{$data->{media}};
 
     validate_dbid 'SELECT id FROM vn WHERE id IN', map $_->{vid}, @{$data->{vn}};
     validate_dbid 'SELECT id FROM producers WHERE id IN', map $_->{pid}, @{$data->{producers}};
