@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use Multi::Core;
 use AnyEvent::HTTP;
+use VNDB::Config;
 
 my %C = (
   api               => '',
@@ -15,7 +16,7 @@ my %C = (
 
 sub run {
   shift;
-  $C{ua} = "VNDB.org Affiliate Crawler (Multi v$VNDB::S{version}; contact\@vndb.org)";
+  $C{ua} = sprintf 'VNDB.org Affiliate Crawler (Multi v%s; contact@vndb.org)', config->{version};
   %C = (%C, @_);
 
   push_watcher schedule 0, $C{sync_gtin_timeout}, \&sync_gtin;

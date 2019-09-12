@@ -171,9 +171,9 @@ sub _load_session {
 
 sub new {
     bless {
-        scrypt_salt => 'random string',
-        scrypt_args => [ 65536, 8, 1 ],
-        %{ tuwf->conf->{auth}||{} }
+        scrypt_salt => tuwf->conf->{scrypt_salt}||die(),
+        scrypt_args => tuwf->conf->{scrypt_args}||[ 65536, 8, 1 ],
+        csrf_key    => tuwf->conf->{form_salt}||die(),
     }, shift;
 }
 

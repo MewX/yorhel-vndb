@@ -107,8 +107,8 @@ util/multi.pl (application server, optional):
   rm dump.sql
 ```
 
-- Update `data/config.pl` and optionally `config3.pl` with the proper
-  credentials for *vndb_site* and *vndb_multi*.
+- Update `data/conf.pl` with the proper credentials for *vndb_site* and
+  *vndb_multi*.
 - Now simply run:
 
 ```
@@ -132,7 +132,6 @@ code is easy to identify, the following files are only used by version 3:
 - `css3/`
 - `elm3/`
 - `util/vndb3.pl`
-- `data/config3{,_example}.pl`
 
 To run version 3 instead of 2:
 

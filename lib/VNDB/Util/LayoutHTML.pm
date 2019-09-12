@@ -14,7 +14,7 @@ our @EXPORT = qw|htmlHeader htmlFooter|;
 sub htmlHeader { # %options->{ title, noindex, search, feeds, svg, metadata }
   my($self, %o) = @_;
   my $skin = $self->reqGet('skin') || $self->authPref('skin') || $self->{skin_default};
-  $skin = $self->{skin_default} if !$self->{skins}{$skin} || !-d "$VNDB::ROOT/static/s/$skin";
+  $skin = $self->{skin_default} if !$self->{skins}{$skin} || !-d "$self->{root}/static/s/$skin";
 
   # heading
   lit '<!DOCTYPE HTML>';
@@ -28,8 +28,11 @@ sub htmlHeader { # %options->{ title, noindex, search, feeds, svg, metadata }
       (my $css = $self->authPref('customcss')) =~ s/\n/ /g;
       style type => 'text/css', $css;
     }
-    Link rel => 'alternate', type => 'application/atom+xml', href => "/feeds/$_.atom", title => $self->{atom_feeds}{$_}[1]
-      for ($o{feeds} ? @{$o{feeds}} : ());
+    if($o{feeds}) {
+      Link rel => 'alternate', type => 'application/atom+xml', href => "/feeds/announcements.atom", title => 'Site Announcements';
+      Link rel => 'alternate', type => 'application/atom+xml', href => "/feeds/changes.atom",       title => 'Recent Changes';
+      Link rel => 'alternate', type => 'application/atom+xml', href => "/feeds/posts.atom",         title => 'Recent Posts';
+    }
 
     if(exists $o{metadata}) {
       # Required fields as per http://op.me/#metadata: og:title, og:type, og:image, og:url

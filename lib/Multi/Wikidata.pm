@@ -10,6 +10,7 @@ use warnings;
 use Multi::Core;
 use JSON::XS 'decode_json';
 use AnyEvent::HTTP;
+use VNDB::Config;
 
 
 my %C = (
@@ -22,7 +23,7 @@ my %C = (
 
 sub run {
   shift;
-  $C{ua} = "VNDB.org Crawler (Multi v$VNDB::S{version}; contact\@vndb.org)";
+  $C{ua} = sprintf 'VNDB.org Crawler (Multi v%s; contact@vndb.org)', config->{version};
   %C = (%C, @_);
 
   push_watcher schedule 0, $C{check_timeout}, \&fetch;

@@ -25,7 +25,7 @@
 ALL_KEEP=\
 	static/ch static/cv static/sf static/st \
 	data/log static/f static/v3 www www/feeds www/api \
-	data/config.pl data/config3.pl \
+	data/conf.pl \
 	www/robots.txt static/robots.txt
 
 ALL_CLEAN=\
@@ -67,11 +67,8 @@ static/ch static/cv static/sf static/st:
 data/log www www/feeds www/api static/f static/v3:
 	mkdir -p $@
 
-data/config.pl:
-	cp -n data/config_example.pl data/config.pl
-
-data/config3.pl:
-	cp -n data/config3_example.pl data/config3.pl
+data/conf.pl:
+	cp -n data/conf_example.pl data/conf.pl
 
 %/robots.txt: | www
 	echo 'User-agent: *' > $@
@@ -80,7 +77,7 @@ data/config3.pl:
 %.gz: %
 	zopfli $<
 
-static/f/vndb.js: data/js/*.js lib/VNDB/Types.pm util/jsgen.pl data/config.pl data/global.pl | static/f
+static/f/vndb.js: data/js/*.js lib/VNDB/Types.pm util/jsgen.pl data/conf.pl | static/f
 	util/jsgen.pl
 
 static/f/vndb.min.js: static/f/vndb.js
@@ -99,7 +96,7 @@ static/s/%/style.css: static/s/%/conf util/skingen.pl data/style.css data/icons/
 static/s/%/style.min.css: static/s/%/style.css
 	perl -MCSS::Minifier::XS -e 'undef $$/; print CSS::Minifier::XS::minify(scalar <>)' <$< >$@
 
-elm3/Lib/Gen.elm: lib/VN3/*.pm lib/VN3/*/*.pm data/config3.pl
+elm3/Lib/Gen.elm: lib/VN3/*.pm lib/VN3/*/*.pm data/conf.pl
 	util/vndb3.pl elmgen >$@
 
 static/v3/elm.js: elm3/*.elm elm3/*/*.elm elm3/Lib/Gen.elm | static/f

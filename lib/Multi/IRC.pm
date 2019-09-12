@@ -11,6 +11,7 @@ use Multi::Core;
 use AnyEvent::IRC::Client;
 use AnyEvent::IRC::Util 'prefix_nick';
 use VNDBUtil 'normalize_query';
+use VNDB::Config;
 use TUWF::Misc 'uri_escape';
 use POSIX 'strftime';
 use Encode 'decode_utf8', 'encode_utf8';
@@ -142,12 +143,7 @@ sub set_cbs {
     reconnect();
   });
 
-  #$irc->reg_cb(read => sub {
-  #  require Data::Dumper;
-  #  AE::log trace => "Received: ".Data::Dumper::Dumper($_[1]);
-  #});
-
-  $irc->ctcp_auto_reply(VERSION => ['VERSION', "$O{ircname}:$VNDB::S{version}:AnyEvent"]);
+  $irc->ctcp_auto_reply(VERSION => ['VERSION', join ':', $O{ircname}, config->{version}, 'AnyEvent']);
   $irc->ctcp_auto_reply(USERINFO => ['USERINFO', ":$O{ircname}"]);
 
   $irc->reg_cb(publicmsg => sub { my @a = (prefix_nick($_[2]->{prefix}), $_[1], $_[2]->{params}[1]); command(@a) || vndbid(@a); });
@@ -162,7 +158,7 @@ sub set_logger {
   my $l = sub {
     my($chan, $msg, @arg) = @_;
     return if !grep $chan eq $_, @{$O{channels}};
-    open my $F, '>>', "$VNDB::M{log_dir}/$chan.log" or die $!;
+    open my $F, '>>', config->{Multi}{Core}{log_dir}."/$chan.log" or die $!;
     print $F strftime('%Y-%m-%d %H:%M:%S', localtime).' '.sprintf($msg, @arg)."\n";
   };
 
@@ -268,7 +264,7 @@ sub formatid {
     ) if defined $_->{comments};
 
     # (always) @ URL
-    push @msg, $c."@ $NORMAL$LIGHT_GREY$VNDB::S{url}/$id$NORMAL";
+    push @msg, $c."@ $NORMAL$LIGHT_GREY".config->{url}."/$id$NORMAL";
 
     # now post it
     $irc->send_msg(PRIVMSG => $dest, encode_utf8 join ' ', @msg);
@@ -392,7 +388,7 @@ my %cmds = (
 
 info => [ 0, 0, sub {
   $irc->send_msg(PRIVMSG => $_[1], 
-    'Hi! I am HMX-12 Multi '.$VNDB::S{version}.', the IRC bot of '.$VNDB::S{url}.'/, written by the great master Yorhel!');
+    'Hi! I am HMX-12 Multi '.config->{version}.', the IRC bot of '.config->{url}.'/, written by the great master Yorhel!');
 }],
 
 list => [ 0, 0, sub {
@@ -422,7 +418,7 @@ vn => [ 0, 0, sub {
     return if pg_expect $res, 1;
     return $irc->send_msg(PRIVMSG => $chan, 'No visual novels found.') if !$res->nRows;
     return $irc->send_msg(PRIVMSG => $chan,
-      sprintf 'Too many results found, see %s/v/all?q=%s', $VNDB::S{url}, uri_escape($q)) if $res->nRows > 5;
+      sprintf 'Too many results found, see %s/v/all?q=%s', config->{url}, uri_escape($q)) if $res->nRows > 5;
     formatid([$res->rowsAsHashes()], $chan, 0);
   };
 }],
@@ -441,7 +437,7 @@ p => [ 0, 0, sub {
     return if pg_expect $res, 1;
     return $irc->send_msg(PRIVMSG => $chan, 'No producers novels found.') if !$res->nRows;
     return $irc->send_msg(PRIVMSG => $chan,
-      sprintf 'Too many results found, see %s/p/all?q=%s', $VNDB::S{url}, uri_escape($q)) if $res->nRows > 5;
+      sprintf 'Too many results found, see %s/p/all?q=%s', config->{url}, uri_escape($q)) if $res->nRows > 5;
     formatid([$res->rowsAsHashes()], $chan, 0);
   };
 }],

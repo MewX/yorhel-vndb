@@ -6,6 +6,7 @@ use Multi::Core;
 use AnyEvent::HTTP;
 use JSON::XS 'decode_json';
 use MIME::Base64 'encode_base64';
+use VNDB::Config;
 
 
 my %C = (
@@ -18,7 +19,7 @@ my %C = (
 
 sub run {
   shift;
-  $C{ua} = "VNDB.org Affiliate Crawler (Multi v$VNDB::S{version}; contact\@vndb.org)";
+  $C{ua} = sprintf 'VNDB.org Affiliate Crawler (Multi v%s; contact@vndb.org)', config->{version};
   %C = (%C, @_);
 
   push_watcher schedule 0, $C{check_timeout}, sub {

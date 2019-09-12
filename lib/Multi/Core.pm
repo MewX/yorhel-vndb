@@ -14,6 +14,7 @@ use Pg::PQ ':pgres';
 use DBI;
 use POSIX 'setsid', 'pause', 'SIGUSR1';
 use Exporter 'import';
+use VNDB::Config;
 
 our @EXPORT = qw|pg pg_cmd pg_expect schedule push_watcher throttle|;
 
@@ -73,7 +74,7 @@ sub daemon_done {
 
 sub load_pg {
   $PG = AnyEvent::Pg::Pool->new(
-    $VNDB::M{db_login},
+    config->{Multi}{Core}{db_login},
     timeout => 600, # Some maintenance queries can take a while to run...
     on_error => sub { die "Lost connection to PostgreSQL\n"; },
     on_connect_error => sub { die "Lost connection to PostgreSQL\n"; },
@@ -90,8 +91,9 @@ sub load_pg {
 
 
 sub load_mods {
-  for(keys %{$VNDB::M{modules}}) {
-    my($mod, $args) = ($_, $VNDB::M{modules}{$_});
+  for(keys %{ config->{Multi} }) {
+    next if /^Core$/;
+    my($mod, $args) = ($_, config->{Multi}{$_});
     next if !$args || ref($args) ne 'HASH';
     require "Multi/$mod.pm";
     # I'm surprised the strict pagma isn't complaining about this
@@ -104,8 +106,9 @@ sub unload {
   AE::log info => 'Shutting down';
   @watchers = ();
 
-  for(keys %{$VNDB::M{modules}}) {
-    my($mod, $args) = ($_, $VNDB::M{modules}{$_});
+  for(keys %{ config->{Multi} }) {
+    next if /^Core$/;
+    my($mod, $args) = ($_, config->{Multi}{$_});
     next if !$args || ref($args) ne 'HASH';
     no strict 'refs';
     ${"Multi::$mod\::"}{unload} && "Multi::$mod"->unload();
@@ -115,14 +118,14 @@ sub unload {
 
 sub run {
   my $p = shift;
-  $pidfile = "$VNDB::ROOT/data/multi.pid";
+  $pidfile = config->{root}."/data/multi.pid";
   die "PID file already exists\n" if -e $pidfile;
 
   $stopcv = AE::cv;
-  AnyEvent::Log::ctx('Multi')->attach(AnyEvent::Log::Ctx->new(level => $VNDB::M{log_level}, # log_to_file => $VNDB::M{log_dir}.'/multi.log'));
+  AnyEvent::Log::ctx('Multi')->attach(AnyEvent::Log::Ctx->new(level => config->{Multi}{Core}{log_level}||'trace',
     # Don't use log_to_file, it doesn't accept perl's unicode strings (and, in fact, crashes on them without logging anything).
     log_cb => sub {
-      open(my $F, '>>:utf8', $VNDB::M{log_dir}.'/multi.log');
+      open(my $F, '>>:utf8', config->{Multi}{Core}{log_dir}.'/multi.log');
       print $F $_[0];
     }
   ));
@@ -132,7 +135,7 @@ sub run {
   load_pg;
   load_mods;
   daemon_done;
-  AE::log info => "Starting Multi $VNDB::S{version}";
+  AE::log info => "Starting Multi ".config->{version};
   push_watcher(schedule(60, 10*60, \&throttle_gc));
 
   $stopcv->recv;

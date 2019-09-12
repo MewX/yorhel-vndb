@@ -42,7 +42,7 @@ sub homepage {
     'og:description' => $desc,
   };
 
-  $self->htmlHeader(title => $title, feeds => [ keys %{$self->{atom_feeds}} ], metadata => $metadata);
+  $self->htmlHeader(title => $title, feeds => 1, metadata => $metadata);
 
   div class => 'mainbox';
    h1 $title;

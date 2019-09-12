@@ -105,9 +105,7 @@ sub checkmod {
     $check->($_) for (qw{
         util/vndb.pl
         util/vndb3.pl
-        data/config.pl
-        data/config3.pl
-        data/global.pl
+        data/conf.pl
     });
 
     my $ismod = $newlastmod > $lastmod;

@@ -17,6 +17,7 @@ use Crypt::URandom 'urandom';
 use Crypt::ScryptKDF 'scrypt_raw';;
 use VNDBUtil 'normalize_query', 'norm_ip';
 use VNDB::Types;
+use VNDB::Config;
 use JSON::XS;
 use PWLookup;
 
@@ -32,7 +33,7 @@ sub FALSE () { JSON::XS::false }
 my %O = (
   port => 19534,
   tls_port => 19535,  # Only used when tls_options is set
-  logfile => "$VNDB::M{log_dir}/api.log",
+  logfile => config->{Multi}{Core}{log_dir}.'/api.log',
   conn_per_ip => 10,
   max_results => 25, # For get vn/release/producer/character
   max_results_lists => 100, # For get votelist/vnlist/wishlist
@@ -277,7 +278,7 @@ sub login {
   } else {
     $arg->{username} = lc $arg->{username};
     return cerr $c, auth => "Password too weak, please log in on the site and change your password"
-      if $VNDB::S{password_db} && PWLookup::lookup($VNDB::S{password_db}, $arg->{password});
+      if config->{password_db} && PWLookup::lookup(config->{password_db}, $arg->{password});
   }
 
   login_auth($c, $arg);
@@ -291,7 +292,7 @@ sub login_auth {
   cpg $c, 'SELECT extract(\'epoch\' from timeout) FROM login_throttle WHERE ip = $1', [ norm_ip($c->{ip}) ], sub {
     my $tm = $_[0]->nRows ? $_[0]->value(0,0) : AE::time;
     return cerr $c, auth => "Too many failed login attempts"
-      if $tm-AE::time() > $VNDB::S{login_throttle}[1];
+      if $tm-AE::time() > config->{login_throttle}[1];
 
     # Fetch user info
     cpg $c, 'SELECT id, encode(user_getscryptargs(id), \'hex\') FROM users WHERE username = $1', [ $arg->{username} ], sub {
@@ -311,7 +312,7 @@ sub login_verify {
 
   my $token = urandom(20);
   my($N, $r, $p, $salt) = unpack 'NCCa8', pack 'H*', $sargs;
-  my $passwd = pack 'NCCa8a*', $N, $r, $p, $salt, scrypt_raw(encode_utf8($arg->{password}), $VNDB::S{scrypt_salt} . $salt, $N, $r, $p, 32);
+  my $passwd = pack 'NCCa8a*', $N, $r, $p, $salt, scrypt_raw(encode_utf8($arg->{password}), config->{scrypt_salt} . $salt, $N, $r, $p, 32);
 
   cpg $c, 'SELECT user_login($1, decode($2, \'hex\'), decode($3, \'hex\'))', [ $uid, unpack('H*', $passwd), unpack('H*', $token) ], sub {
     if($_[0]->nRows == 1 && ($_[0]->value(0,0)||'') =~ /t/) {
@@ -322,7 +323,7 @@ sub login_verify {
       pg_cmd 'SELECT user_logout($1, decode($2, \'hex\'))', [ $uid, unpack('H*', $token) ];
       cres $c, ['ok'], 'Successful login by %s (%s) using client "%s" ver. %s', $arg->{username}, $c->{uid}, $c->{client}, $c->{clientver};
     } else {
-      my @a = ( $tm + $VNDB::S{login_throttle}[0], norm_ip($c->{ip}) );
+      my @a = ( $tm + config->{login_throttle}[0], norm_ip($c->{ip}) );
       pg_cmd 'UPDATE login_throttle SET timeout = to_timestamp($1) WHERE ip = $2', \@a;
       pg_cmd 'INSERT INTO login_throttle (ip, timeout) SELECT $2, to_timestamp($1) WHERE NOT EXISTS(SELECT 1 FROM login_throttle WHERE ip = $2)', \@a;
       cerr $c, auth => "Wrong password for user '$arg->{username}'";
@@ -425,7 +426,7 @@ my %GET_VN = (
           encubed   => delete($_[0]{l_encubed})||undef,
           renai     => delete($_[0]{l_renai})  ||undef
         };
-        $_[0]{image} = $_[0]{image} ? sprintf '%s/cv/%02d/%d.jpg', $VNDB::S{url_static}, $_[0]{image}%100, $_[0]{image} : undef;
+        $_[0]{image} = $_[0]{image} ? sprintf '%s/cv/%02d/%d.jpg', config->{url_static}, $_[0]{image}%100, $_[0]{image} : undef;
       },
     },
     stats => {
@@ -492,7 +493,7 @@ my %GET_VN = (
             $i->{screens} = [ grep $i->{id} == $_->{vid}, @$n ];
           }
           for (@$n) {
-            $_->{image} = sprintf '%s/sf/%02d/%d.jpg', $VNDB::S{url_static}, $_->{image}%100, $_->{image};
+            $_->{image} = sprintf '%s/sf/%02d/%d.jpg', config->{url_static}, $_->{image}%100, $_->{image};
             $_->{rid} *= 1;
             $_->{nsfw} = $_->{nsfw} =~ /t/ ? TRUE : FALSE;
             $_->{width} *= 1;
@@ -814,7 +815,7 @@ my %GET_CHARACTER = (
       select => 'c.alias AS aliases, c.image, c."desc" AS description',
       proc => sub {
         $_[0]{aliases}     ||= undef;
-        $_[0]{image}       = $_[0]{image} ? sprintf '%s/ch/%02d/%d.jpg', $VNDB::S{url_static}, $_[0]{image}%100, $_[0]{image} : undef;
+        $_[0]{image}       = $_[0]{image} ? sprintf '%s/ch/%02d/%d.jpg', config->{url_static}, $_[0]{image}%100, $_[0]{image} : undef;
         $_[0]{description} ||= undef;
       },
     },

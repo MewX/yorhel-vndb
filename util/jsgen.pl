@@ -1,18 +1,16 @@
 #!/usr/bin/perl
 
-package VNDB;
-
 use strict;
 use warnings;
 use Encode 'encode_utf8';
 use Cwd 'abs_path';
 use JSON::XS;
 
-our($ROOT, %S, %O);
+my $ROOT;
 BEGIN { ($ROOT = abs_path $0) =~ s{/util/jsgen\.pl$}{}; }
-require $ROOT.'/data/global.pl';
 
 use lib "$ROOT/lib";
+use VNDB::Config;
 use VNDB::Types;
 
 
@@ -37,7 +35,7 @@ sub resolutions {
 sub vars {
   my %vars = (
     rlist_status  => [ map [ $_, $RLIST_STATUS{$_} ], keys %RLIST_STATUS ],
-    cookie_prefix => $O{cookie_prefix},
+    cookie_prefix => config->{tuwf}{cookie_prefix},
     age_ratings   => [ map [ $_, $AGE_RATING{$_}{txt}], keys %AGE_RATING ],
     languages     => [ map [ $_, $LANGUAGE{$_} ], keys %LANGUAGE ],
     platforms     => [ map [ $_, $PLATFORM{$_} ], keys %PLATFORM ],

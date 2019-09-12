@@ -11,6 +11,7 @@ use TUWF::XML;
 use Multi::Core;
 use POSIX 'strftime';
 use VNDB::BBCode;
+use VNDB::Config;
 
 my %stats; # key = feed, value = [ count, total, max ]
 
@@ -39,8 +40,8 @@ sub generate {
       WHERE NOT t.hidden AND NOT t.private
       ORDER BY t.id DESC
       LIMIT $1},
-    [$VNDB::S{atom_feeds}{announcements}[0]],
-    sub { write_atom(announcements => @_) };
+    [10],
+    sub { write_atom(announcements => '/t/an', 'VNDB Site Announcements', @_) };
 
   # changes
   pg_cmd q{
@@ -59,8 +60,8 @@ sub generate {
       WHERE c.requester <> 1
       ORDER BY c.id DESC
       LIMIT $1},
-    [$VNDB::S{atom_feeds}{changes}[0]],
-    sub { write_atom(changes => @_); };
+    [25],
+    sub { write_atom(changes => '/hist', 'VNDB Recent Changes', @_); };
 
   # posts
   pg_cmd q{
@@ -72,13 +73,13 @@ sub generate {
       WHERE NOT tp.hidden AND NOT t.hidden AND NOT t.private
       ORDER BY tp.date DESC
       LIMIT $1},
-    [$VNDB::S{atom_feeds}{posts}[0]],
-    sub { write_atom(posts => @_); };
+    [25],
+    sub { write_atom(posts => '/t', 'VNDB Recent Posts', @_); };
 }
 
 
 sub write_atom {
-  my($feed, $res, $sqltime) = @_;
+  my($feed, $path, $title, $res, $sqltime) = @_;
   return if pg_expect $res, 1;
 
   my $start = AE::time;
@@ -93,33 +94,33 @@ sub write_atom {
   my $data;
   my $x = TUWF::XML->new(write => sub { $data .= shift }, pretty => 2);
   $x->xml();
-  $x->tag(feed => xmlns => 'http://www.w3.org/2005/Atom', 'xml:lang' => 'en', 'xml:base' => $VNDB::S{url}.'/');
-  $x->tag(title => $VNDB::S{atom_feeds}{$feed}[1]);
+  $x->tag(feed => xmlns => 'http://www.w3.org/2005/Atom', 'xml:lang' => 'en', 'xml:base' => config->{url}.'/');
+  $x->tag(title => $title);
   $x->tag(updated => datetime($updated));
-  $x->tag(id => $VNDB::S{url}.$VNDB::S{atom_feeds}{$feed}[2]);
-  $x->tag(link => rel => 'self', type => 'application/atom+xml', href => "$VNDB::S{url}/feeds/$feed.atom", undef);
-  $x->tag(link => rel => 'alternate', type => 'text/html', href => $VNDB::S{url}.$VNDB::S{atom_feeds}{$feed}[2], undef);
+  $x->tag(id => config->{url}.$path);
+  $x->tag(link => rel => 'self', type => 'application/atom+xml', href => config->{url}."/feeds/$feed.atom", undef);
+  $x->tag(link => rel => 'alternate', type => 'text/html', href => config->{url}.$path, undef);
 
   for(@r) {
     $x->tag('entry');
-    $x->tag(id => $VNDB::S{url}.$_->{id});
+    $x->tag(id => config->{url}.$_->{id});
     $x->tag(title => $_->{title});
     $x->tag(updated => datetime($_->{updated} || $_->{published}));
     $x->tag(published => datetime($_->{published})) if $_->{published};
     if($_->{username}) {
       $x->tag('author');
       $x->tag(name => $_->{username});
-      $x->tag(uri => $VNDB::S{url}.'/u'.$_->{uid}) if $_->{uid};
+      $x->tag(uri => config->{url}.'/u'.$_->{uid}) if $_->{uid};
       $x->end;
     }
-    $x->tag(link => rel => 'alternate', type => 'text/html', href => $VNDB::S{url}.$_->{id}, undef);
+    $x->tag(link => rel => 'alternate', type => 'text/html', href => config->{url}.$_->{id}, undef);
     $x->tag('summary', type => 'html', bb2html $_->{summary}) if $_->{summary};
     $x->end('entry');
   }
 
   $x->end('feed');
 
-  open my $f, '>:utf8', "$VNDB::ROOT/www/feeds/$feed.atom" || die $!;
+  open my $f, '>:utf8', config->{root}."/www/feeds/$feed.atom" || die $!;
   print $f $data;
   close $f;
 
@@ -139,7 +140,7 @@ sub stats {
     my $v = $stats{$_};
     next if !$v->[0];
     AE::log info => sprintf 'Stats summary for %16s.atom: total:%5dms, avg:%4dms, max:%4dms, size: %.1fkB',
-      $_, $v->[1], $v->[1]/$v->[0], $v->[2], (-s "$VNDB::ROOT/www/feeds/$_.atom")/1024;
+      $_, $v->[1], $v->[1]/$v->[0], $v->[2], (-s config->{root}."/www/feeds/$_.atom")/1024;
   }
   %stats = ();
 }

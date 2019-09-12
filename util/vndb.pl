@@ -1,45 +1,34 @@
 #!/usr/bin/perl
 
-
-package VNDB;
-
 use strict;
 use warnings;
-
-
 use Cwd 'abs_path';
-our $ROOT;
-BEGIN { ($ROOT = abs_path $0) =~ s{/util/vndb\.pl$}{}; }
+use TUWF ':html';
 
 $|=1; # Disable buffering on STDOUT, otherwise vndb-dev-server.pl won't pick up our readyness notification.
 
+my $ROOT;
+BEGIN { ($ROOT = abs_path $0) =~ s{/util/vndb\.pl$}{}; }
+
 use lib $ROOT.'/lib';
-
-
-use TUWF ':html';
 use SkinFile;
-
-
-our(%O, %S);
+use VNDB::Config;
 
 
 # load the skins
-# NOTE: $S{skins} can be modified in data/config.pl, allowing deletion of skins or forcing only one skin
 my $skin = SkinFile->new("$ROOT/static/s");
-$S{skins} = { map +($_ => [ $skin->get($_, 'name'), $skin->get($_, 'userid') ]), $skin->list };
+tuwf->{skins} = { map +($_ => [ $skin->get($_, 'name'), $skin->get($_, 'userid') ]), $skin->list };
 
+# Some global variables
+tuwf->{scr_size}     = [ 136, 102 ]; # w*h of screenshot thumbnails
+tuwf->{ch_size}      = [ 256, 300 ]; # max. w*h of char images
+tuwf->{cv_size}      = [ 256, 400 ]; # max. w*h of cover images
+tuwf->{permissions}  = {qw| board 1  boardmod 2  edit 4  tag 16  dbmod 32  tagmod 64  usermod 128 |};
+tuwf->{default_perm} = 1+4+16; # Keep synchronised with the default value of users.perm
+tuwf->{$_} = config->{$_} for keys %{ config() };
 
-# load settings from global.pl
-require $ROOT.'/data/global.pl';
-
-
-# automatically regenerate the skins and script.js and whatever else should be done
-system "make -sC $ROOT" if $S{regen_static};
-
-
-$TUWF::OBJ->{$_} = $S{$_} for (keys %S);
 TUWF::set(
-  %O,
+  %{ config->{tuwf} },
   pre_request_handler => \&reqinit,
   error_404_handler => \&handle404,
   log_format => \&logformat,

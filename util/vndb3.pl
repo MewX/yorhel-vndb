@@ -10,13 +10,12 @@ BEGIN { ($ROOT = abs_path $0) =~ s{/util/vndb3\.pl$}{}; }
 use lib $ROOT.'/lib';
 
 use PWLookup;
+use VNDB::Config;
 
 $|=1; # Disable buffering on STDOUT, otherwise vndb-dev-server.pl won't pick up our readyness notification.
 
-my $conf = require $ROOT.'/data/config3.pl';
-
 # Make the configuration available as tuwf->conf
-sub TUWF::Object::conf { $conf }
+sub TUWF::Object::conf { config }
 
 
 # Make our root path available as tuwf->root
@@ -48,7 +47,7 @@ sub TUWF::Object::isUnsafePass {
 }
 
 
-TUWF::set %{ $conf->{tuwf} || {} };
+TUWF::set %{ config->{tuwf} || {} };
 
 TUWF::set import_modules => 0;
 

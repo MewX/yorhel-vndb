@@ -10,6 +10,7 @@ use warnings;
 use Multi::Core;
 use PerlIO::gzip;
 use VNDBUtil 'normalize_titles';
+use VNDB::Config;
 
 
 my $monthly;
@@ -134,20 +135,20 @@ my %monthlies = (
 
 
 sub logrotate {
-  my $dir = sprintf '%s/old', $VNDB::M{log_dir};
+  my $dir = sprintf '%s/old', config->{Multi}{Core}{log_dir};
   mkdir $dir if !-d $dir;
 
-  for (glob sprintf '%s/*', $VNDB::M{log_dir}) {
+  for (glob sprintf '%s/*', config->{Multi}{Core}{log_dir}) {
     next if /^\./ || /~$/ || !-f;
     my $f = /([^\/]+)$/ ? $1 : $_;
     my $n = sprintf '%s/%s.%04d-%02d-%02d.gz', $dir, $f, (localtime)[5]+1900, (localtime)[4]+1, (localtime)[3];
     return if -f $n;
-    open my $I, '<', sprintf '%s/%s', $VNDB::M{log_dir}, $f;
+    open my $I, '<', sprintf '%s/%s', config->{Multi}{Core}{log_dir}, $f;
     open my $O, '>:gzip', $n;
     print $O $_ while <$I>;
     close $O;
     close $I;
-    open $I, '>', sprintf '%s/%s', $VNDB::M{log_dir}, $f;
+    open $I, '>', sprintf '%s/%s', config->{Multi}{Core}{log_dir}, $f;
     close $I;
   }
   AE::log info => 'Logs rotated.';

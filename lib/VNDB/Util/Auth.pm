@@ -156,7 +156,7 @@ sub authInfo {
 
 
 # returns whether the currently loggedin or anonymous user can perform
-# a certain action. Argument is the action name as defined in global.pl
+# a certain action.
 sub authCan {
   my($self, $act) = @_;
   return $self->{_auth} ? $self->{_auth}{perm} & $self->{permissions}{$act} : 0;
