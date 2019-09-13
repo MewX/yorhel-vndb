@@ -339,7 +339,7 @@ sub page {
   )->[0];
   return $self->resNotFound if !$v->{id};
 
-  my $r = $self->dbReleaseGet(vid => $vid, what => 'extended links producers platforms media', results => 200);
+  my $r = $self->dbReleaseGet(vid => $vid, what => 'extended links vns producers platforms media', results => 200);
 
   my $metadata = {
     'og:title' => $v->{title},
@@ -755,10 +755,20 @@ sub _useroptions {
 sub _affiliate_links {
   my($self, $r) = @_;
 
-  # url => [$title, $url, $price, $rel]
+  # If the same shop link has been added to multiple releases, use the 'first' matching type in this list.
+  my @type = ('bundle', '', 'partial', 'trial', 'patch');
+
+  # url => [$title, $url, $price, $type]
   my %links;
   for my $rel (@$r) {
-    $links{$_->[1]} = $_ for map [@$_, $rel], grep $_->[2], @{$self->entryLinks(r => $rel)};
+    my $type =   $rel->{patch} ? 4 :
+       $rel->{type} eq 'trial' ? 3 :
+     $rel->{type} eq 'partial' ? 2 :
+             @{$rel->{vn}} > 1 ? 0 : 1;
+
+    for my $l (grep $_->[2], @{$self->entryLinks(r => $rel)}) {
+      $links{$l->[1]} = [ @$l, min $type, $links{$l->[1]}[3]||9 ];
+    }
   }
   return if !keys %links;
 
@@ -772,7 +782,7 @@ sub _affiliate_links {
        txt $l->[2];
        b class => 'grayedout', " @ ";
        txt $l->[0];
-       b class => 'grayedout', ' (patch)' if $l->[3]{patch};
+       b class => 'grayedout', " ($type[$l->[3]])" if $l->[3] != 1;
       end;
       br;
     }
