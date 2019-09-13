@@ -202,7 +202,7 @@ sub _enrich {
           FROM vn_staff$hist vs
           JOIN staff_alias sa ON vs.aid = sa.aid
           JOIN staff s ON s.id = sa.id
-          WHERE s.hidden = FALSE AND vs.$colname IN(!l)
+          WHERE vs.$colname IN(!l)
           ORDER BY vs.role ASC, sa.name ASC",
         [ keys %r ]
       )});
@@ -220,7 +220,7 @@ sub _enrich {
           JOIN staff s ON s.id = sa.id
           JOIN chars c ON c.id = vs.cid
           $join
-          WHERE s.hidden = FALSE AND vs.$colname IN(!l)
+          WHERE vs.$colname IN(!l)
           ORDER BY c.name",
         [ keys %r ]
       )});
