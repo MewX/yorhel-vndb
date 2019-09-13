@@ -146,12 +146,12 @@ hash CREDIT_TYPE =>
 
 
 hash VN_LENGTH =>
-    0 => { txt => 'Unknown',    time => '',              example => ''                                                  },
-    1 => { txt => 'Very short', time => '< 2 hours',     example => 'OMGWTFOTL, Jouka no Monshou, The world to reverse' },
-    2 => { txt => 'Short',      time => '2 - 10 hours',  example => 'Narcissu, Saya no Uta, Planetarian'                },
-    3 => { txt => 'Medium',     time => '10 - 30 hours', example => 'Yume Miru Kusuri, Cross†Channel, Crescendo'        },
-    4 => { txt => 'Long',       time => '30 - 50 hours', example => 'Tsukihime, Ever17, Demonbane'                      },
-    5 => { txt => 'Very long',  time => '> 50 hours',    example => 'Clannad, Umineko, Fate/Stay Night'                 };
+    0 => { txt => 'Unknown',    time => ''              },
+    1 => { txt => 'Very short', time => '< 2 hours'     },
+    2 => { txt => 'Short',      time => '2 - 10 hours'  },
+    3 => { txt => 'Medium',     time => '10 - 30 hours' },
+    4 => { txt => 'Long',       time => '30 - 50 hours' },
+    5 => { txt => 'Very long',  time => '> 50 hours'    };
 
 
 

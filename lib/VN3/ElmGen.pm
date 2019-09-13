@@ -166,7 +166,7 @@ my $perms = VN3::Auth::listPerms();
 
 def urlStatic         => String                  => string tuwf->conf->{url_static};
 def userPerms         => 'List (Int, String)'    => list map tuple($perms->{$_}, string $_), sort keys %$perms;
-def vnLengths         => 'List (Int, String)'    => list map tuple($_, string vn_length_display $_), 0..$#VN_LENGTHS;
+def vnLengths         => 'List (Int, String)'    => list map tuple($_, string vn_length_display $_), keys %VN_LENGTH;
 def vnRelations       => 'List (String, String)' => list map tuple(string $_, string vn_relation_display $_), keys %VN_RELATION;
 def producerRelations => 'List (String, String)' => list map tuple(string $_, string producer_relation_display $_), keys %PRODUCER_RELATION;
 def creditType        => 'List (String, String)' => list map tuple(string $_, string $CREDIT_TYPE{$_}), keys %CREDIT_TYPE;

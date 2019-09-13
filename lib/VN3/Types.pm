@@ -18,7 +18,7 @@ our @EXPORT = qw/
     Platform
     media_display
     ReleaseDate
-    @VN_LENGTHS vn_length_time vn_length_display
+    vn_length_time vn_length_display
     char_roles char_role_display
     vote_display vote_string
     date_display
@@ -88,25 +88,14 @@ sub ReleaseDate {
 }
 
 
-
-our @VN_LENGTHS = (
-    # name          time             examples
-    [ 'Unknown',    '',              ''                                                  ],
-    [ 'Very short', '< 2 hours',     'OMGWTFOTL, Jouka no Monshou, The world to reverse' ],
-    [ 'Short',      '2 - 10 hours',  'Narcissu, Saya no Uta, Planetarian'                ],
-    [ 'Medium',     '10 - 30 hours', 'Yume Miru Kusuri, Cross†Channel, Crescendo'        ],
-    [ 'Long',       '30 - 50 hours', 'Tsukihime, Ever17, Demonbane'                      ],
-    [ 'Very long',  '> 50 hours',    'Clannad, Umineko, Fate/Stay Night'                 ],
-);
-
 sub vn_length_time {
-    my $l = $VN_LENGTHS[$_[0]];
-    $l->[1] || $l->[0];
+    my $l = $VN_LENGTH{$_[0]};
+    $l->{time} || $l->{txt};
 }
 
 sub vn_length_display {
-    my $l = $VN_LENGTHS[$_[0]];
-    $l->[0].($l->[1] ? " ($l->[1])" : '')
+    my $l = $VN_LENGTH{$_[0]};
+    $l->{txt}.($l->{time} ? " ($l->{time})" : '')
 }
 
 
@@ -161,9 +150,7 @@ sub spoil_display {
 
 
 
-my @RELEASE_TYPES = qw/complete partial trial/;
-
-sub release_types { @RELEASE_TYPES }
+sub release_types { keys %RELEASE_TYPE }
 
 
 sub minage_display { $AGE_RATING{$_[0]}{txt} }

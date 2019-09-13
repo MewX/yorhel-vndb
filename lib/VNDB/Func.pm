@@ -203,13 +203,11 @@ sub fmtmedia {
     $med->{ $med->{qty} && $qty > 1 ? 'plural' : 'txt' };
 }
 
-# Formats a VN length (xtra = 1 for time indication, 2 for examples)
+# Formats a VN length (xtra = time indication)
 sub fmtvnlen {
   my($len, $xtra) = @_;
   $len = $VN_LENGTH{$len};
-  $len->{txt}.
-    ($xtra && $xtra == 1 && $len->{time} ? " ($len->{time})" : '').
-    ($xtra && $xtra == 2 && $len->{example} ? " ($len->{example})" : '');
+  $len->{txt}.($xtra && $len->{time} ? " ($len->{time})" : '');
 }
 
 # Formats a UNIX timestamp as a '<number> <unit> ago' string

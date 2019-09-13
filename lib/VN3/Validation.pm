@@ -23,7 +23,7 @@ TUWF::set custom_validations => {
     username    => { regex => qr/^[a-z0-9-]{2,15}$/ },
     password    => { length => [ 4, 500 ] },
     editsum     => { required => 1, length => [ 2, 5000 ] },
-    vn_length   => { required => 0, default => 0, uint => 1, range => [ 0, $#VN_LENGTHS ] },
+    vn_length   => { required => 0, default => 0, uint => 1, enum => \%VN_LENGTH },
     vn_relation => { enum => \%VN_RELATION },
     producer_relation => { enum => \%PRODUCER_RELATION },
     staff_role  => { enum => \%CREDIT_TYPE },

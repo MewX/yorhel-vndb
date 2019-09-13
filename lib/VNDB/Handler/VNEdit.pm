@@ -269,8 +269,8 @@ sub _form {
     [ static   => content =>
         'Short description of the main story. Please do not include spoilers, and don\'t forget to list'
        .' the source in case you didn\'t write the description yourself. Formatting codes are allowed.' ],
-    [ select   => short => 'length',    name => 'Length', width => 450, options =>
-      [ map [ $_ => fmtvnlen $_, 2 ], keys %VN_LENGTH ] ],
+    [ select   => short => 'length',    name => 'Length', options =>
+      [ map [ $_ => fmtvnlen $_, 1 ], keys %VN_LENGTH ] ],
 
     [ input    => short => 'l_wikidata',name => 'Wikidata ID',
         pre   => 'https://www.wikidata.org/wiki/',
