@@ -300,7 +300,8 @@ sub edit {
     }
   }
   delete $frm->{_err} unless ref $frm->{_err};
-  $frm->{boards} ||= $board;
+  $frm->{boards} ||= $board.($board =~ /^u/ ? ' u'.$self->authInfo->{id} : '');
+  $frm->{title} ||= $self->reqGet('title');
   $frm->{poll_preview} //= 1;
   $frm->{poll_max_options} ||= 1;
 
