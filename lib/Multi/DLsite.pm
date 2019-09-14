@@ -67,12 +67,12 @@ sub data {
 
   # We have a price? Update database.
   if($price && $shop) {
-    pg_cmd q{UPDATE shop_dlsite SET found = TRUE, shop = $2, price = $3, lastfetch = NOW() WHERE id = $1}, [ $id, $shop, $price ];
+    pg_cmd q{UPDATE shop_dlsite SET deadsince = NULL, shop = $2, price = $3, lastfetch = NOW() WHERE id = $1}, [ $id, $shop, $price ];
     AE::log debug => "$prefix for $price at /$shop/";
 
   # Nothing? Update DB
   } else {
-    pg_cmd q{UPDATE shop_dlsite SET found = FALSE, lastfetch = NOW() WHERE id = $1}, [ $id ];
+    pg_cmd q{UPDATE shop_dlsite SET deadsince = COALESCE(deadsince, NOW()), lastfetch = NOW() WHERE id = $1}, [ $id ];
     AE::log info => "$prefix not found.";
   }
 }

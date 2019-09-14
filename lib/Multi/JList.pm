@@ -58,12 +58,12 @@ sub data {
 
   # Out of stock? Update database.
   if($outofstock) {
-    pg_cmd q{UPDATE shop_jlist SET found = TRUE, jbox = $2, price = '', lastfetch = NOW() WHERE id = $1}, [ $id, $jbox ];
+    pg_cmd q{UPDATE shop_jlist SET deadsince = NULL, jbox = $2, price = '', lastfetch = NOW() WHERE id = $1}, [ $id, $jbox ];
     AE::log debug => "$prefix is out of stock on jbox=$jbox";
 
   # We have a price? Update database.
   } elsif($price) {
-    pg_cmd q{UPDATE shop_jlist SET found = TRUE, jbox = $2, price = $3, lastfetch = NOW() WHERE id = $1}, [ $id, $jbox, $price ];
+    pg_cmd q{UPDATE shop_jlist SET deadsince = NULL, jbox = $2, price = $3, lastfetch = NOW() WHERE id = $1}, [ $id, $jbox, $price ];
     AE::log debug => "$prefix for $price on jbox=$jbox";
 
   # No price or stock info? Try J-List
@@ -72,7 +72,7 @@ sub data {
 
   # Nothing at all? Update database.
   } else {
-    pg_cmd q{UPDATE shop_jlist SET found = FALSE, lastfetch = NOW() WHERE id = $1}, [ $id ];
+    pg_cmd q{UPDATE shop_jlist SET deadsince = coalesce(deadsince, NOW()), lastfetch = NOW() WHERE id = $1}, [ $id ];
     AE::log info => "$prefix not found on either JBOX or J-List.";
   }
 }

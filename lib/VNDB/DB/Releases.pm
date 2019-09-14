@@ -214,11 +214,11 @@ sub _enrich {
              , r.l_dlsite,     sdlsite.price AS l_dlsite_price,   sdlsite.shop AS l_dlsite_shop
              , r.l_dlsiteen, sdlsiteen.price AS l_dlsiteen_price, sdlsiteen.shop AS l_dlsiteen_shop
           FROM releases$hist r
-          LEFT JOIN shop_denpa  sdenpa    ON    sdenpa.id = r.l_denpa    AND    sdenpa.found
-          LEFT JOIN shop_dlsite sdlsite   ON   sdlsite.id = r.l_dlsite   AND   sdlsite.found
-          LEFT JOIN shop_dlsite sdlsiteen ON sdlsiteen.id = r.l_dlsiteen AND sdlsiteen.found
-          LEFT JOIN shop_jlist  sjlist    ON    sjlist.id = r.l_jlist    AND    sjlist.found
-          LEFT JOIN shop_mg     smg       ON       smg.id = r.l_mg       AND       smg.found
+          LEFT JOIN shop_denpa  sdenpa    ON    sdenpa.id = r.l_denpa    AND    sdenpa.lastfetch IS NOT NULL AND    sdenpa.deadsince IS NULL
+          LEFT JOIN shop_dlsite sdlsite   ON   sdlsite.id = r.l_dlsite   AND   sdlsite.lastfetch IS NOT NULL AND   sdlsite.deadsince IS NULL
+          LEFT JOIN shop_dlsite sdlsiteen ON sdlsiteen.id = r.l_dlsiteen AND sdlsiteen.lastfetch IS NOT NULL AND sdlsiteen.deadsince IS NULL
+          LEFT JOIN shop_jlist  sjlist    ON    sjlist.id = r.l_jlist    AND    sjlist.lastfetch IS NOT NULL AND    sjlist.deadsince IS NULL
+          LEFT JOIN shop_mg     smg       ON       smg.id = r.l_mg       AND       smg.lastfetch IS NOT NULL AND       smg.deadsince IS NULL
          WHERE r.$colname IN(!l)",
         [ keys %r ]
       )});
@@ -229,7 +229,7 @@ sub _enrich {
       } 0..$#$r;
       if(keys %p) {
         push(@{$r->[$p{$_->{gtin}}]{l_playasia}}, $_) for (@{$self->dbAll("
-          SELECT gtin, price, url FROM shop_playasia WHERE gtin IN(!l)",
+          SELECT gtin, price, url FROM shop_playasia WHERE gtin IN(!l) AND price <> ''",
           [ keys %p ]
         )});
       }

@@ -1,0 +1,19 @@
+ALTER TABLE shop_denpa ALTER COLUMN found DROP NOT NULL;
+ALTER TABLE shop_denpa ALTER COLUMN found DROP DEFAULT;
+ALTER TABLE shop_denpa ALTER COLUMN found TYPE timestamptz USING CASE WHEN found THEN NULL ELSE lastfetch END;
+ALTER TABLE shop_denpa RENAME COLUMN found TO deadsince;
+
+ALTER TABLE shop_dlsite ALTER COLUMN found DROP NOT NULL;
+ALTER TABLE shop_dlsite ALTER COLUMN found DROP DEFAULT;
+ALTER TABLE shop_dlsite ALTER COLUMN found TYPE timestamptz USING CASE WHEN found THEN NULL ELSE lastfetch END;
+ALTER TABLE shop_dlsite RENAME COLUMN found TO deadsince;
+
+ALTER TABLE shop_jlist ALTER COLUMN found DROP NOT NULL;
+ALTER TABLE shop_jlist ALTER COLUMN found DROP DEFAULT;
+ALTER TABLE shop_jlist ALTER COLUMN found TYPE timestamptz USING CASE WHEN found THEN NULL ELSE lastfetch END;
+ALTER TABLE shop_jlist RENAME COLUMN found TO deadsince;
+
+ALTER TABLE shop_mg ALTER COLUMN found DROP NOT NULL;
+ALTER TABLE shop_mg ALTER COLUMN found DROP DEFAULT;
+ALTER TABLE shop_mg ALTER COLUMN found TYPE timestamptz USING CASE WHEN found THEN NULL ELSE lastfetch END;
+ALTER TABLE shop_mg RENAME COLUMN found TO deadsince;

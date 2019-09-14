@@ -56,7 +56,7 @@ sub data {
 
   # We have a price? Update database.
   if($price) {
-    pg_cmd q{UPDATE shop_mg SET found = TRUE, r18 = $2, price = $3, lastfetch = NOW() WHERE id = $1}, [ $id, $r18, $price ];
+    pg_cmd q{UPDATE shop_mg SET deadsince = NULL, r18 = $2, price = $3, lastfetch = NOW() WHERE id = $1}, [ $id, $r18, $price ];
     AE::log debug => "$prefix for $price on r18=$r18";
 
   # Try /r18/
@@ -65,7 +65,7 @@ sub data {
 
   # Nothing? Update DB
   } else {
-    pg_cmd q{UPDATE shop_mg SET found = FALSE, lastfetch = NOW() WHERE id = $1}, [ $id ];
+    pg_cmd q{UPDATE shop_mg SET deadsince = COALESCE(deadsince, NOW()), lastfetch = NOW() WHERE id = $1}, [ $id ];
     AE::log info => "$prefix not found.";
   }
 }

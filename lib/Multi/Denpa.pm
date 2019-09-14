@@ -75,13 +75,13 @@ sub data {
     }
     my $price = 'US$ '.$prod->{variants}[0]{price};
     $price = 'free' if $price eq 'US$ 0.00';
-    pg_cmd 'UPDATE shop_denpa SET found = TRUE, lastfetch = NOW(), sku = $2, price = $3 WHERE id = $1',
+    pg_cmd 'UPDATE shop_denpa SET deadsince = NULL, lastfetch = NOW(), sku = $2, price = $3 WHERE id = $1',
       [ $prod->{handle}, $prod->{variants}[0]{sku}, $price ];
 
     delete $handles->{$prod->{handle}};
   }
 
-  pg_cmd 'UPDATE shop_denpa SET found = FALSE, lastfetch = NOW() WHERE id = $1', [$_]
+  pg_cmd 'UPDATE shop_denpa SET deadsince = COALESCE(deadsince, NOW()), lastfetch = NOW() WHERE id = $1', [$_]
     for (keys %$handles);
 
   AE::log info => "%d in shop, %d online, %d offline", scalar @{$data->{products}}, $db_count-scalar keys %$handles, scalar keys %$handles;

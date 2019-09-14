@@ -462,7 +462,7 @@ CREATE TABLE sessions (
 CREATE TABLE shop_denpa (
   id        text NOT NULL PRIMARY KEY,
   lastfetch timestamptz,
-  found     boolean NOT NULL DEFAULT false,
+  deadsince timestamptz,
   sku       text NOT NULL DEFAULT '',
   price     text NOT NULL DEFAULT ''
 );
@@ -471,7 +471,7 @@ CREATE TABLE shop_denpa (
 CREATE TABLE shop_dlsite (
   id        text NOT NULL PRIMARY KEY,
   lastfetch timestamptz,
-  found     boolean NOT NULL DEFAULT false,
+  deadsince timestamptz,
   shop      text NOT NULL DEFAULT '',
   price     text NOT NULL DEFAULT ''
 );
@@ -480,7 +480,7 @@ CREATE TABLE shop_dlsite (
 CREATE TABLE shop_jlist (
   id        text NOT NULL PRIMARY KEY,
   lastfetch timestamptz,
-  found     boolean NOT NULL DEFAULT false,
+  deadsince timestamptz,
   jbox      boolean NOT NULL DEFAULT false,
   price     text NOT NULL DEFAULT '' -- empty when unknown or not in stock
 );
@@ -489,7 +489,7 @@ CREATE TABLE shop_jlist (
 CREATE TABLE shop_mg (
   id        integer NOT NULL PRIMARY KEY,
   lastfetch timestamptz,
-  found     boolean NOT NULL DEFAULT false,
+  deadsince timestamptz,
   r18       boolean NOT NULL DEFAULT true,
   price     text NOT NULL DEFAULT ''
 );
