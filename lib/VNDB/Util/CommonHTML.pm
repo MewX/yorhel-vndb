@@ -173,15 +173,6 @@ sub htmlRevision {
   div class => 'mainbox revision';
    h1 "Revision $new->{rev}";
 
-   # character information may be rather spoilerous
-   if($type eq 'c') {
-     div class => 'warning';
-      h2 'SPOILER WARNING!';
-      lit 'This revision page may contain major spoilers. You may want to view the <a href="/c'.$new->{id}.'">final page</a> instead.';
-     end;
-     br;br;
-   }
-
    # previous/next revision links
    a class => 'prev', href => sprintf('/%s%d.%d', $type, $new->{id}, $new->{rev}-1), '<- earlier revision' if $new->{rev} > 1;
    a class => 'next', href => sprintf('/%s%d.%d', $type, $new->{id}, $new->{rev}+1), 'later revision ->' if !$new->{lastrev};
