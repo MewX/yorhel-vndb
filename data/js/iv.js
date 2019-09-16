@@ -111,7 +111,7 @@ function show(ev) {
   byId('ivimgload').style.top = ((wh - 20) / 2 + st)+'px';
   setClass(byId('ivimgload'), 'hidden', false);
 
-  document.body.onclick = close;
+  document.onclick = close;
   // Capture left/right arrow keys
   document.onkeydown = function(e) {
     if(e.keyCode == 37 && byId('ivprev').style.visibility == 'visible') {
@@ -126,7 +126,7 @@ function show(ev) {
 }
 
 function close() {
-  document.body.onclick = null;
+  document.onclick = null;
   document.onkeydown = null;
   setClass(byId('iv_view'), 'hidden', true);
   setClass(byId('ivimgload'), 'hidden', true);
