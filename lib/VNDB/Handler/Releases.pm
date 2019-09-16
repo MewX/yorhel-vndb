@@ -809,7 +809,7 @@ sub enginexml {
   xml;
   tag 'engines';
    for(grep $lst->[$_]{engine} =~ /\Q$f->{q}\E/i, 0..$#$lst) {
-     tag 'item', count => $lst->[$_]{cnt}, id => $_, $lst->[$_]{engine};
+     tag 'item', count => $lst->[$_]{cnt}, id => $_+1, $lst->[$_]{engine};
    }
   end;
 }
