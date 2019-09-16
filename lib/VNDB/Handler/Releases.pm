@@ -808,8 +808,8 @@ sub enginexml {
   $self->resHeader('Content-type' => 'text/xml; charset=UTF-8');
   xml;
   tag 'engines';
-   for(grep $_->{engine} =~ /\Q$f->{q}\E/i, @$lst) {
-     tag 'item', count => $_->{cnt}, $_->{engine};
+   for(grep $lst->[$_]{engine} =~ /\Q$f->{q}\E/i, 0..$#$lst) {
+     tag 'item', count => $lst->[$_]{cnt}, id => $_, $lst->[$_]{engine};
    }
   end;
 }
