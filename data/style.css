@@ -1,5 +1,5 @@
 *            { margin: 0; padding: 0; }
-body, td     { font: 12px "Tahoma", "Arial", sans-serif; }
+body, td     { font: 13px "Tahoma", "Arial", sans-serif; }
 body         { $_bodybg$; color: $maintext$ }
 table        { border-collapse: collapse; }
 table td,
@@ -56,14 +56,14 @@ div.warning, div.notice       { margin: 5px 10%; padding: 15px; background-color
 div.notice                    { background-color: $noticebg$; border: 1px solid $noticeborder$; }
 div.warning ul, div.notice ul { margin-left: 0; }
 div.warning li, div.notice li { margin-left: 20px; }
-div.warning h2, div.notice h2 { font-size: 12px; font-weight: bold; margin: 0; }
+div.warning h2, div.notice h2 { font-size: 13px; font-weight: bold; margin: 0; }
 
 /* dropdown box */
 #dd_box            { position: absolute; left: 0px; border: 1px solid $border$; background-color: $secbg$; z-index: 2 }
 #dd_box ul         { list-style-type: none; margin: 0; padding: 0 }
 #dd_box li b       { display: block; font-weight: normal; padding-left: 5px; }
 #dd_box li i       { display: block; font-style: normal; padding-left: 10px; padding-right: 5px }
-#dd_box li a       { display: block; padding-left: 10px; border: 0; padding-right: 5px }
+#dd_box li a       { display: block; padding-left: 10px; border: 0; padding: 3px 5px 3px 3px }
 #dd_box li a:hover { background: $boxbg$ }
 
 /* dropdown search */
@@ -88,7 +88,7 @@ ul, ol        { margin-left: 35px; }
 p.locked      { float: right; color: $standout$; font-style: italic; margin: 0!important; }
 b.grayedout   { font-weight: normal; color: $grayedout$ }
 i.grayedout   { font-style: normal; color: $grayedout$ }
-#maincontent h2 b { font: 12px "Tahoma", "Arial", sans-serif; font-weight: normal; }
+#maincontent h2 b { font: 13px "Tahoma", "Arial", sans-serif; font-weight: normal; }
 p.description { margin: 10px 100px!important; }
 b.done        { font-weight: normal; color: $statok$ }
 b.todo        { font-weight: normal; color: $statnok$ }
@@ -130,7 +130,8 @@ input.text, input.submit, select, textarea {
   background-color: $secbg$;
   color: $maintext$;
   border: 1px solid $secborder$;
-  font: 13px "Tahoma", "Arial", sans-serif;
+  font: 14px "Tahoma", "Arial", sans-serif;
+  padding: 0 1px 1px 1px;
   margin: 1px;
 }
 form, fieldset           { border: 0; display: block; }
@@ -139,8 +140,9 @@ optgroup option          { padding-left: 10px; font-style: normal; }
 input.submit             { background: $boxbg$; padding: 1px; }
 input.text, select       { width: 200px; }
 fieldset.submit          { width: 100%; text-align: center; margin: 5px; }
-fieldset.submit input    { width: 150px; }
-fieldset.submit h2       { font-size: 12px!important; }
+fieldset.submit input[type=submit] { width: 150px; }
+fieldset.submit input[type=checkbox] { margin: 0 5px 0 15px; }
+fieldset.submit h2       { font-size: 13px!important; }
 fieldset.submit textarea { margin: 0 20px 5px 20px; }
 td.label, td.label label { width: 110px; }
 td.label label           { display: block; }
@@ -158,21 +160,19 @@ table.formtable tr.newpart td { padding-top: 20px; font-weight: bold; }
 
 #menulist a                  { color: $maintext$; text-decoration: none; }
 #menulist a:hover            { border-bottom: 1px dotted $maintext$; }
-#menulist                    { position: absolute; left: 30px; top: 190px; width: 150px; }
+#menulist                    { position: absolute; left: 30px; top: 190px; width: 160px; }
 #menulist div.menubox        { margin: 0 0 10px 0; border: 1px solid $border$; background: $boxbg$; }
 #menulist div.menubox div    { padding: 2px 7px; }
 #menulist h2                 { border-bottom: 1px solid $border$; background: $boxbg$; padding: 1px 3px; }
-#menulist h2, #menulist h2 a { font-size: 12px; color: $maintext$; }
+#menulist h2, #menulist h2 a { font-size: 13px; color: $maintext$; }
 #menulist h2 #lang_select    { float: right; padding-top: 1px; }
-#menulist dt                 { display: block; float: left; width: 93px; font-style: italic; }
-#menulist dd                 { width: 40px; float: left; text-align: right; }
+#menulist dt                 { display: block; float: left; width: 97px; font-style: italic; }
+#menulist dd                 { width: 45px; float: left; text-align: right; }
 #menulist p                  { text-align: center; }
-#menulist input.text         { width: 100px; margin-left: 15px; }
-#menulist input.submit       { width: 90px; margin-left: 20px; }
-#menulist #search input.text { width: 133px; margin: 0 0 3px 7px }
+#menulist #search input.text { width: 141px; margin: 0 0 3px 7px }
 #menulist #search input.submit { display: none; }
 #dd_box abbr                 { margin: 2px 5px 2px 0!important; }
-#menulist .notifyget         { display: inline-block; width: 125px; padding: 4px; background: $warnbg$; border: 1px solid $warnborder$; }
+#menulist .notifyget         { display: inline-block; width: 135px; padding: 4px; background: $warnbg$; border: 1px solid $warnborder$; }
 
 
 
@@ -182,7 +182,7 @@ table.formtable tr.newpart td { padding-top: 20px; font-weight: bold; }
 #maincontent {
   position: absolute;
   top: 169px;
-  left: 190px;
+  left: 200px;
   right: 30px;
   margin: 0;
   padding-bottom: 50px!important;
@@ -198,7 +198,7 @@ div.mainbox, table.mainbox td {
   padding: 5px;
   background: $boxbg$;
 }
-.mainbox h1          { color: $boxtitle$; font-size: 21px; margin: -5px 0 15px 0; }
+.mainbox h1          { color: $boxtitle$; font-size: 24px; margin: -5px 0 15px 0; }
 .mainbox h2.alttitle { color: $alttitle$; margin: -17px 0 15px 15px; font-weight: normal; }
 .mainbox p           { margin: 3px 20px; }
 .mainbox div p,
@@ -208,7 +208,7 @@ a.addnew, p.addnew   { float: right; margin: 0 }
 
 .mainbox.threelayout    { border-collapse: separate; border-spacing: 10px; margin: 10px -10px -20px -10px; min-width: 100%; }
 .mainbox.threelayout td { width: 32%; padding: 0 2px 10px 2px; }
-.mainbox.threelayout h1 { margin: 0; font-size: 16px; font-weight: bold; }
+.mainbox.threelayout h1 { margin: 0; font-size: 18px; font-weight: bold; }
 .mainbox.threelayout h2 { font-size: 14px; margin-top: 3px; }
 .mainbox.threelayout a.right { float: right; }
 .mainbox.threelayout ul { list-style-type: none; margin-left: 10px; }
@@ -282,7 +282,7 @@ table thead td, table thead th  { font-weight: bold; background-color: $secbg$; 
 table thead th                  { text-align: left }
 fieldset.search                 { display: block; width: 100%; text-align: center; margin: 0 0 10px 0; }
 fieldset.search .submit         { padding: 0 1px; }
-p#searchtabs                    { height: 12px; padding-right: 70px; }
+p#searchtabs                    { height: 13px; padding-right: 70px; }
 p#searchtabs a                  { padding: 2px 6px 2px 6px; margin: 0 2px; color: $maintext$; }
 p#searchtabs a:hover, p#searchtabs a.sel {
   border: 1px solid $secborder$;
@@ -371,7 +371,7 @@ div.vndetails td.relations dt { float: none; font-style: normal; }
 div.vndetails td.relations dd { margin-left: 15px; }
 div.vndetails td.anime b      { font-size: 10px; font-weight: normal; padding-right: 4px; }
 
-div#vntags                    { margin: 0 30px 0 30px; border-top: 1px solid $border$; padding: 1px 5% 0 5%; text-align: center; }
+div#vntags                    { margin: 0 30px 0 30px; border-top: 1px solid $border$; padding: 3px 5% 0 5%; text-align: center; }
 #vntags span                  { white-space: nowrap; margin-left: 15px; }
 #vntags b                     { color: $grayedout$; font-weight: normal; font-size: 10px }
 #tagops                       { text-align: right; width: auto; }
@@ -411,7 +411,7 @@ div#vntags                    { margin: 0 30px 0 30px; border-top: 1px solid $bo
 .releases td.tc5 a     { color: $maintext$; border: 0; }
 .releases td.tc6       { text-align: right; width: 25px; padding: 0; white-space: nowrap }
 
-.rllinks_dd a { text-align: right; padding: 3px }
+.rllinks_dd a { text-align: right }
 .rllinks_dd span { color: $maintext$; padding-right: 10px }
 
 #screenshots p.rel {
@@ -593,7 +593,7 @@ div.charimg p   { text-align: center; padding: 0px; margin: 0; }
 .chardesc p     { padding: 0 0 0 5px; }
 div.chardetails table        { float: left; width: 530px; }
 div.chardetails table td.key { width: 100px; }
-div.chardetails.charsep      { padding-top: 5px; margin-top: 5px; border-top: 1px solid $border$ }
+div.chardetails.charsep      { margin-top: 30px }
 
 .charops label                 { float: right; margin: 8px 0 8px 10px;  border: 0; outline: none; color: $link$; cursor: pointer; }
 .charops label.sec             { border-left: 1px solid $border$; padding-left: 10px }
@@ -657,7 +657,7 @@ div.staffbrowse	   { padding-bottom: 10px }
 .staffbrowse ul    { float: left; margin-top: -5px; margin-left: 3%; width: 28%; }
 .staffbrowse ul li { list-style-type: none; margin-bottom: 2px; }
 .staffbrowse ul li abbr { margin-right: 5px; margin-top: 1px; }
-.staffpage table.stripe { width: 400px; margin: 0 auto; }
+.staffpage table.stripe { width: 450px; margin: 0 auto; }
 .staffpage .key  { width: 70px; }
 .staffroles td.tc2 { white-space: nowrap; width: 80px }
 .staffroles td.tc3 { white-space: nowrap; width: 100px }
@@ -784,7 +784,7 @@ div.votelist td.tc2 { width: 50px; text-align: right; padding-right: 10px }
 
 /***** Userpage *****/
 
-.userpage table { width: 400px; margin: 0 auto; }
+.userpage table { width: 450px; margin: 0 auto; }
 .userpage .key  { width: 70px; }
 
 
@@ -792,7 +792,7 @@ div.votelist td.tc2 { width: 50px; text-align: right; padding-right: 10px }
 div.uposts table    { table-layout: fixed }
 div.uposts td       { white-space: nowrap }
 div.uposts td.tc1   { width: 60px; padding-left: 0!important; padding-right: 0; text-align: right }
-div.uposts td.tc2   { width: 25px; padding-left: 0 }
+div.uposts td.tc2   { width: 30px; padding-left: 0 }
 div.uposts td.tc3   { width: 65px; }
 div.uposts td.tc4   { overflow: hidden }
 div.uposts td.tc4 b { margin-left: 10px }
@@ -803,7 +803,7 @@ div.uposts td.tc4 b { margin-left: 10px }
 /***** Tag page *****/
 
 .tagtree        { margin-left: 20px; margin-top: -20px; list-style-type: none; }
-.tagtree li     { float: left; width: 200px; margin-top: 10px; }
+.tagtree li     { float: left; width: 230px; margin-top: 10px; }
 .tagtree li li  { float: none; width: auto; margin-top: 0; }
 .tagtree ul     { margin-left: 10px; list-style-type: none; }
 .tagvnlist .tc1 { width: 105px; }
@@ -815,7 +815,7 @@ div.uposts td.tc4 b { margin-left: 10px }
 
 /***** Tag/trait list (/g/list, /i/list) *****/
 
-.browse.taglist .tc1 { width: 80px }
+.browse.taglist .tc1 { width: 100px; white-space: nowrap }
 
 
 /***** Tag links *****/
@@ -843,7 +843,7 @@ table.tgl .tc_allvote       { padding-left: 30px!important; }
 table.tgl .tc_allvote i     { font-style: normal; font-size: 10px }
 table.tgl .tc_allspoil      { text-align: right; padding-right: 15px!important; }
 table.tgl .tagmod_cat td    { font-weight: bold }
-.taglvl             { display: block; float: left; width: 8px; height: 12px; border: 1px solid $border$; font-size: 1px; color: $maintext$!important }
+.taglvl             { display: block; float: left; width: 8px; height: 13px; border: 1px solid $border$; font-size: 1px; color: $maintext$!important }
 .taglvl0            { width: 15px; border: none; font-size: 10px; text-align: center; }
 div.taglvl0         { font-size: 10px; width: 20px!important }
 div.taglvl          { border: none; width: 10px; height: 14px }
@@ -929,7 +929,7 @@ div#iv_view {
 .fil_div .browseopts a { outline: none; color: $maintext$ }
 .fil_div .browseopts a.active { font-weight: bold }
 .fil_div b.ruler       { display: block; margin: auto; width: 93%; height: 1px; border-bottom: 1px solid $border$; margin-bottom: 5px }
-.fil_div h3            { width: 100%; text-align: center; font-size: 12px }
+.fil_div h3            { width: 100%; text-align: center; font-size: 13px }
 .fil_div table         { width: 93%; text-align: left; margin: 0 auto 5px auto }
 .fil_div table td.label label { width: 120px }
 .fil_div table td.label b { display: block; font-weight: normal; padding: 10px 5px 0 0 }
