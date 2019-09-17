@@ -3,180 +3,31 @@ package VNDB::Util::LayoutHTML;
 
 use strict;
 use warnings;
-use TUWF ':html', 'uri_escape';
+use TUWF ':html';
+use VNWeb::HTML;
 use Exporter 'import';
-use Encode 'decode_utf8';
-use VNDB::Func;
 
 our @EXPORT = qw|htmlHeader htmlFooter|;
 
-
-sub htmlHeader { # %options->{ title, noindex, search, feeds, svg, metadata }
+sub htmlHeader { # %options->{ title, noindex, search, feeds, metadata }
   my($self, %o) = @_;
-  my $skin = $self->reqGet('skin') || $self->authPref('skin') || $self->{skin_default};
-  $skin = $self->{skin_default} if !$self->{skins}{$skin} || !-d "$self->{root}/static/s/$skin";
 
-  # heading
-  lit '<!DOCTYPE HTML>';
-  tag 'html', lang => 'en';
-   head prefix => 'og: http://ogp.me/ns#';
-    title $o{title};
-    Link rel => 'shortcut icon', href => '/favicon.ico', type => 'image/x-icon';
-    Link rel => 'stylesheet', href => $self->{url_static}.'/s/'.$skin.'/style.css?'.$self->{version}, type => 'text/css', media => 'all';
-    Link rel => 'search', type => 'application/opensearchdescription+xml', title => 'VNDB VN Search', href => $self->reqBaseURI().'/opensearch.xml';
-    if($self->authPref('customcss')) {
-      (my $css = $self->authPref('customcss')) =~ s/\n/ /g;
-      style type => 'text/css', $css;
-    }
-    if($o{feeds}) {
-      Link rel => 'alternate', type => 'application/atom+xml', href => "/feeds/announcements.atom", title => 'Site Announcements';
-      Link rel => 'alternate', type => 'application/atom+xml', href => "/feeds/changes.atom",       title => 'Recent Changes';
-      Link rel => 'alternate', type => 'application/atom+xml', href => "/feeds/posts.atom",         title => 'Recent Posts';
-    }
+  $o{og} = $o{metadata} ? +{ map +(s/og://r, $o{metadata}{$_}), keys $o{metadata}->%* } : undef;
 
-    if(exists $o{metadata}) {
-      # Required fields as per http://op.me/#metadata: og:title, og:type, og:image, og:url
-      if(exists $o{metadata}{'og:title'}) {
-        $o{metadata}{'og:site_name'} = 'The Visual Novel Database';
-        $o{metadata}{'og:type'}    ||= 'object';
-        $o{metadata}{'og:image'}   ||= $self->{placeholder_img};
-        $o{metadata}{'og:url'}     ||= $self->reqURI();
-      }
-
-      for my $k (keys %{$o{metadata}}) {
-        next if !$o{metadata}{$k} and $o{metadata}{$k} ne '0';
-        $o{metadata}{$k} =~ s/\R/ /g;
-
-        meta property => "$k", content => $o{metadata}->{$k}, undef;
-      }
-    }
-
-    meta name => 'robots', content => 'noindex, follow', undef if $o{noindex};
-   end;
+  html lang => 'en';
+   head sub { VNWeb::HTML::_head_(\%o) };
    body;
     div id => 'bgright', ' ';
-    div id => 'header';
-     h1;
-      a href => '/', 'the visual novel database';
-     end;
-    end;
-
-    _menu($self, %o);
-
+    div id => 'header', sub { h1 sub { a href => '/', 'the visual novel database' } };
+    div id => 'menulist', sub { VNWeb::HTML::_menu_(\%o) };
     div id => 'maincontent';
-}
-
-
-sub _menu {
-  my($self, %o) = @_;
-
-  div id => 'menulist';
-
-   div class => 'menubox';
-    h2;
-     txt 'Menu';
-    end;
-    div;
-     a href => '/',      'Home'; br;
-     a href => '/v/all', 'Visual novels'; br;
-     b class => 'grayedout', '> '; a href => '/g', 'Tags'; br;
-     a href => '/r',     'Releases'; br;
-     a href => '/p/all', 'Producers'; br;
-     a href => '/s/all', 'Staff'; br;
-     a href => '/c/all', 'Characters'; br;
-     b class => 'grayedout', '> '; a href => '/i', 'Traits'; br;
-     a href => '/u/all', 'Users'; br;
-     a href => '/hist',  'Recent changes'; br;
-     a href => '/t',     'Discussion board'; br;
-     a href => '/d6',    'FAQ'; br;
-     a href => '/v/rand','Random visual novel';
-    end;
-    form action => '/v/all', method => 'get', id => 'search';
-     fieldset;
-      legend 'Search';
-      input type => 'text', class => 'text', id => 'sq', name => 'sq', value => $o{search}||'', placeholder => 'search';
-      input type => 'submit', class => 'submit', value => 'Search';
-     end;
-    end;
-   end 'div'; # /menubox
-
-   div class => 'menubox';
-    if($self->authInfo->{id}) {
-      my $uid = sprintf '/u%d', $self->authInfo->{id};
-      my $nc = $self->authInfo->{notifycount};
-      h2;
-       a href => $uid, ucfirst $self->authInfo->{username};
-      end;
-      div;
-       a href => "$uid/edit", 'My Profile'; br;
-       a href => "$uid/list", 'My Visual Novel List'; br;
-       a href => "$uid/votes",'My Votes'; br;
-       a href => "$uid/wish", 'My Wishlist'; br;
-       a href => "$uid/notifies", $nc ? (class => 'notifyget') : (), 'My Notifications'.($nc?" ($nc)":''); br;
-       a href => "$uid/hist", 'My Recent Changes'; br;
-       a href => '/g/links?u='.$self->authInfo->{id}, 'My Tags'; br;
-       br;
-       if($self->authCan('edit')) {
-         a href => '/v/add', 'Add Visual Novel'; br;
-         a href => '/p/add', 'Add Producer'; br;
-         a href => '/s/new', 'Add Staff'; br;
-         a href => '/c/new', 'Add Character'; br;
-       }
-       br;
-       a href => "$uid/logout", 'Logout';
-      end;
-    } else {
-      h2 'User menu';
-      div;
-       my $ref = uri_escape $self->reqPath().$self->reqQuery();
-       a href => "/u/login?ref=$ref", 'Login'; br;
-       a href => '/u/newpass', 'Password reset'; br;
-       a href => '/u/register', 'Register'; br;
-      end;
-    }
-   end 'div'; # /menubox
-
-   div class => 'menubox';
-    h2 'Database Statistics';
-    div;
-     dl;
-      dt 'Visual Novels';   dd $self->{stats}{vn};
-      dt; b class => 'grayedout', '> '; lit 'Tags'; end; dd $self->{stats}{tags};
-      dt 'Releases';        dd $self->{stats}{releases};
-      dt 'Producers';       dd $self->{stats}{producers};
-      dt 'Staff';           dd $self->{stats}{staff};
-      dt 'Characters';      dd $self->{stats}{chars};
-      dt; b class => 'grayedout', '> '; lit 'Traits'; end; dd $self->{stats}{traits};
-     end;
-     clearfloat;
-    end;
-   end;
-  end 'div'; # /menulist
 }
 
 
 sub htmlFooter { # %options => { pref_code => 1 }
   my($self, %o) = @_;
-     div id => 'footer';
-
-      my $q = $self->dbRandomQuote;
-      if($q && $q->{vid}) {
-        lit '"';
-        a href => "/v$q->{vid}", style => 'text-decoration: none', $q->{quote};
-        txt '"';
-        br;
-      }
-
-      txt "vndb $self->{version} | ";
-      a href => '/d7', 'about us';
-      txt ' | ';
-      a href => 'irc://irc.synirc.net/vndb', '#vndb';
-      txt ' | ';
-      a href => "mailto:$self->{admin_email}", $self->{admin_email};
-      txt ' | ';
-      a href => $self->{source_url}, 'source';
-     end;
-    end 'div'; # /maincontent
+     div id => 'footer', sub { VNWeb::HTML::_footer_ };
+    end 'div'; # maincontent
 
     # Abuse an empty noscript tag for the formcode to update a preference setting, if the page requires one.
     noscript id => 'pref_code', title => $self->authGetCode('/xml/prefs.xml'), ''
@@ -184,21 +35,6 @@ sub htmlFooter { # %options => { pref_code => 1 }
     script type => 'text/javascript', src => $self->{url_static}.'/f/vndb.js?'.$self->{version}, '';
    end 'body';
   end 'html';
-
-  # write the SQL queries as a HTML comment when debugging is enabled
-  if($self->debug) {
-    lit "\n<!--\n SQL Queries:\n";
-    for (@{$self->{_TUWF}{DB}{queries}}) {
-      my($sql, $params, $time) = @$_;
-      lit sprintf "  [%6.2fms] %s | %s\n", $time*1000, $sql,
-          join ', ',
-          map "$_:".DBI::neat($params->{$_}),
-          sort { $a =~ /^[0-9]+$/ && $b =~ /^[0-9]+$/ ? $a <=> $b : $a cmp $b }
-          keys %$params
-    }
-    lit "-->\n";
-  }
 }
-
 
 1;

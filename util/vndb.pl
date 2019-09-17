@@ -33,7 +33,7 @@ TUWF::set(
   error_404_handler => \&handle404,
   log_format => \&logformat,
 );
-TUWF::load_recursive('VNDB::Util', 'VNDB::DB', 'VNDB::Handler');
+TUWF::load_recursive('VNDB::Util', 'VNDB::DB', 'VNDB::Handler', 'VNWeb');
 TUWF::run();
 
 

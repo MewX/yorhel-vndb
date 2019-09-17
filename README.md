@@ -121,16 +121,38 @@ util/multi.pl (application server, optional):
 ```
 
 
-# Version 2 & 3
+# Rewrites, rewrites, rewrites
 
-The VNDB website is being rewritten. The current active site is version 2, but
-this repository also contains the code for the new (in progress) version 3. The
-code is easy to identify, the following files are only used by version 3:
+The VNDB website is currently (like every project beyond a certain age) in a
+transitional state of rewrites. There are three "versions" and coding styles
+across this repository:
 
-- `lib/VN3/`
-- `css3/`
-- `elm3/`
-- `util/vndb3.pl`
+**Version 2**
+
+This is the code that powers the actual website. It lives in `lib/VNDB/` and
+has `util/vndb.pl` as entry point. Front-end assets are in `data/js/`,
+`data/style.css`, `data/icons/`, `static/f/` and `static/s/`.
+
+**Version 2-rw**
+
+This is a (newly started) backend rewrite of version 2. It lives in
+`lib/VNWeb/`. Individual parts of the website are gradually being moved into
+this new coding style and structure. Version 2 and 2-rw run side-by-side in the
+same process and share a common route table and database connection, so the
+entry point is still `util/vndb.pl`. The primary goal of this rewrite is to
+make use of the clearer version 3 structure and to slowly migrate the brittle
+frontend Javascript parts to Elm and JSON APIs.
+
+**Version 3**
+
+This is (or was) an attempt at a full rewrite of the entire website, both
+backend and frontend. It lives in `lib/VN3/` and uses `util/vndb3.pl` as entry
+point. Its frontend assets live inside `css3/`, `elm3/` and `static/v3/`. Most
+of the ideas from version 3 will be gradually backported into version 2-rw.
+Version 3 also comes with a completely different and much better layout, which
+I hope will also be integrated in version 2-rw at some point. Version 3 is not
+actively maintained at this point and is more of a playground for the new
+layout.
 
 To run version 3 instead of 2:
 
@@ -141,6 +163,15 @@ To run version 3 instead of 2:
   # Or when using Docker, start the container as follows:
   docker run -ti --name vndb -p 3000:3000 -v "`pwd`":/var/www --rm vndb /var/www/util/docker-init.sh 3
 ```
+
+**Non-rewrites**
+
+Some parts of this repository are not affected by these rewrites. These include
+the database structure, most of the scripts in `util/`, some common modules
+spread across `lib/` and Multi, which resides in `lib/Multi/`. That's not to
+say these are *final* or *stable*, but they're largely independent from the
+website code.
+
 
 # License
 

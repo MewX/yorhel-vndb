@@ -6,7 +6,7 @@ use warnings;
 use Exporter 'import';
 
 our @EXPORT = qw|
-  dbStats dbItemEdit dbRevisionGet dbRandomQuote dbWikidata
+  dbStats dbItemEdit dbRevisionGet dbWikidata
 |;
 
 
@@ -108,16 +108,6 @@ sub dbRevisionGet {
   }
 
   return wantarray ? ($r, $np) : $r;
-}
-
-
-# Returns a random quote (hashref with keys = vid, quote)
-sub dbRandomQuote {
-  return $_[0]->dbRow(q|
-    SELECT vid, quote
-      FROM quotes
-      ORDER BY RANDOM()
-      LIMIT 1|);
 }
 
 
