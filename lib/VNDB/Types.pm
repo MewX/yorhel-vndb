@@ -1,15 +1,14 @@
 package VNDB::Types;
 
-use v5.12;
+use v5.24;
 no strict 'refs';
 use warnings;
 use Exporter 'import';
-use Tie::IxHash;
 
 our @EXPORT;
 sub hash {
     my $name = shift;
-    tie $name->%*, 'Tie::IxHash', @_;
+    tie $name->%*, 'VNDB::Types::Hash', @_;
     push @EXPORT, "%$name";
 }
 
@@ -121,7 +120,7 @@ hash PRODUCER_RELATION =>
     sub => { reverse => 'par', txt => 'Subsidiary'      },
     par => { reverse => 'sub', txt => 'Parent producer' },
     imp => { reverse => 'ipa', txt => 'Imprint'         },
-    ipa => { reverse => 'imp', txt => 'Parent brand '   };
+    ipa => { reverse => 'imp', txt => 'Parent brand'    };
 
 
 
@@ -326,4 +325,16 @@ hash CHAR_ROLE =>
     side    => { txt => 'Side character',      plural => 'Side characters'    },
     appears => { txt => 'Makes an appearance', plural => 'Make an appearance' };
 
+
+
+
+# Concise implementation of an immutable hash that remembers key order.
+package VNDB::Types::Hash;
+use v5.24;
+sub TIEHASH { shift; bless [ [ map $_[$_*2], 0..$#_/2 ], +{@_}, 0 ], __PACKAGE__ };
+sub FETCH { $_[0][1]{$_[1]} }
+sub EXISTS { exists $_[0][1]{$_[1]} }
+sub FIRSTKEY { $_[0][2] = 0; &NEXTKEY }
+sub NEXTKEY { $_[0][0][ $_[0][2]++ ] }
+sub SCALAR { scalar $_[0][0]->@* }
 1;

@@ -5,7 +5,6 @@ package VN3::Types;
 use strict;
 use warnings;
 use utf8;
-use Tie::IxHash;
 use TUWF ':Html5';
 use POSIX 'strftime', 'ceil';
 use Exporter 'import';
