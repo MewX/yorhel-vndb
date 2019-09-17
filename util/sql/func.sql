@@ -682,6 +682,7 @@ CREATE OR REPLACE FUNCTION notify_dbedit(xtype dbentry_type, xedit edit_rettype)
       ) x(title) ON true
      WHERE h.type = xtype AND h.itemid = xedit.itemid
        AND h.requester <> h2.requester -- exclude the user who edited the entry
+       AND h2.requester <> 1 -- exclude edits by Multi
        -- exclude users who don't want this notify
        AND NOT EXISTS(SELECT 1 FROM users_prefs up WHERE uid = h.requester AND key = 'notify_nodbedit');
 $$ LANGUAGE sql;
