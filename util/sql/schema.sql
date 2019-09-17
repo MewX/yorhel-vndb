@@ -40,7 +40,7 @@
 -- defined in util/dbdump.pl.
 --
 -- Note: Every CREATE TABLE clause and each column should be on a separate
--- line. This file is parsed by lib/VNDBSchema.pm and it doesn't implement a
+-- line. This file is parsed by lib/VNDB/Schema.pm and it doesn't implement a
 -- full SQL query parser.
 
 

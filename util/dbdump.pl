@@ -34,7 +34,7 @@ our $ROOT;
 BEGIN { ($ROOT = abs_path $0) =~ s{/util/dbdump\.pl$}{}; }
 
 use lib "$ROOT/lib";
-use VNDBSchema;
+use VNDB::Schema;
 
 
 # Tables and columns to export.
@@ -99,9 +99,9 @@ my %tables = (
 );
 
 my @tables = map +{ name => $_, %{$tables{$_}} }, sort keys %tables;
-my $schema = VNDBSchema::schema("$ROOT/util/sql/schema.sql");
-my $types = VNDBSchema::types("$ROOT/util/sql/schema.sql");
-my $references = VNDBSchema::references("$ROOT/util/sql/tableattrs.sql");
+my $schema = VNDB::Schema::schema;
+my $types = VNDB::Schema::types;
+my $references = VNDB::Schema::references;
 
 my $db = DBI->connect('dbi:Pg:dbname=vndb', 'vndb', undef, { RaiseError => 1 });
 $db->do('SET TIME ZONE +0');

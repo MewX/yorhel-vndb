@@ -4,10 +4,13 @@
 # This is not a full-blown SQL parser. The code makes all kinds of assumptions
 # about the formatting of the .sql files.
 
-package VNDBSchema;
+package VNDB::Schema;
 
-use strict;
+use v5.12;
 use warnings;
+
+my $ROOT = $INC{'VNDB/Schema.pm'} =~ s{/lib/VNDB/Schema\.pm}{}r;
+
 
 # Reads schema.sql and returns a hashref with the following structure:
 # {
@@ -25,10 +28,9 @@ use warnings;
 #   }
 # }
 sub schema {
-    my $fn = shift;
     my %schema;
     my $table;
-    open my $F, '<', $fn or die "$fn: $!";
+    open my $F, '<', "$ROOT/util/sql/schema.sql" or die "schema.sql: $!";
     while(<$F>) {
         chomp;
         next if /^\s*--/ || /^\s*$/;
@@ -81,9 +83,8 @@ sub schema {
 #   }, ..
 # }
 sub types {
-    my $fn = shift;
     my %types;
-    open my $F, '<', $fn or die "$fn: $!";
+    open my $F, '<', "$ROOT/util/sql/schema.sql" or die "schema.sql: $!";
     while(<$F>) {
         chomp;
         if(/^CREATE TYPE ([^ ]+)/) {
@@ -106,9 +107,8 @@ sub types {
 #   }, ..
 # ]
 sub references {
-    my $fn = shift;
     my @ref;
-    open my $F, '<', $fn or die "$fn: $!";
+    open my $F, '<', "$ROOT/util/sql/tableattrs.sql" or die "tableattrs.sql: $!";
     while(<$F>) {
         chomp;
         next if !/^\s*ALTER\s+TABLE\s+([^ ]+)\s+ADD\s+CONSTRAINT\s+([^ ]+)\s+FOREIGN\s+KEY\s+\(([^\)]+)\)\s*REFERENCES\s+([^ ]+)\s*\(([^\)]+)\)/;

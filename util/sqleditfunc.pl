@@ -9,9 +9,9 @@ our $ROOT;
 BEGIN { ($ROOT = abs_path $0) =~ s{/util/sqleditfunc\.pl$}{}; }
 
 use lib "$ROOT/lib";
-use VNDBSchema;
+use VNDB::Schema;
 
-my $schema = VNDBSchema::schema("$ROOT/util/sql/schema.sql");
+my $schema = VNDB::Schema::schema;
 my $template = join '', <DATA>;
 
 sub gensql {
