@@ -141,15 +141,12 @@ sub _menu {
     div;
      dl;
       dt 'Visual Novels';   dd $self->{stats}{vn};
+      dt; b class => 'grayedout', '> '; lit 'Tags'; end; dd $self->{stats}{tags};
       dt 'Releases';        dd $self->{stats}{releases};
       dt 'Producers';       dd $self->{stats}{producers};
-      dt 'Characters';      dd $self->{stats}{chars};
       dt 'Staff';           dd $self->{stats}{staff};
-      dt 'VN Tags';         dd $self->{stats}{tags};
-      dt 'Character Traits';dd $self->{stats}{traits};
-      dt 'Users';           dd $self->{stats}{users};
-      dt 'Threads';         dd $self->{stats}{threads};
-      dt 'Posts';           dd $self->{stats}{posts};
+      dt 'Characters';      dd $self->{stats}{chars};
+      dt; b class => 'grayedout', '> '; lit 'Traits'; end; dd $self->{stats}{traits};
      end;
      clearfloat;
     end;
