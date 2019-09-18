@@ -444,7 +444,7 @@ div#vntags                    { margin: 0 30px 0 30px; border-top: 1px solid $bo
 .votegraph           { float: left; margin-right: 20px }
 .votegraph td        { padding: 0 2px; }
 .votegraph td.number { text-align: right }
-.votegraph td div    { float: left; height: 14px; background-color: $border$; margin-right: 2px; padding: 0; }
+.votegraph td div    { float: left; height: 15px; background-color: $border$; margin-right: 2px; padding: 0; }
 .votestats thead td  { background: transparent; text-align: center; padding: 2px; }
 .votestats tfoot td  { text-align: right }
 .votestats div       { text-align: center; padding-top: 5px; }
