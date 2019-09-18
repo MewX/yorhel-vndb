@@ -6,9 +6,8 @@ use warnings;
 use Exporter 'import';
 
 our @EXPORT = qw|
-  dbUserGet dbUserEdit dbUserAdd dbUserDel dbUserPrefSet dbUserLogin dbUserLogout
-  dbUserUpdateLastUsed dbUserEmailExists dbUserGetMail dbUserSetMail dbUserSetPerm dbUserAdminSetPass
-  dbUserResetPass dbUserIsValidToken dbUserSetPass
+  dbUserGet dbUserEdit dbUserAdd dbUserDel dbUserPrefSet dbUserLogout
+  dbUserEmailExists dbUserGetMail dbUserSetMail dbUserSetPerm
   dbNotifyGet dbNotifyMarkRead dbNotifyRemove
   dbThrottleGet dbThrottleSet
 |;
@@ -151,24 +150,9 @@ sub dbUserPrefSet {
 }
 
 
-# uid, encpass, token
-sub dbUserLogin {
-  $_[0]->dbRow(
-    q|SELECT user_login(?, decode(?, 'hex'), decode(?, 'hex')) AS r|,
-    $_[1], unpack('H*', $_[2]), unpack('H*', $_[3])
-  )->{r}||0;
-}
-
-
 # uid, token
 sub dbUserLogout {
   $_[0]->dbExec(q|SELECT user_logout(?, decode(?, 'hex'))|, $_[1], unpack 'H*', $_[2]);
-}
-
-
-# uid, token
-sub dbUserUpdateLastUsed {
-  $_[0]->dbExec(q|SELECT user_update_lastused(?, decode(?, 'hex'))|, $_[1], unpack 'H*', $_[2]);
 }
 
 
@@ -177,38 +161,18 @@ sub dbUserEmailExists {
 }
 
 
-sub dbUserIsValidToken {
-  $_[0]->dbRow(q|SELECT user_isvalidtoken(?, decode(?, 'hex')) AS r|, $_[1], unpack 'H*', $_[2])->{r};
-}
-
-
-sub dbUserResetPass {
-  $_[0]->dbRow(q|SELECT user_resetpass(?, decode(?, 'hex')) AS r|, $_[1], unpack 'H*', $_[2])->{r};
-}
-
-
-sub dbUserSetPass {
-  $_[0]->dbRow(q|SELECT user_setpass(?, decode(?, 'hex'), decode(?, 'hex')) AS r|, $_[1], unpack('H*', $_[2]), unpack('H*', $_[3]))->{r};
-}
-
-
 sub dbUserGetMail {
-  $_[0]->dbRow(q|SELECT user_getmail(?, ?, decode(?, 'hex')) AS r|, $_[1], $_[2], unpack 'H*', $_[3])->{r};
+  $_[0]->dbRow(q|SELECT user_getmail(?, ?, decode(?, 'hex')) AS r|, $_[1], $_[2], $_[3])->{r};
 }
 
 
 sub dbUserSetMail {
-  $_[0]->dbExec(q|SELECT user_setmail(?, ?, decode(?, 'hex'), ?)|, $_[1], $_[2], unpack('H*', $_[3]), $_[4]);
+  $_[0]->dbExec(q|SELECT user_setmail(?, ?, decode(?, 'hex'), ?)|, $_[1], $_[2], $_[3], $_[4]);
 }
 
 
 sub dbUserSetPerm {
-  $_[0]->dbExec(q|SELECT user_setperm(?, ?, decode(?, 'hex'), ?)|, $_[1], $_[2], unpack('H*', $_[3]), $_[4]);
-}
-
-
-sub dbUserAdminSetPass {
-  $_[0]->dbExec(q|SELECT user_admin_setpass(?, ?, decode(?, 'hex'), decode(?, 'hex'))|, $_[1], $_[2], unpack('H*', $_[3]), unpack('H*', $_[4]));
+  $_[0]->dbExec(q|SELECT user_setperm(?, ?, decode(?, 'hex'), ?)|, $_[1], $_[2], $_[3], $_[4]);
 }
 
 

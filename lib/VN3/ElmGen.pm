@@ -9,7 +9,7 @@ use warnings;
 use TUWF;
 use Exporter 'import';
 use List::Util 'max';
-use VN3::Auth;
+use VNWeb::Auth;
 use VN3::Types;
 use VNDB::Types;
 
@@ -162,7 +162,7 @@ sub print {
 };
 
 
-my $perms = VN3::Auth::listPerms();
+my $perms = VNWeb::Auth::listPerms();
 
 def urlStatic         => String                  => string tuwf->conf->{url_static};
 def userPerms         => 'List (Int, String)'    => list map tuple($perms->{$_}, string $_), sort keys %$perms;

@@ -11,8 +11,8 @@
 #
 #  use VNDBUtil;
 #  use VNDB::Types;
+#  use VNWeb::Auth;
 #  use VN3::HTML;
-#  use VN3::Auth;
 #  use VN3::DB;
 #  use VN3::Types;
 #  use VN3::Validation;
@@ -29,7 +29,7 @@ use warnings;
 use utf8;
 use feature ':5.10';
 use TUWF;
-use VN3::Auth;
+use VNWeb::Auth;
 use VN3::ElmGen;
 
 sub import {
@@ -49,8 +49,8 @@ sub import {
 
     use VNDBUtil;
     use VNDB::Types;
+    use VNWeb::Auth;
     use VN3::HTML;
-    use VN3::Auth;
     use VN3::DB;
     use VN3::Types;
     use VN3::Validation;

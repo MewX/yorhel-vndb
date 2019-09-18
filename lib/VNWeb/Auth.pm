@@ -1,13 +1,11 @@
-# This package provides a 'tuwf->auth' method and a useful object for dealing
-# with VNDB sessions. Usage:
+# This package provides a 'tuwf' function and a useful object for dealing with
+# VNDB sessions. Usage:
 #
-#   use VN3::Auth;
+#   use VNWeb::Auth;
 #
 #   if(auth) {
 #     ..user is logged in
 #   }
-#   ..or:
-#   if(tuwf->auth) { .. }
 #
 #   my $success = auth->login($user, $pass);
 #   auth->logout;
@@ -17,11 +15,11 @@
 #   my $wants_spoilers = auth->pref('spoilers');
 #   ..etc
 #
-#   die "You're not allowed to post!" if !tuwf->auth->permBoard;
+#   die "You're not allowed to post!" if !auth->permBoard;
 #
-package VN3::Auth;
+package VNWeb::Auth;
 
-use strict;
+use v5.24;
 use warnings;
 use TUWF;
 use Exporter 'import';
@@ -31,24 +29,27 @@ use Crypt::URandom 'urandom';
 use Crypt::ScryptKDF 'scrypt_raw';
 use Encode 'encode_utf8';
 
-use VN3::DB;
 use VNDBUtil 'norm_ip';
+use VNDB::Config;
+use VNWeb::DB;
 
 our @EXPORT = ('auth');
-sub auth { tuwf->{auth} }
+
+my $auth;
+sub auth { $auth }
 
 
 TUWF::hook before => sub {
     my $cookie = tuwf->reqCookie('auth')||'';
     my($uid, $token_e) = $cookie =~ /^([a-fA-F0-9]{40})\.?(\d+)$/ ? ($2, sha1_hex pack 'H*', $1) : (0, '');
 
-    tuwf->{auth} = __PACKAGE__->new();
-    tuwf->{auth}->_load_session($uid, $token_e);
+    $auth = __PACKAGE__->new();
+    $auth->_load_session($uid, $token_e);
     1;
 };
 
 
-TUWF::hook after => sub { tuwf->{auth} = __PACKAGE__->new() };
+TUWF::hook after => sub { $auth = __PACKAGE__->new() };
 
 
 # log user IDs (necessary for determining performance issues, user preferences
@@ -72,6 +73,7 @@ sub token    { shift->{token} }
 # The 'perm' field is a bit field, with the following bits.
 # The 'usermod' flag is hardcoded in sql/func.sql for the user_* functions.
 # Flag 8 was used for 'staffedit', but is now free for re-use.
+# Flag 256 was used for 'affiliates', now also free.
 my %perms = qw{
     board        1
     boardmod     2
@@ -80,7 +82,6 @@ my %perms = qw{
     dbmod       32
     tagmod      64
     usermod    128
-    affiliate  256
 };
 
 sub defaultPerms { $perms{board} + $perms{edit} + $perms{tag} }
@@ -154,7 +155,7 @@ sub _load_session {
         );
 
         # update the sessions.lastused column if lastused < now()-'6 hours'
-        tuwf->dbExeci('SELECT', sql_func user_update_lastused => \$user->{id}, sql_fromhex $token_db)
+        tuwf->dbExeci(SELECT => sql_func user_update_lastused => \$user->{id}, sql_fromhex $token_db)
             if $user->{id} && $user->{lastused} < time()-6*3600;
     }
 
@@ -171,9 +172,9 @@ sub _load_session {
 
 sub new {
     bless {
-        scrypt_salt => tuwf->conf->{scrypt_salt}||die(),
-        scrypt_args => tuwf->conf->{scrypt_args}||[ 65536, 8, 1 ],
-        csrf_key    => tuwf->conf->{form_salt}||die(),
+        scrypt_salt => config->{scrypt_salt}||die(),
+        scrypt_args => config->{scrypt_args}||[ 65536, 8, 1 ],
+        csrf_key    => config->{form_salt}||die(),
     }, shift;
 }
 
@@ -208,6 +209,7 @@ sub resetpass {
     my $id = tuwf->dbVali(
         select => sql_func(user_resetpass => \$mail, sql_fromhex sha1_hex lc $token)
     );
+    warn $id;
     return $id ? ($id, $token) : ();
 }
 
@@ -223,19 +225,30 @@ sub isvalidtoken {
 
 # Change the users' password, drop all existing sessions and create a new session.
 # Requires either the current password or a reset token.
+# Returns 1 on success, 0 on failure.
 sub setpass {
     my($self, $uid, $token, $oldpass, $newpass) = @_;
 
     my $code = $token
         ? sha1_hex lc $token
         : $self->_encpass($uid, $oldpass);
-    return if !$code;
+    return 0 if !$code;
 
     my $encpass = $self->_preparepass($newpass);
-    return if !tuwf->dbVali(
+    return 0 if !tuwf->dbVali(
         select => sql_func user_setpass => \$uid, sql_fromhex($code), sql_fromhex($encpass)
     );
     $self->_create_session($uid, $encpass);
+}
+
+
+# Change a users' password, requires that the current logged in user is an admin.
+sub admin_setpass {
+    my($self, $uid, $pass) = @_;
+    my $encpass = $self->_preparepass($pass);
+    tuwf->dbVali(select =>
+        sql_func user_admin_setpass => \$uid, \$self->{uid}, sql_fromhex($self->{token}), sql_fromhex($encpass)
+    )
 }
 
 
@@ -279,11 +292,13 @@ sub prefSet {
     my($self, $key, $value, $uid) = @_;
     $uid //= $self->uid;
     if($value) {
+        $self->{pref}{$key} = $value;
         tuwf->dbExeci(
             'INSERT INTO users_prefs', { uid => $uid, key => $key, value => $value },
             'ON CONFLICT (uid,key) DO UPDATE SET', { value => $value }
         );
     } else {
+        delete $self->{pref}{$key};
         tuwf->dbExeci('DELETE FROM users_prefs WHERE', { uid => $uid, key => $key });
     }
 }

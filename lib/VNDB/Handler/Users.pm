@@ -6,6 +6,7 @@ use warnings;
 use TUWF ':html', 'xml_escape';
 use VNDB::Func;
 use VNDB::Types;
+use VNWeb::Auth;
 use POSIX 'floor';
 use PWLookup;
 
@@ -421,7 +422,7 @@ sub edit {
   return $self->htmlDenied if !$self->authInfo->{id} || $self->authInfo->{id} != $uid && !$self->authCan('usermod');
 
   # fetch user info (cached if uid == loggedin uid)
-  my $u = $self->authInfo->{id} == $uid ? $self->authInfo : $self->dbUserGet(uid => $uid, what => 'extended prefs')->[0];
+  my $u = $self->dbUserGet(uid => $uid, what => 'extended prefs')->[0];
   return $self->resNotFound if !$u->{id};
 
   # check POST data
@@ -466,9 +467,9 @@ sub edit {
 
         my $perm = 0;
         $perm |= $self->{permissions}{$_} for(@{ delete $frm->{perms} });
-        $self->dbUserSetPerm($u->{id}, $self->authInfo->{id}, $self->authInfo->{token}, $perm);
+        $self->dbUserSetPerm($u->{id}, $self->authInfo->{id}, auth->token(), $perm);
       }
-      $self->dbUserSetMail($u->{id}, $self->authInfo->{id}, $self->authInfo->{token}, $frm->{mail});
+      $self->dbUserSetMail($u->{id}, $self->authInfo->{id}, auth->token(), $frm->{mail});
       $self->dbUserEdit($uid, %o);
       $self->authAdminSetPass($u->{id}, $frm->{usrpass}) if $frm->{usrpass} && $self->authInfo->{id} != $u->{id};
 
@@ -485,7 +486,7 @@ sub edit {
 
   # fill out default values
   $frm->{usrname} ||= $u->{username};
-  $frm->{mail}    ||= $self->dbUserGetMail($u->{id}, $self->authInfo->{id}, $self->authInfo->{token});
+  $frm->{mail}    ||= $self->dbUserGetMail($u->{id}, $self->authInfo->{id}, auth->token);
   $frm->{perms}   ||= [ grep $u->{perm} & $self->{permissions}{$_}, keys %{$self->{permissions}} ];
   $frm->{$_} //= $u->{prefs}{$_} for(qw|skin customcss show_nsfw traits_sexual tags_all hide_list spoilers|);
   $frm->{tags_cat} ||= [ split /,/, $u->{prefs}{tags_cat}||$self->{default_tags_cat} ];
@@ -545,8 +546,8 @@ sub edit {
 sub posts {
   my($self, $uid) = @_;
 
-  # fetch user info (cached if uid == loggedin uid)
-  my $u = $self->authInfo->{id} && $self->authInfo->{id} == $uid ? $self->authInfo : $self->dbUserGet(uid => $uid, what => 'hide_list')->[0];
+  # fetch user info
+  my $u = $self->dbUserGet(uid => $uid, what => 'hide_list')->[0];
   return $self->resNotFound if !$u->{id};
 
   my $f = $self->formValidate(
@@ -713,8 +714,8 @@ sub list {
 sub notifies {
   my($self, $uid) = @_;
 
-  my $u = $self->authInfo;
-  return $self->htmlDenied if !$u->{id} || $uid != $u->{id};
+  my $u = $self->dbUserGet(uid => $uid)->[0];
+  return $self->htmlDenied if !$u->{id} || $uid != $self->authInfo->{id};
 
   my $f = $self->formValidate(
     { get => 'p', required => 0, default => 1, template => 'page' },
@@ -746,7 +747,6 @@ sub notifies {
     my @ids = grep $_, @{$frm->{notifysel}};
     $self->dbNotifyMarkRead(@ids) if @ids && $frm->{markread};
     $self->dbNotifyRemove(@ids) if @ids && $frm->{remove};
-    $self->authInfo->{notifycount} = $self->dbUserGet(uid => $uid, what => 'notifycount')->[0]{notifycount};
   }
 
   my($list, $np) = $self->dbNotifyGet(

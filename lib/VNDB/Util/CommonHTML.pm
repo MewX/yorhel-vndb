@@ -66,7 +66,7 @@ sub htmlMainTabs {
      end;
    }
 
-   if(($type =~ /[rc]/ && $self->authCan('edit')) && $self->authInfo->{c_changes} > 0) {
+   if($type =~ /[rc]/ && $self->authCan('edit')) {
      li $sel eq 'copy' ? (class => 'tabselected') : ();
       a href => "/$id/copy", 'copy';
      end;

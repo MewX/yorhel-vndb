@@ -5,6 +5,8 @@ use warnings;
 use TUWF ':html5_', 'uri_escape';
 use Exporter 'import';
 use JSON::XS;
+use VNDB::Config;
+use VNWeb::Auth;
 
 our @EXPORT = qw/
     clearfloat_
@@ -28,14 +30,14 @@ sub debug_ {
 
 sub _head_ {
     my $o = shift;
-    my $skin = tuwf->reqGet('skin') || tuwf->authPref('skin') || tuwf->{skin_default};
-    $skin = tuwf->{skin_default} if !tuwf->{skins}{$skin};
+    my $skin = tuwf->reqGet('skin') || auth->pref('skin') || config->{skin_default};
+    $skin = config->{skin_default} if !tuwf->{skins}{$skin};
 
     title_ $o->{title}.' | vndb';
     link_ rel => 'shortcut icon', href => '/favicon.ico', type => 'image/x-icon';
-    link_ rel => 'stylesheet', href => tuwf->{url_static}.'/s/'.$skin.'/style.css?'.tuwf->{version}, type => 'text/css', media => 'all';
+    link_ rel => 'stylesheet', href => config->{url_static}.'/s/'.$skin.'/style.css?'.config->{version}, type => 'text/css', media => 'all';
     link_ rel => 'search', type => 'application/opensearchdescription+xml', title => 'VNDB VN Search', href => tuwf->reqBaseURI().'/opensearch.xml';
-    style_ type => 'text/css', tuwf->authPref('customcss') =~ s/\n/ /rg if tuwf->authPref('customcss');
+    style_ type => 'text/css', auth->pref('customcss') =~ s/\n/ /rg if auth->pref('customcss');
     if($o->{feeds}) {
         link_ rel => 'alternate', type => 'application/atom+xml', href => "/feeds/announcements.atom", title => 'Site Announcements';
         link_ rel => 'alternate', type => 'application/atom+xml', href => "/feeds/changes.atom",       title => 'Recent Changes';
@@ -84,9 +86,9 @@ sub _menu_ {
     };
 
     div_ class => 'menubox', sub {
-        my $uid = sprintf '/u%d', tuwf->authInfo->{id};
-        my $nc = tuwf->authInfo->{notifycount};
-        h2_ sub { a_ href => $uid, ucfirst tuwf->authInfo->{username} };
+        my $uid = sprintf '/u%d', auth->uid;
+        my $nc = auth && tuwf->dbVali('SELECT count(*) FROM notifications WHERE uid =', \auth->uid, 'AND read IS NULL');
+        h2_ sub { a_ href => $uid, ucfirst auth->username };
         div_ sub {
             a_ href => "$uid/edit", 'My Profile'; br_;
             a_ href => "$uid/list", 'My Visual Novel List'; br_;
@@ -94,9 +96,9 @@ sub _menu_ {
             a_ href => "$uid/wish", 'My Wishlist'; br_;
             a_ href => "$uid/notifies", $nc ? (class => 'notifyget') : (), 'My Notifications'.($nc?" ($nc)":''); br_;
             a_ href => "$uid/hist", 'My Recent Changes'; br_;
-            a_ href => '/g/links?u='.tuwf->authInfo->{id}, 'My Tags'; br_;
+            a_ href => '/g/links?u='.auth->uid, 'My Tags'; br_;
             br_;
-            if(tuwf->authCan('edit')) {
+            if(auth->permEdit) {
                 a_ href => '/v/add', 'Add Visual Novel'; br_;
                 a_ href => '/p/add', 'Add Producer'; br_;
                 a_ href => '/s/new', 'Add Staff'; br_;
@@ -105,7 +107,7 @@ sub _menu_ {
             br_;
             a_ href => "$uid/logout", 'Logout';
         }
-    } if tuwf->authInfo->{id};
+    } if auth;
 
     div_ class => 'menubox', sub {
         h2_ 'User menu';
@@ -115,7 +117,7 @@ sub _menu_ {
             a_ href => '/u/newpass', 'Password reset'; br_;
             a_ href => '/u/register', 'Register'; br_;
         }
-    } if !tuwf->authInfo->{id};
+    } if !auth;
 
     div_ class => 'menubox', sub {
         h2_ 'Database Statistics';
@@ -145,14 +147,14 @@ sub _footer_ {
         txt_ '"';
         br_;
     }
-    txt_ sprintf 'vndb %s | ', tuwf->{version};
+    txt_ sprintf 'vndb %s | ', config->{version};
     a_ href => '/d7', 'about us';
     lit_ ' | ';
     a_ href => 'irc://irc.synirc.net/vndb', '#vndb';
     lit_ ' | ';
-    a_ href => sprintf('mailto:%s', tuwf->{admin_email}), tuwf->{admin_email};
+    a_ href => sprintf('mailto:%s', config->{admin_email}), config->{admin_email};
     lit_ ' | ';
-    a_ href => tuwf->{source_url}, 'source';
+    a_ href => config->{source_url}, 'source';
 
     if(tuwf->debug) {
         lit_ ' | ';
@@ -191,9 +193,11 @@ sub framework_ {
             div_ id => 'bgright', ' ';
             div_ id => 'header', sub { h1_ sub { a_ href => '/', 'the visual novel database' } };
             div_ id => 'menulist', sub { _menu_ \%o };
-            div_ id => 'maincontent', $cont;
-            div_ id => 'footer', sub { _footer_ };
-        };
+            div_ id => 'maincontent', sub {
+                $cont->();
+                div_ id => 'footer', sub { _footer_ };
+            }
+        }
     }
 }
 

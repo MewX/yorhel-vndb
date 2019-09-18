@@ -11,7 +11,7 @@ use v5.10;
 use utf8;
 use List::Util 'pairs', 'max', 'sum';
 use TUWF ':Html5', 'mkclass', 'uri_escape';
-use VN3::Auth;
+use VNWeb::Auth;
 use VN3::Types;
 use VN3::Validation;
 use base 'Exporter';

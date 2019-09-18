@@ -6,6 +6,7 @@ use warnings;
 use TUWF;
 use SQL::Interp ':all';
 use Carp 'carp';
+use VNWeb::DB (); # For the tuwf->dbVali etc methods
 use base 'Exporter';
 
 our @EXPORT = qw/
@@ -14,32 +15,6 @@ our @EXPORT = qw/
     enrich enrich_list enrich_list1
     entry update_entry
 /;
-
-
-
-# Test for potential SQL injection and warn about it. This will cause some
-# false positives.
-# The heuristic is pretty simple: Just check if there's an integer in the SQL
-# statement. SQL injection through strings is likely to be caught much earlier,
-# since that will generate a syntax error if the string is not properly escaped
-# (and who'd put effort into escaping strings when placeholders are easier?).
-sub interp_warn {
-    my @r = sql_interp @_;
-    carp "Possible SQL injection in '$r[0]'" if tuwf->debug && $r[0] =~ /[2-9]/; # 0 and 1 aren't interesting, "SELECT 1" is a common pattern and so is "x > 0"
-    return @r;
-}
-
-
-# SQL::Interp wrappers around TUWF's db* methods.  These do not work with
-# sql_type(). Proper integration should probably be added directly to TUWF.
-sub TUWF::Object::dbExeci { shift->dbExec(interp_warn @_) }
-sub TUWF::Object::dbVali  { shift->dbVal (interp_warn @_) }
-sub TUWF::Object::dbRowi  { shift->dbRow (interp_warn @_) }
-sub TUWF::Object::dbAlli  { shift->dbAll (interp_warn @_) }
-sub TUWF::Object::dbPagei { shift->dbPage(shift, interp_warn @_) }
-
-# Ugly workaround to ensure that db* method failures are reported at the actual caller.
-$Carp::Internal{ (__PACKAGE__) }++;
 
 
 
@@ -280,7 +255,7 @@ sub update_entry {
 
     tuwf->dbExeci("SELECT edit_${type}_init(", \$id, ', (SELECT MAX(rev) FROM changes WHERE type = ', \$type, ' AND itemid = ', \$id, '))');
     tuwf->dbExeci('UPDATE edit_revision SET', {
-        requester => $uid // scalar VN3::Auth::auth()->uid(),
+        requester => $uid // scalar VNWeb::Auth::auth()->uid(),
         ip        => scalar tuwf->reqIP(),
         comments  => $data->{editsum},
         ihid      => $data->{hidden},
