@@ -301,8 +301,8 @@ div.history table    { table-layout: fixed }
 div.history td       { white-space: nowrap }
 div.history td.tc1_1 { width: 70px; padding-left: 0; padding-right: 0; text-align: right }
 div.history td.tc1_2 { width: 30px; padding-left: 0 }
-div.history td.tc2   { width: 130px }
-div.history td.tc3   { width: 100px }
+div.history td.tc2   { width: 140px }
+div.history td.tc3   { width: 110px }
 div.history td.tc4   { overflow: hidden }
 div.history td.tc4 b { margin-left: 10px }
 
@@ -327,9 +327,9 @@ div.mainbox.discussions td.tc4     { text-align: right; }
 div.mainbox.discussions a.locked   { text-decoration: line-through; }
 div.mainbox.discussions b.boards   { padding-left: 10px; font-weight: normal; }
 div.mainbox.discussions b.boards a { color: $grayedout$; }
-div.discussions td.tc2             { width: 50px;  }
-div.discussions td.tc3             { width: 100px;  }
-div.discussions td.tc4             { width: 210px; }
+div.discussions td.tc2             { width: 60px;  }
+div.discussions td.tc3             { width: 110px;  }
+div.discussions td.tc4             { width: 230px; }
 div.discussions .pollflag          { color: $grayedout$; padding-right: 6px; }
 div.postsearch td.tc1_1           { width: 60px; padding-left: 0; padding-right: 0; text-align: right }
 div.postsearch td.tc1_2           { width: 25px; padding-left: 0 }
@@ -792,8 +792,8 @@ div.votelist td.tc2 { width: 50px; text-align: right; padding-right: 10px }
 div.uposts table    { table-layout: fixed }
 div.uposts td       { white-space: nowrap }
 div.uposts td.tc1   { width: 60px; padding-left: 0!important; padding-right: 0; text-align: right }
-div.uposts td.tc2   { width: 30px; padding-left: 0 }
-div.uposts td.tc3   { width: 65px; }
+div.uposts td.tc2   { width: 40px; padding-left: 0 }
+div.uposts td.tc3   { width: 80px; }
 div.uposts td.tc4   { overflow: hidden }
 div.uposts td.tc4 b { margin-left: 10px }
 
