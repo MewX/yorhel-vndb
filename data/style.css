@@ -735,7 +735,7 @@ div.charsum_list .charsum_bubble {
 .docs td[colspan]+td,
 .docs td[colspan]+td+td { white-space: normal }
 .docs p + p         { padding-top: 10px }
-.docs ul.index      { display: block; float: right; width: 170px; padding: 2px; margin: 0 0 10px 5px; background: $boxbg$; border: 1px solid $border$; }
+.docs ul.index      { display: block; float: right; width: 190px; padding: 2px; margin: 0 0 10px 5px; background: $boxbg$; border: 1px solid $border$; }
 .docs ul.index li   { list-style-type: none; }
 .docs ul.index li a { margin: 0 0 0 10px; }
 .docs img           { margin: 5px }

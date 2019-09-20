@@ -74,7 +74,10 @@ sub _menu_ {
             a_ href => '/hist',  'Recent changes'; br_;
             a_ href => '/t',     'Discussion board'; br_;
             a_ href => '/d6',    'FAQ'; br_;
-            a_ href => '/v/rand','Random visual novel';
+            a_ href => '/v/rand','Random visual novel'; br_;
+            a_ href => '/d11',   'API'; lit_ ' - ';
+            a_ href => '/d14',   'Dumps'; lit_ ' - ';
+            a_ href => '/d18',   'Query';
         };
         form_ action => '/v/all', method => 'get', id => 'search', sub {
             fieldset_ sub {
