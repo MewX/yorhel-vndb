@@ -6,11 +6,13 @@ use TUWF;
 use SQL::Interp ':all';
 use Carp 'carp';
 use Exporter 'import';
+use VNDB::Schema;
 
 our @EXPORT = qw/
     sql
     sql_join sql_comma sql_and sql_array sql_func sql_fromhex sql_tohex sql_fromtime sql_totime
     enrich enrich_merge enrich_flatten
+    db_entry
 /;
 
 
@@ -176,5 +178,87 @@ sub enrich_flatten {
     }, $key, $sql, @array;
 }
 
+
+
+# Database entry API: Intended to provide a low-level read/write interface for
+# versioned database entires. The same data structure is used for reading and
+# updating entries, and should support easy diffing/comparison.
+# Not very convenient for general querying & searching, those still need custom
+# queries.
+
+
+# Hash table, something like:
+# {
+#   v => {
+#       prefix => 'vn',
+#       base => { .. 'vn_hist' schema }
+#       tables => {
+#           anime => { .. 'vn_anime_hist' schema }
+#       },
+#   }, ..
+# }
+my $entry_types = do {
+    my $schema = VNDB::Schema::schema;
+    my %types = map +($_->{dbentry_type}, { prefix => $_->{name} }), grep $_->{dbentry_type}, values %$schema;
+    for my $t (values %$schema) {
+        my $n = $t->{name};
+        my($type) = grep $n =~ s/^$_->{prefix}_//, values %types;
+        next if !$type;
+        $type->{base} = $t if $n eq 'hist';
+        next if $n !~ s/_hist$//;
+        $type->{tables}{$n} = $t;
+    }
+    \%types;
+};
+
+
+# Returns everything for a specific entry ID. The top-level hash also includes
+# the following keys:
+#
+#   id, chid, rev, maxrev, hidden, locked, entry_hidden, entry_locked
+#
+# (Ordering of arrays is unspecified)
+#
+# TODO:
+# - Use non _hist tables if $maxrev == $rev (should be faster)
+# - Combine the enrich_merge() calls into a single query.
+sub db_entry {
+    my($type, $id, $rev) = @_;
+    my $t = $entry_types->{$type}||die;
+
+    my $maxrev = tuwf->dbVali('SELECT MAX(rev) FROM changes WHERE type =', \$type, ' AND itemid =', \$id);
+    return undef if !$maxrev;
+    $rev ||= $maxrev;
+    my $entry = tuwf->dbRowi(q{
+        SELECT itemid AS id, id AS chid, rev AS chrev, ihid AS hidden, ilock AS locked
+          FROM changes
+         WHERE}, { type => $type, itemid => $id, rev => $rev }
+    );
+    return undef if !$entry->{id};
+    $entry->{maxrev} = $maxrev;
+
+    if($maxrev == $rev) {
+        $entry->{entry_hidden} = $entry->{hidden};
+        $entry->{entry_locked} = $entry->{locked};
+    } else {
+        my $base = $t->{base}{name} =~ s/_hist$//r;
+        enrich_merge id => "SELECT id, hidden AS entry_hidden, locked AS entry_locked FROM \"$base\" WHERE id IN", $entry;
+    }
+
+    enrich_merge chid => sql(
+        SELECT => sql_comma(map "\"$_->{name}\"", $t->{base}{cols}->@*),
+        FROM => "\"$t->{base}{name}\"",
+        'WHERE chid IN'
+    ), $entry;
+
+    while(my($name, $tbl) = each $t->{tables}->%*) {
+        $entry->{$name} = tuwf->dbAlli(
+            SELECT => sql_comma(map "\"$_->{name}\"", grep $_->{name} ne 'chid', $tbl->{cols}->@*),
+            FROM => "\"$tbl->{name}\"",
+            WHERE => { chid => $entry->{chid} }
+        );
+    }
+    $entry
+}
 
 1;

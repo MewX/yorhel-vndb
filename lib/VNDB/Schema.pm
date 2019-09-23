@@ -15,6 +15,7 @@ my $ROOT = $INC{'VNDB/Schema.pm'} =~ s{/lib/VNDB/Schema\.pm}{}r;
 # Reads schema.sql and returns a hashref with the following structure:
 # {
 #   vn => {
+#       name => 'vn',
 #       dbentry_type => 'v',
 #       cols => [
 #           {
@@ -40,6 +41,7 @@ sub schema {
         if(/^\s*CREATE\s+TABLE\s+([^ ]+)/) {
             die "Unexpected 'CREATE TABLE $1'\n" if $table;
             $table = $1;
+            $schema{$table}{name} = $table;
             $schema{$table}{dbentry_type} = $1 if /--.*\s+dbentry_type=(.)/;
             $schema{$table}{cols} = [];
 

@@ -46,7 +46,7 @@ Global requirements:
 
 - Linux, or an OS that resembles Linux. Chances are VNDB won't run on Windows.
 - PostgreSQL 10 (older versions may work)
-- Perl 5.24+
+- Perl 5.26+
 - Elm 0.19
 
 **Perl modules** (core modules are not listed):

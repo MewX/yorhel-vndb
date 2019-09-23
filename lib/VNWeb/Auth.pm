@@ -209,7 +209,6 @@ sub resetpass {
     my $id = tuwf->dbVali(
         select => sql_func(user_resetpass => \$mail, sql_fromhex sha1_hex lc $token)
     );
-    warn $id;
     return $id ? ($id, $token) : ();
 }
 
