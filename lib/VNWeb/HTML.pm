@@ -341,7 +341,6 @@ sub _revision_header_ {
 }
 
 
-
 sub _revision_fmtval_ {
     my($opt, $val) = @_;
     return i_ '[empty]' if !defined $val || !length $val;

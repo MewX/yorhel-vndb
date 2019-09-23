@@ -16,11 +16,11 @@ RUN apt-get install -y tzdata \
         graphviz \
         imagemagick \
         libalgorithm-diff-xs-perl \
+        libanyevent-http-perl \
         libanyevent-irc-perl \
         libanyevent-perl \
         libcrypt-urandom-perl \
         libdbd-pg-perl \
-        libfcgi-perl \
         libhttp-server-simple-perl \
         libimage-magick-perl \
         libjson-xs-perl \

@@ -1,4 +1,4 @@
-# This package provides a 'tuwf' function and a useful object for dealing with
+# This package provides an 'auth' function and a useful object for dealing with
 # VNDB sessions. Usage:
 #
 #   use VNWeb::Auth;

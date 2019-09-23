@@ -69,8 +69,9 @@ util/vndb.pl (the web backend):
 
 util/multi.pl (application server, optional):
 - AnyEvent
-- AnyEvent::Pg
+- AnyEvent::HTTP
 - AnyEvent::IRC
+- AnyEvent::Pg
 - XML::Parser
 - graphviz (/usr/bin/dot is used by default)
 
