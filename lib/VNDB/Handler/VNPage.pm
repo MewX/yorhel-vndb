@@ -560,8 +560,8 @@ sub _revision {
       return @r ? @r : ('[empty]');
     }],
     [ seiyuu      => 'Seiyuu', join => '<br />', split => sub {
-      my @r = map sprintf('<a href="/s%d" title="%s">%s</a> as %s%s',
-          $_->{id}, xml_escape($_->{original}||$_->{name}), xml_escape($_->{name}), xml_escape($_->{cname}),
+      my @r = map sprintf('<a href="/s%d" title="%s">%s</a> as <a href="/c%d">%s</a>%s',
+          $_->{id}, xml_escape($_->{original}||$_->{name}), xml_escape($_->{name}), $_->{cid}, xml_escape($_->{cname}),
           $_->{note} ? ' ['.xml_escape($_->{note}).']' : ''),
         sort { $a->{id} <=> $b->{id} || $a->{cid} <=> $b->{cid} || $a->{note} cmp $b->{note} } @{$_[0]};
       return @r ? @r : ('[empty]');
