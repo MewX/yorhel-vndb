@@ -28,6 +28,7 @@ hash LANGUAGE =>
     es => 'Spanish',
     fi => 'Finnish',
     fr => 'French',
+    gd => 'Scottish Gaelic',
     he => 'Hebrew',
     hr => 'Croatian',
     hu => 'Hungarian',

@@ -54,7 +54,7 @@ CREATE TYPE credit_type       AS ENUM ('scenario', 'chardesign', 'art', 'music',
 CREATE TYPE dbentry_type      AS ENUM ('v', 'r', 'p', 'c', 's', 'd');
 CREATE TYPE edit_rettype      AS (itemid integer, chid integer, rev integer);
 CREATE TYPE gender            AS ENUM ('unknown', 'm', 'f', 'b');
-CREATE TYPE language          AS ENUM ('ar', 'bg', 'ca', 'cs', 'da', 'de', 'el', 'en', 'eo', 'es', 'fi', 'fr', 'he', 'hr', 'hu', 'id', 'it', 'ja', 'ko', 'mk', 'lt', 'lv', 'nl', 'no', 'pl', 'pt-pt', 'pt-br', 'ro', 'ru', 'sk', 'sl', 'sv', 'ta', 'th', 'tr', 'uk', 'vi', 'zh');
+CREATE TYPE language          AS ENUM ('ar', 'bg', 'ca', 'cs', 'da', 'de', 'el', 'en', 'eo', 'es', 'fi', 'fr', 'gd', 'he', 'hr', 'hu', 'id', 'it', 'ja', 'ko', 'mk', 'lt', 'lv', 'nl', 'no', 'pl', 'pt-pt', 'pt-br', 'ro', 'ru', 'sk', 'sl', 'sv', 'ta', 'th', 'tr', 'uk', 'vi', 'zh');
 CREATE TYPE medium            AS ENUM ('cd', 'dvd', 'gdr', 'blr', 'flp', 'mrt', 'mem', 'umd', 'nod', 'in', 'otc');
 CREATE TYPE notification_ntype AS ENUM ('pm', 'dbdel', 'listdel', 'dbedit', 'announce');
 CREATE TYPE notification_ltype AS ENUM ('v', 'r', 'p', 'c', 't', 's', 'd');
