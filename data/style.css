@@ -134,7 +134,8 @@ input.text, input.submit, select, textarea {
   padding: 0 1px 1px 1px;
   margin: 1px;
 }
-form, fieldset           { border: 0; display: block; }
+div.preview              { border: 1px solid $secborder$; margin: 1px; padding: 5px }
+form, fieldset           { border: 0; display: block }
 legend                   { display: none; }
 optgroup option          { padding-left: 10px; font-style: normal; }
 input.submit             { background: $boxbg$; padding: 1px; }
@@ -151,6 +152,9 @@ table.formtable          { margin: 0 20px 20px 20px; }
 table.formtable td       { padding: 0; }
 table.formtable tr.newfield td { padding-top: 5px; }
 table.formtable tr.newpart td { padding-top: 20px; font-weight: bold; }
+
+div.spinner { content: ''; border: 3px solid #9eaebd; border-bottom-color: transparent; border-radius: 100%; animation: spin 1s infinite linear; width: 14px; height: 14px; display: inline-block; margin: auto }
+@keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
 
 
 

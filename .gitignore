@@ -4,6 +4,8 @@
 /data/log/
 /data/multi.pid
 /data/passwords.dat
+/elm/elm-stuff/
+/elm/Gen/
 /elm3/elm-stuff/
 /elm3/Lib/Gen.elm
 /static/f/js/
@@ -12,6 +14,9 @@
 /static/f/vndb.js
 /static/f/vndb.min.js
 /static/f/vndb.min.js.gz
+/static/f/v2rw.js
+/static/f/v2rw.min.js
+/static/f/v2rw.min.js.gz
 /static/feeds/
 /static/s/*/style.css
 /static/s/*/style.min.css

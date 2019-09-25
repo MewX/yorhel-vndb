@@ -136,13 +136,14 @@ has `util/vndb.pl` as entry point. Front-end assets are in `data/js/`,
 
 **Version 2-rw**
 
-This is a (newly started) backend rewrite of version 2. It lives in
-`lib/VNWeb/`. Individual parts of the website are gradually being moved into
-this new coding style and structure. Version 2 and 2-rw run side-by-side in the
-same process and share a common route table and database connection, so the
-entry point is still `util/vndb.pl`. The primary goal of this rewrite is to
-make use of the clearer version 3 structure and to slowly migrate the brittle
-frontend Javascript parts to Elm and JSON APIs.
+This is a (recently started) backend rewrite of version 2. It lives in
+`lib/VNWeb/` with Elm and Javascript code in `elm/`. Individual parts of the
+website are gradually being moved into this new coding style and structure.
+Version 2 and 2-rw run side-by-side in the same process and share a common
+route table and database connection, so the entry point is still
+`util/vndb.pl`. The primary goal of this rewrite is to make use of the clearer
+version 3 structure and to slowly migrate the brittle frontend Javascript parts
+to Elm and JSON APIs.
 
 **Version 3**
 

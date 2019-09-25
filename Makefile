@@ -30,6 +30,7 @@ ALL_KEEP=\
 
 ALL_CLEAN=\
 	static/f/vndb.js \
+	static/f/v2rw.js \
 	data/icons/icons.css \
 	static/v3/elm.js \
 	static/v3/style.css \
@@ -41,20 +42,23 @@ PROD=\
 	static/v3/min.js static/v3/min.js.gz \
 	static/v3/min.css static/v3/min.css.gz \
 	static/f/vndb.min.js static/f/vndb.min.js.gz \
+	static/f/v2rw.min.js static/f/v2rw.min.js.gz \
 	static/f/icons.opt.png \
 	$(shell ls static/s | sed -e 's/\(.\+\)/static\/s\/\1\/style.min.css/g') \
 	$(shell ls static/s | sed -e 's/\(.\+\)/static\/s\/\1\/style.min.css.gz/g')
 
 all: ${ALL_KEEP} ${ALL_CLEAN}
-prod: ${PROD}
+prod: all ${PROD}
 
 clean:
 	rm -f ${ALL_CLEAN} ${PROD}
 	rm -f static/f/icons.png
 	rm -f elm3/Lib/Gen.elm
+	rm -rf elm/elm-stuff/build-artifacts
 	rm -rf elm3/elm-stuff/build-artifacts
 
 cleaner: clean
+	rm -rf elm/elm-stuff
 	rm -rf elm3/elm-stuff
 
 util/sql/editfunc.sql: util/sqleditfunc.pl util/sql/schema.sql
@@ -77,11 +81,12 @@ data/conf.pl:
 %.gz: %
 	zopfli $<
 
-static/f/vndb.js: data/js/*.js lib/VNDB/Types.pm util/jsgen.pl data/conf.pl | static/f
-	util/jsgen.pl
+chmod: all
+	chmod -R a-x+rwX static/{ch,cv,sf,st}
 
-static/f/vndb.min.js: static/f/vndb.js
-	uglifyjs $< --compress --mangle -o $@
+
+
+# v2 & v2-rw
 
 data/icons/icons.css static/f/icons.png: data/icons/*.png data/icons/*/*.png util/spritegen.pl | static/f
 	util/spritegen.pl
@@ -96,15 +101,56 @@ static/s/%/style.css: static/s/%/conf util/skingen.pl data/style.css data/icons/
 static/s/%/style.min.css: static/s/%/style.css
 	perl -MCSS::Minifier::XS -e 'undef $$/; print CSS::Minifier::XS::minify(scalar <>)' <$< >$@
 
+
+
+# v2
+
+static/f/vndb.js: data/js/*.js lib/VNDB/Types.pm util/jsgen.pl data/conf.pl | static/f
+	util/jsgen.pl
+
+static/f/vndb.min.js: static/f/vndb.js
+	uglifyjs $< --compress --mangle -o $@
+
+
+
+# v2-rw
+
+define cat-js
+	sed -i 's/var author\$$project\$$Lib\$$Ffi\$$/var __unused__/g' $@
+	sed -Ei 's/author\$$project\$$Lib\$$Ffi\$$([a-zA-Z0-9_]+)/window.elmFfi_\1(_Json_wrap)/g' $@
+	for fn in elm/*.js elm/*/*.js; do \
+		echo "(function(){'use strict';"; \
+		cat $$fn; \
+		echo "})();"; \
+	done >>$@
+endef
+
+elm/Gen/.generated: lib/VNWeb/*.pm lib/VNWeb/*/*.pm lib/VNDB/Types.pm lib/VNDB/Config.pm data/conf.pl
+	util/vndb.pl elmgen
+
+static/f/v2rw.js: elm/*.elm elm/*/*.elm elm/*.js elm/*/*.js elm/Gen/.generated | static/f
+	cd elm && ELM_HOME=elm-stuff elm make *.elm */*.elm --output ../$@
+	${cat-js}
+
+static/f/v2rw.min.js: elm/*.elm elm/*/*.elm elm/*.js elm/*/*.js elm/Gen/.generated | static/f
+	cd elm && ELM_HOME=elm-stuff elm make --optimize *.elm --output ../$@
+	${cat-js}
+	uglifyjs $@ --compress 'pure_funcs="F2,F3,F4,F5,F6,F7,F8,F9,A2,A3,A4,A5,A6,A7,A8,A9",pure_getters,keep_fargs=false,unsafe_comps,unsafe' | uglifyjs --mangle -o $@~
+	mv $@~ $@
+
+
+
+# v3
+
 elm3/Lib/Gen.elm: lib/VN3/*.pm lib/VN3/*/*.pm data/conf.pl
 	util/vndb3.pl elmgen >$@
 
-static/v3/elm.js: elm3/*.elm elm3/*/*.elm elm3/Lib/Gen.elm | static/f
+static/v3/elm.js: elm3/*.elm elm3/*/*.elm elm3/Lib/Gen.elm
 	cd elm3 && ELM_HOME=elm-stuff elm make *.elm */*.elm --output ../$@
 	sed -i 's/var author\$$project\$$Lib\$$Ffi\$$/var __unused__/g' $@
 	sed -Ei 's/author\$$project\$$Lib\$$Ffi\$$([a-zA-Z0-9_]+)/window.elmFfi_\1(_Json_wrap)/g' $@
 
-static/v3/elm-opt.js: elm3/*.elm elm3/*/*.elm elm3/Lib/Gen.elm | static/f
+static/v3/elm-opt.js: elm3/*.elm elm3/*/*.elm elm3/Lib/Gen.elm
 	cd elm3 && ELM_HOME=elm-stuff elm make --optimize *.elm */*.elm --output ../$@
 	sed -i 's/var author\$$project\$$Lib\$$Ffi\$$/var __unused__/g' $@
 	sed -Ei 's/author\$$project\$$Lib\$$Ffi\$$([a-zA-Z0-9_]+)/window.elmFfi_\1(_Json_wrap)/g' $@
@@ -127,9 +173,8 @@ static/v3/min.css: static/v3/style.css
 	perl -MCSS::Minifier::XS -e 'undef $$/; print CSS::Minifier::XS::minify(scalar <>)' <$< >$@
 
 
-chmod: all
-	chmod -R a-x+rwX static/{ch,cv,sf,st}
 
+# Multi
 
 # may wait indefinitely, ^C and kill -9 in that case
 define multi-stop

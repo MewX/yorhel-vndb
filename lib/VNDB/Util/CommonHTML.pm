@@ -108,23 +108,7 @@ sub htmlMainTabs {
 
 
 # generates a full error page, including header and footer
-sub htmlDenied {
-  my $self = shift;
-  $self->htmlHeader(title => 'Access Denied');
-  div class => 'mainbox';
-   h1 'Access Denied';
-   div class => 'warning';
-    if(!$self->authInfo->{id}) {
-      h2 'You need to be logged in to perform this action.';
-      p; lit 'Please <a href="/u/login">login</a>, or <a href="/u/register">create an account</a> if you don\'t have one yet.'; end;
-    } else {
-      h2 'You are not allowed to perform this action.';
-      p 'It seems you don\'t have the proper rights to perform the action you wanted to perform...';
-    }
-   end;
-  end 'div';
-  $self->htmlFooter;
-}
+sub htmlDenied { shift->resDenied }
 
 
 # Generates message saying that the current item has been deleted,

@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Exporter 'import';
 
-our @EXPORT = qw|dbDocGet dbDocGetRev dbDocRevisionInsert|;
+our @EXPORT = qw|dbDocGet dbDocGetRev|;
 
 
 # Can only fetch a single document.
@@ -39,15 +39,5 @@ sub dbDocGetRev {
   );
   return wantarray ? ($r, 0) : $r;
 }
-
-
-# Updates the edit_* tables, used from dbItemEdit()
-# Arguments: { title content },
-sub dbDocRevisionInsert {
-  my($self, $o) = @_;
-  my %set = map exists($o->{$_}) ? (qq|"$_" = ?|, $o->{$_}) : (), qw|title content|;
-  $self->dbExec('UPDATE edit_docs !H', \%set) if keys %set;
-}
-
 
 1;

@@ -21,6 +21,7 @@ our @EXPORT = qw/
     debug_
     join_
     user_
+    elm_
     framework_
     revision_
 /;
@@ -61,6 +62,13 @@ sub user_ {
 }
 
 
+# Instantiate an Elm module
+sub elm_($$$) {
+    my($mod, $schema, $data) = @_;
+    div_ 'data-elm-module' => 'DocEdit',
+         'data-elm-flags' => JSON::XS->new->encode($schema->analyze->coerce_for_json($data, unknown => 'remove')), '';
+}
+
 
 
 sub _head_ {
@@ -78,7 +86,8 @@ sub _head_ {
         link_ rel => 'alternate', type => 'application/atom+xml', href => "/feeds/changes.atom",       title => 'Recent Changes';
         link_ rel => 'alternate', type => 'application/atom+xml', href => "/feeds/posts.atom",         title => 'Recent Posts';
     }
-    meta_ name => 'robots', content => 'noindex, follow' if $o->{noindex};
+    meta_ name => 'csrf-token', content => auth->csrftoken;
+    meta_ name => 'robots', content => 'noindex' if defined $o->{index} && !$o->{index};
 
     # Opengraph metadata
     if($o->{og}) {
@@ -288,7 +297,7 @@ sub _hidden_msg_ {
 
 # Options:
 #   title      => $title
-#   noindex    => 1/0
+#   index      => 1/0, default 1
 #   feeds      => 1/0
 #   search     => $query
 #   og         => { opengraph metadata }
@@ -313,7 +322,8 @@ sub framework_ {
                 _maintabs_ \%o;
                 $cont->() unless $o{hiddenmsg} && _hidden_msg_ \%o;
                 div_ id => 'footer', \&_footer_;
-            }
+            };
+            script_ type => 'application/javascript', src => config->{url_static}.'/f/v2rw.js', '';
         }
     }
 }

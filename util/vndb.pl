@@ -13,7 +13,9 @@ BEGIN { ($ROOT = abs_path $0) =~ s{/util/vndb\.pl$}{}; }
 use lib $ROOT.'/lib';
 use SkinFile;
 use VNDB::Config;
+use VNWeb::Auth;
 use VNWeb::HTML ();
+use VNWeb::Validation ();
 
 
 # load the skins
@@ -29,6 +31,10 @@ tuwf->{default_perm} = 1+4+16; # Keep synchronised with the default value of use
 tuwf->{$_} = config->{$_} for keys %{ config() };
 
 TUWF::set %{ config->{tuwf} };
+
+# Signal to VNWeb::Elm whether it should generate the Elm files.
+# Should be done before loading any more modules.
+tuwf->{elmgen} = $ARGV[0] && $ARGV[0] eq 'elmgen';
 
 
 TUWF::hook before => sub {
@@ -62,5 +68,33 @@ TUWF::set error_404_handler => sub {
 };
 
 
-TUWF::load_recursive('VNDB::Util', 'VNDB::DB', 'VNDB::Handler', 'VNWeb');
-TUWF::run();
+sub TUWF::Object::resDenied {
+    tuwf->resStatus(403);
+    VNWeb::HTML::framework_ title => 'Access Denied', noindex => 1, sub {
+        div_ class => 'mainbox', sub {
+            h1_ 'Access Denied';
+            div_ class => 'warning', sub {
+                if(!auth) {
+                    h2_ 'You need to be logged in to perform this action.';
+                    p_ sub {
+                        txt_ 'Please ';
+                        a_ href => '/u/login', 'login';
+                        txt_ ' or ';
+                        a_ href => '/u/register', 'create an account';
+                        txt_ " if you don't have one yet.";
+                    }
+                } else {
+                    h2_ 'You are not allowed to perform this action.';
+                    p_ 'You do not have the proper rights to perform the action you wanted to perform.';
+                }
+            }
+        }
+    }
+}
+
+
+TUWF::load_recursive('VNDB::Util', 'VNDB::DB', 'VNDB::Handler');
+TUWF::set import_modules => 0;
+TUWF::load_recursive('VNWeb');
+
+TUWF::run if !tuwf->{elmgen};

@@ -12,7 +12,7 @@ our @EXPORT = qw/
     sql
     sql_join sql_comma sql_and sql_array sql_func sql_fromhex sql_tohex sql_fromtime sql_totime
     enrich enrich_merge enrich_flatten
-    db_entry
+    db_entry db_edit
 /;
 
 
@@ -222,6 +222,7 @@ my $entry_types = do {
 # TODO:
 # - Use non _hist tables if $maxrev == $rev (should be faster)
 # - Combine the enrich_merge() calls into a single query.
+# - Fixed ordering of arrays (use primary keys)
 sub db_entry {
     my($type, $id, $rev) = @_;
     my $t = $entry_types->{$type}||die;
@@ -259,6 +260,54 @@ sub db_entry {
         );
     }
     $entry
+}
+
+
+# Edit or create an entry, usage:
+#   ($id, $chid, $rev) = db_edit $type, $id, $data, $uid;
+#
+# $id should be undef to create a new entry.
+# $uid should be undef to use the currently logged in user.
+# $data should have the same format as returned by db_entry(), but instead with
+# the following additional keys in the top-level hash:
+#
+#   hidden, locked, editsum
+sub db_edit {
+    my($type, $id, $data, $uid) = @_;
+    $id ||= undef;
+    my $t = $entry_types->{$type}||die;
+
+    tuwf->dbExeci("SELECT edit_${type}_init(", \$id, ', (SELECT MAX(rev) FROM changes WHERE type = ', \$type, ' AND itemid = ', \$id, '))');
+    tuwf->dbExeci('UPDATE edit_revision SET', {
+        requester => $uid // scalar VNWeb::Auth::auth()->uid(),
+        ip        => scalar tuwf->reqIP(),
+        comments  => $data->{editsum},
+        ihid      => $data->{hidden},
+        ilock     => $data->{locked},
+    });
+
+    {
+        my $base = $t->{base}{name} =~ s/_hist$//r;
+        tuwf->dbExeci("UPDATE edit_${base} SET ", sql_comma(
+            map sql("\"$_->{name}\"", ' = ', \$data->{$_->{name}}),
+                grep exists $data->{$_->{name}}, $t->{base}{cols}->@*
+        ));
+    }
+
+    while(my($name, $tbl) = each $t->{tables}->%*) {
+        my $base = $tbl->{name} =~ s/_hist$//r;
+        my @cols = map sql_comma(map "\"$_->{name}\""), $tbl->{cols}->$@;
+        my @rows = map {
+            my $d = $_;
+            sql '(', sql_comma(map \$d, $tbl->{cols}->@*), ')'
+        } $data->{$name}->@*;
+
+        tuwf->dbExeci("DELETE FROM edit_${base}");
+        tuwf->dbExeci("INSERT INTO edit_${base} (", @cols, ') VALUES ', sql_comma @rows) if @rows;
+    }
+
+    my $r = tuwf->dbRow("SELECT * FROM edit_${type}_commit()");
+    ($r->{itemid}, $r->{chid}, $r->{rev})
 }
 
 1;
