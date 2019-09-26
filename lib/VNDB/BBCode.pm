@@ -56,7 +56,7 @@ sub _link {
   return ('link') if $match =~ /^[hf]t/;
 
   # Now we're left with various forms of IDs, just need to make sure it's not surrounded by word characters
-  return ('dblink') if $char_pre !~ /\w/ && $char_post !~ /\w/;
+  return ('dblink') if $char_pre !~ /[\w-]/ && $char_post !~ /[\w-]/;
 
   ();
 }

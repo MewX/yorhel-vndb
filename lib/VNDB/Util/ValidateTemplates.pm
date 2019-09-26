@@ -14,7 +14,7 @@ TUWF::set(
   validate_templates => {
     id    => { template => 'uint', max => 1<<40 },
     page  => { template => 'uint', max => 1000 },
-    uname => { regex => qr/^[a-z0-9-]*$/, minlength => 2, maxlength => 15 },
+    uname => { regex => qr/^[a-z0-9-]*$/, func => sub { $_[0] !~ /^-*[a-z][0-9]+-*$/ }, minlength => 2, maxlength => 15 },
     gtin  => { func => \&gtintype },
     editsum => { maxlength => 5000, minlength => 2 },
     json  => { func => \&json_validate, inherit => ['json_fields','json_maxitems','json_unique','json_sort'], default => [] },
