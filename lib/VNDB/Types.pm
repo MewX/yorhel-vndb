@@ -37,6 +37,7 @@ hash LANGUAGE =>
     ja => 'Japanese',
     ko => 'Korean',
     mk => 'Macedonian',
+    ms => 'Malay',
     lt => 'Lithuanian',
     lv => 'Latvian',
     nl => 'Dutch',
