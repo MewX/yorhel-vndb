@@ -9,8 +9,10 @@
 #  use Time::HiRes 'time';
 #
 #  use VNDBUtil;
+#  use VNDB::BBCode;
 #  use VNDB::Types;
 #  use VNDB::Config;
+#  use VNDB::Func 'fmtdate';
 #  use VNWeb::Auth;
 #  use VNWeb::HTML;
 #  use VNWeb::DB;
@@ -48,8 +50,10 @@ sub import {
     use Time::HiRes 'time';
 
     use VNDBUtil;
+    use VNDB::BBCode;
     use VNDB::Types;
     use VNDB::Config;
+    use VNDB::Func 'fmtdate';
     use VNWeb::Auth;
     use VNWeb::HTML;
     use VNWeb::DB;

@@ -15,6 +15,7 @@ our @EXPORT = qw/
 TUWF::set custom_validations => {
     id          => { uint => 1, max => 1<<40 },
     editsum     => { required => 1, length => [ 2, 5000 ] },
+    page        => { uint => 1, min => 1, max => 1000, required => 0, default => 1 },
 };
 
 

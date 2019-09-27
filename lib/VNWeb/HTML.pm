@@ -8,6 +8,7 @@ use Encode 'encode_utf8';
 use JSON::XS;
 use TUWF ':html5_', 'uri_escape', 'html_escape', 'mkclass';
 use Exporter 'import';
+use POSIX 'ceil';
 use JSON::XS;
 use VNDB::Config;
 use VNDB::BBCode;
@@ -24,6 +25,7 @@ our @EXPORT = qw/
     elm_
     framework_
     revision_
+    paginate_
 /;
 
 
@@ -249,8 +251,18 @@ sub _maintabs_ {
                  WHERE}, { 'tb.type' => $t, 'tb.iid' => $o->{id}, 't.hidden' => 0, 't.private' => 0 });
             t disc => "/t/$id", "discussions ($cnt)";
         };
+        t posts => "/$id/posts", 'posts' if $t eq 'u';
 
-        # TODO: User lists
+        do {
+            t wish  => "/$id/wish", 'wishlist';
+            t votes => "/$id/votes", 'votes';
+            t list  => "/$id/list", 'list';
+        } if $t eq 'u' && (
+            auth->permUsermod || (auth && auth->uid == $o->{id})
+            || !(exists $o->{hide_list}
+                ? $o->{hide_list}
+                : tuwf->dbVali('SELECT value FROM users_prefs WHERE', { uid => $o->{id}, key => 'hide_list' }))
+        );
 
         t tagmod => "/$id/tagmod", 'modify tags' if $t eq 'v' && auth->permTag && !$o->{entry_hidden};
         t copy => "/$id/copy", 'copy' if $t =~ /[rc]/ && can_edit $t, $o;
@@ -523,6 +535,46 @@ sub revision_ {
 
         _revision_cmp_ $type, $old, $new, @fields if $old;
     };
+}
+
+
+# Creates next/previous buttons (tabs), if needed.
+# Arguments:
+#   url generator (code reference that takes $_ and returns a url for that page).
+#   current page number (1..n),
+#   nextpage (0/1 or, if the full count is known: [$total, $perpage]),
+#   alignment (t/b)
+sub paginate_ {
+    my($url, $p, $np, $al) = @_;
+    my($cnt, $pp) = ref($np) ? @$np : ($p+$np, 1);
+    return if $p == 1 && $cnt <= $pp;
+
+    my sub tab_ {
+        my($left, $page, $label) = @_;
+        li_ mkclass(left => $left), sub {
+            local $_ = $page;
+            my $u = $url->();
+            a_ href => $u, $label;
+        }
+    }
+    my sub ell_ {
+        my($left) = @_;
+        li_ mkclass(ellipsis => 1, left => $left), sub { b_ '⋯' };
+    }
+    my $nc = 5; # max. number of buttons on each side
+
+    ul_ class => 'maintabs browsetabs ' . ($al eq 't' ? 'notfirst' : 'bottom'), sub {
+        $p > 2     and ref $np and tab_ 1, 1, '« first';
+        $p > $nc+1 and ref $np and ell_ 1;
+        $p > $_    and ref $np and tab_ 1, $p-$_, $p-$_ for (reverse 2..($nc>$p-2?$p-2:$nc-1));
+        $p > 1                 and tab_ 1, $p-1, '‹ previous';
+
+        my $l = ceil($cnt/$pp)-$p+1;
+        $l > 2     and tab_ 0, $l+$p-1, 'last »';
+        $l > $nc+1 and ell_ 0;
+        $l > $_    and tab_ 0, $p+$_, $p+$_ for (reverse 2..($nc>$l-2?$l-2:$nc-1));
+        $l > 1     and tab_ 0, $p+1, 'next ›';
+    }
 }
 
 1;

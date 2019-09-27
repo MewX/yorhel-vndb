@@ -10,7 +10,7 @@ use VNDB::Schema;
 
 our @EXPORT = qw/
     sql
-    sql_join sql_comma sql_and sql_array sql_func sql_fromhex sql_tohex sql_fromtime sql_totime
+    sql_join sql_comma sql_and sql_or sql_array sql_func sql_fromhex sql_tohex sql_fromtime sql_totime
     enrich enrich_merge enrich_flatten
     db_entry db_edit
 /;
@@ -49,15 +49,15 @@ $Carp::Internal{ (__PACKAGE__) }++;
 sub sql_join {
     my $sep = shift;
     my @args = map +($sep, $_), @_;
-    shift @args;
-    return @args;
+    sql @args[1..$#args];
 }
 
 # Join multiple arguments together with a comma, for use in a SELECT or IN
 # clause or function arguments.
 sub sql_comma { sql_join ',', @_ }
 
-sub sql_and   { sql_join 'AND', map sql('(', $_, ')'), @_ }
+sub sql_and   { @_ ? sql_join 'AND', map sql('(', $_, ')'), @_ : sql '1=1' }
+sub sql_or    { @_ ? sql_join 'OR',  map sql('(', $_, ')'), @_ : sql '1=0' }
 
 # Construct a PostgreSQL array type from the function arguments.
 sub sql_array { 'ARRAY[', sql_join(',', map \$_, @_), ']' }

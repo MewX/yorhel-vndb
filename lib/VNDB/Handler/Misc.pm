@@ -11,7 +11,6 @@ use VNDB::Types;
 
 TUWF::register(
   qr{},                               \&homepage,
-  qr{(?:([upvrcsd])([1-9]\d*)/)?hist},\&history,
   qr{nospam},                         \&nospam,
   qr{xml/prefs\.xml},                 \&prefs,
   qr{opensearch\.xml},                \&opensearch,
@@ -190,105 +189,6 @@ sub homepage {
    end 'tr';
   end 'table';
 
-  $self->htmlFooter;
-}
-
-
-sub history {
-  my($self, $type, $id) = @_;
-  $type ||= '';
-  $id ||= 0;
-
-  my $f = $self->formValidate(
-    { get => 'p', required => 0, default => 1, template => 'page' },
-    { get => 'm', required => 0, default => !$type, enum => [ 0, 1 ] },
-    { get => 'h', required => 0, default => 0, enum => [ -1..1 ] },
-    { get => 't', required => 0, default => '', enum => [qw|v r p c s d a|] },
-    { get => 'e', required => 0, default => 0, enum => [ -1..1 ] },
-    { get => 'r', required => 0, default => 0, enum => [ 0, 1 ] },
-  );
-  return $self->resNotFound if $f->{_err};
-
-  # get item object and title
-  my $obj = $type eq 'u' ? $self->dbUserGet(uid => $id, what => 'hide_list')->[0] :
-            $type eq 'p' ? $self->dbProducerGet(id => $id)->[0] :
-            $type eq 'r' ? $self->dbReleaseGet(id => $id)->[0] :
-            $type eq 'c' ? $self->dbCharGet(id => $id)->[0] :
-            $type eq 's' ? $self->dbStaffGet(id => $id)->[0] :
-            $type eq 'd' ? $self->dbDocGet(id => $id)->[0] :
-            $type eq 'v' ? $self->dbVNGet(id => $id)->[0] : undef;
-  return $self->resNotFound if $type && !$obj->{id};
-  my $title = $type ? 'Edit history of '.($obj->{title} || $obj->{name} || $obj->{username}) : 'Recent changes';
-
-  # get the edit history
-  my($list, $np) = $self->dbRevisionGet(
-    $type && $type ne 'u' ? ( type => $type, itemid => $id ) : (),
-    $type eq 'u' ? ( uid => $id ) : (),
-    $f->{t} ? ( type => $f->{t} eq 'a' ? [qw|v r p s d|] : $f->{t} ) : (),
-    page => $f->{p},
-    results => 50,
-    auto => $f->{m},
-    hidden => $type && $type ne 'u' ? 0 : $f->{h},
-    edit => $f->{e},
-    releases => $f->{r},
-  );
-
-  $self->htmlHeader(title => $title, noindex => 1, feeds => [ 'changes' ]);
-  $self->htmlMainTabs($type, $obj, 'hist') if $type;
-
-  # url generator
-  my $u = sub {
-    my($n, $v) = @_;
-    $n ||= '';
-    local $_ = ($type ? "/$type$id" : '').'/hist';
-    $_ .= '?m='.($n eq 'm' ? $v : $f->{m});
-    $_ .= ';h='.($n eq 'h' ? $v : $f->{h});
-    $_ .= ';t='.($n eq 't' ? $v : $f->{t});
-    $_ .= ';e='.($n eq 'e' ? $v : $f->{e});
-    $_ .= ';r='.($n eq 'r' ? $v : $f->{r});
-  };
-
-  # filters
-  div class => 'mainbox';
-   h1 $title;
-   if($type ne 'u') {
-     p class => 'browseopts';
-      a !$f->{m} ? (class => 'optselected') : (), href => $u->(m => 0), 'Show automated edits';
-      a  $f->{m} ? (class => 'optselected') : (), href => $u->(m => 1), 'Hide automated edits';
-     end;
-   }
-   if(!$type || $type eq 'u') {
-     if($self->authCan('dbmod')) {
-       p class => 'browseopts';
-        a $f->{h} == 1  ? (class => 'optselected') : (), href => $u->(h =>  1), 'Hide deleted items';
-        a $f->{h} == -1 ? (class => 'optselected') : (), href => $u->(h => -1), 'Show deleted items';
-       end;
-     }
-     p class => 'browseopts';
-      a !$f->{t}        ? (class => 'optselected') : (), href => $u->(t => ''),  'Show all items';
-      a  $f->{t} eq 'v' ? (class => 'optselected') : (), href => $u->(t => 'v'), 'Only visual novels';
-      a  $f->{t} eq 'r' ? (class => 'optselected') : (), href => $u->(t => 'r'), 'Only releases';
-      a  $f->{t} eq 'p' ? (class => 'optselected') : (), href => $u->(t => 'p'), 'Only producers';
-      a  $f->{t} eq 's' ? (class => 'optselected') : (), href => $u->(t => 's'), 'Only staff';
-      a  $f->{t} eq 'c' ? (class => 'optselected') : (), href => $u->(t => 'c'), 'Only characters';
-      a  $f->{t} eq 'd' ? (class => 'optselected') : (), href => $u->(t => 'd'), 'Only docs';
-      a  $f->{t} eq 'a' ? (class => 'optselected') : (), href => $u->(t => 'a'), 'All except characters';
-     end;
-     p class => 'browseopts';
-      a !$f->{e}       ? (class => 'optselected') : (), href => $u->(e =>  0), 'Show all changes';
-      a  $f->{e} == 1  ? (class => 'optselected') : (), href => $u->(e =>  1), 'Only edits';
-      a  $f->{e} == -1 ? (class => 'optselected') : (), href => $u->(e => -1), 'Only newly created pages';
-     end;
-   }
-   if($type eq 'v') {
-     p class => 'browseopts';
-      a !$f->{r} ? (class => 'optselected') : (), href => $u->(r => 0), 'Exclude edits of releases';
-      a $f->{r}  ? (class => 'optselected') : (), href => $u->(r => 1), 'Include edits of releases';
-     end;
-   }
-  end 'div';
-
-  $self->htmlBrowseHist($list, $f, $np, $u->());
   $self->htmlFooter;
 }
 
