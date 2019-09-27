@@ -269,7 +269,11 @@ sub _maintabs_ {
         t edit => "/$id/edit", 'edit' if can_edit $t, $o;
         t del => "/$id/del", 'remove' if $t eq 'u' && auth && auth->uid == 2;
         t releases => "/$id/releases", 'releases' if $t eq 'v';
-        t rgraph => "/$id/rg", 'relations' if $t =~ /[vp]/ && $o->{rgraph}; # TODO: Check DB if this field isn't given?
+
+        t rgraph => "/$id/rg", 'relations'
+            if $t =~ /[vp]/ && (exists $o->{rgraph} ? $o->{rgraph}
+                : tuwf->dbVali('SELECT rgraph FROM', $t eq 'v' ? 'vn' : 'producers', 'WHERE id =', \$o->{id}));
+
         t '' => "/$id", $id;
     }
 }
