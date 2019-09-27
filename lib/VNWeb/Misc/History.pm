@@ -82,16 +82,14 @@ sub tablebox_ {
                 my $i = $_;
                 my $revurl = "/$i->{type}$i->{itemid}.$i->{rev}";
 
-                tr_ sub {
-                    td_ class => 'tc1_1', sub { a_ href => $revurl, "$i->{type}$i->{itemid}" };
-                    td_ class => 'tc1_2', sub { a_ href => $revurl, ".$i->{rev}" };
-                    td_ class => 'tc2', fmtdate $i->{added}, 'full';
-                    td_ class => 'tc3', sub { user_ $i->{requester}, $i->{username} };
-                    td_ class => 'tc4', sub {
-                        a_ href => $revurl, title => $i->{original}, shorten $i->{title}, 80;
-                        b_ class => 'grayedout', sub { lit_ bb2html $i->{comments}, 150 };
-                    };
-                }
+                td_ class => 'tc1_1', sub { a_ href => $revurl, "$i->{type}$i->{itemid}" };
+                td_ class => 'tc1_2', sub { a_ href => $revurl, ".$i->{rev}" };
+                td_ class => 'tc2', fmtdate $i->{added}, 'full';
+                td_ class => 'tc3', sub { user_ $i->{requester}, $i->{username} };
+                td_ class => 'tc4', sub {
+                    a_ href => $revurl, title => $i->{original}, shorten $i->{title}, 80;
+                    b_ class => 'grayedout', sub { lit_ bb2html $i->{comments}, 150 };
+                };
             } for @$lst;
         };
     };
