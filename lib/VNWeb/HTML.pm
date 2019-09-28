@@ -84,7 +84,7 @@ sub _sanitize_css {
     # around that is to fetch and cache those URLs on the server.
     local $_ = $_[0];
     s/\\//g; # Get rid of backslashes, could be used to bypass the other regexes.
-    s/@(import|charset|font-face)//ig;
+    s/@(import|charset|font-face)[^\n\;]*.//ig;
     s/javascript\s*://ig; # Not sure 'javascript:' URLs do anything, but just in case.
     s/expression\s*\(//ig; # An old IE thing I guess.
     s/binding\s*://ig; # Definitely don't want bindings.
