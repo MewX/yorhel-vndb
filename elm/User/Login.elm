@@ -115,7 +115,7 @@ view model =
           , td [ class "field" ] [ a [ href "/u/newpass" ] [ text "Forgot your password?" ] ]
           ]
         ]
-     , if model.state == Api.Normal
+     , if model.state == Api.Normal || model.state == Api.Loading
        then text ""
        else div [ class "notice" ]
             [ h2 [] [ text "Trouble logging in?" ]
