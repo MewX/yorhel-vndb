@@ -29,13 +29,16 @@ our @EXPORT = qw/
 #
 # These API responses are available in Elm in the `Gen.Api.Response` union type.
 my %apis = (
-    Unauth    => [], # Not authorized
-    Unchanged => [], # No changes
-    Changed   => [ { id => 1 }, { uint => 1 } ], # [ id, chrev]; DB entry has been successfully changed
-    Success   => [],
-    CSRF      => [], # Invalid CSRF token
-    Invalid   => [], # POST data did not validate the schema
-    Content   => [{}], # Rendered HTML content (for markdown/bbcode APIs)
+    Unauth         => [], # Not authorized
+    Unchanged      => [], # No changes
+    Changed        => [ { id => 1 }, { uint => 1 } ], # [ id, chrev]; DB entry has been successfully changed
+    Success        => [],
+    CSRF           => [], # Invalid CSRF token
+    Invalid        => [], # POST data did not validate the schema
+    Content        => [{}], # Rendered HTML content (for markdown/bbcode APIs)
+    BadLogin       => [], # Invalid user or pass
+    LoginThrottle  => [], # Too many failed login attempts
+    InsecurePass   => [], # Password is in a dictionary or breach database
 );
 
 
@@ -218,7 +221,8 @@ sub write_api {
 sub write_types {
     my $data = '';
 
-    $data .= def urlStatic => String => string config->{url_static};
+    $data .= def urlStatic  => String => string config->{url_static};
+    $data .= def adminEMail => String => string config->{admin_email};
 
     write_module Types => $data;
 }

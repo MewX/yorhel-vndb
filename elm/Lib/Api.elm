@@ -32,6 +32,9 @@ showResponse res =
     Unchanged                       -> "No changes"
     Changed _ _                     -> unexp
     Content _                       -> unexp
+    BadLogin                        -> "Invalid username or password."
+    LoginThrottle                   -> "Action throttled, too many failed login attempts."
+    InsecurePass                    -> "Your chosen password is in a database of leaked passwords, please choose another one."
 
 
 expectResponse : (Response -> msg) -> Http.Expect msg

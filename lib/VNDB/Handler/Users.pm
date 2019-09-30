@@ -13,8 +13,6 @@ use PWLookup;
 
 TUWF::register(
   qr{u([1-9]\d*)}             => \&userpage,
-  qr{u/login}                 => \&login,
-  qr{u([1-9]\d*)/logout}      => \&logout,
   qr{u/newpass}               => \&newpass,
   qr{u/newpass/sent}          => \&newpass_sent,
   qr{u([1-9]\d*)/setpass}     => \&setpass,
@@ -171,61 +169,6 @@ sub _check_throttle {
 }
 
 
-sub login {
-  my $self = shift;
-
-  return $self->resRedirect('/', 'temp') if $self->authInfo->{id};
-
-  my $tm = _check_throttle($self);
-  return if !defined $tm;
-
-  my $ref = $self->formValidate({ param => 'ref', required => 0, default => '/'})->{ref};
-
-  my $frm;
-  if($self->reqMethod eq 'POST') {
-    return if !$self->authCheckCode;
-    $frm = $self->formValidate(
-      { post => 'usrname', required => 1, minlength => 2, maxlength => 15 },
-      { post => 'usrpass', required => 1, minlength => 4, maxlength => 500 },
-    );
-
-    if(!$frm->{_err}) {
-      $frm->{usrname} = lc $frm->{usrname};
-
-      my $ok = $self->authLogin($frm->{usrname}, $frm->{usrpass}, $ref);
-
-      if($ok && $self->{password_db} && PWLookup::lookup($self->{password_db}, $frm->{usrpass})) {
-        my $u = $self->dbUserGet(username => $frm->{usrname})->[0];
-        $self->dbUserLogout($u->{id}, $ok); # Make sure to throw away the session we just created
-        return $self->resRedirect("/u$u->{id}/setpass", 'post');
-      }
-      return if $ok;
-
-      $frm->{_err} = [ 'Invalid username or password' ];
-      $self->dbThrottleSet(norm_ip($self->reqIP), $tm+$self->{login_throttle}[0]);
-    }
-  }
-
-  $self->htmlHeader(noindex => 1, title => 'Login');
-  $self->htmlForm({ frm => $frm, action => '/u/login' }, login => [ 'Login',
-    [ hidden => short => 'ref', value => $ref ],
-    [ input  => short => 'usrname', name => 'Username' ],
-    [ static => content => '<a href="/u/register">No account yet?</a>' ],
-    [ passwd => short => 'usrpass', name => 'Password' ],
-    [ static => content => '<a href="/u/newpass">Forgot your password?</a>' ],
-  ]);
-  $self->htmlFooter;
-}
-
-
-sub logout {
-  my $self = shift;
-  my $uid = shift;
-  return $self->resNotFound if !$self->authInfo->{id} || $self->authInfo->{id} != $uid;
-  $self->authLogout;
-}
-
-
 sub newpass {
   my $self = shift;
 
@@ -282,9 +225,9 @@ sub newpass_sent {
 }
 
 
-# /u+/setpass has two modes: With a token (?t=xxx), to set the password after a
+# /u+/setpass had two modes: With a token (?t=xxx), to set the password after a
 # 'register' or 'newpass', or without a token, after the user tried to log in
-# with a weak password.
+# with a weak password (that mode has been moved into v2rw).
 sub setpass {
   my($self, $uid) = @_;
   return $self->resRedirect('/', 'temp') if $self->authInfo->{id};

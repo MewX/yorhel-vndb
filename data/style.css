@@ -182,6 +182,8 @@ div.spinner { content: ''; border: 3px solid #9eaebd; border-bottom-color: trans
 #menulist #search input.submit { display: none; }
 #dd_box abbr                 { margin: 2px 5px 2px 0!important; }
 #menulist .notifyget         { display: inline-block; width: 135px; padding: 4px; background: $warnbg$; border: 1px solid $warnborder$; }
+#menulist .logout            { border: 0; background: none; color: $maintext$; cursor: pointer }
+#menulist .logout:hover      { text-decoration: underline }
 
 
 

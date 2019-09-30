@@ -2,10 +2,13 @@ package VNWeb::Validation;
 
 use v5.26;
 use TUWF;
+use PWLookup;
+use VNDB::Config;
 use VNWeb::Auth;
 use Exporter 'import';
 
 our @EXPORT = qw/
+    is_insecurepass
     form_compile
     form_changed
     can_edit
@@ -16,7 +19,14 @@ TUWF::set custom_validations => {
     id          => { uint => 1, max => 1<<40 },
     editsum     => { required => 1, length => [ 2, 5000 ] },
     page        => { uint => 1, min => 1, max => 1000, required => 0, default => 1 },
+    username    => { regex => qr/^[a-z0-9-]*$/, func => sub { $_[0] !~ /^-*[a-z][0-9]+-*$/ }, minlength => 2, maxlength => 15 },
+    password    => { length => [ 4, 500 ] },
 };
+
+
+sub is_insecurepass {
+    config->{password_db} && PWLookup::lookup(config->{password_db}, shift)
+}
 
 
 # Recursively remove keys from hashes that have a '_when' key that doesn't

@@ -128,7 +128,7 @@ sub _encpass {
 # Arguments: self, uid, encpass
 # Returns: 0 on error, 1 on success
 sub _create_session {
-    my($self, $uid, $encpass) = @_;
+    my($self, $uid, $encpass, $pretend) = @_;
 
     my $token = urandom 20;
     my $token_db = sha1_hex $token;
@@ -136,8 +136,12 @@ sub _create_session {
         sql_func(user_login => \$uid, sql_fromhex($encpass), sql_fromhex $token_db)
     );
 
-    tuwf->resCookie(auth => unpack('H*', $token).'.'.$uid, httponly => 1, expires => time + 31536000);
-    $self->_load_session($uid, $token_db);
+    if($pretend) {
+        tuwf->dbExeci('SELECT', sql_func user_logout => \$uid, sql_fromhex $token_db);
+    } else {
+        tuwf->resCookie(auth => unpack('H*', $token).'.'.$uid, httponly => 1, expires => time + 31536000);
+        $self->_load_session($uid, $token_db);
+    }
     return 1;
 }
 
@@ -180,15 +184,17 @@ sub new {
 
 
 # Returns 1 on success, 0 on failure
+# When $pretend is true, it only tests if the user/pass combination is correct,
+# but doesn't actually create a session.
 sub login {
-    my($self, $user, $pass) = @_;
+    my($self, $user, $pass, $pretend) = @_;
     return 0 if $self->uid || !$user || !$pass;
 
     my $uid = tuwf->dbVali('SELECT id FROM users WHERE username =', \$user);
     return 0 if !$uid;
     my $encpass = $self->_encpass($uid, $pass);
     return 0 if !$encpass;
-    $self->_create_session($uid, $encpass);
+    $self->_create_session($uid, $encpass, $pretend);
 }
 
 

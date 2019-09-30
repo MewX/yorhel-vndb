@@ -53,6 +53,19 @@ inputText nam val onch attrs = input (
   ) []
 
 
+inputPassword : String -> String -> (String -> m) -> List (Attribute m) -> Html m
+inputPassword nam val onch attrs = input (
+    [ type_ "password"
+    , class "text"
+    , tabindex 10
+    , value val
+    , onInput onch
+    ]
+    ++ attrs
+    ++ (if nam == "" then [] else [ id nam, name nam ])
+  ) []
+
+
 inputTextArea : String -> String -> (String -> m) -> List (Attribute m) -> Html m
 inputTextArea nam val onch attrs = textarea (
     [ tabindex 10

@@ -67,8 +67,8 @@ sub user_ {
 # Instantiate an Elm module
 sub elm_($$$) {
     my($mod, $schema, $data) = @_;
-    div_ 'data-elm-module' => 'DocEdit',
-         'data-elm-flags' => JSON::XS->new->encode($schema->analyze->coerce_for_json($data, unknown => 'remove')), '';
+    div_ 'data-elm-module' => $mod,
+         'data-elm-flags' => JSON::XS->new->allow_nonref->encode($schema->analyze->coerce_for_json($data, unknown => 'remove')), '';
 }
 
 
@@ -107,6 +107,7 @@ sub _head_ {
         link_ rel => 'alternate', type => 'application/atom+xml', href => "/feeds/changes.atom",       title => 'Recent Changes';
         link_ rel => 'alternate', type => 'application/atom+xml', href => "/feeds/posts.atom",         title => 'Recent Posts';
     }
+    meta_ charset => 'utf-8';
     meta_ name => 'csrf-token', content => auth->csrftoken;
     meta_ name => 'robots', content => 'noindex' if defined $o->{index} && !$o->{index};
 
@@ -173,7 +174,10 @@ sub _menu_ {
                 a_ href => '/c/new', 'Add Character'; br_;
             }
             br_;
-            a_ href => "$uid/logout", 'Logout';
+            form_ action => "$uid/logout", method => 'post', sub {
+                input_ type => 'hidden', class => 'hidden', name => 'csrf', value => auth->csrftoken;
+                input_ type => 'submit', class => 'logout', value => 'Logout';
+            };
         }
     } if auth;
 
