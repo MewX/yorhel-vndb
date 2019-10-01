@@ -35,6 +35,11 @@ showResponse res =
     BadLogin                        -> "Invalid username or password."
     LoginThrottle                   -> "Action throttled, too many failed login attempts."
     InsecurePass                    -> "Your chosen password is in a database of leaked passwords, please choose another one."
+    BadEmail                        -> "Unknown email address."
+    Bot                             -> "Invalid answer to the anti-bot question."
+    Taken                           -> "Username already taken, please choose a different name."
+    DoubleEmail                     -> "Email address already used for another account."
+    DoubleIP                        -> "You can only register one account from the same IP within 24 hours."
 
 
 expectResponse : (Response -> msg) -> Http.Expect msg

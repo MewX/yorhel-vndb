@@ -72,7 +72,7 @@ type Msg
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    Username n -> ({ model | username = n }, Cmd.none)
+    Username n -> ({ model | username = String.toLower n }, Cmd.none)
     Password n -> ({ model | password = n }, Cmd.none)
     Newpass1 n -> ({ model | newpass1 = n, noteq = False }, Cmd.none)
     Newpass2 n -> ({ model | newpass2 = n, noteq = False }, Cmd.none)

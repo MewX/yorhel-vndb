@@ -118,7 +118,7 @@ sub filters_ {
         r => { required => 0, default => 0, enum => [ 0, 1 ] },  # Include releases
         p => { page => 1 },
     }});
-    my $filt = tuwf->validate(get => $schema)->data;
+    my $filt = eval { tuwf->validate(get => $schema)->data } || tuwf->pass;
 
     $filt->{m} //= $type ? 0 : 1; # Exclude automated edits by default on the main 'recent changes' view.
 

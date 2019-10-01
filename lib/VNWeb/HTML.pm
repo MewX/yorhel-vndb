@@ -65,10 +65,12 @@ sub user_ {
 
 
 # Instantiate an Elm module
-sub elm_($$$) {
+sub elm_ {
     my($mod, $schema, $data) = @_;
     div_ 'data-elm-module' => $mod,
-         'data-elm-flags' => JSON::XS->new->allow_nonref->encode($schema->analyze->coerce_for_json($data, unknown => 'remove')), '';
+         $data ? (
+            'data-elm-flags' => JSON::XS->new->allow_nonref->encode($schema->analyze->coerce_for_json($data, unknown => 'remove'))
+         ) : (), '';
 }
 
 
@@ -97,7 +99,9 @@ sub _head_ {
     my $skin = tuwf->reqGet('skin') || auth->pref('skin') || config->{skin_default};
     $skin = config->{skin_default} if !tuwf->{skins}{$skin};
 
+    meta_ charset => 'utf-8';
     title_ $o->{title}.' | vndb';
+    base_ href => tuwf->reqBaseURI();
     link_ rel => 'shortcut icon', href => '/favicon.ico', type => 'image/x-icon';
     link_ rel => 'stylesheet', href => config->{url_static}.'/s/'.$skin.'/style.css?'.config->{version}, type => 'text/css', media => 'all';
     link_ rel => 'search', type => 'application/opensearchdescription+xml', title => 'VNDB VN Search', href => tuwf->reqBaseURI().'/opensearch.xml';
@@ -107,7 +111,6 @@ sub _head_ {
         link_ rel => 'alternate', type => 'application/atom+xml', href => "/feeds/changes.atom",       title => 'Recent Changes';
         link_ rel => 'alternate', type => 'application/atom+xml', href => "/feeds/posts.atom",         title => 'Recent Posts';
     }
-    meta_ charset => 'utf-8';
     meta_ name => 'csrf-token', content => auth->csrftoken;
     meta_ name => 'robots', content => 'noindex' if defined $o->{index} && !$o->{index};
 

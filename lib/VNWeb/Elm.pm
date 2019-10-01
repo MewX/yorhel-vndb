@@ -39,6 +39,11 @@ my %apis = (
     BadLogin       => [], # Invalid user or pass
     LoginThrottle  => [], # Too many failed login attempts
     InsecurePass   => [], # Password is in a dictionary or breach database
+    BadEmail       => [], # Unknown email address in password reset form
+    Bot            => [], # User didn't pass bot verification
+    Taken          => [], # Username already taken
+    DoubleEmail    => [], # Account with same email already exists
+    DoubleIP       => [], # Account with same IP already exists
 );
 
 
@@ -167,10 +172,10 @@ sub elm_form {
     my($name, $out, $in) = @_;
 
     my $data = '';
-    $data .= def_type Recv => $out->analyze;
-    $data .= def_type Send => $in->analyze;
-    $data .= encoder encode => 'Send', $in->analyze;
-    $data .= def_validation val => $in->analyze;
+    $data .= def_type Recv => $out->analyze if $out;
+    $data .= def_type Send => $in->analyze if $in;
+    $data .= encoder encode => 'Send', $in->analyze if $in;
+    $data .= def_validation val => $in->analyze if $in;
 
     write_module $name, $data;
 }
