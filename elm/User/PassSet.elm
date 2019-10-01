@@ -8,7 +8,7 @@ import Browser
 import Browser.Navigation exposing (load)
 import Lib.Api as Api
 import Gen.Api as GApi
-import Gen.RegReset as GRR
+import Gen.UserEdit as GUE
 import Lib.Html exposing (..)
 
 
@@ -77,12 +77,12 @@ view model =
     , table [ class "formtable" ]
       [ tr [ class "newfield" ]
         [ td [ class "label" ] [ label [ for "newpass1" ] [ text "New password" ]]
-        , td [ class "field" ] [ inputPassword "newpass1" model.newpass1 Newpass1 GRR.valPassword ]
+        , td [ class "field" ] [ inputPassword "newpass1" model.newpass1 Newpass1 GUE.valPassword ]
         ]
       , tr [ class "newfield" ]
         [ td [ class "label" ] [ label [ for "newpass2" ] [ text "Repeat" ]]
         , td [ class "field" ]
-          [ inputPassword "newpass2" model.newpass2 Newpass2 GRR.valPassword
+          [ inputPassword "newpass2" model.newpass2 Newpass2 GUE.valPassword
           , if model.noteq then b [ class "standout" ] [ text "Passwords do not match" ] else text ""
           ]
         ]

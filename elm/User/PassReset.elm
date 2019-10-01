@@ -7,7 +7,7 @@ import Json.Encode as JE
 import Browser
 import Lib.Api as Api
 import Gen.Api as GApi
-import Gen.RegReset as GRR
+import Gen.UserEdit as GUE
 import Lib.Html exposing (..)
 
 
@@ -79,7 +79,7 @@ view model =
       , table [ class "formtable" ]
         [ tr [ class "newfield" ]
           [ td [ class "label" ] [ label [ for "email" ] [ text "E-Mail" ]]
-          , td [ class "field" ] [ inputText "email" model.email EMail GRR.valEmail ]
+          , td [ class "field" ] [ inputText "email" model.email EMail GUE.valEmail ]
           ]
         ]
       ]

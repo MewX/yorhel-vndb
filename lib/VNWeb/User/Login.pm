@@ -3,14 +3,6 @@ package VNWeb::User::Login;
 use VNWeb::Prelude;
 
 
-my $LOGIN = form_compile in => {
-    username => { username => 1 },
-    password => { password => 1 }
-};
-
-elm_form UserLogin => $LOGIN, $LOGIN;
-
-
 TUWF::get '/u/login' => sub {
     return tuwf->resRedirect('/', 'temp') if auth;
 
@@ -23,7 +15,10 @@ TUWF::get '/u/login' => sub {
 };
 
 
-json_api '/u/login', $LOGIN, sub {
+json_api '/u/login', {
+    username => { username => 1 },
+    password => { password => 1 }
+}, sub {
     my $data = shift;
 
     my $ip = norm_ip tuwf->reqIP;

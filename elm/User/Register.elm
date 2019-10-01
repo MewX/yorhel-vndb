@@ -7,7 +7,7 @@ import Json.Encode as JE
 import Browser
 import Lib.Api as Api
 import Gen.Api as GApi
-import Gen.RegReset as GRR
+import Gen.UserEdit as GUE
 import Lib.Html exposing (..)
 
 
@@ -84,7 +84,7 @@ view model =
       , table [ class "formtable" ]
         [ tr [ class "newfield" ]
           [ td [ class "label" ] [ label [ for "username" ] [ text "Username" ]]
-          , td [ class "field" ] [ inputText "username" model.username Username GRR.valUsername ]
+          , td [ class "field" ] [ inputText "username" model.username Username GUE.valUsername ]
           ]
         , tr []
           [ td [] []
@@ -92,7 +92,7 @@ view model =
           ]
         , tr [ class "newfield" ]
           [ td [ class "label" ] [ label [ for "email" ] [ text "E-Mail" ]]
-          , td [ class "field" ] [ inputText "email" model.email EMail GRR.valEmail ]
+          , td [ class "field" ] [ inputText "email" model.email EMail GUE.valEmail ]
           ]
         , tr []
           [ td [] []
@@ -106,7 +106,7 @@ view model =
           ]
         , tr [ class "newfield" ]
           [ td [ class "label" ] [ label [ for "vns" ] [ text "Answer" ]]
-          , td [ class "field" ] [ inputText "vns" (if model.vns == 0 then "" else String.fromInt model.vns) VNs GRR.valVns ]
+          , td [ class "field" ] [ inputText "vns" (if model.vns == 0 then "" else String.fromInt model.vns) VNs [] ]
           ]
         ]
       ]
