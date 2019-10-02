@@ -40,6 +40,7 @@ showResponse res =
     Taken                           -> "Username already taken, please choose a different name."
     DoubleEmail                     -> "Email address already used for another account."
     DoubleIP                        -> "You can only register one account from the same IP within 24 hours."
+    BadCurPass                      -> "Current password is invalid."
 
 
 expectResponse : (Response -> msg) -> Http.Expect msg

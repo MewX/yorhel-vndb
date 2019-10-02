@@ -77,10 +77,7 @@ view model =
         , text " and we'll send you instructions to set a new password within a few minutes!"
         ]
       , table [ class "formtable" ]
-        [ tr [ class "newfield" ]
-          [ td [ class "label" ] [ label [ for "email" ] [ text "E-Mail" ]]
-          , td [ class "field" ] [ inputText "email" model.email EMail GUE.valEmail ]
-          ]
+        [ formField "email::E-Mail" [ inputText "email" model.email EMail GUE.valEmail ]
         ]
       ]
     , div [ class "mainbox" ]

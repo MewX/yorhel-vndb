@@ -13,6 +13,10 @@ onClickN : m -> Attribute m
 onClickN action = custom "click" (JD.succeed { message = action, stopPropagation = True, preventDefault = True})
 
 
+-- Multi-<br> (ugly but oh, so, convenient)
+br_ : Int -> Html m
+br_ n = if n == 1 then br [] [] else span [] <| List.repeat n <| br [] []
+
 -- Submit button with loading indicator and error message display
 submitButton : String -> Api.State -> Bool -> Bool -> Html m
 submitButton val state valid load = div []
@@ -85,3 +89,26 @@ inputCheck nam val onch = input (
     ]
     ++ (if nam == "" then [] else [ id nam, name nam ])
   ) []
+
+
+-- Generate a form field (table row) with a label. The `label` string can be:
+--
+--   "none"          -> To generate a full-width field (colspan=2)
+--   ""              -> Empty label
+--   "Some string"   -> Text label
+--   "input::String" -> Label that refers to the named input
+--
+-- (Yeah, stringly typed arguments; I wish Elm had typeclasses)
+formField : String -> List (Html m) -> Html m
+formField lbl cont =
+  tr [ class "newfield" ]
+  [ if lbl == "none"
+    then text ""
+    else
+      td [ class "label" ]
+      [ case String.split "::" lbl of
+          [name, txt] -> label [ for name ] [ text txt ]
+          txt         -> text <| String.concat txt
+      ]
+  , td (class "field" :: if lbl == "none" then [ colspan 2 ] else []) cont
+  ]

@@ -9,13 +9,10 @@ import Json.Encode as JE
 import Lib.Html exposing (..)
 import Lib.Api as Api
 import Lib.Ffi as Ffi
+import Lib.Editsum as Editsum
 import Gen.Api as GApi
 import Gen.DocEdit as GD
 
---import Lib.Api as Api
---import Lib.Ffi as Ffi
-
-import Lib.Editsum as Editsum
 
 main : Program GD.Recv Model Msg
 main = Browser.element
@@ -100,28 +97,24 @@ view model =
     [ div [ class "mainbox" ]
       [ h1 [] [ text <| "Edit d" ++ String.fromInt model.id ]
       , table [ class "formtable" ]
-        [ tr [ class "newfield" ]
-          [ td [ class "label" ] [ label [ for "title" ] [ text "Title" ]]
-          , td [ class "field" ] [ inputText "title" model.title Title (style "width" "300px" :: GD.valTitle) ]
-          ]
-        , tr [ class "newfield" ]
-          [ td [ class "field", colspan 2 ]
-            [ br [] []
-            , text "Contents (HTML and MultiMarkdown supported, which is "
-            , a [ href "https://daringfireball.net/projects/markdown/basics", target "_blank" ] [ text "Markdown" ]
-            , text " with some "
-            , a [ href "http://fletcher.github.io/MultiMarkdown-5/syntax.html", target "_blank" ][ text "extensions" ]
-            , text ")."
-            , br [] []
-            , a [ href "#", style "float" "right", onClickN Preview ]
-              [ text <| if model.preview == "" then "Preview" else "Edit"
-              , if model.state == Api.Loading then div [ class "spinner" ] [] else text ""
-              ]
-            , br [] []
-            , if model.preview == ""
-              then inputTextArea "content" model.content Content ([rows 50, cols 90, style "width" "850px"] ++ GD.valContent)
-              else div [ class "docs preview", style "width" "850px", Ffi.innerHtml model.preview ] []
+        [ formField "title::Title" [ inputText "title" model.title Title (style "width" "300px" :: GD.valTitle) ]
+        , formField "none"
+          [ br_ 1
+          , b [] [ text "Contents" ]
+          , br_ 1
+          , text "HTML and MultiMarkdown supported, which is "
+          , a [ href "https://daringfireball.net/projects/markdown/basics", target "_blank" ] [ text "Markdown" ]
+          , text " with some "
+          , a [ href "http://fletcher.github.io/MultiMarkdown-5/syntax.html", target "_blank" ][ text "extensions" ]
+          , text "."
+          , a [ href "#", style "float" "right", onClickN Preview ]
+            [ text <| if model.preview == "" then "Preview" else "Edit"
+            , if model.state == Api.Loading then div [ class "spinner" ] [] else text ""
             ]
+          , br_ 1
+          , if model.preview == ""
+            then inputTextArea "content" model.content Content ([rows 50, cols 90, style "width" "850px"] ++ GD.valContent)
+            else div [ class "docs preview", style "width" "850px", Ffi.innerHtml model.preview ] []
           ]
         ]
       ]

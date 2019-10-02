@@ -53,6 +53,7 @@ prod: all ${PROD}
 clean:
 	rm -f ${ALL_CLEAN} ${PROD}
 	rm -f static/f/icons.png
+	rm -rf elm/Gen/
 	rm -f elm3/Lib/Gen.elm
 	rm -rf elm/elm-stuff/build-artifacts
 	rm -rf elm3/elm-stuff/build-artifacts

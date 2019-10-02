@@ -44,6 +44,7 @@ my %apis = (
     Taken          => [], # Username already taken
     DoubleEmail    => [], # Account with same email already exists
     DoubleIP       => [], # Account with same IP already exists
+    BadCurPass     => [], # Current password is incorrect when changing password
 );
 
 
@@ -106,8 +107,8 @@ sub def_validation {
         $v{required}  ? 'A.required True' : (),
         $v{minlength} ? "A.minlength $v{minlength}" : (),
         $v{maxlength} ? "A.maxlength $v{maxlength}" : (),
-        $v{min}       ? "A.min $v{min}" : (),
-        $v{max}       ? "A.max $v{max}" : (),
+        $v{min}       ? 'A.min '.string($v{min}) : (),
+        $v{max}       ? 'A.max '.string($v{max}) : (),
         $v{pattern}   ? 'A.pattern '.string($v{pattern}) : ()
     ).']' if !$obj->{keys};
     $data;
@@ -228,6 +229,10 @@ sub write_types {
 
     $data .= def urlStatic  => String => string config->{url_static};
     $data .= def adminEMail => String => string config->{admin_email};
+    $data .= def userPerms  => 'List (Int, String)' => list map tuple(VNWeb::Auth::listPerms->{$_}, string $_), sort keys VNWeb::Auth::listPerms->%*;
+    $data .= def skins      => 'List (String, String)' =>
+                list map tuple(string $_, string tuwf->{skins}{$_}[0]),
+                sort { tuwf->{skins}{$a}[0] cmp tuwf->{skins}{$b}[0] } keys tuwf->{skins}->%*;
 
     write_module Types => $data;
 }

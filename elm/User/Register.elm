@@ -82,32 +82,20 @@ view model =
     [ div [ class "mainbox" ]
       [ h1 [] [ text "Create an account" ]
       , table [ class "formtable" ]
-        [ tr [ class "newfield" ]
-          [ td [ class "label" ] [ label [ for "username" ] [ text "Username" ]]
-          , td [ class "field" ] [ inputText "username" model.username Username GUE.valUsername ]
+        [ formField "username::Username"
+          [ inputText "username" model.username Username GUE.valUsername
+          , br_ 1
+          , text "Preferred username. Must be lowercase and can only consist of alphanumeric characters."
           ]
-        , tr []
-          [ td [] []
-          , td [ class "field" ] [ text "Preferred username. Must be lowercase and can only consist of alphanumeric characters." ]
+        , formField "email::E-Mail"
+          [ inputText "email" model.email EMail GUE.valEmail
+          , br_ 1
+          , text "Your email address will only be used in case you lose your password. "
+          , text "We will never send spam or newsletters unless you explicitly ask us for it or we get hacked."
+          , br_ 3
+          , text "Anti-bot question: How many visual novels do we have in the database? (Hint: look to your left)"
           ]
-        , tr [ class "newfield" ]
-          [ td [ class "label" ] [ label [ for "email" ] [ text "E-Mail" ]]
-          , td [ class "field" ] [ inputText "email" model.email EMail GUE.valEmail ]
-          ]
-        , tr []
-          [ td [] []
-          , td [ class "field" ]
-            [ text "Your email address will only be used in case you lose your password. "
-            , text "We will never send spam or newsletters unless you explicitly ask us for it or we get hacked."
-            , br [] []
-            , br [] []
-            , text "Anti-bot question: How many visual novels do we have in the database? (Hint: look to your left)"
-            ]
-          ]
-        , tr [ class "newfield" ]
-          [ td [ class "label" ] [ label [ for "vns" ] [ text "Answer" ]]
-          , td [ class "field" ] [ inputText "vns" (if model.vns == 0 then "" else String.fromInt model.vns) VNs [] ]
-          ]
+        , formField "vns::Answer" [ inputText "vns" (if model.vns == 0 then "" else String.fromInt model.vns) VNs [] ]
         ]
       ]
     , div [ class "mainbox" ]

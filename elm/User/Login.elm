@@ -98,21 +98,15 @@ view model =
       div [ class "mainbox" ]
       [ h1 [] [ text "Login" ]
       , table [ class "formtable" ]
-        [ tr [ class "newfield" ]
-          [ td [ class "label" ] [ label [ for "username" ] [ text "Username" ]]
-          , td [ class "field" ] [ inputText "username" model.username Username GUE.valUsername ]
+        [ formField "username::Username"
+          [ inputText "username" model.username Username GUE.valUsername
+          , br_ 1
+          , a [ href "/u/register" ] [ text "No account yet?" ]
           ]
-        , tr []
-          [ td [] []
-          , td [ class "field" ] [ a [ href "/u/register" ] [ text "No account yet?" ] ]
-          ]
-        , tr [ class "newfield" ]
-          [ td [ class "label" ] [ label [ for "password" ] [ text "Password" ]]
-          , td [ class "field" ] [ inputPassword "password" model.password Password GUE.valPassword ]
-          ]
-        , tr []
-          [ td [] []
-          , td [ class "field" ] [ a [ href "/u/newpass" ] [ text "Forgot your password?" ] ]
+        , formField "password::Password"
+          [ inputPassword "password" model.password Password GUE.valPasswordOld
+          , br_ 1
+          , a [ href "/u/newpass" ] [ text "Forgot your password?" ]
           ]
         ]
      , if model.state == Api.Normal || model.state == Api.Loading
@@ -122,14 +116,13 @@ view model =
             , text "If you have not used this login form since October 2014, your account has likely been disabled. You can "
             , a [ href "/u/newpass" ] [ text "reset your password" ]
             , text " to regain access."
-            , br [] []
-            , br [] []
+            , br_ 2
             , text "Still having trouble? Send a mail to "
             , a [ href <| "mailto:" ++ adminEMail ] [ text adminEMail ]
             , text ". But keep in mind that I can only help you if the email address associated with your account is correct"
             , text " and you still have access to it. Without that, there is no way to prove that the account is yours."
             ]
-     ]
+      ]
 
     changeBox =
       div [ class "mainbox" ]
@@ -139,19 +132,14 @@ view model =
         , text "Your current password is in a public database of leaked passwords. You need to change it before you can continue."
         ]
       , table [ class "formtable" ]
-        [ tr [ class "newfield" ]
-          [ td [ class "label" ] [ label [ for "newpass1" ] [ text "New password" ]]
-          , td [ class "field" ] [ inputPassword "newpass1" model.newpass1 Newpass1 GUE.valPassword ]
-          ]
-        , tr [ class "newfield" ]
-          [ td [ class "label" ] [ label [ for "newpass2" ] [ text "Repeat" ]]
-          , td [ class "field" ]
-            [ inputPassword "newpass2" model.newpass2 Newpass2 GUE.valPassword
-            , if model.noteq then b [ class "standout" ] [ text "Passwords do not match" ] else text ""
-            ]
+        [ formField "newpass1::New password" [ inputPassword "newpass1" model.newpass1 Newpass1 GUE.valPasswordNew ]
+        , formField "newpass2::Repeat"
+          [ inputPassword "newpass2" model.newpass2 Newpass2 GUE.valPasswordNew
+          , br_ 1
+          , if model.noteq then b [ class "standout" ] [ text "Passwords do not match" ] else text ""
           ]
         ]
-     ]
+      ]
 
   in Html.form [ onSubmit Submit ]
       [ if model.insecure then changeBox else loginBox
