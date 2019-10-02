@@ -85,7 +85,8 @@ view model =
         [ formField "username::Username"
           [ inputText "username" model.username Username GUE.valUsername
           , br_ 1
-          , text "Preferred username. Must be lowercase and can only consist of alphanumeric characters."
+          , text "Preferred username. Must be lowercase, between 2 and 15 characters long and consist entirely of alphanumeric characters or a dash."
+          , text " Names that look like database identifiers (i.e. a single letter followed by several numbers) are also disallowed."
           ]
         , formField "email::E-Mail"
           [ inputText "email" model.email EMail GUE.valEmail
