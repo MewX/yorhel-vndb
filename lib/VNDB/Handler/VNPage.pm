@@ -694,7 +694,7 @@ sub _anime {
          txt '] ';
         end;
         abbr title => $_->{title_kanji}||$_->{title_romaji}, shorten $_->{title_romaji}, 50;
-        b ' ('.(defined $_->{type} ? $ANIME_TYPE{$_->{type}}.', ' : '').$_->{year}.')';
+        b ' ('.(defined $_->{type} ? $ANIME_TYPE{$_->{type}}{txt}.', ' : '').$_->{year}.')';
         br;
       }
     }
