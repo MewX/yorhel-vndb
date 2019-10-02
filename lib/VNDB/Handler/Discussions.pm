@@ -214,7 +214,7 @@ sub edit {
     my @boards;
     if(!$frm->{_err} && $frm->{boards}) {
       for (split /[ ,]/, $frm->{boards}) {
-        my($ty, $id) = ($1, $2) if /^([a-z]{1,2})([0-9]*)$/;
+        my($ty, $id) = /^([a-z]{1,2})([0-9]*)$/ ? ($1, $2) : ($_, '');
         push @boards, [ $ty, $id ] if !grep $_->[0].$_->[1] eq $ty.$id, @boards;
         my $bt = $BOARD_TYPE{$ty};
         push @{$frm->{_err}}, "Wrong board: $_" if
