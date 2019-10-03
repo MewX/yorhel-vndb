@@ -65,6 +65,7 @@ CREATE TYPE release_type      AS ENUM ('complete', 'partial', 'trial');
 CREATE TYPE tag_category      AS ENUM('cont', 'ero', 'tech');
 CREATE TYPE vn_relation       AS ENUM ('seq', 'preq', 'set', 'alt', 'char', 'side', 'par', 'ser', 'fan', 'orig');
 CREATE TYPE resolution        AS ENUM ('unknown', 'nonstandard', '640x480', '800x600', '1024x768', '1280x960', '1600x1200', '640x400', '960x600', '960x640', '1024x576', '1024x600', '1024x640', '1280x720', '1280x800', '1366x768', '1600x900', '1920x1080');
+CREATE TYPE session_type      AS ENUM ('web', 'pass');
 
 -- Sequences used for ID generation of items not in the DB
 CREATE SEQUENCE covers_seq;
@@ -454,6 +455,7 @@ CREATE TABLE sessions (
   token   bytea NOT NULL,
   added   timestamptz NOT NULL DEFAULT NOW(),
   expires timestamptz NOT NULL,
+  type    session_type NOT NULL,
   PRIMARY KEY (uid, token)
 );
 
@@ -703,15 +705,13 @@ CREATE TABLE users (
   username   varchar(20) NOT NULL UNIQUE, -- [pub]
   mail       varchar(100) NOT NULL,
   perm       smallint NOT NULL DEFAULT 1+4+16,
-  -- Interpretation of the passwd column depends on its length:
-  -- * 20 bytes: Password reset token (sha1(lower_hex(20 bytes of random data)))
-  -- * 46 bytes: scrypt password
+  -- A valid passwd column is 46 bytes:
   --   4 bytes: N (big endian)
   --   1 byte: r
   --   1 byte: p
   --   8 bytes: salt
   --   32 bytes: scrypt(passwd, global_salt + salt, N, r, p, 32)
-  -- * Anything else: Invalid, account disabled.
+  -- Anything else is invalid, account disabled.
   passwd          bytea NOT NULL DEFAULT '',
   registered      timestamptz NOT NULL DEFAULT NOW(),
   c_votes         integer NOT NULL DEFAULT 0,

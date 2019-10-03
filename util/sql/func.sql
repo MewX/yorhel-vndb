@@ -745,9 +745,9 @@ CREATE OR REPLACE FUNCTION user_getscryptargs(integer) RETURNS bytea AS $$
 $$ LANGUAGE SQL SECURITY DEFINER;
 
 
--- Create a new session for this user (uid, scryptpass, token)
+-- Create a new web session for this user (uid, scryptpass, token)
 CREATE OR REPLACE FUNCTION user_login(integer, bytea, bytea) RETURNS boolean AS $$
-  INSERT INTO sessions (uid, token, expires) SELECT $1, $3, NOW() + '1 month' FROM users
+  INSERT INTO sessions (uid, token, expires, type) SELECT $1, $3, NOW() + '1 month', 'web' FROM users
    WHERE length($2) = 46 AND length($3) = 20
      AND id = $1 AND passwd = $2
   RETURNING true
@@ -755,14 +755,17 @@ $$ LANGUAGE SQL SECURITY DEFINER;
 
 
 CREATE OR REPLACE FUNCTION user_logout(integer, bytea) RETURNS void AS $$
-  DELETE FROM sessions WHERE uid = $1 AND token = $2
+  DELETE FROM sessions WHERE uid = $1 AND token = $2 AND type = 'web'
 $$ LANGUAGE SQL SECURITY DEFINER;
 
 
--- Returns true if the given session token is valid and extends the session expiration.
-CREATE OR REPLACE FUNCTION user_isloggedin(integer, bytea) RETURNS bool AS $$
-  UPDATE sessions SET expires = NOW() + '1 month' WHERE uid = $1 AND token = $2 AND expires < NOW() + '1 month'::interval - '6 hours'::interval;
-  SELECT true FROM sessions WHERE uid = $1 AND token = $2 AND expires > NOW();
+-- Returns true if the given session token is valid.
+-- As a side effect, this also extends the expiration time of web sessions.
+CREATE OR REPLACE FUNCTION user_isvalidsession(integer, bytea, session_type) RETURNS bool AS $$
+  UPDATE sessions SET expires = NOW() + '1 month'
+   WHERE uid = $1 AND token = $2 AND type = $3 AND $3 = 'web'
+     AND expires < NOW() + '1 month'::interval - '6 hours'::interval;
+  SELECT true FROM sessions WHERE uid = $1 AND token = $2 AND type = $3 AND expires > NOW();
 $$ LANGUAGE SQL SECURITY DEFINER;
 
 
@@ -771,26 +774,30 @@ CREATE OR REPLACE FUNCTION user_emailexists(text) RETURNS boolean AS $$
 $$ LANGUAGE SQL SECURITY DEFINER;
 
 
-CREATE OR REPLACE FUNCTION user_isvalidtoken(integer, bytea) RETURNS boolean AS $$
-  SELECT true FROM users WHERE id = $1 AND passwd = $2 AND length($2) = 20
-$$ LANGUAGE SQL SECURITY DEFINER;
-
-
--- Replace password with a reset token. args: email, token. Returns: user id.
+-- Create a password reset token. args: email, token. Returns: user id.
 -- Doesn't work for usermods, otherwise an attacker could use this function to
 -- gain access to all user's emails by obtaining a reset token of a usermod.
 -- Ideally Postgres itself would send the user an email so that the application
 -- calling this function doesn't even get the token, and thus can't get access
 -- to someone's account. But alas, that'd require a separate process.
 CREATE OR REPLACE FUNCTION user_resetpass(text, bytea) RETURNS integer AS $$
-  UPDATE users SET passwd = $2 WHERE lower(mail) = lower($1) AND length($2) = 20 AND perm & 128 = 0 RETURNING id;
+  WITH uid(uid) AS (
+    SELECT id FROM users WHERE lower(mail) = lower($1) AND length($2) = 20 AND perm & 128 = 0
+  )
+  INSERT INTO sessions (uid, token, expires, type) SELECT uid, $2, NOW()+'1 week', 'pass' FROM uid RETURNING uid
 $$ LANGUAGE SQL SECURITY DEFINER;
 
 
--- Changes the user's password and invalidates all existing sessions. args: uid, old_pass_or_token, new_pass
+-- Changes the user's password and invalidates all existing sessions. args: uid, old_pass_or_reset_token, new_pass
 CREATE OR REPLACE FUNCTION user_setpass(integer, bytea, bytea) RETURNS boolean AS $$
   WITH upd(id) AS (
-    UPDATE users SET passwd = $3 WHERE id = $1 AND passwd = $2 AND length($2) IN(20,46) AND length($3) = 46 RETURNING id
+    UPDATE users SET passwd = $3
+     WHERE id = $1
+       AND length($3) = 46
+       AND (    (passwd = $2 AND length($2) = 46)
+             OR EXISTS(SELECT 1 FROM sessions WHERE uid = $1 AND token = $2 AND type = 'pass' AND expires > NOW())
+           )
+    RETURNING id
   ), del AS( -- Not referenced, but still guaranteed to run
     DELETE FROM sessions WHERE uid IN(SELECT id FROM upd)
   )
@@ -799,11 +806,11 @@ $$ LANGUAGE SQL SECURITY DEFINER;
 
 
 -- Internal function, used to verify whether user ($2 with session $3) is
--- allowed to access data from user $1.
+-- allowed to access sensitive data from user $1.
 CREATE OR REPLACE FUNCTION user_isauth(integer, integer, bytea) RETURNS boolean AS $$
   SELECT true FROM users
    WHERE id = $2
-     AND EXISTS(SELECT 1 FROM sessions WHERE uid = $2 AND token = $3)
+     AND EXISTS(SELECT 1 FROM sessions WHERE uid = $2 AND token = $3 AND type = 'web')
      AND ($2 = $1 OR perm & 128 = 128)
 $$ LANGUAGE SQL;
 

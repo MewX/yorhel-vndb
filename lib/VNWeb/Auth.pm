@@ -152,7 +152,7 @@ sub _load_session {
     my $user = $uid ? tuwf->dbRowi(
         'SELECT id, username, perm FROM users
           WHERE id = ', \$uid,
-           'AND', sql_func(user_isloggedin => 'id', sql_fromhex($token_db))
+           'AND', sql_func(user_isvalidsession => 'id', sql_fromhex($token_db), \'web')
     ) : {};
 
     # Drop the cookie if it's not valid
@@ -198,9 +198,8 @@ sub logout {
 }
 
 
-# Replaces the user's password with a random token that can be used to reset
-# the password. Returns ($uid, $token) if the email address is found in the DB,
-# () otherwise.
+# Create a random token that can be used to reset the password.
+# Returns ($uid, $token) if the email address is found in the DB, () otherwise.
 sub resetpass {
     my(undef, $mail) = @_;
     my $token = unpack 'H*', urandom(20);
@@ -215,7 +214,7 @@ sub resetpass {
 sub isvalidtoken {
     my(undef, $uid, $token) = @_;
     tuwf->dbVali(
-        select => sql_func(user_isvalidtoken => \$uid, sql_fromhex sha1_hex lc $token)
+        select => sql_func(user_isvalidsession => \$uid, sql_fromhex(sha1_hex lc $token), \'pass')
     );
 }
 
