@@ -149,18 +149,11 @@ sub _create_session {
 sub _load_session {
     my($self, $uid, $token_db) = @_;
 
-    my $user = {};
-    if($uid) {
-        my $loggedin = sql_func(user_isloggedin => 'id', sql_fromhex($token_db));
-        $user = tuwf->dbRowi(
-            'SELECT id, username, perm, ', sql_totime($loggedin), ' AS lastused',
-            'FROM users WHERE id = ', \$uid, 'AND', $loggedin, 'IS NOT NULL'
-        );
-
-        # update the sessions.lastused column if lastused < now()-'6 hours'
-        tuwf->dbExeci(SELECT => sql_func user_update_lastused => \$user->{id}, sql_fromhex $token_db)
-            if $user->{id} && $user->{lastused} < time()-6*3600;
-    }
+    my $user = $uid ? tuwf->dbRowi(
+        'SELECT id, username, perm FROM users
+          WHERE id = ', \$uid,
+           'AND', sql_func(user_isloggedin => 'id', sql_fromhex($token_db))
+    ) : {};
 
     # Drop the cookie if it's not valid
   	tuwf->resCookie(auth => undef) if !$user->{id} && tuwf->reqCookie('auth');

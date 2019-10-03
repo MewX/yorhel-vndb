@@ -747,7 +747,7 @@ $$ LANGUAGE SQL SECURITY DEFINER;
 
 -- Create a new session for this user (uid, scryptpass, token)
 CREATE OR REPLACE FUNCTION user_login(integer, bytea, bytea) RETURNS boolean AS $$
-  INSERT INTO sessions (uid, token) SELECT $1, $3 FROM users
+  INSERT INTO sessions (uid, token, expires) SELECT $1, $3, NOW() + '1 month' FROM users
    WHERE length($2) = 46 AND length($3) = 20
      AND id = $1 AND passwd = $2
   RETURNING true
@@ -759,13 +759,10 @@ CREATE OR REPLACE FUNCTION user_logout(integer, bytea) RETURNS void AS $$
 $$ LANGUAGE SQL SECURITY DEFINER;
 
 
-CREATE OR REPLACE FUNCTION user_update_lastused(integer, bytea) RETURNS void AS $$
-  UPDATE sessions SET lastused = NOW() WHERE uid = $1 AND token = $2
-$$ LANGUAGE SQL SECURITY DEFINER;
-
-
-CREATE OR REPLACE FUNCTION user_isloggedin(integer, bytea) RETURNS timestamptz AS $$
-  SELECT lastused FROM sessions WHERE uid = $1 AND token = $2
+-- Returns true if the given session token is valid and extends the session expiration.
+CREATE OR REPLACE FUNCTION user_isloggedin(integer, bytea) RETURNS bool AS $$
+  UPDATE sessions SET expires = NOW() + '1 month' WHERE uid = $1 AND token = $2 AND expires < NOW() + '1 month'::interval - '6 hours'::interval;
+  SELECT true FROM sessions WHERE uid = $1 AND token = $2 AND expires > NOW();
 $$ LANGUAGE SQL SECURITY DEFINER;
 
 

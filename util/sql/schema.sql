@@ -450,10 +450,10 @@ CREATE TABLE screenshots (
 
 -- sessions
 CREATE TABLE sessions (
-  uid integer NOT NULL,
-  token bytea NOT NULL,
-  added timestamptz NOT NULL DEFAULT NOW(),
-  lastused timestamptz NOT NULL DEFAULT NOW(),
+  uid     integer NOT NULL,
+  token   bytea NOT NULL,
+  added   timestamptz NOT NULL DEFAULT NOW(),
+  expires timestamptz NOT NULL,
   PRIMARY KEY (uid, token)
 );
 

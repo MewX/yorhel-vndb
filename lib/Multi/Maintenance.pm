@@ -90,7 +90,7 @@ my %dailies = (
      WHERE NOT EXISTS(SELECT 1 FROM vn WHERE rgraph = vg.id)
        AND NOT EXISTS(SELECT 1 FROM producers WHERE rgraph = vg.id)|,
 
-  cleansessions      => q|DELETE FROM sessions       WHERE lastused   < NOW()-'1 month'::interval|,
+  cleansessions      => q|DELETE FROM sessions       WHERE expires    < NOW()|,
   cleannotifications => q|DELETE FROM notifications  WHERE read       < NOW()-'1 month'::interval|,
   cleannotifications2=> q|DELETE FROM notifications  WHERE id IN (
     SELECT id FROM (SELECT id, row_number() OVER (PARTITION BY uid ORDER BY id DESC) > 500 from notifications) AS x(id,del) WHERE x.del)|,
