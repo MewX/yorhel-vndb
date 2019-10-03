@@ -6,8 +6,7 @@ use warnings;
 use Exporter 'import';
 
 our @EXPORT = qw|
-  dbUserGet dbUserEdit dbUserAdd dbUserDel dbUserLogout
-  dbUserEmailExists dbUserGetMail dbUserSetMail dbUserSetPerm
+  dbUserGet dbUserDel
   dbNotifyGet dbNotifyMarkRead dbNotifyRemove
   dbThrottleGet dbThrottleSet
 |;
@@ -92,58 +91,10 @@ sub dbUserGet {
 }
 
 
-# uid, %options->{ columns in users table }
-sub dbUserEdit {
-  my($s, $uid, %o) = @_;
-
-  my %h;
-  defined $o{$_} && ($h{$_.' = ?'} = $o{$_})
-    for (qw| username ign_votes email_confirmed |);
-
-  return if scalar keys %h <= 0;
-  return $s->dbExec(q|
-    UPDATE users
-    !H
-    WHERE id = ?|,
-  \%h, $uid);
-}
-
-
-# username, mail, [ip]
-sub dbUserAdd {
-  $_[0]->dbRow(q|INSERT INTO users (username, mail, ip) VALUES(?, ?, ?) RETURNING id|, $_[1], $_[2], $_[3]||$_[0]->reqIP)->{id};
-}
-
 
 # uid
 sub dbUserDel {
   $_[0]->dbExec(q|DELETE FROM users WHERE id = ?|, $_[1]);
-}
-
-
-# uid, token
-sub dbUserLogout {
-  $_[0]->dbExec(q|SELECT user_logout(?, decode(?, 'hex'))|, $_[1], unpack 'H*', $_[2]);
-}
-
-
-sub dbUserEmailExists {
-  $_[0]->dbRow(q|SELECT user_emailexists(?) AS r|, $_[1])->{r};
-}
-
-
-sub dbUserGetMail {
-  $_[0]->dbRow(q|SELECT user_getmail(?, ?, decode(?, 'hex')) AS r|, $_[1], $_[2], $_[3])->{r};
-}
-
-
-sub dbUserSetMail {
-  $_[0]->dbExec(q|SELECT user_setmail(?, ?, decode(?, 'hex'), ?)|, $_[1], $_[2], $_[3], $_[4]);
-}
-
-
-sub dbUserSetPerm {
-  $_[0]->dbExec(q|SELECT user_setperm(?, ?, decode(?, 'hex'), ?)|, $_[1], $_[2], $_[3], $_[4]);
 }
 
 

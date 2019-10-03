@@ -769,8 +769,8 @@ CREATE OR REPLACE FUNCTION user_isvalidsession(integer, bytea, session_type) RET
 $$ LANGUAGE SQL SECURITY DEFINER;
 
 
-CREATE OR REPLACE FUNCTION user_emailexists(text) RETURNS boolean AS $$
-  SELECT true FROM users WHERE lower(mail) = lower($1) LIMIT 1
+CREATE OR REPLACE FUNCTION user_emailexists(text, integer) RETURNS boolean AS $$
+  SELECT true FROM users WHERE lower(mail) = lower($1) AND ($2 IS NULL OR id <> $2) LIMIT 1
 $$ LANGUAGE SQL SECURITY DEFINER;
 
 

@@ -102,6 +102,7 @@ json_api qr{/u/edit}, $FORM, sub {
         if(auth->permUsermod) {
             tuwf->dbExeci(select => sql_func user_admin_setmail => \$data->{id}, \auth->uid, sql_fromhex(auth->token), \$data->{email});
         } else {
+            return elm_DoubleEmail if tuwf->dbVali(select => sql_func user_emailexists => \$data->{email}, \$data->{id});
             my $token = auth->setmail_token($data->{email});
             my $body = sprintf
                 "Hello %s,"

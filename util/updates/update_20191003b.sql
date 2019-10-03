@@ -13,6 +13,7 @@ DROP FUNCTION user_isloggedin(integer, bytea);
 DROP FUNCTION user_update_lastused(integer, bytea);
 DROP FUNCTION user_isvalidtoken(integer, bytea);
 DROP FUNCTION user_setmail(integer, integer, bytea, text);
+DROP FUNCTION user_emailexists(text);
 
 -- Convert old password reset tokens to the new session format
 INSERT INTO sessions (uid, token, expires, type)
