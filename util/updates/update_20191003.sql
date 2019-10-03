@@ -12,7 +12,7 @@ ALTER TABLE users ADD COLUMN tags_all        boolean NOT NULL DEFAULT FALSE;
 ALTER TABLE users ADD COLUMN tags_cont       boolean NOT NULL DEFAULT TRUE;
 ALTER TABLE users ADD COLUMN tags_ero        boolean NOT NULL DEFAULT FALSE;
 ALTER TABLE users ADD COLUMN tags_tech       boolean NOT NULL DEFAULT TRUE;
-ALTER TABLE users ADD COLUMN spoilers        boolean NOT NULL DEFAULT FALSE;
+ALTER TABLE users ADD COLUMN spoilers        smallint NOT NULL DEFAULT 0;
 ALTER TABLE users ADD COLUMN traits_sexual   boolean NOT NULL DEFAULT FALSE;
 
 UPDATE users SET
@@ -27,7 +27,7 @@ UPDATE users SET
     vn_list_own     = COALESCE((SELECT TRUE  FROM users_prefs WHERE uid = id AND key = 'vn_list_own'    ), FALSE),
     vn_list_wish    = COALESCE((SELECT TRUE  FROM users_prefs WHERE uid = id AND key = 'vn_list_wish'   ), FALSE),
     tags_all        = COALESCE((SELECT TRUE  FROM users_prefs WHERE uid = id AND key = 'tags_all'       ), FALSE),
-    spoilers        = COALESCE((SELECT TRUE  FROM users_prefs WHERE uid = id AND key = 'spoilers'       ), FALSE),
+    spoilers        = COALESCE((SELECT value::smallint  FROM users_prefs WHERE uid = id AND key = 'spoilers'), 0),
     traits_sexual   = COALESCE((SELECT TRUE  FROM users_prefs WHERE uid = id AND key = 'traits_sexual'  ), FALSE),
     tags_cont       = COALESCE((SELECT value LIKE '%cont%' FROM users_prefs WHERE uid = id AND key = 'tags_cat'), TRUE),
     tags_ero        = COALESCE((SELECT value LIKE '%ero%'  FROM users_prefs WHERE uid = id AND key = 'tags_cat'), FALSE),

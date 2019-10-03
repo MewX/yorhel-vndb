@@ -734,7 +734,7 @@ CREATE TABLE users (
   tags_cont       boolean NOT NULL DEFAULT TRUE,
   tags_ero        boolean NOT NULL DEFAULT FALSE,
   tags_tech       boolean NOT NULL DEFAULT TRUE,
-  spoilers        boolean NOT NULL DEFAULT FALSE,
+  spoilers        smallint NOT NULL DEFAULT 0,
   traits_sexual   boolean NOT NULL DEFAULT FALSE
 );
 
