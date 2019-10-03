@@ -34,6 +34,11 @@ my $FORM = form_compile in => {
 elm_form UserEdit => undef, $FORM;
 
 
+sub _getmail {
+    my $uid = shift;
+    tuwf->dbVali(select => sql_func user_getmail => \$uid, \auth->uid, sql_fromhex auth->token);
+}
+
 TUWF::get qr{/$RE{uid}/edit}, sub {
     my $u = tuwf->dbRowi(q{
         SELECT id, username, perm, ign_votes, hide_list, show_nsfw, traits_sexual,
@@ -43,7 +48,7 @@ TUWF::get qr{/$RE{uid}/edit}, sub {
 
     return tuwf->resNotFound if !can_edit u => $u;
 
-    $u->{email} = tuwf->dbVali(select => sql_func user_getmail => \$u->{id}, \auth->uid, sql_fromhex auth->token);
+    $u->{email} = _getmail $u->{id};
     $u->{authmod} = auth->permUsermod;
     $u->{password} = undef;
     $u->{skin} ||= config->{skin_default};
@@ -65,6 +70,8 @@ TUWF::get qr{/$RE{uid}/edit}, sub {
 json_api qr{/u/edit}, $FORM, sub {
     my $data = shift;
 
+    my $username = tuwf->dbVali('SELECT username FROM users WHERE id =', \$data->{id});
+    return tuwf->resNotFound if !$username;
     return elm_Unauth if !can_edit u => $data;
 
     if(auth->permUsermod) {
@@ -88,12 +95,52 @@ json_api qr{/u/edit}, $FORM, sub {
         }
     }
 
-    tuwf->dbExeci(select => sql_func user_setmail => \$data->{id}, \auth->uid, sql_fromhex(auth->token), \$data->{email});
+    my $ret = \&elm_Success;
+
+    my $oldmail = _getmail $data->{id};
+    if($data->{email} ne $oldmail) {
+        if(auth->permUsermod) {
+            tuwf->dbExeci(select => sql_func user_admin_setmail => \$data->{id}, \auth->uid, sql_fromhex(auth->token), \$data->{email});
+        } else {
+            my $token = auth->setmail_token($data->{email});
+            my $body = sprintf
+                "Hello %s,"
+                ."\n\n"
+                ."To confirm that you want to change the email address associated with your VNDB.org account from %s to %s, click the link below:"
+                ."\n\n"
+                ."%s"
+                ."\n\n"
+                ."vndb.org",
+                $username, $oldmail, $data->{email}, tuwf->reqBaseURI()."/u$data->{id}/setmail/$token";
+
+            tuwf->mail($body,
+                To => $data->{email},
+                From => 'VNDB <noreply@vndb.org>',
+                Subject => "Confirm e-mail change for $username",
+            );
+            $ret = \&elm_MailChange;
+        }
+    }
 
     $data->{skin} = '' if $data->{skin} eq config->{skin_default};
     auth->prefSet($_, $data->{$_}, $data->{id}) for qw/hide_list show_nsfw traits_sexual tags_all tags_cont tags_ero tags_tech spoilers skin customcss/;
 
-    elm_Success
+    $ret->();
+};
+
+
+TUWF::get qr{/$RE{uid}/setmail/(?<token>[a-f0-9]{40})}, sub {
+    my $success = auth->setmail_confirm(tuwf->capture('id'), tuwf->capture('token'));
+    my $title = $success ? 'E-mail confirmed' : 'Error confirming email';
+    framework_ title => $title, index => 0, sub {
+        div_ class => 'mainbox', sub {
+            h1_ $title;
+            div_ class => $success ? 'notice' : 'warning', sub {
+                p_ "Your e-mail address has been updated!" if $success;
+                p_ "Invalid or expired confirmation link." if !$success;
+            };
+        };
+    };
 };
 
 1;

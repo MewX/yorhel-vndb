@@ -238,13 +238,17 @@ sub setpass {
 }
 
 
-# Change a users' password, requires that the current logged in user is an admin.
-sub admin_setpass {
-    my($self, $uid, $pass) = @_;
-    my $encpass = $self->_preparepass($pass);
-    tuwf->dbVali(select =>
-        sql_func user_admin_setpass => \$uid, \$self->{uid}, sql_fromhex($self->{token}), sql_fromhex($encpass)
-    )
+sub setmail_token {
+    my($self, $mail) = @_;
+    my $token = unpack 'H*', urandom(20);
+    tuwf->dbExeci(select => sql_func user_setmail_token => \$self->uid, sql_fromhex($self->token), sql_fromhex(sha1_hex lc $token), \$mail);
+    $token;
+}
+
+
+sub setmail_confirm {
+    my(undef, $uid, $token) = @_;
+    tuwf->dbVali(select => sql_func user_setmail_confirm => \$uid, sql_fromhex sha1_hex lc $token);
 }
 
 

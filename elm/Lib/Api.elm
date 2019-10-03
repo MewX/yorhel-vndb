@@ -41,6 +41,7 @@ showResponse res =
     DoubleEmail                     -> "Email address already used for another account."
     DoubleIP                        -> "You can only register one account from the same IP within 24 hours."
     BadCurPass                      -> "Current password is invalid."
+    MailChange                      -> unexp
 
 
 expectResponse : (Response -> msg) -> Http.Expect msg

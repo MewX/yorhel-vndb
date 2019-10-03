@@ -45,6 +45,7 @@ my %apis = (
     DoubleEmail    => [], # Account with same email already exists
     DoubleIP       => [], # Account with same IP already exists
     BadCurPass     => [], # Current password is incorrect when changing password
+    MailChange     => [], # A confirmation mail has been sent to change a user's email address
 );
 
 

@@ -65,7 +65,7 @@ CREATE TYPE release_type      AS ENUM ('complete', 'partial', 'trial');
 CREATE TYPE tag_category      AS ENUM('cont', 'ero', 'tech');
 CREATE TYPE vn_relation       AS ENUM ('seq', 'preq', 'set', 'alt', 'char', 'side', 'par', 'ser', 'fan', 'orig');
 CREATE TYPE resolution        AS ENUM ('unknown', 'nonstandard', '640x480', '800x600', '1024x768', '1280x960', '1600x1200', '640x400', '960x600', '960x640', '1024x576', '1024x600', '1024x640', '1280x720', '1280x800', '1366x768', '1600x900', '1920x1080');
-CREATE TYPE session_type      AS ENUM ('web', 'pass');
+CREATE TYPE session_type      AS ENUM ('web', 'pass', 'mail');
 
 -- Sequences used for ID generation of items not in the DB
 CREATE SEQUENCE covers_seq;
@@ -456,6 +456,7 @@ CREATE TABLE sessions (
   added   timestamptz NOT NULL DEFAULT NOW(),
   expires timestamptz NOT NULL,
   type    session_type NOT NULL,
+  mail    text,
   PRIMARY KEY (uid, token)
 );
 

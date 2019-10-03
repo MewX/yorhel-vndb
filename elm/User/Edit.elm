@@ -23,25 +23,27 @@ main = Browser.element
 
 
 type alias Model =
-  { state   : Api.State
-  , data    : GUE.Send
-  , cpass   : Bool
-  , pass1   : String
-  , pass2   : String
-  , opass   : String
-  , passNeq : Bool
+  { state       : Api.State
+  , data        : GUE.Send
+  , cpass       : Bool
+  , pass1       : String
+  , pass2       : String
+  , opass       : String
+  , passNeq     : Bool
+  , mailConfirm : Bool
   }
 
 
 init : GUE.Send -> Model
 init d =
-  { state   = Api.Normal
-  , data    = d
-  , cpass   = False
-  , pass1   = ""
-  , pass2   = ""
-  , opass   = ""
-  , passNeq = False
+  { state       = Api.Normal
+  , data        = d
+  , cpass       = False
+  , pass1       = ""
+  , pass2       = ""
+  , opass       = ""
+  , passNeq     = False
+  , mailConfirm = False
   }
 
 
@@ -115,7 +117,8 @@ update msg model =
       else ({ model | state = Api.Loading }, Api.post "/u/edit" (GUE.encode model.data) Submitted)
 
     -- TODO: This reload is only necessary for the skin and customcss options to apply, but it's nicer to do that directly from JS.
-    Submitted GApi.Success -> (model, load <| "/u" ++ String.fromInt model.data.id ++ "/edit")
+    Submitted GApi.Success    -> (model, load <| "/u" ++ String.fromInt model.data.id ++ "/edit")
+    Submitted GApi.MailChange -> ({ model | mailConfirm = True, state = Api.Normal }, Cmd.none)
     Submitted r -> ({ model | state = Api.Error r }, Cmd.none)
 
 
@@ -188,5 +191,8 @@ view model =
       ]
     , div [ class "mainbox" ]
       [ fieldset [ class "submit" ] [ submitButton "Submit" model.state (not model.passNeq) False ]
+      , if not model.mailConfirm then text "" else
+          div [ class "notice" ]
+          [ text "A confirmation email has been sent to your new address. Your address will be updated after following the instructions in that mail." ]
       ]
     ]

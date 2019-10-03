@@ -781,10 +781,10 @@ $$ LANGUAGE SQL SECURITY DEFINER;
 -- calling this function doesn't even get the token, and thus can't get access
 -- to someone's account. But alas, that'd require a separate process.
 CREATE OR REPLACE FUNCTION user_resetpass(text, bytea) RETURNS integer AS $$
-  WITH uid(uid) AS (
-    SELECT id FROM users WHERE lower(mail) = lower($1) AND length($2) = 20 AND perm & 128 = 0
-  )
-  INSERT INTO sessions (uid, token, expires, type) SELECT uid, $2, NOW()+'1 week', 'pass' FROM uid RETURNING uid
+  INSERT INTO sessions (uid, token, expires, type)
+    SELECT id, $2, NOW()+'1 week', 'pass' FROM users
+     WHERE lower(mail) = lower($1) AND length($2) = 20 AND perm & 128 = 0
+    RETURNING uid
 $$ LANGUAGE SQL SECURITY DEFINER;
 
 
@@ -822,8 +822,21 @@ CREATE OR REPLACE FUNCTION user_getmail(integer, integer, bytea) RETURNS text AS
 $$ LANGUAGE SQL SECURITY DEFINER;
 
 
-CREATE OR REPLACE FUNCTION user_setmail(integer, integer, bytea, text) RETURNS void AS $$
-  UPDATE users SET mail = $4 WHERE id = $1 AND user_isauth($1, $2, $3)
+-- Set a token to change a user's email address.
+-- Args: uid, web-token, new-email-token, email
+CREATE OR REPLACE FUNCTION user_setmail_token(integer, bytea, bytea, text) RETURNS void AS $$
+  INSERT INTO sessions (uid, token, expires, type, mail)
+    SELECT id, $3, NOW()+'1 week', 'mail', $4 FROM users
+     WHERE id = $1 AND user_isauth($1, $1, $2) AND length($3) = 20
+$$ LANGUAGE SQL SECURITY DEFINER;
+
+
+-- Actually change a user's email address, given a valid token.
+CREATE OR REPLACE FUNCTION user_setmail_confirm(integer, bytea) RETURNS boolean AS $$
+  WITH u(mail) AS (
+    DELETE FROM sessions WHERE uid = $1 AND token = $2 AND type = 'mail' AND expires > NOW() RETURNING mail
+  )
+  UPDATE users SET mail = (SELECT mail FROM u) WHERE id = $1 AND EXISTS(SELECT 1 FROM u) RETURNING true;
 $$ LANGUAGE SQL SECURITY DEFINER;
 
 
@@ -837,4 +850,9 @@ CREATE OR REPLACE FUNCTION user_admin_setpass(integer, integer, bytea, bytea) RE
     UPDATE users SET passwd = $4 WHERE id = $1 AND user_isauth(-1, $2, $3) AND length($4) = 46 RETURNING id
   )
   DELETE FROM sessions WHERE uid IN(SELECT id FROM upd)
+$$ LANGUAGE SQL SECURITY DEFINER;
+
+
+CREATE OR REPLACE FUNCTION user_admin_setmail(integer, integer, bytea, text) RETURNS void AS $$
+  UPDATE users SET mail = $4 WHERE id = $1 AND user_isauth(-1, $2, $3)
 $$ LANGUAGE SQL SECURITY DEFINER;
