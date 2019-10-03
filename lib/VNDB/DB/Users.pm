@@ -75,7 +75,7 @@ sub dbUserGet {
     id => 'u.id %s',
     username => 'u.username %s',
     registered => 'u.registered %s',
-    votes => 'up.value NULLS FIRST, u.c_votes %s',
+    votes => 'u.hide_list, u.c_votes %s',
     changes => 'u.c_changes %s',
     tags => 'u.c_tags %s',
   }->{ $o{sort}||'username' }, $o{reverse} ? 'DESC' : 'ASC';
