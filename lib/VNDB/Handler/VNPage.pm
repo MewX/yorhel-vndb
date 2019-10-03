@@ -456,9 +456,8 @@ sub page {
    my $t = $self->dbTagStats(vid => $v->{id}, sort => 'rating', reverse => 1, minrating => 0, results => 999, state => 2);
    if(@$t) {
      div id => 'tagops';
-      my $tags_cat = $self->authPref('tags_cat') || $self->{default_tags_cat};
       for (keys %TAG_CATEGORY) {
-        input id => "cat_$_", type => 'checkbox', class => 'visuallyhidden', $tags_cat =~ /\Q$_/ ? (checked => 'checked') : ();
+        input id => "cat_$_", type => 'checkbox', class => 'visuallyhidden', $self->authPref("tags_$_") ? (checked => 'checked') : ();
         label for => "cat_$_", lc $TAG_CATEGORY{$_};
       }
       my $spoiler = $self->authPref('spoilers') || 0;

@@ -322,11 +322,11 @@ sub notifies {
   if($self->reqMethod() eq 'POST' && $self->reqPost('set')) {
     return if !$self->authCheckCode;
     my $frm = $self->formValidate(
-      { post => 'notify_nodbedit', required => 0, default => 1, enum => [0,1] },
+      { post => 'notify_dbedit',   required => 0, default => 0, enum => [0,1] },
       { post => 'notify_announce', required => 0, default => 0, enum => [0,1] }
     );
     return $self->resNotFound if $frm->{_err};
-    $self->authPref($_, $frm->{$_}) for ('notify_nodbedit', 'notify_announce');
+    $self->authPref($_, $frm->{$_}) for ('notify_dbedit', 'notify_announce');
     $saved = 1;
 
   # updating notifications
@@ -428,11 +428,10 @@ sub notifies {
    h1 'Settings';
    div class => 'notice', 'Settings successfully saved.' if $saved;
    p;
-    for('nodbedit', 'announce') {
-      my $def = $_ eq 'nodbedit' ? 0 : 1;
-      input type => 'checkbox', name => "notify_$_", id => "notify_$_", value => $def,
-        ($self->authPref("notify_$_")||0) == $def ? (checked => 'checked') : ();
-      label for => "notify_$_", $_ eq 'nodbedit'
+    for('dbedit', 'announce') {
+      input type => 'checkbox', name => "notify_$_", id => "notify_$_", value => 1,
+        $self->authPref("notify_$_") ? (checked => 'checked') : ();
+      label for => "notify_$_", $_ eq 'dbedit'
         ? ' Notify me about edits of database entries I contributed to.'
         : ' Notify me about site announcements.';
       br;

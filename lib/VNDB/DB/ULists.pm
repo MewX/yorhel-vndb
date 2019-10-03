@@ -195,25 +195,22 @@ sub dbVoteGet {
     qw|n.vid n.vote n.uid|, q|extract('epoch' from n.date) as date|,
     $o{what} =~ /user/ ? ('u.username') : (),
     $o{what} =~ /vn/ ? (qw|v.title v.original|) : (),
-    $o{what} =~ /hide_list/ ? ('up.uid as hide_list') : (),
+    $o{what} =~ /hide_list/ ? ('u.hide_list') : (),
   );
 
   my @join = (
     $o{what} =~ /vn/ ? (
       'JOIN vn v ON v.id = n.vid',
     ) : (),
-    $o{what} =~ /user/ || $o{hide} ? (
+    $o{what} =~ /user/ || $o{hide} || $o{what} =~ /hide_list/ ? (
       'JOIN users u ON u.id = n.uid'
-    ) : (),
-    $o{what} =~ /hide_list/ ? (
-      'LEFT JOIN users_prefs up ON up.uid = n.uid AND key = \'hide_list\''
     ) : (),
   );
 
   my $order = sprintf {
     date     => 'n.date %s',
     # Hidden users should not be sorted among the rest. as that would still give them away
-    username => $o{what} =~ /hide_list/ ? '(CASE WHEN up.uid IS NULL THEN u.username ELSE NULL END) %s, n.date' : 'u.username %s',
+    username => $o{what} =~ /hide_list/ ? '(CASE WHEN u.hide_list THEN NULL ELSE u.username END) %s, n.date' : 'u.username %s',
     title    => 'v.title %s',
     vote     => 'n.vote %s'.($o{what} =~ /vn/ ? ', v.title ASC' : $o{what} =~ /user/ ? ', u.username ASC' : ''),
   }->{$o{sort}}, $o{reverse} ? 'DESC' : 'ASC';

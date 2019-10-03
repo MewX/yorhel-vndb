@@ -6,7 +6,7 @@ use warnings;
 use Exporter 'import';
 
 our @EXPORT = qw|
-  dbUserGet dbUserEdit dbUserAdd dbUserDel dbUserPrefSet dbUserLogout
+  dbUserGet dbUserEdit dbUserAdd dbUserDel dbUserLogout
   dbUserEmailExists dbUserGetMail dbUserSetMail dbUserSetPerm
   dbNotifyGet dbNotifyMarkRead dbNotifyRemove
   dbThrottleGet dbThrottleSet
@@ -14,7 +14,7 @@ our @EXPORT = qw|
 
 
 # %options->{ username session uid ip registered search results page what sort reverse notperm }
-# what: notifycount stats scryptargs extended prefs hide_list
+# what: notifycount stats scryptargs extended
 # sort: username registered votes changes tags
 sub dbUserGet {
   my $s = shift;
@@ -54,10 +54,9 @@ sub dbUserGet {
   );
 
   my @select = (
-    qw|id username c_votes c_changes c_tags|,
+    qw|id username c_votes c_changes c_tags hide_list|,
     q|extract('epoch' from registered) as registered|,
     $o{what} =~ /extended/ ? qw|perm ign_votes| : (), # mail
-    $o{what} =~ /hide_list/ ? 'up.value AS hide_list' : (),
     $o{what} =~ /scryptargs/ ? 'user_getscryptargs(id) AS scryptargs' : (),
     $o{what} =~ /notifycount/ ?
       '(SELECT COUNT(*) FROM notifications WHERE uid = u.id AND read IS NULL) AS notifycount' : (),
@@ -72,11 +71,6 @@ sub dbUserGet {
     $token ? qq|extract('epoch' from user_isloggedin(id, decode('$token', 'hex'))) as session_lastused| : (),
   );
 
-  my @join = (
-    $o{what} =~ /hide_list/ || $o{sort} eq 'votes' ?
-      "LEFT JOIN users_prefs up ON up.uid = u.id AND up.key = 'hide_list'" : (),
-  );
-
   my $order = sprintf {
     id => 'u.id %s',
     username => 'u.username %s',
@@ -89,25 +83,11 @@ sub dbUserGet {
   my($r, $np) = $s->dbPage(\%o, q|
     SELECT !s
       FROM users u
-      !s
       !W
       ORDER BY !s|,
-    join(', ', @select), join(' ', @join), \%where, $order
+    join(', ', @select), \%where, $order
   );
 
-  if(@$r && $o{what} =~ /prefs/) {
-    my %r = map {
-      $r->[$_]{prefs} = {};
-      ($r->[$_]{id}, $r->[$_])
-    } 0..$#$r;
-
-    $r{$_->{uid}}{prefs}{$_->{key}} = $_->{value} for (@{$s->dbAll(q|
-      SELECT uid, key, value
-        FROM users_prefs
-        WHERE uid IN(!l)|,
-      [ keys %r ]
-    )});
-  }
   return wantarray ? ($r, $np) : $r;
 }
 
@@ -138,15 +118,6 @@ sub dbUserAdd {
 # uid
 sub dbUserDel {
   $_[0]->dbExec(q|DELETE FROM users WHERE id = ?|, $_[1]);
-}
-
-
-# uid, key, val
-sub dbUserPrefSet {
-  my($s, $uid, $key, $val) = @_;
-  !$val ? $s->dbExec('DELETE FROM users_prefs WHERE uid = ? AND key = ?', $uid, $key)
-   : $s->dbExec('UPDATE users_prefs SET value = ? WHERE uid = ? AND key = ?', $val, $uid, $key)
-  || $s->dbExec('INSERT INTO users_prefs (uid, key, value) VALUES (?, ?, ?)', $uid, $key, $val);
 }
 
 

@@ -24,7 +24,6 @@ my $config = {
     source_url        => 'http://git.blicky.net/vndb.git/?h=master',
     admin_email       => 'contact@vndb.org',
     login_throttle    => [ 24*3600/10, 24*3600 ], # interval between attempts, max burst (10 a day)
-    default_tags_cat  => 'cont,tech', # Default visible tag categories
     board_edit_time   => 7*24*3600, # Time after which posts become immutable
     poll_options      => 20, # max number of options in discussion board polls
 

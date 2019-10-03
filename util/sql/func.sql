@@ -684,7 +684,7 @@ CREATE OR REPLACE FUNCTION notify_dbedit(xtype dbentry_type, xedit edit_rettype)
        AND h.requester <> h2.requester -- exclude the user who edited the entry
        AND h2.requester <> 1 -- exclude edits by Multi
        -- exclude users who don't want this notify
-       AND NOT EXISTS(SELECT 1 FROM users_prefs up WHERE uid = h.requester AND key = 'notify_nodbedit');
+       AND EXISTS(SELECT 1 FROM users u WHERE u.id = h.requester AND notify_dbedit);
 $$ LANGUAGE sql;
 
 
@@ -714,11 +714,11 @@ $$ LANGUAGE sql;
 CREATE OR REPLACE FUNCTION notify_announce() RETURNS trigger AS $$
 BEGIN
   INSERT INTO notifications (ntype, ltype, uid, iid, subid, c_title, c_byuser)
-    SELECT 'announce', 't', up.uid, t.id, 1, t.title, NEw.uid
+    SELECT 'announce', 't', u.id, t.id, 1, t.title, NEW.uid
       FROM threads t
       JOIN threads_boards tb ON tb.tid = t.id
       -- get the users who want this announcement
-      JOIN users_prefs up ON up.key = 'notify_announce'
+      JOIN users u ON u.notify_announce
      WHERE t.id = NEW.tid
        AND tb.type = 'an' -- announcement board
        AND NOT t.hidden;

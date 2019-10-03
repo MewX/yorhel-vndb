@@ -67,7 +67,6 @@ ALTER TABLE traits                   ADD CONSTRAINT traits_addedby_fkey         
 ALTER TABLE traits                   ADD CONSTRAINT traits_group_fkey                  FOREIGN KEY ("group")   REFERENCES traits        (id);
 ALTER TABLE traits_parents           ADD CONSTRAINT traits_parents_trait_fkey          FOREIGN KEY (trait)     REFERENCES traits        (id);
 ALTER TABLE traits_parents           ADD CONSTRAINT traits_parents_parent_fkey         FOREIGN KEY (parent)    REFERENCES traits        (id);
-ALTER TABLE users_prefs              ADD CONSTRAINT users_prefs_uid_fkey               FOREIGN KEY (uid)       REFERENCES users         (id) ON DELETE CASCADE;
 ALTER TABLE vn                       ADD CONSTRAINT vn_rgraph_fkey                     FOREIGN KEY (rgraph)    REFERENCES relgraphs     (id);
 ALTER TABLE vn                       ADD CONSTRAINT vn_l_wikidata_fkey                 FOREIGN KEY (l_wikidata)REFERENCES wikidata      (id);
 ALTER TABLE vn_hist                  ADD CONSTRAINT vn_hist_chid_fkey                  FOREIGN KEY (chid)      REFERENCES changes       (id) ON DELETE CASCADE;

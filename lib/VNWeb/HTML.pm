@@ -285,9 +285,7 @@ sub _maintabs_ {
             t list  => "/$id/list", 'list';
         } if $t eq 'u' && (
             auth->permUsermod || (auth && auth->uid == $o->{id})
-            || !(exists $o->{hide_list}
-                ? $o->{hide_list}
-                : tuwf->dbVali('SELECT value FROM users_prefs WHERE', { uid => $o->{id}, key => 'hide_list' }))
+            || !($o->{hide_list} // tuwf->dbVali('SELECT hide_list FROM users WHERE id =', \$o->{id}))
         );
 
         t tagmod => "/$id/tagmod", 'modify tags' if $t eq 'v' && auth->permTag && !$o->{entry_hidden};

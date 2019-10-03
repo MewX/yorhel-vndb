@@ -64,12 +64,11 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON traits_parents           TO vndb_site;
 
 -- users table is special; The 'perm', 'passwd' and 'mail' columns are
 -- protected and can only be accessed through the user_* functions.
-GRANT SELECT (id, username,       registered, perm, c_votes, c_changes, ip, c_tags, ign_votes, email_confirmed),
-      INSERT (id, username, mail, registered,       c_votes, c_changes, ip, c_tags, ign_votes, email_confirmed),
-      UPDATE (    username,       registered,       c_votes, c_changes, ip, c_tags, ign_votes, email_confirmed) ON users TO vndb_site;
+GRANT SELECT (id, username,       registered, perm, c_votes, c_changes, ip, c_tags, ign_votes, email_confirmed, skin, customcss, filter_vn, filter_release, show_nsfw, hide_list, notify_dbedit, notify_announce, vn_list_own, vn_list_wish, tags_all, tags_cont, tags_ero, tags_tech, spoilers, traits_sexual),
+      INSERT (id, username, mail, registered,       c_votes, c_changes, ip, c_tags, ign_votes, email_confirmed, skin, customcss, filter_vn, filter_release, show_nsfw, hide_list, notify_dbedit, notify_announce, vn_list_own, vn_list_wish, tags_all, tags_cont, tags_ero, tags_tech, spoilers, traits_sexual),
+      UPDATE (    username,       registered,       c_votes, c_changes, ip, c_tags, ign_votes, email_confirmed, skin, customcss, filter_vn, filter_release, show_nsfw, hide_list, notify_dbedit, notify_announce, vn_list_own, vn_list_wish, tags_all, tags_cont, tags_ero, tags_tech, spoilers, traits_sexual) ON users TO vndb_site;
 GRANT DELETE ON users TO vndb_site;
 
-GRANT SELECT, INSERT, UPDATE, DELETE ON users_prefs              TO vndb_site;
 GRANT SELECT, INSERT, UPDATE         ON vn                       TO vndb_site;
 GRANT SELECT, INSERT,         DELETE ON vn_anime                 TO vndb_site;
 GRANT SELECT, INSERT                 ON vn_anime_hist            TO vndb_site;
@@ -146,10 +145,9 @@ GRANT SELECT                         ON threads_posts            TO vndb_multi;
 GRANT SELECT,         UPDATE         ON traits                   TO vndb_multi;
 GRANT SELECT, INSERT, TRUNCATE       ON traits_chars             TO vndb_multi;
 GRANT SELECT                         ON traits_parents           TO vndb_multi;
-GRANT SELECT (id, username, registered, c_votes, c_changes, c_tags, ign_votes, email_confirmed),
-      UPDATE (                          c_votes, c_changes, c_tags                            ) ON users TO vndb_multi;
+GRANT SELECT (id, username, registered, c_votes, c_changes, c_tags, ign_votes, email_confirmed, hide_list, notify_dbedit, notify_announce),
+      UPDATE (                          c_votes, c_changes, c_tags) ON users TO vndb_multi;
 GRANT                         DELETE ON users                    TO vndb_multi;
-GRANT SELECT                         ON users_prefs              TO vndb_multi;
 GRANT SELECT,         UPDATE         ON vn                       TO vndb_multi;
 GRANT SELECT                         ON vn_anime                 TO vndb_multi;
 GRANT SELECT                         ON vn_hist                  TO vndb_multi;

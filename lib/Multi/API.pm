@@ -1040,8 +1040,8 @@ my $VN_FILTER = [
 
 my %GET_VOTELIST = (
   islist  => 1,
-  sql     => "SELECT %s FROM votes v WHERE (%s) AND NOT EXISTS(SELECT 1 FROM users_prefs WHERE uid = v.uid AND key = 'hide_list') %s",
-  sqluser => q{SELECT %1$s FROM votes v WHERE (%2$s) AND (uid = %4$d OR NOT EXISTS(SELECT 1 FROM users_prefs WHERE uid = v.uid AND key = 'hide_list')) %3$s},
+  sql     => "SELECT %s FROM votes v WHERE (%s) AND NOT EXISTS(SELECT 1 FROM users WHERE id = v.uid AND hide_list) %s",
+  sqluser => q{SELECT %1$s FROM votes v WHERE (%2$s) AND (uid = %4$d OR NOT EXISTS(SELECT 1 FROM users WHERE id = v.uid AND hide_list)) %3$s},
   select  => "uid, vid as vn, vote, extract('epoch' from date) AS added",
   proc    => sub {
     $_[0]{uid}*=1;
@@ -1057,8 +1057,8 @@ my %GET_VOTELIST = (
 
 my %GET_VNLIST = (
   islist  => 1,
-  sql     => "SELECT %s FROM vnlists v WHERE (%s) AND NOT EXISTS(SELECT 1 FROM users_prefs WHERE uid = v.uid AND key = 'hide_list') %s",
-  sqluser => q{SELECT %1$s FROM vnlists v WHERE (%2$s) AND (uid = %4$d OR NOT EXISTS(SELECT 1 FROM users_prefs WHERE uid = v.uid AND key = 'hide_list')) %3$s},
+  sql     => "SELECT %s FROM vnlists v WHERE (%s) AND NOT EXISTS(SELECT 1 FROM users WHERE id = v.uid AND hide_list) %s",
+  sqluser => q{SELECT %1$s FROM vnlists v WHERE (%2$s) AND (uid = %4$d OR NOT EXISTS(SELECT 1 FROM users WHERE id = v.uid AND hide_list)) %3$s},
   select  => "uid, vid as vn, status, extract('epoch' from added) AS added, notes",
   proc    => sub {
     $_[0]{uid}*=1;
@@ -1075,8 +1075,8 @@ my %GET_VNLIST = (
 
 my %GET_WISHLIST = (
   islist  => 1,
-  sql     => "SELECT %s FROM wlists w WHERE (%s) AND NOT EXISTS(SELECT 1 FROM users_prefs WHERE uid = w.uid AND key = 'hide_list') %s",
-  sqluser => q{SELECT %1$s FROM wlists w WHERE (%2$s) AND (uid = %4$d OR NOT EXISTS(SELECT 1 FROM users_prefs WHERE uid = w.uid AND key = 'hide_list')) %3$s},
+  sql     => "SELECT %s FROM wlists w WHERE (%s) AND NOT EXISTS(SELECT 1 FROM users WHERE id = w.uid AND hide_list) %s",
+  sqluser => q{SELECT %1$s FROM wlists w WHERE (%2$s) AND (uid = %4$d OR NOT EXISTS(SELECT 1 FROM users WHERE id = w.uid AND hide_list)) %3$s},
   select  => "uid, vid AS vn, wstat AS priority, extract('epoch' from added) AS added",
   proc    => sub {
     $_[0]{uid}*=1;

@@ -150,7 +150,6 @@ sub _load_session {
     my($self, $uid, $token_db) = @_;
 
     my $user = {};
-    my %pref = ();
     if($uid) {
         my $loggedin = sql_func(user_isloggedin => 'id', sql_fromhex($token_db));
         $user = tuwf->dbRowi(
@@ -280,32 +279,30 @@ sub csrfcheck {
 }
 
 
-# Returns a value from 'users_prefs' for the current user. Lazily loads all
+# TODO: Measure global usage of the pref() and prefSet() calls to see if this cache is actually necessary.
+
+my @pref_columns = qw/
+    email_confirmed skin customcss filter_vn filter_release show_nsfw hide_list notify_dbedit notify_announce
+    vn_list_own vn_list_wish tags_all tags_cont tags_ero tags_tech spoilers traits_sexual
+/;
+
+# Returns a user preference column for the current user. Lazily loads all
 # preferences to speed of subsequent calls.
 sub pref {
     my($self, $key) = @_;
     return undef if !$self->uid;
 
-    $self->{pref} ||= { map +($_->{key}, $_->{value}), @{ tuwf->dbAlli(
-        'SELECT key, value FROM users_prefs WHERE uid =', \$self->uid
-    ) } };
+    $self->{pref} ||= tuwf->dbRowi('SELECT', sql_comma(map "\"$_\"", @pref_columns), 'FROM users WHERE id =', \$self->uid);
     $self->{pref}{$key};
 }
 
 
 sub prefSet {
     my($self, $key, $value, $uid) = @_;
+    die "Unknown pref key: $_" if !grep $key eq $_, @pref_columns;
     $uid //= $self->uid;
-    if($value) {
-        $self->{pref}{$key} = $value;
-        tuwf->dbExeci(
-            'INSERT INTO users_prefs', { uid => $uid, key => $key, value => $value },
-            'ON CONFLICT (uid,key) DO UPDATE SET', { value => $value }
-        );
-    } else {
-        delete $self->{pref}{$key};
-        tuwf->dbExeci('DELETE FROM users_prefs WHERE', { uid => $uid, key => $key });
-    }
+    $self->{pref}{$key} = $value;
+    tuwf->dbExeci(qq{UPDATE users SET "$key" =}, \$value, 'WHERE id =', \$self->uid);
 }
 
 

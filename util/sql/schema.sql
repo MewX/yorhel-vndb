@@ -59,7 +59,6 @@ CREATE TYPE medium            AS ENUM ('cd', 'dvd', 'gdr', 'blr', 'flp', 'mrt', 
 CREATE TYPE notification_ntype AS ENUM ('pm', 'dbdel', 'listdel', 'dbedit', 'announce');
 CREATE TYPE notification_ltype AS ENUM ('v', 'r', 'p', 'c', 't', 's', 'd');
 CREATE TYPE platform          AS ENUM ('win', 'dos', 'lin', 'mac', 'ios', 'and', 'dvd', 'bdp', 'fmt', 'gba', 'gbc', 'msx', 'nds', 'nes', 'p88', 'p98', 'pce', 'pcf', 'psp', 'ps1', 'ps2', 'ps3', 'ps4', 'psv', 'drc', 'sat', 'sfc', 'swi', 'wii', 'wiu', 'n3d', 'x68', 'xb1', 'xb3', 'xbo', 'web', 'oth');
-CREATE TYPE prefs_key         AS ENUM ('l10n', 'skin', 'customcss', 'filter_vn', 'filter_release', 'show_nsfw', 'hide_list', 'notify_nodbedit', 'notify_announce', 'vn_list_own', 'vn_list_wish', 'tags_all', 'tags_cat', 'spoilers', 'traits_sexual');
 CREATE TYPE producer_type     AS ENUM ('co', 'in', 'ng');
 CREATE TYPE producer_relation AS ENUM ('old', 'new', 'sub', 'par', 'imp', 'ipa', 'spa', 'ori');
 CREATE TYPE release_type      AS ENUM ('complete', 'partial', 'trial');
@@ -700,10 +699,10 @@ CREATE TABLE traits_parents (
 
 -- users
 CREATE TABLE users (
-  id SERIAL NOT NULL PRIMARY KEY, -- [pub]
-  username varchar(20) NOT NULL UNIQUE, -- [pub]
-  mail varchar(100) NOT NULL,
-  perm smallint NOT NULL DEFAULT 1+4+16,
+  id         SERIAL NOT NULL PRIMARY KEY, -- [pub]
+  username   varchar(20) NOT NULL UNIQUE, -- [pub]
+  mail       varchar(100) NOT NULL,
+  perm       smallint NOT NULL DEFAULT 1+4+16,
   -- Interpretation of the passwd column depends on its length:
   -- * 20 bytes: Password reset token (sha1(lower_hex(20 bytes of random data)))
   -- * 46 bytes: scrypt password
@@ -713,22 +712,30 @@ CREATE TABLE users (
   --   8 bytes: salt
   --   32 bytes: scrypt(passwd, global_salt + salt, N, r, p, 32)
   -- * Anything else: Invalid, account disabled.
-  passwd bytea NOT NULL DEFAULT '',
-  registered timestamptz NOT NULL DEFAULT NOW(),
-  c_votes integer NOT NULL DEFAULT 0,
-  c_changes integer NOT NULL DEFAULT 0,
-  ip inet NOT NULL DEFAULT '0.0.0.0',
-  c_tags integer NOT NULL DEFAULT 0,
-  ign_votes boolean NOT NULL DEFAULT FALSE,
-  email_confirmed boolean NOT NULL DEFAULT FALSE
-);
-
--- users_prefs
-CREATE TABLE users_prefs (
-  uid integer NOT NULL,
-  key prefs_key NOT NULL,
-  value varchar NOT NULL,
-  PRIMARY KEY(uid, key)
+  passwd          bytea NOT NULL DEFAULT '',
+  registered      timestamptz NOT NULL DEFAULT NOW(),
+  c_votes         integer NOT NULL DEFAULT 0,
+  c_changes       integer NOT NULL DEFAULT 0,
+  ip              inet NOT NULL DEFAULT '0.0.0.0',
+  c_tags          integer NOT NULL DEFAULT 0,
+  ign_votes       boolean NOT NULL DEFAULT FALSE,
+  email_confirmed boolean NOT NULL DEFAULT FALSE,
+  skin            text NOT NULL DEFAULT '',
+  customcss       text NOT NULL DEFAULT '',
+  filter_vn       text NOT NULL DEFAULT '',
+  filter_release  text NOT NULL DEFAULT '',
+  show_nsfw       boolean NOT NULL DEFAULT FALSE,
+  hide_list       boolean NOT NULL DEFAULT FALSE,
+  notify_dbedit   boolean NOT NULL DEFAULT TRUE,
+  notify_announce boolean NOT NULL DEFAULT FALSE,
+  vn_list_own     boolean NOT NULL DEFAULT FALSE,
+  vn_list_wish    boolean NOT NULL DEFAULT FALSE,
+  tags_all        boolean NOT NULL DEFAULT FALSE,
+  tags_cont       boolean NOT NULL DEFAULT TRUE,
+  tags_ero        boolean NOT NULL DEFAULT FALSE,
+  tags_tech       boolean NOT NULL DEFAULT TRUE,
+  spoilers        boolean NOT NULL DEFAULT FALSE,
+  traits_sexual   boolean NOT NULL DEFAULT FALSE
 );
 
 -- vn

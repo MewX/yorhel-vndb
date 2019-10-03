@@ -59,7 +59,7 @@ my %tables = (
     releases_platforms  => { where => 'id IN(SELECT id FROM releases WHERE NOT hidden)' },
     releases_producers  => { where => 'id IN(SELECT id FROM releases WHERE NOT hidden) AND pid IN(SELECT id FROM producers WHERE NOT hidden)' },
     releases_vn         => { where => 'id IN(SELECT id FROM releases WHERE NOT hidden) AND vid IN(SELECT id FROM vn WHERE NOT hidden)' },
-    rlists              => { where => 'uid NOT IN(SELECT uid FROM users_prefs WHERE key = \'hide_list\') AND rid IN(SELECT id FROM releases WHERE NOT hidden)' },
+    rlists              => { where => 'uid NOT IN(SELECT id FROM users WHERE hide_list) AND rid IN(SELECT id FROM releases WHERE NOT hidden)' },
     screenshots         => { where => 'id IN(SELECT scr FROM vn_screenshots vs JOIN vn v ON v.id = vs.id WHERE NOT v.hidden)' },
     staff               => { where => 'NOT hidden' },
     staff_alias         => { where => 'id IN(SELECT id FROM staff WHERE NOT hidden)' },
@@ -73,7 +73,7 @@ my %tables = (
                            # (The 'DISTINCT' isn't necessary, but does make the query faster)
                            # (Users with their votes ignored are still included. W/e)
     users               => { where => q{
-                                (     id NOT IN(SELECT DISTINCT uid FROM users_prefs WHERE key = 'hide_list')
+                                (     id NOT IN(SELECT DISTINCT id FROM users WHERE hide_list)
                                   AND id IN(SELECT DISTINCT uid FROM rlists
                                       UNION SELECT DISTINCT uid FROM wlists
                                       UNION SELECT DISTINCT uid FROM vnlists
@@ -88,14 +88,13 @@ my %tables = (
                                 .' AND aid IN(SELECT sa.aid FROM staff_alias sa JOIN staff s ON s.id = sa.id WHERE NOT s.hidden)'
                                 .' AND cid IN(SELECT id FROM chars WHERE NOT hidden)' },
     vn_staff            => { where => 'id IN(SELECT id FROM vn WHERE NOT hidden) AND aid IN(SELECT sa.aid FROM staff_alias sa JOIN staff s ON s.id = sa.id WHERE NOT s.hidden)' },
-    vnlists             => { where => 'uid NOT IN(SELECT uid FROM users_prefs WHERE key = \'hide_list\') AND vid IN(SELECT id FROM vn WHERE NOT hidden)' },
-    votes               => { where => 'uid NOT IN(SELECT uid FROM users_prefs WHERE key = \'hide_list\')'
-                                .' AND uid NOT IN(SELECT id FROM users WHERE ign_votes)'
+    vnlists             => { where => 'uid NOT IN(SELECT id FROM users WHERE hide_list) AND vid IN(SELECT id FROM vn WHERE NOT hidden)' },
+    votes               => { where => 'uid NOT IN(SELECT id FROM users WHERE hide_list OR ign_votes)'
                                 .' AND vid IN(SELECT id FROM vn WHERE NOT hidden)' },
     wikidata            => { where => q{id IN(SELECT l_wikidata FROM producers WHERE NOT hidden
                                         UNION SELECT l_wikidata FROM staff WHERE NOT hidden
                                         UNION SELECT l_wikidata FROM vn WHERE NOT hidden)} },
-    wlists              => { where => 'uid NOT IN(SELECT uid FROM users_prefs WHERE key = \'hide_list\') AND vid IN(SELECT id FROM vn WHERE NOT hidden)' },
+    wlists              => { where => 'uid NOT IN(SELECT id FROM users WHERE hide_list) AND vid IN(SELECT id FROM vn WHERE NOT hidden)' },
 );
 
 my @tables = map +{ name => $_, %{$tables{$_}} }, sort keys %tables;
@@ -274,7 +273,7 @@ sub export_votes {
           JOIN vn v ON v.id = vv.vid
          WHERE NOT v.hidden
            AND NOT u.ign_votes
-           AND NOT EXISTS(SELECT 1 FROM users_prefs up WHERE up.uid = u.id AND key = 'hide_list')
+           AND NOT u.hide_list
          ORDER BY vv.vid, vv.uid
        ) TO STDOUT
     });

@@ -35,25 +35,24 @@ elm_form UserEdit => undef, $FORM;
 
 
 TUWF::get qr{/$RE{uid}/edit}, sub {
-    my $u = tuwf->dbRowi('SELECT id, username, perm, ign_votes FROM users WHERE id =', \tuwf->capture('id'));
+    my $u = tuwf->dbRowi(q{
+        SELECT id, username, perm, ign_votes, hide_list, show_nsfw, traits_sexual,
+               tags_all, tags_cont, tags_ero, tags_tech, spoilers, skin, customcss
+          FROM users WHERE id =}, \tuwf->capture('id')
+    );
 
     return tuwf->resNotFound if !can_edit u => $u;
 
     $u->{email} = tuwf->dbVali(select => sql_func user_getmail => \$u->{id}, \auth->uid, sql_fromhex auth->token);
     $u->{authmod} = auth->permUsermod;
     $u->{password} = undef;
+    $u->{skin} ||= config->{skin_default};
 
     # Let's not disclose this (though it's not hard to find out through other means)
     if(!auth->permUsermod) {
         $u->{ign_votes} = 0;
         $u->{perm} = auth->defaultPerms;
     }
-
-    my $prefs = { map +($_->{key}, $_->{value}), @{ tuwf->dbAlli('SELECT key, value FROM users_prefs WHERE uid =', \$u->{id}) }};
-    $u->{$_} = $prefs->{$_}||'' for qw/hide_list show_nsfw traits_sexual tags_all spoilers skin customcss/;
-    $u->{spoilers} ||= 0;
-    $u->{skin} ||= config->{skin_default};
-    $u->{"tags_$_"} = (($prefs->{tags_cat}||'cont,tech') =~ /$_/) for qw/cont ero tech/;
 
     my $title = $u->{id} == auth->uid ? 'My Account' : "Edit $u->{username}";
     framework_ title => $title, index => 0, type => 'u', dbobj => $u, tab => 'edit',
@@ -92,8 +91,7 @@ json_api qr{/u/edit}, $FORM, sub {
     tuwf->dbExeci(select => sql_func user_setmail => \$data->{id}, \auth->uid, sql_fromhex(auth->token), \$data->{email});
 
     $data->{skin} = '' if $data->{skin} eq config->{skin_default};
-    auth->prefSet($_, $data->{$_}, $data->{id}) for qw/hide_list show_nsfw traits_sexual tags_all spoilers skin customcss/;
-    auth->prefSet(tags_cat => join(',', map $data->{"tags_$_"} ? $_ : (), qw/cont ero tech/), $data->{id});
+    auth->prefSet($_, $data->{$_}, $data->{id}) for qw/hide_list show_nsfw traits_sexual tags_all tags_cont tags_ero tags_tech spoilers skin customcss/;
 
     elm_Success
 };
