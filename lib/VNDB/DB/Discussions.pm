@@ -202,7 +202,7 @@ sub dbThreadCount {
       FROM threads_boards tb
       JOIN threads t ON t.id = tb.tid
       WHERE tb.type = ? AND tb.iid = ?
-        AND t.hidden = FALSE|,
+        AND t.hidden = FALSE AND t.private = FALSE|,
     $type, $iid)->{cnt};
 }
 
