@@ -12,129 +12,12 @@ use PWLookup;
 
 
 TUWF::register(
-  qr{u([1-9]\d*)}             => \&userpage,
   qr{u([1-9]\d*)/posts}       => \&posts,
   qr{u([1-9]\d*)/del(/[od])?} => \&delete,
   qr{u/(all|[0a-z])}          => \&list,
   qr{u([1-9]\d*)/notifies}    => \&notifies,
   qr{u([1-9]\d*)/notify/([1-9]\d*)} => \&readnotify,
 );
-
-
-sub userpage {
-  my($self, $uid) = @_;
-
-  my $u = $self->dbUserGet(uid => $uid, what => 'stats hide_list')->[0];
-  return $self->resNotFound if !$u->{id};
-
-  my $votes = $u->{c_votes} && $self->dbVoteStats(uid => $uid);
-  my $list_visible = !$u->{hide_list} || ($self->authInfo->{id}||0) == $u->{id} || $self->authCan('usermod');
-
-  my $title = "$u->{username}'s profile";
-  $self->htmlHeader(title => $title, noindex => 1);
-  $self->htmlMainTabs('u', $u);
-  div class => 'mainbox userpage';
-   h1 $title;
-
-   table class => 'stripe';
-
-    Tr;
-     td class => 'key', 'Username';
-     td;
-      txt ucfirst($u->{username}).' (';
-      a href => "/u$uid", "u$uid";
-      txt ')';
-     end;
-    end;
-
-    Tr;
-     td 'Registered';
-     td fmtdate $u->{registered};
-    end;
-
-    Tr;
-     td 'Edits';
-     td;
-      if($u->{c_changes}) {
-        a href => "/u$uid/hist", $u->{c_changes};
-      } else {
-        txt '-';
-      }
-     end;
-    end;
-
-    Tr;
-     td 'Votes';
-     td;
-      if(!$list_visible) {
-        txt 'hidden';
-      } elsif($votes) {
-        my($total, $count) = (0, 0);
-        for (1..@$votes) {
-          $count += $votes->[$_-1][0];
-          $total += $votes->[$_-1][1];
-        }
-        a href => "/u$uid/votes", $count;
-        txt sprintf ' (%.2f average)', $total/$count/10;
-      } else {
-        txt '-';
-      }
-     end;
-    end;
-
-    Tr;
-     td 'Tags';
-     td;
-      if(!$u->{c_tags}) {
-        txt '-';
-      } else {
-        txt sprintf '%d vote%s on %d distinct tag%s and %d visual novel%s. ',
-          $u->{c_tags},     $u->{c_tags}     == 1 ? '' : 's',
-          $u->{tagcount},   $u->{tagcount}   == 1 ? '' : 's',
-          $u->{tagvncount}, $u->{tagvncount} == 1 ? '' : 's';
-        a href => "/g/links?u=$uid"; lit 'Browse tags &raquo;'; end;
-      }
-     end;
-    end;
-
-    Tr;
-     td 'List stats';
-     td !$list_visible ? 'hidden' :
-       sprintf '%d release%s of %d visual novel%s.',
-         $u->{releasecount}, $u->{releasecount} == 1 ? '' : 's',
-         $u->{vncount},      $u->{vncount}      == 1 ? '' : 's';
-    end;
-
-    Tr;
-     td 'Forum stats';
-     td;
-      txt sprintf '%d post%s, %d new thread%s. ',
-        $u->{postcount},   $u->{postcount}   == 1 ? '' : 's',
-        $u->{threadcount}, $u->{threadcount} == 1 ? '' : 's';
-      if($u->{postcount}) {
-        a href => "/u$uid/posts"; lit 'Browse posts &raquo;'; end;
-      }
-     end;
-    end;
-   end 'table';
-  end 'div';
-
-  if($votes && $list_visible) {
-    div class => 'mainbox';
-     h1 'Vote statistics';
-     $self->htmlVoteStats(u => $u, $votes);
-    end;
-  }
-
-  if($u->{c_changes}) {
-    my $list = $self->dbRevisionGet(uid => $uid, results => 5);
-    h1 class => 'boxtitle';
-     a href => "/u$uid/hist", 'Recent changes';
-    end;
-    $self->htmlBrowseHist($list, { p => 1 }, 0, "/u$uid/hist");
-  }
-  $self->htmlFooter;
-}
 
 
 sub posts {

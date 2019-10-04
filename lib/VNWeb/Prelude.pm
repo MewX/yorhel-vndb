@@ -7,12 +7,13 @@
 #  use TUWF ':html5_', 'mkclass';
 #  use Exporter 'import';
 #  use Time::HiRes 'time';
+#  use List::Util 'min', 'max', 'sum';
 #
 #  use VNDBUtil;
 #  use VNDB::BBCode;
 #  use VNDB::Types;
 #  use VNDB::Config;
-#  use VNDB::Func 'fmtdate';
+#  use VNDB::Func 'fmtdate', 'fmtvote';
 #  use VNWeb::Auth;
 #  use VNWeb::HTML;
 #  use VNWeb::DB;
@@ -48,12 +49,13 @@ sub import {
     use TUWF ':html5_', 'mkclass';
     use Exporter 'import';
     use Time::HiRes 'time';
+    use List::Util 'min', 'max', 'sum';
 
     use VNDBUtil;
     use VNDB::BBCode;
     use VNDB::Types;
     use VNDB::Config;
-    use VNDB::Func 'fmtdate';
+    use VNDB::Func 'fmtdate', 'fmtvote';
     use VNWeb::Auth;
     use VNWeb::HTML;
     use VNWeb::DB;

@@ -795,8 +795,8 @@ div.votelist td.tc2 { width: 50px; text-align: right; padding-right: 10px }
 
 /***** Userpage *****/
 
-.userpage table { width: 450px; margin: 0 auto; }
-.userpage .key  { width: 70px; }
+.userpage table { width: 600px; margin: 0 auto; }
+.userpage .key  { width: 100px; }
 
 
 /***** User posts browser ****/

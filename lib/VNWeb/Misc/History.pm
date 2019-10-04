@@ -4,7 +4,7 @@ use VNWeb::Prelude;
 
 
 sub fetch {
-    my($type, $id, $filt) = @_;
+    my($type, $id, $filt, $opt) = @_;
 
     my $where = sql_and
          !$type ? ()
@@ -28,7 +28,7 @@ sub fetch {
                 WHERE c_i.type = c.type AND c_i.itemid = c.itemid AND c_i.ihid
                   AND c_i.rev = (SELECT MAX(c_ii.rev) FROM changes c_ii WHERE c_ii.type = c.type AND c_ii.itemid = c.itemid))' : ();
 
-    my($lst, $np) = tuwf->dbPagei({ page => $filt->{p}, results => 50 }, q{
+    my($lst, $np) = tuwf->dbPagei({ page => $filt->{p}, results => $opt->{results}||50 }, q{
         SELECT c.id, c.type, c.itemid, c.comments, c.rev,}, sql_totime('c.added'), q{ AS added
              , c.requester, u.username
           FROM changes c
@@ -61,14 +61,16 @@ sub _filturl {
 }
 
 
+# Also used by User::Page.
+# %opt: nopage => 1/0, results => $num
 sub tablebox_ {
-    my($type, $id, $filt) = @_;
+    my($type, $id, $filt, %opt) = @_;
 
-    my($lst, $np) = fetch $type, $id, $filt;
+    my($lst, $np) = fetch $type, $id, $filt, \%opt;
 
     my sub url { _filturl {%$filt, p => $_} }
 
-    paginate_ \&url, $filt->{p}, $np, 't';
+    paginate_ \&url, $filt->{p}, $np, 't' unless $opt{nopage};
     div_ class => 'mainbox browse history', sub {
         table_ class => 'stripe', sub {
             thead_ sub { tr_ sub {
@@ -93,7 +95,7 @@ sub tablebox_ {
             } for @$lst;
         };
     };
-    paginate_ \&url, $filt->{p}, $np, 'b';
+    paginate_ \&url, $filt->{p}, $np, 'b' unless $opt{nopage};
 }
 
 
