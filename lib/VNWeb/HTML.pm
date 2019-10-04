@@ -363,7 +363,7 @@ sub framework_ {
                 $cont->() unless $o{hiddenmsg} && _hidden_msg_ \%o;
                 div_ id => 'footer', \&_footer_;
             };
-            script_ type => 'application/javascript', src => config->{url_static}.'/f/v2rw.js', '';
+            script_ type => 'application/javascript', src => config->{url_static}.'/f/v2rw.js?'.config->{version}, '';
         }
     }
 }
