@@ -457,7 +457,8 @@ sub page {
    if(@$t) {
      div id => 'tagops';
       for (keys %TAG_CATEGORY) {
-        input id => "cat_$_", type => 'checkbox', class => 'visuallyhidden', $self->authPref("tags_$_") ? (checked => 'checked') : ();
+        input id => "cat_$_", type => 'checkbox', class => 'visuallyhidden',
+          ($self->authInfo->{id} ? $self->authPref("tags_$_") : $_ ne 'ero') ? (checked => 'checked') : ();
         label for => "cat_$_", lc $TAG_CATEGORY{$_};
       }
       my $spoiler = $self->authPref('spoilers') || 0;
