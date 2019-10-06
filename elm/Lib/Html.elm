@@ -32,16 +32,24 @@ submitButton val state valid load = div []
    ]
 
 
-inputSelect : String -> String -> (String -> m) -> List (Attribute m) -> List (String, String) -> Html m
+inputSelect : String -> a -> (a -> m) -> List (Attribute m) -> List (a, String) -> Html m
 inputSelect nam sel onch attrs lst =
-  let opt (id, name) = option [ value id, selected (id == sel) ] [ text name ]
+  let
+    opt n (id, name) = option [ value (String.fromInt n), selected (id == sel) ] [ text name ]
+    call first n =
+      case List.drop (Maybe.withDefault 0 <| String.toInt n) lst |> List.head of
+        Just (id, name) -> onch id
+        Nothing -> onch first
+    ev =
+      case List.head lst of
+        Just first -> [ onInput <| call <| Tuple.first first ]
+        Nothing -> []
   in select (
-    [ tabindex 10
-    , onInput onch
-    ]
-    ++ attrs
-    ++ (if nam == "" then [] else [ id nam, name nam ])
-  ) <| List.map opt lst
+        [ tabindex 10 ]
+        ++ ev
+        ++ attrs
+        ++ (if nam == "" then [] else [ id nam, name nam ])
+      ) <| List.indexedMap opt lst
 
 
 inputText : String -> String -> (String -> m) -> List (Attribute m) -> Html m

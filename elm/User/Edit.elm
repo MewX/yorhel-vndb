@@ -55,7 +55,7 @@ type Data
   | HideList Bool
   | ShowNsfw Bool
   | TraitsSexual Bool
-  | Spoilers String
+  | Spoilers Int
   | TagsAll Bool
   | TagsCont Bool
   | TagsEro Bool
@@ -74,7 +74,7 @@ updateData msg model =
     HideList b -> { model | hide_list = b }
     ShowNsfw b -> { model | show_nsfw = b }
     TraitsSexual b -> { model | traits_sexual = b }
-    Spoilers n -> { model | spoilers = Maybe.withDefault model.spoilers (String.toInt n) }
+    Spoilers n -> { model | spoilers  = n }
     TagsAll b  -> { model | tags_all  = b }
     TagsCont b -> { model | tags_cont = b }
     TagsEro b  -> { model | tags_ero  = b }
@@ -178,10 +178,10 @@ view model =
           , label [] [ inputCheck "" model.data.tags_tech (Set << TagsTech), text " Technical" ]
           ]
         , formField "spoil::Spoiler level"
-          [ inputSelect "spoil" (String.fromInt model.data.spoilers) (Set << Spoilers) []
-            [ ("0", "Hide spoilers")
-            , ("1", "Show only minor spoilers")
-            , ("2", "Show all spoilers")
+          [ inputSelect "spoil" model.data.spoilers (Set << Spoilers) []
+            [ (0, "Hide spoilers")
+            , (1, "Show only minor spoilers")
+            , (2, "Show all spoilers")
             ]
           ]
         , formField "skin::Skin" [ inputSelect "skin" model.data.skin (Set << Skin) [ style "width" "300px" ] GT.skins ]
