@@ -361,6 +361,9 @@ sub parsedate {
 }
 
 
+sub formatwd { $_[0] ? "Q$_[0]" : undef }
+
+
 sub splitarray {
   (my $s = shift) =~ s/^{(.*)}$/$1/;
   return [ split /,/, $s ];
@@ -414,7 +417,7 @@ my %GET_VN = (
       },
     },
     details => {
-      select => 'v.image, v.img_nsfw, v.alias AS aliases, v.length, v.desc AS description, v.l_wp, v.l_encubed, v.l_renai',
+      select => 'v.image, v.img_nsfw, v.alias AS aliases, v.length, v.desc AS description, v.l_wp, v.l_encubed, v.l_renai, l_wikidata',
       proc   => sub {
         $_[0]{aliases}     ||= undef;
         $_[0]{length}      *= 1;
@@ -424,7 +427,8 @@ my %GET_VN = (
         $_[0]{links} = {
           wikipedia => delete($_[0]{l_wp})     ||undef,
           encubed   => delete($_[0]{l_encubed})||undef,
-          renai     => delete($_[0]{l_renai})  ||undef
+          renai     => delete($_[0]{l_renai})  ||undef,
+          wikidata  => formatwd(delete $_[0]{l_wikidata}),
         };
         $_[0]{image} = $_[0]{image} ? sprintf '%s/cv/%02d/%d.jpg', config->{url_static}, $_[0]{image}%100, $_[0]{image} : undef;
       },
@@ -736,13 +740,14 @@ my %GET_PRODUCER = (
       },
     },
     details => {
-      select => 'p.website, p.l_wp, p.desc AS description, p.alias AS aliases',
+      select => 'p.website, p.l_wp, p.l_wikidata, p.desc AS description, p.alias AS aliases',
       proc => sub {
         $_[0]{description} ||= undef;
         $_[0]{aliases}     ||= undef;
         $_[0]{links} = {
           homepage  => delete($_[0]{website})||undef,
           wikipedia => delete $_[0]{l_wp},
+          wikidata  => formatwd(delete $_[0]{l_wikidata}),
         };
       },
     },
@@ -926,14 +931,16 @@ my %GET_STAFF = (
       },
     },
     details => {
-      select => 's."desc" AS description, s.l_wp, s.l_site, s.l_twitter, s.l_anidb',
+      select => 's."desc" AS description, s.l_wp, s.l_site, s.l_twitter, s.l_anidb, s.l_wikidata, s.l_pixiv',
       proc => sub {
         $_[0]{description} ||= undef;
         $_[0]{links} = {
           wikipedia => delete($_[0]{l_wp})     ||undef,
           homepage  => delete($_[0]{l_site})   ||undef,
           twitter   => delete($_[0]{l_twitter})||undef,
-          anidb     => (delete($_[0]{l_anidb})||0)*1||undef
+          anidb     => (delete($_[0]{l_anidb})||0)*1||undef,
+          wikidata  => formatwd(delete $_[0]{l_wikidata}),
+          pixiv     => delete($_[0]{l_pixiv})*1||undef,
         };
       },
     },
