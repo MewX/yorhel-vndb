@@ -123,12 +123,19 @@ $$ LANGUAGE plpgsql;
 
 
 
--- recalculate tags_vn_inherit
-CREATE OR REPLACE FUNCTION tag_vn_calc() RETURNS void AS $$
+-- Recalculate tags_vn_inherit.
+-- When a vid is given, only the tags for that vid will be updated. These
+-- incremental updates do not affect tags.c_items, so that may still get
+-- out-of-sync.
+CREATE OR REPLACE FUNCTION tag_vn_calc(uvid integer) RETURNS void AS $$
 BEGIN
-  DROP INDEX IF EXISTS tags_vn_inherit_tag_vid;
-  TRUNCATE tags_vn_inherit;
-  -- populate tags_vn_inherit
+  IF uvid IS NULL THEN
+    DROP INDEX IF EXISTS tags_vn_inherit_tag_vid;
+    TRUNCATE tags_vn_inherit;
+  ELSE
+    DELETE FROM tags_vn_inherit WHERE vid = uvid;
+  END IF;
+
   INSERT INTO tags_vn_inherit (tag, vid, rating, spoiler)
     -- Group votes to generate a list of directly-upvoted (vid, tag) pairs.
     -- This is essentually the same as the tag listing on VN pages.
@@ -138,6 +145,7 @@ BEGIN
           JOIN tags t ON t.id = tv.tag
          WHERE NOT tv.ignore AND t.state = 2
            AND vid NOT IN(SELECT id FROM vn WHERE hidden)
+           AND (uvid IS NULL OR vid = uvid)
          GROUP BY tv.tag, tv.vid
         HAVING AVG(tv.vote) > 0
     -- Add parent tags
@@ -155,10 +163,12 @@ BEGIN
       FROM t_all
      WHERE tag IN(SELECT id FROM tags WHERE searchable)
      GROUP BY tag, vid;
-  -- recreate index
-  CREATE INDEX tags_vn_inherit_tag_vid ON tags_vn_inherit (tag, vid);
-  -- and update the VN count in the tags table
-  UPDATE tags SET c_items = (SELECT COUNT(*) FROM tags_vn_inherit WHERE tag = id);
+
+  IF uvid IS NULL THEN
+    CREATE INDEX tags_vn_inherit_tag_vid ON tags_vn_inherit (tag, vid);
+    UPDATE tags SET c_items = (SELECT COUNT(*) FROM tags_vn_inherit WHERE tag = id);
+  END IF;
+
   RETURN;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

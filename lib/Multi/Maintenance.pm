@@ -66,7 +66,7 @@ my %dailies = (
       ) AS r(id)|,
 
   # takes about 15 seconds max, still OK
-  tagcache => 'SELECT tag_vn_calc()',
+  tagcache => 'SELECT tag_vn_calc(NULL)',
 
   # takes about 25 seconds, OK
   traitcache => 'SELECT traits_chars_calc()',

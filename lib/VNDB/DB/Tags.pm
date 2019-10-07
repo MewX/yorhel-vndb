@@ -237,6 +237,9 @@ sub dbTagLinkEdit {
   # update
   $self->dbExec('UPDATE tags_vn SET vote = ?, spoiler = ?, date = NOW() WHERE tag = ? AND vid = ? AND uid = ?',
     $update->{$_}[0], $update->{$_}[1]<0?undef:$update->{$_}[1], $_, $vid, $uid) for (keys %$update);
+
+  # Update cache
+  $self->dbExec('SELECT tag_vn_calc(?)', $vid);
 }
 
 
