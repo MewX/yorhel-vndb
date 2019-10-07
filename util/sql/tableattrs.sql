@@ -118,7 +118,7 @@ CREATE        INDEX tags_vn_vid            ON tags_vn (vid);
 CREATE        INDEX threads_posts_date     ON threads_posts (date);
 CREATE        INDEX threads_posts_ts       ON threads_posts USING gin(bb_tsvector(msg));
 CREATE        INDEX threads_posts_uid      ON threads_posts (uid); -- Only really used on /u+ pages to get stats
-CREATE        INDEX traits_chars_tid       ON traits_chars (tid); -- Significantly speeds up traits_chars_calc() and possibly other stuff
+CREATE        INDEX traits_chars_tid       ON traits_chars (tid);
 CREATE        INDEX vn_seiyuu_aid          ON vn_seiyuu (aid); -- Only used on /s+?
 CREATE        INDEX vn_seiyuu_cid          ON vn_seiyuu (cid); -- Only used on /c+?
 CREATE        INDEX vn_staff_aid           ON vn_staff (aid);

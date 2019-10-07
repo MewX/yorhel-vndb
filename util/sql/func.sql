@@ -129,39 +129,32 @@ BEGIN
   DROP INDEX IF EXISTS tags_vn_inherit_tag_vid;
   TRUNCATE tags_vn_inherit;
   -- populate tags_vn_inherit
-  INSERT INTO tags_vn_inherit
-    -- All votes for all tags, including votes inherited by child tags if the
-    -- parent tag itself does not have any votes.
-    -- (also includes non-searchable tags, because they could have a searchable tag as parent)
-    WITH RECURSIVE tags_vn_all(lvl, tag, vid, uid, vote, spoiler, defaultspoil, searchable) AS (
-        SELECT 15, tv.tag, tv.vid, tv.uid, tv.vote, tv.spoiler, t.defaultspoil, true
-        FROM tags_vn tv
-        JOIN tags t ON t.id = tv.tag
-       WHERE NOT tv.ignore
-      UNION ALL
-        SELECT lvl-1, tp.parent, ta.vid, ta.uid, ta.vote, ta.spoiler, t.defaultspoil, t.searchable
-        FROM tags_vn_all ta
-        JOIN tags_parents tp ON tp.tag = ta.tag
-        JOIN tags t ON t.id = tp.parent
-        WHERE t.state = 2
-          AND ta.lvl > 0
-          AND NOT EXISTS(SELECT 1 FROM tags_vn tv WHERE tv.tag = tp.parent AND tv.vid = ta.vid)
+  INSERT INTO tags_vn_inherit (tag, vid, rating, spoiler)
+    -- Group votes to generate a list of directly-upvoted (vid, tag) pairs.
+    -- This is essentually the same as the tag listing on VN pages.
+    WITH RECURSIVE t_avg(tag, vid, vote, spoiler) AS (
+        SELECT tv.tag, tv.vid, AVG(tv.vote)::real, CASE WHEN COUNT(tv.spoiler) = 0 THEN MIN(t.defaultspoil) ELSE AVG(tv.spoiler)::real END
+          FROM tags_vn tv
+          JOIN tags t ON t.id = tv.tag
+         WHERE NOT tv.ignore AND t.state = 2
+           AND vid NOT IN(SELECT id FROM vn WHERE hidden)
+         GROUP BY tv.tag, tv.vid
+        HAVING AVG(tv.vote) > 0
+    -- Add parent tags
+    ), t_all(lvl, tag, vid, vote, spoiler) AS (
+        SELECT 15, * FROM t_avg
+        UNION ALL
+        SELECT ta.lvl-1, tp.parent, ta.vid, ta.vote, ta.spoiler
+          FROM t_all ta
+          JOIN tags_parents tp ON tp.tag = ta.tag
+         WHERE ta.lvl > 0
     )
-    -- grouped by (tag, vid)
-    SELECT tag, vid, COUNT(uid) AS users, AVG(vote)::real AS rating,
-           (CASE WHEN COUNT(spoiler) = 0 THEN defaultspoil
-                 WHEN AVG(spoiler) > 1.3 THEN 2
-                 WHEN AVG(spoiler) > 0.4 THEN 1 ELSE 0
-            END)::smallint AS spoiler
-    FROM (
-      -- grouped by (tag, vid, uid), so only one user votes on one parent tag per VN entry (also removing unsearchable tags)
-      SELECT tag, vid, uid, MAX(vote)::real, AVG(spoiler)::real, defaultspoil
-      FROM tags_vn_all
-      WHERE searchable
-      GROUP BY tag, vid, uid, defaultspoil
-    ) AS t(tag, vid, uid, vote, spoiler, defaultspoil)
-    GROUP BY tag, vid, defaultspoil
-    HAVING AVG(vote) > 0;
+    -- Merge
+    SELECT tag, vid, AVG(vote)
+         , (CASE WHEN MIN(spoiler) > 1.3 THEN 2 WHEN MIN(spoiler) > 0.4 THEN 1 ELSE 0 END)::smallint
+      FROM t_all
+     WHERE tag IN(SELECT id FROM tags WHERE searchable)
+     GROUP BY tag, vid;
   -- recreate index
   CREATE INDEX tags_vn_inherit_tag_vid ON tags_vn_inherit (tag, vid);
   -- and update the VN count in the tags table
@@ -174,36 +167,36 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- recalculate traits_chars
 CREATE OR REPLACE FUNCTION traits_chars_calc() RETURNS void AS $$
 BEGIN
+  DROP INDEX IF EXISTS traits_chars_tid;
   TRUNCATE traits_chars;
   INSERT INTO traits_chars (tid, cid, spoil)
-    -- all char<->trait links of the latest revisions, including chars
-    -- inherited from child traits if the parent trait was not mentioned
-    -- directly.
+    -- all char<->trait links of the latest revisions, including chars inherited from child traits.
     -- (also includes non-searchable traits, because they could have a searchable trait as parent)
-    WITH RECURSIVE traits_chars_all(lvl, tid, cid, spoiler, searchable) AS (
-        SELECT 15, tid, ct.id, spoil, true
-        FROM chars_traits ct
-        JOIN chars c ON c.id = ct.id
-       WHERE NOT c.hidden
+    WITH RECURSIVE traits_chars_all(lvl, tid, cid, spoiler) AS (
+        SELECT 15, tid, ct.id, spoil
+          FROM chars_traits ct
+         WHERE id NOT IN(SELECT id from chars WHERE hidden)
       UNION ALL
-        SELECT lvl-1, tp.parent, tc.cid, tc.spoiler, t.searchable
+        SELECT lvl-1, tp.parent, tc.cid, tc.spoiler
         FROM traits_chars_all tc
         JOIN traits_parents tp ON tp.trait = tc.tid
         JOIN traits t ON t.id = tp.parent
         WHERE t.state = 2
           AND tc.lvl > 0
-          AND NOT EXISTS(SELECT 1 FROM chars_traits cti WHERE cti.tid = tp.parent AND cti.id = tc.cid)
     )
-    -- now grouped by (tid, cid) and with non-searchable traits filtered out
-    SELECT tid, cid, (CASE WHEN AVG(spoiler) > 1.3 THEN 2 WHEN AVG(spoiler) > 0.7 THEN 1 ELSE 0 END)::smallint AS spoiler
-    FROM traits_chars_all
-    WHERE searchable
-    GROUP BY tid, cid;
+    -- now grouped by (tid, cid), with non-searchable traits filtered out
+    SELECT tid, cid
+         , (CASE WHEN MIN(spoiler) > 1.3 THEN 2 WHEN MIN(spoiler) > 0.7 THEN 1 ELSE 0 END)::smallint AS spoiler
+      FROM traits_chars_all
+     WHERE tid IN(SELECT id FROM traits WHERE searchable)
+     GROUP BY tid, cid;
+  -- recreate index
+  CREATE INDEX traits_chars_tid ON traits_chars (tid);
   -- and update the VN count in the tags table
   UPDATE traits SET c_items = (SELECT COUNT(*) FROM traits_chars WHERE tid = id);
   RETURN;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 
 -- Fully recalculate all rows in stats_cache

@@ -610,7 +610,6 @@ CREATE TABLE tags_vn (
 CREATE TABLE tags_vn_inherit (
   tag integer NOT NULL,
   vid integer NOT NULL,
-  users integer NOT NULL,
   rating real NOT NULL,
   spoiler smallint NOT NULL
 );
@@ -689,8 +688,7 @@ CREATE TABLE traits (
 CREATE TABLE traits_chars (
   cid integer NOT NULL,  -- chars (id)
   tid integer NOT NULL,  -- traits (id)
-  spoil smallint NOT NULL DEFAULT 0,
-  PRIMARY KEY(cid, tid)
+  spoil smallint NOT NULL DEFAULT 0
 );
 
 -- traits_parents
