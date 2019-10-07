@@ -105,22 +105,19 @@ $$ LANGUAGE sql;
 
 -- recalculate vn.c_popularity
 CREATE OR REPLACE FUNCTION update_vnpopularity() RETURNS void AS $$
-BEGIN
-  -- the following queries only update rows with popularity > 0, so make sure to reset all rows first
+  -- the following querie only update VNs which have valid votes, so make sure to reset all rows first.
   UPDATE vn SET c_popularity = NULL;
-  CREATE OR REPLACE TEMP VIEW tmp_pop1 (uid, vid, rank) AS
-      SELECT v.uid, v.vid, count(*)::real ^ 0.36788
-        FROM votes v
-        JOIN votes v2 ON v.uid = v2.uid AND v2.vote < v.vote
-        JOIN users u ON u.id = v.uid AND NOT ign_votes
-    GROUP BY v.vid, v.uid;
-  CREATE OR REPLACE TEMP VIEW tmp_pop2 (vid, win) AS
-    SELECT vid, sum(rank) FROM tmp_pop1 GROUP BY vid;
-  UPDATE vn SET c_popularity = s1.win/(SELECT MAX(win) FROM tmp_pop2) FROM tmp_pop2 s1 WHERE s1.vid = vn.id;
-  RETURN;
-END;
-$$ LANGUAGE plpgsql;
-
+  WITH t2(vid, win) AS (
+    SELECT vid, SUM(rank)
+      FROM (
+          SELECT v.uid, v.vid, ((rank() OVER (PARTITION BY uid ORDER BY vote))::real - 1) ^ 0.36788
+            FROM votes v
+            JOIN users u ON u.id = v.uid AND NOT ign_votes
+      ) t1(uid, vid, rank)
+      GROUP BY vid
+  )
+  UPDATE vn SET c_popularity = s1.win/(SELECT MAX(win) FROM t2) FROM t2 s1 WHERE s1.vid = vn.id AND s1.win > 0;
+$$ LANGUAGE SQL;
 
 
 -- Recalculate tags_vn_inherit.
