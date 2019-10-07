@@ -122,7 +122,9 @@ sub traitpage {
      if(!@$chars) {
        p; br; br; txt 'This trait has not been linked to any characters yet, or they were hidden because of your spoiler settings.'; end;
      }
-     p; br; txt 'The list below also includes all characters linked to child traits. This list is cached, it can take up to 24 hours after a character has been edited for it to show up on this page.'; end;
+     if(@{$t->{childs}}) {
+       p; br; txt 'The list below also includes all characters linked to child traits.'; end;
+     }
     end 'div';
     end 'form';
     @$chars && $self->charBrowseTable($chars, $np, $f, "/i$trait?m=$f->{m};fil=$f->{fil}");

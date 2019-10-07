@@ -136,7 +136,9 @@ sub tagpage {
      if(!@$list) {
        p; br; br; txt 'This tag has not been linked to any visual novels yet, or they were hidden because of your spoiler settings or default filters.'; end;
      }
-     p; br; txt 'The list below also includes all visual novels linked to child tags. This list is cached, it can take up to 24 hours after a visual novel has been tagged for it to show up on this page.'; end;
+     if(@{$t->{childs}}) {
+       p; br; txt 'The list below also includes all visual novels linked to child tags.'; end;
+     }
     end 'div';
     end 'form';
     $self->htmlBrowseVN($list, $f, $np, "/g$t->{id}?fil=$f->{fil};m=$f->{m}", 1) if @$list;
@@ -572,7 +574,6 @@ sub vntagmod {
     ul;
      li; txt 'Make sure you have read the '; a href => '/d10', 'guidelines'; txt '!'; end;
      li 'Don\'t forget to hit the submit button on the bottom of the page to make your changes permanent.';
-     li 'Some tag information on the site is cached, it can take up to an hour for your changes to be visible everywhere.';
     end;
    end;
   end 'div';
