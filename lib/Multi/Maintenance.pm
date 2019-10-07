@@ -69,7 +69,7 @@ my %dailies = (
   tagcache => 'SELECT tag_vn_calc(NULL)',
 
   # takes about 25 seconds, OK
-  traitcache => 'SELECT traits_chars_calc()',
+  traitcache => 'SELECT traits_chars_calc(NULL)',
 
   # takes about 140 seconds, not really OK
   vnpopularity => 'SELECT update_vnpopularity()',

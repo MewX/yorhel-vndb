@@ -174,11 +174,16 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 
--- recalculate traits_chars
-CREATE OR REPLACE FUNCTION traits_chars_calc() RETURNS void AS $$
+-- Recalculate traits_chars. Pretty much same thing as tag_vn_calc().
+CREATE OR REPLACE FUNCTION traits_chars_calc(ucid integer) RETURNS void AS $$
 BEGIN
-  DROP INDEX IF EXISTS traits_chars_tid;
-  TRUNCATE traits_chars;
+  IF ucid IS NULL THEN
+    DROP INDEX IF EXISTS traits_chars_tid;
+    TRUNCATE traits_chars;
+  ELSE
+    DELETE FROM traits_chars WHERE cid = ucid;
+  END IF;
+
   INSERT INTO traits_chars (tid, cid, spoil)
     -- all char<->trait links of the latest revisions, including chars inherited from child traits.
     -- (also includes non-searchable traits, because they could have a searchable trait as parent)
@@ -186,6 +191,7 @@ BEGIN
         SELECT 15, tid, ct.id, spoil
           FROM chars_traits ct
          WHERE id NOT IN(SELECT id from chars WHERE hidden)
+           AND (ucid IS NULL OR ct.id = ucid)
       UNION ALL
         SELECT lvl-1, tp.parent, tc.cid, tc.spoiler
         FROM traits_chars_all tc
@@ -200,10 +206,11 @@ BEGIN
       FROM traits_chars_all
      WHERE tid IN(SELECT id FROM traits WHERE searchable)
      GROUP BY tid, cid;
-  -- recreate index
-  CREATE INDEX traits_chars_tid ON traits_chars (tid);
-  -- and update the VN count in the tags table
-  UPDATE traits SET c_items = (SELECT COUNT(*) FROM traits_chars WHERE tid = id);
+
+  IF ucid IS NULL THEN
+    CREATE INDEX traits_chars_tid ON traits_chars (tid);
+    UPDATE traits SET c_items = (SELECT COUNT(*) FROM traits_chars WHERE tid = id);
+  END IF;
   RETURN;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -380,6 +387,11 @@ BEGIN
     PERFORM update_vncache(vid) FROM (
       SELECT DISTINCT vid FROM releases_vn_hist WHERE chid IN(xedit.chid, xoldchid)
     ) AS v(vid);
+  END IF;
+
+  -- Call traits_chars_calc() for characters to update the traits cache
+  IF xtype = 'c' THEN
+    PERFORM traits_chars_calc(xedit.itemid);
   END IF;
 
   -- Call notify_dbdel() if an entry has been deleted
