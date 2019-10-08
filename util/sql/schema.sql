@@ -734,7 +734,16 @@ CREATE TABLE users (
   tags_ero        boolean NOT NULL DEFAULT FALSE,
   tags_tech       boolean NOT NULL DEFAULT TRUE,
   spoilers        smallint NOT NULL DEFAULT 0,
-  traits_sexual   boolean NOT NULL DEFAULT FALSE
+  traits_sexual   boolean NOT NULL DEFAULT FALSE,
+  nodistract_can     boolean NOT NULL DEFAULT FALSE,
+  nodistract_noads   boolean NOT NULL DEFAULT FALSE,
+  nodistract_nofancy boolean NOT NULL DEFAULT FALSE,
+  support_can     boolean NOT NULL DEFAULT FALSE,
+  support_enabled boolean NOT NULL DEFAULT FALSE,
+  uniname_can     boolean NOT NULL DEFAULT FALSE,
+  uniname         text NOT NULL DEFAULT '',
+  pubskin_can     boolean NOT NULL DEFAULT FALSE,
+  pubskin_enabled boolean NOT NULL DEFAULT FALSE
 );
 
 -- vn

@@ -19,6 +19,16 @@ my $FORM = form_compile in => {
     skin      => { enum => tuwf->{skins} },
     customcss => { required => 0, default => '', maxlength => 2000 },
 
+    nodistract_can     => { anybool => 1 },
+    nodistract_noads   => { anybool => 1 },
+    nodistract_nofancy => { anybool => 1 },
+    support_can     => { anybool => 1 },
+    support_enabled => { anybool => 1 },
+    uniname_can     => { anybool => 1 },
+    uniname         => { required => 0, default => '', length => [ 2, 15 ] },
+    pubskin_can     => { anybool => 1 },
+    pubskin_enabled => { anybool => 1 },
+
     password  => { _when => 'in', required => 0, type => 'hash', keys => {
         old   => { password => 1 },
         new   => { password => 1 }
@@ -41,8 +51,9 @@ sub _getmail {
 
 TUWF::get qr{/$RE{uid}/edit}, sub {
     my $u = tuwf->dbRowi(q{
-        SELECT id, username, perm, ign_votes, hide_list, show_nsfw, traits_sexual,
-               tags_all, tags_cont, tags_ero, tags_tech, spoilers, skin, customcss
+        SELECT id, username, perm, ign_votes, hide_list, show_nsfw, traits_sexual
+             , tags_all, tags_cont, tags_ero, tags_tech, spoilers, skin, customcss
+             , nodistract_can, nodistract_noads, nodistract_nofancy, support_can, support_enabled, uniname_can, uniname, pubskin_can, pubskin_enabled
           FROM users WHERE id =}, \tuwf->capture('id')
     );
 
@@ -73,6 +84,9 @@ json_api qr{/u/edit}, $FORM, sub {
     my $username = tuwf->dbVali('SELECT username FROM users WHERE id =', \$data->{id});
     return tuwf->resNotFound if !$username;
     return elm_Unauth if !can_edit u => $data;
+
+    return elm_Taken if $data->{uniname}
+        && tuwf->dbVali('SELECT 1 FROM users WHERE id <>', \$data->{id}, 'AND username =', \lc($data->{uniname}));
 
     if(auth->permUsermod) {
         tuwf->dbExeci(update => users => set => {
@@ -124,7 +138,13 @@ json_api qr{/u/edit}, $FORM, sub {
     }
 
     $data->{skin} = '' if $data->{skin} eq config->{skin_default};
-    auth->prefSet($_, $data->{$_}, $data->{id}) for qw/hide_list show_nsfw traits_sexual tags_all tags_cont tags_ero tags_tech spoilers skin customcss/;
+    $data->{uniname} = '' if $data->{uniname} eq $data->{username};
+    tuwf->dbExeci('UPDATE users SET', { %{$data}{qw/
+            hide_list show_nsfw traits_sexual tags_all tags_cont tags_ero tags_tech spoilers skin customcss
+            nodistract_noads nodistract_nofancy support_enabled uniname pubskin_enabled
+        /} },
+        'WHERE id =', \$data->{id}
+    );
 
     $ret->();
 };

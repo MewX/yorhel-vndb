@@ -62,6 +62,11 @@ type Data
   | TagsTech Bool
   | Skin String
   | Css String
+  | NoAds Bool
+  | NoFancy Bool
+  | Support Bool
+  | PubSkin Bool
+  | Uniname String
 
 
 updateData : Data -> GUE.Send -> GUE.Send
@@ -81,6 +86,11 @@ updateData msg model =
     TagsTech b -> { model | tags_tech = b }
     Skin n     -> { model | skin = n }
     Css n      -> { model | customcss = n }
+    NoAds b    -> { model | nodistract_noads = b }
+    NoFancy b  -> { model | nodistract_nofancy = b }
+    Support b  -> { model | support_enabled = b }
+    PubSkin b  -> { model | pubskin_enabled = b }
+    Uniname n  -> { model | uniname = n }
 
 
 type Msg
@@ -126,14 +136,16 @@ update msg model =
 view : Model -> Html Msg
 view model =
   let
+    data = model.data
+
     modform =
       [ tr [ class "newpart" ] [ td [ colspan 2 ] [ text "Admin options" ] ]
-      , formField "username::Username" [ inputText "username" model.data.username (Set << Username) GUE.valUsername ]
+      , formField "username::Username" [ inputText "username" data.username (Set << Username) GUE.valUsername ]
       , formField "Permissions"
         <| List.intersperse (br_ 1)
-        <| List.map (\(n,s) -> label [] [ inputCheck "" (and model.data.perm n > 0) (Set << Perm n), text (" " ++ s) ])
+        <| List.map (\(n,s) -> label [] [ inputCheck "" (and data.perm n > 0) (Set << Perm n), text (" " ++ s) ])
            GT.userPerms
-      , formField "Other" [ label [] [ inputCheck "" model.data.ign_votes (Set << IgnVotes), text " Ignore votes in VN statistics" ] ]
+      , formField "Other" [ label [] [ inputCheck "" data.ign_votes (Set << IgnVotes), text " Ignore votes in VN statistics" ] ]
       ]
 
     passform =
@@ -148,15 +160,30 @@ view model =
         ]
       ]
 
+    supportform =
+      [ tr [ class "newpart" ] [ td [ colspan 2 ] [ text "Supporter options" ] ]
+      , if not data.nodistract_can && not data.authmod then text ""
+        else formField "" [ label [] [ inputCheck "" data.nodistract_noads (Set << NoAds), text " Disable advertising and other distractions (doesn't hide affiliate links for the moment)" ] ]
+      , if not data.nodistract_can && not data.authmod then text ""
+        else formField "" [ label [] [ inputCheck "" data.nodistract_nofancy (Set << NoFancy), text " Disable supporters badges, custom usernames and profile skins" ] ]
+      , if not data.support_can && not data.authmod then text ""
+        else formField "" [ label [] [ inputCheck "" data.support_enabled (Set << Support), text " Display supporters badge" ] ]
+      , if not data.pubskin_can && not data.authmod then text ""
+        else formField "" [ label [] [ inputCheck "" data.pubskin_enabled (Set << PubSkin), text " Apply my skin and custom CSS when others visit my profile" ] ]
+      , if not data.uniname_can && not data.authmod then text ""
+        else formField "uniname::Display name" [ inputText "uniname" (if data.uniname == "" then data.username else data.uniname) (Set << Uniname) GUE.valUniname ]
+      ]
+
   in Html.form [ onSubmit Submit ]
     [ div [ class "mainbox" ]
-      [ h1 [] [ text <| if model.data.authmod then "Edit " ++ model.data.username else "My preferences" ]
+      [ h1 [] [ text <| if data.authmod then "Edit " ++ data.username else "My preferences" ]
       , table [ class "formtable" ] <|
         [ tr [ class "newpart" ] [ td [ colspan 2 ] [ text "General" ] ]
-        , formField "Username" [ text model.data.username ]
-        , formField "email::E-Mail" [ inputText "email" model.data.email (Set << EMail) GUE.valEmail ]
+        , formField "Username" [ text data.username ]
+        , formField "email::E-Mail" [ inputText "email" data.email (Set << EMail) GUE.valEmail ]
         ]
-        ++ (if model.data.authmod then modform else []) ++
+        ++ (if data.authmod then modform else [])
+        ++ (if data.authmod || data.nodistract_can || data.support_can || data.uniname_can || data.pubskin_can then supportform else []) ++
         [ tr [ class "newpart" ] [ td [ colspan 2 ] [ text "Password" ] ]
         , formField "" [ label [] [ inputCheck "" model.cpass CPass, text " Change password" ] ]
         ] ++ (if model.cpass then passform else [])
@@ -164,28 +191,28 @@ view model =
         [ tr [ class "newpart" ] [ td [ colspan 2 ] [ text "Preferences" ] ]
         , formField "Privacy"
           [ label []
-            [ inputCheck "" model.data.hide_list (Set << HideList)
+            [ inputCheck "" data.hide_list (Set << HideList)
             , text " Don't allow others to see my visual novel list, vote list and wishlist and exclude these lists from the database dumps and API."
             ]
           ]
-        , formField "NSFW" [ label [] [ inputCheck "" model.data.show_nsfw     (Set << ShowNsfw),     text " Show NSFW images by default" ] ]
-        , formField ""     [ label [] [ inputCheck "" model.data.traits_sexual (Set << TraitsSexual), text " Show sexual traits by default on character pages" ] ]
-        , formField "Tags" [ label [] [ inputCheck "" model.data.tags_all (Set << TagsAll), text " Show all tags by default on visual novel pages (don't summarize)" ] ]
+        , formField "NSFW" [ label [] [ inputCheck "" data.show_nsfw     (Set << ShowNsfw),     text " Show NSFW images by default" ] ]
+        , formField ""     [ label [] [ inputCheck "" data.traits_sexual (Set << TraitsSexual), text " Show sexual traits by default on character pages" ] ]
+        , formField "Tags" [ label [] [ inputCheck "" data.tags_all      (Set << TagsAll),      text " Show all tags by default on visual novel pages (don't summarize)" ] ]
         , formField ""
           [ text "Default tag categories on visual novel pages:", br_ 1
-          , label [] [ inputCheck "" model.data.tags_cont (Set << TagsCont), text " Content" ], br_ 1
-          , label [] [ inputCheck "" model.data.tags_ero  (Set << TagsEro ), text " Sexual content" ], br_ 1
-          , label [] [ inputCheck "" model.data.tags_tech (Set << TagsTech), text " Technical" ]
+          , label [] [ inputCheck "" data.tags_cont (Set << TagsCont), text " Content" ], br_ 1
+          , label [] [ inputCheck "" data.tags_ero  (Set << TagsEro ), text " Sexual content" ], br_ 1
+          , label [] [ inputCheck "" data.tags_tech (Set << TagsTech), text " Technical" ]
           ]
         , formField "spoil::Spoiler level"
-          [ inputSelect "spoil" model.data.spoilers (Set << Spoilers) []
+          [ inputSelect "spoil" data.spoilers (Set << Spoilers) []
             [ (0, "Hide spoilers")
             , (1, "Show only minor spoilers")
             , (2, "Show all spoilers")
             ]
           ]
-        , formField "skin::Skin" [ inputSelect "skin" model.data.skin (Set << Skin) [ style "width" "300px" ] GT.skins ]
-        , formField "css::Custom CSS" [ inputTextArea "css" model.data.customcss (Set << Css) ([ rows 5, cols 60 ] ++ GUE.valCustomcss) ]
+        , formField "skin::Skin" [ inputSelect "skin" data.skin (Set << Skin) [ style "width" "300px" ] GT.skins ]
+        , formField "css::Custom CSS" [ inputTextArea "css" data.customcss (Set << Css) ([ rows 5, cols 60 ] ++ GUE.valCustomcss) ]
         ]
 
       ]

@@ -64,10 +64,9 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON traits_parents           TO vndb_site;
 
 -- users table is special; The 'perm', 'passwd' and 'mail' columns are
 -- protected and can only be accessed through the user_* functions.
-GRANT SELECT (id, username,       registered, perm, c_votes, c_changes, ip, c_tags, ign_votes, email_confirmed, skin, customcss, filter_vn, filter_release, show_nsfw, hide_list, notify_dbedit, notify_announce, vn_list_own, vn_list_wish, tags_all, tags_cont, tags_ero, tags_tech, spoilers, traits_sexual),
-      INSERT (id, username, mail, registered,       c_votes, c_changes, ip, c_tags, ign_votes, email_confirmed, skin, customcss, filter_vn, filter_release, show_nsfw, hide_list, notify_dbedit, notify_announce, vn_list_own, vn_list_wish, tags_all, tags_cont, tags_ero, tags_tech, spoilers, traits_sexual),
-      UPDATE (    username,       registered,       c_votes, c_changes, ip, c_tags, ign_votes, email_confirmed, skin, customcss, filter_vn, filter_release, show_nsfw, hide_list, notify_dbedit, notify_announce, vn_list_own, vn_list_wish, tags_all, tags_cont, tags_ero, tags_tech, spoilers, traits_sexual) ON users TO vndb_site;
-GRANT DELETE ON users TO vndb_site;
+GRANT SELECT (id, username,       registered, perm, c_votes, c_changes, ip, c_tags, ign_votes, email_confirmed, skin, customcss, filter_vn, filter_release, show_nsfw, hide_list, notify_dbedit, notify_announce, vn_list_own, vn_list_wish, tags_all, tags_cont, tags_ero, tags_tech, spoilers, traits_sexual, nodistract_can, nodistract_noads, nodistract_nofancy, support_can, support_enabled, uniname_can, uniname, pubskin_can, pubskin_enabled),
+      INSERT (id, username, mail, registered,       c_votes, c_changes, ip, c_tags, ign_votes, email_confirmed, skin, customcss, filter_vn, filter_release, show_nsfw, hide_list, notify_dbedit, notify_announce, vn_list_own, vn_list_wish, tags_all, tags_cont, tags_ero, tags_tech, spoilers, traits_sexual, nodistract_can, nodistract_noads, nodistract_nofancy, support_can, support_enabled, uniname_can, uniname, pubskin_can, pubskin_enabled),
+      UPDATE (    username,       registered,       c_votes, c_changes, ip, c_tags, ign_votes, email_confirmed, skin, customcss, filter_vn, filter_release, show_nsfw, hide_list, notify_dbedit, notify_announce, vn_list_own, vn_list_wish, tags_all, tags_cont, tags_ero, tags_tech, spoilers, traits_sexual, nodistract_can, nodistract_noads, nodistract_nofancy, support_can, support_enabled, uniname_can, uniname, pubskin_can, pubskin_enabled) ON users TO vndb_site;
 
 GRANT SELECT, INSERT, UPDATE         ON vn                       TO vndb_site;
 GRANT SELECT, INSERT,         DELETE ON vn_anime                 TO vndb_site;
