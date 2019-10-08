@@ -233,7 +233,7 @@ sub traitedit {
     [ input    => short => 'name',     name => 'Primary name' ],
     $self->authCan('tagmod') ? (
       $t ?
-        [ static   => label => 'Added by', content => fmtuser($t->{addedby}, $t->{username}) ] : (),
+        [ static   => label => 'Added by', content => sub { VNWeb::HTML::user_($t); '' } ] : (),
       [ select   => short => 'state',    name => 'State', options => [
         [0,'Awaiting moderation'], [1,'Deleted/hidden'], [2,'Approved'] ] ],
       [ checkbox => short => 'searchable', name => 'Searchable (people can use this trait to filter characters)' ],

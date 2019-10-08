@@ -29,8 +29,7 @@ sub fetch {
                   AND c_i.rev = (SELECT MAX(c_ii.rev) FROM changes c_ii WHERE c_ii.type = c.type AND c_ii.itemid = c.itemid))' : ();
 
     my($lst, $np) = tuwf->dbPagei({ page => $filt->{p}, results => $opt->{results}||50 }, q{
-        SELECT c.id, c.type, c.itemid, c.comments, c.rev,}, sql_totime('c.added'), q{ AS added
-             , c.requester, u.username
+        SELECT c.id, c.type, c.itemid, c.comments, c.rev,}, sql_totime('c.added'), q{ AS added, }, sql_user(), q{
           FROM changes c
           JOIN users u ON c.requester = u.id
          WHERE}, $where, q{
@@ -87,7 +86,7 @@ sub tablebox_ {
                 td_ class => 'tc1_1', sub { a_ href => $revurl, "$i->{type}$i->{itemid}" };
                 td_ class => 'tc1_2', sub { a_ href => $revurl, ".$i->{rev}" };
                 td_ class => 'tc2', fmtdate $i->{added}, 'full';
-                td_ class => 'tc3', sub { user_ $i->{requester}, $i->{username} };
+                td_ class => 'tc3', sub { user_ $i };
                 td_ class => 'tc4', sub {
                     a_ href => $revurl, title => $i->{original}, shorten $i->{title}, 80;
                     b_ class => 'grayedout', sub { lit_ bb2html $i->{comments}, 150 };
@@ -188,7 +187,7 @@ TUWF::get qr{/(?:([upvrcsd])([1-9]\d*)/)?hist} => sub {
     };
 
     my $obj = !$type ? undef :
-        $type eq 'u' ? tuwf->dbRowi('SELECT id, username AS title FROM users WHERE id =', \$id) :
+        $type eq 'u' ? tuwf->dbRowi('SELECT id, ', sql_user(), 'FROM users u WHERE id =', \$id) :
         $type eq 'p' ? dbitem producers => 'name' :
         $type eq 'v' ? dbitem vn        => 'title' :
         $type eq 'r' ? dbitem releases  => 'title' :
@@ -197,6 +196,7 @@ TUWF::get qr{/(?:([upvrcsd])([1-9]\d*)/)?hist} => sub {
         $type eq 'd' ? dbitem docs      => 'title' : die;
 
     return tuwf->resNotFound if $type && !$obj->{id};
+    $obj->{title} = user_displayname $obj if $type eq 'u';
 
     my $title = $type ? "Edit history of $obj->{title}" : 'Recent changes';
     framework_ title => $title, index => 0, type => $type, dbobj => $obj, tab => 'hist',

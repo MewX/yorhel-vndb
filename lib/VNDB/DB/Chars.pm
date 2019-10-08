@@ -90,7 +90,7 @@ sub dbCharGetRev {
   $o{rev} ||= $self->dbRow('SELECT MAX(rev) AS rev FROM changes WHERE type = \'c\' AND itemid = ?', $o{id})->{rev};
 
   my $select = 'c.itemid AS id, ch.name, ch.original, ch.gender';
-  $select .= ', extract(\'epoch\' from c.added) as added, c.requester, c.comments, u.username, c.rev, c.ihid, c.ilock';
+  $select .= ', extract(\'epoch\' from c.added) as added, c.comments, c.rev, c.ihid, c.ilock, '.VNWeb::DB::sql_user();
   $select .= ', c.id AS cid, NOT EXISTS(SELECT 1 FROM changes c2 WHERE c2.type = c.type AND c2.itemid = c.itemid AND c2.rev = c.rev+1) AS lastrev';
   $select .= ', ch.alias, ch.desc, ch.image, ch.b_month, ch.b_day, ch.s_bust, ch.s_waist, ch.s_hip, ch.height, ch.weight, ch.bloodt, ch.main, ch.main_spoil, co.hidden, co.locked' if $o{what} =~ /extended/;
 

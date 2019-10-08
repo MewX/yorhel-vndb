@@ -161,7 +161,7 @@ sub dbVNGetRev {
   my $uid = $self->authInfo->{id};
 
   my $select = 'c.itemid AS id, vo.c_released, vo.c_languages::text[], vo.c_platforms::text[], v.title, v.original, vo.rgraph';
-  $select .= ', extract(\'epoch\' from c.added) as added, c.requester, c.comments, u.username, c.rev, c.ihid, c.ilock';
+  $select .= ', extract(\'epoch\' from c.added) as added, c.comments, c.rev, c.ihid, c.ilock, '.VNWeb::DB::sql_user();
   $select .= ', c.id AS cid, NOT EXISTS(SELECT 1 FROM changes c2 WHERE c2.type = c.type AND c2.itemid = c.itemid AND c2.rev = c.rev+1) AS lastrev';
   $select .= ', v.alias, v.image, v.img_nsfw, v.length, v.desc, v.l_wp, v.l_encubed, v.l_renai, v.l_wikidata, vo.hidden, vo.locked' if $o{what} =~ /extended/;
   $select .= ', vo.c_popularity, vo.c_rating, vo.c_votecount' if $o{what} =~ /rating/;

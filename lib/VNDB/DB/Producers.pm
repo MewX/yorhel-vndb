@@ -68,7 +68,7 @@ sub dbProducerGetRev {
   $o{rev} ||= $self->dbRow('SELECT MAX(rev) AS rev FROM changes WHERE type = \'p\' AND itemid = ?', $o{id})->{rev};
 
   my $select = 'c.itemid AS id, p.type, p.name, p.original, p.lang, po.rgraph';
-  $select .= ', extract(\'epoch\' from c.added) as added, c.requester, c.comments, u.username, c.rev, c.ihid, c.ilock';
+  $select .= ', extract(\'epoch\' from c.added) as added, c.comments, c.rev, c.ihid, c.ilock, '.VNWeb::DB::sql_user();
   $select .= ', c.id AS cid, NOT EXISTS(SELECT 1 FROM changes c2 WHERE c2.type = c.type AND c2.itemid = c.itemid AND c2.rev = c.rev+1) AS lastrev';
   $select .= ', p.desc, p.alias, p.website, p.l_wp, p.l_wikidata, po.hidden, po.locked' if $o{what} =~ /extended/;
 

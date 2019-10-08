@@ -13,7 +13,7 @@ use VNDB::BBCode;
 our @EXPORT = (@VNDBUtil::EXPORT, 'bb2html', 'bb2text', qw|
   clearfloat cssicon tagscore minage fil_parse fil_serialize parenttags
   childtags charspoil imgpath imgurl
-  fmtvote fmtmedia fmtvnlen fmtage fmtdatestr fmtdate fmtuser fmtrating fmtspoil
+  fmtvote fmtmedia fmtvnlen fmtage fmtdatestr fmtdate fmtrating fmtspoil
   json_encode json_decode script_json
   form_compare
 |);
@@ -251,12 +251,6 @@ sub fmtdate {
   my($t, $f) = @_;
   return strftime '%Y-%m-%d', gmtime $t if !$f || $f eq 'compact';
   return strftime '%Y-%m-%d at %R', gmtime $t;
-}
-
-# Arguments: (uid, username), or a hashref containing that info
-sub fmtuser {
-  my($id,$n) = ref($_[0]) eq 'HASH' ? ($_[0]{uid}||$_[0]{requester}, $_[0]{username}) : @_;
-  return !$id ? '[deleted]' : sprintf '<a href="/u%d">%s</a>', $id, xml_escape $n;
 }
 
 # Turn a (natural number) vote into a rating indication

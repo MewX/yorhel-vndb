@@ -85,7 +85,8 @@ sub homepage {
         li;
          txt "$_->{type}:";
          a href => "/$_->{type}$_->{itemid}.$_->{rev}", title => $_->{ioriginal}||$_->{ititle}, shorten $_->{ititle}, 33;
-         lit " by ".fmtuser($_);
+         lit " by ";
+         VNWeb::HTML::user_($_);
         end;
       }
      end;
@@ -120,9 +121,10 @@ sub homepage {
       for (@$posts) {
         my $boards = join ', ', map $BOARD_TYPE{$_->{type}}{txt}.($_->{iid}?' > '.$_->{title}:''), @{$_->{boards}};
         li;
-         txt fmtage($_->{ldate}).' ';
+         txt fmtage($_->{lastpost_date}).' ';
          a href => "/t$_->{id}.$_->{count}", title => "Posted in $boards", shorten $_->{title}, 25;
-         lit ' by '.fmtuser($_->{luid}, $_->{lusername});
+         lit ' by ';
+         VNWeb::HTML::user_($_, 'lastpost_');
         end;
       }
      end;

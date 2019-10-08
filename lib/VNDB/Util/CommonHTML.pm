@@ -214,7 +214,7 @@ sub revheader { # type, obj
   txt ')';
   br;
   txt 'By ';
-  lit fmtuser $obj;
+  VNWeb::HTML::user_($obj);
   txt ' on ';
   txt fmtdate $obj->{added}, 'full';
 }
@@ -401,7 +401,7 @@ sub htmlVoteStats {
           } elsif($_->{hide_list}) {
             b class => 'grayedout', 'hidden';
           } else {
-            a href => "/u$_->{uid}", $_->{username};
+            VNWeb::HTML::user_($_);
           }
          end;
          td fmtvote $_->{vote};

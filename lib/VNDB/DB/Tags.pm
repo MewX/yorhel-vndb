@@ -41,7 +41,7 @@ sub dbTagGet {
   my @select = (
     qw|t.id t.searchable t.applicable t.name t.description t.state t.cat t.c_items t.defaultspoil|,
     q|extract('epoch' from t.added) as added|,
-    $o{what} =~ /addedby/ ? ('t.addedby', 'u.username') : (),
+    $o{what} =~ /addedby/ ? (VNWeb::DB::sql_user()) : (),
   );
   my @join = $o{what} =~ /addedby/ ? 'JOIN users u ON u.id = t.addedby' : ();
 
@@ -187,7 +187,7 @@ sub dbTagLinks {
 
   my @select = (
     qw|tv.tag tv.vid tv.uid tv.vote tv.spoiler tv.ignore|, "EXTRACT('epoch' from tv.date) AS date",
-    $o{what} =~ /details/ ? (qw|v.title u.username t.name|) : (),
+    $o{what} =~ /details/ ? (qw|v.title t.name|, VNWeb::DB::sql_user()) : (),
   );
 
   my @join = $o{what} =~ /details/ ? (

@@ -26,7 +26,7 @@ TUWF::register(
 sub caneditpost {
   my($self, $post) = @_;
   return $self->authCan('boardmod') ||
-    ($self->authInfo->{id} && $post->{uid} == $self->authInfo->{id} && !$post->{hidden} && time()-$post->{date} < $self->{board_edit_time})
+    ($self->authInfo->{id} && $post->{user_id} == $self->authInfo->{id} && !$post->{hidden} && time()-$post->{date} < $self->{board_edit_time})
 }
 
 
@@ -75,7 +75,8 @@ sub thread {
        td class => 'tc1';
         a href => "/t$tid.$_->{num}", name => $_->{num}, "#$_->{num}";
         if(!$_->{hidden}) {
-          lit ' by '.fmtuser($_);
+          lit ' by ';
+          VNWeb::HTML::user_($_);
           br;
           txt fmtdate $_->{date}, 'full';
         }
@@ -312,7 +313,7 @@ sub edit {
                       'Edit post';
   $self->htmlHeader(title => $title, noindex => 1);
   $self->htmlForm({ frm => $frm, action => $url }, 'postedit' => [$title,
-    [ static => label => 'Username', content => fmtuser($p ? ($p->{uid}, $p->{username}) : ($self->authInfo->{id}, $self->authInfo->{username})) ],
+    [ static => label => 'Username', content => sub { VNWeb::HTML::user_($p || VNWeb::Auth::auth->user); '' } ],
     !$tid || $num == 1 ? (
       [ input  => short => 'title', name => 'Thread title' ],
       [ input  => short => 'boards',  name => 'Board(s)' ],
@@ -394,7 +395,7 @@ sub board {
     $type eq 'p' ? $self->dbProducerGet(id => $iid)->[0] :
                    $self->dbVNGet(id => $iid)->[0];
   return $self->resNotFound if $iid && !$obj;
-  my $ititle = $obj && ($obj->{title}||$obj->{name}||$obj->{username});
+  my $ititle = $obj && ($obj->{title}||$obj->{name}||VNWeb::HTML::user_displayname($obj));
   my $title = $obj ? "Related discussions for $ititle" : $type eq 'all' ? 'All boards' : $BOARD_TYPE{$type}{txt};
 
   my($list, $np) = $self->dbThreadGet(
@@ -576,7 +577,7 @@ sub search {
          td class => 'tc1_1'; a href => $link, 't'.$l->{tid}; end;
          td class => 'tc1_2'; a href => $link, '.'.$l->{num}; end;
          td class => 'tc2', fmtdate $l->{date};
-         td class => 'tc3'; lit fmtuser $l->{uid}, $l->{username}; end;
+         td class => 'tc3'; VNWeb::HTML::user_($l); end;
          td class => 'tc4';
           div class => 'title';
            a href => $link, $l->{title};
@@ -634,12 +635,12 @@ sub _threadlist {
        end;
        td class => 'tc2', $o->{count}-1;
        td class => 'tc3';
-        lit fmtuser $o->{fuid}, $o->{fusername};
+        VNWeb::HTML::user_($o, 'firstpost_');
        end;
        td class => 'tc4';
-        lit fmtuser $o->{luid}, $o->{lusername};
+        VNWeb::HTML::user_($o, 'lastpost_');
         lit ' @ ';
-        a href => "/t$o->{id}.$o->{count}", fmtdate $o->{ldate}, 'full';
+        a href => "/t$o->{id}.$o->{count}", fmtdate $o->{lastpost_date}, 'full';
        end;
       end 'tr';
     }

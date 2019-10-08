@@ -10,7 +10,7 @@ use VNDB::Types;
 use POSIX 'ceil';
 
 
-our @EXPORT = qw| htmlBrowse htmlBrowseNavigate htmlBrowseHist htmlBrowseVN |;
+our @EXPORT = qw| htmlBrowse htmlBrowseNavigate htmlBrowseVN |;
 
 
 # generates a browse box, arguments:
@@ -119,45 +119,6 @@ sub htmlBrowseNavigate {
    $l > $_    and $tab->(0, $p+$_, $p+$_) for (reverse 2..($nc>$l-2?$l-2:$nc-1));
    $l > 1     and $tab->(0, $p+1, 'next &rsaquo;');
   end 'ul';
-}
-
-
-sub htmlBrowseHist {
-  my($self, $list, $f, $np, $url) = @_;
-  $self->htmlBrowse(
-    items    => $list,
-    options  => $f,
-    nextpage => $np,
-    pageurl  => $url,
-    class    => 'history',
-    header   => [
-      sub { td class => 'tc1_1', 'Rev.'; td class => 'tc1_2', ''; },
-      [ 'Date' ],
-      [ 'User' ],
-      [ 'Page' ],
-    ],
-    row      => sub {
-      my($s, $n, $i) = @_;
-      my $revurl = "/$i->{type}$i->{itemid}.$i->{rev}";
-
-      Tr;
-       td class => 'tc1_1';
-        a href => $revurl, "$i->{type}$i->{itemid}";
-       end;
-       td class => 'tc1_2';
-        a href => $revurl, ".$i->{rev}";
-       end;
-       td class => 'tc2', fmtdate $i->{added}, 'full';
-       td class => 'tc3';
-        lit fmtuser $i;
-       end;
-       td class => 'tc4';
-        a href => $revurl, title => $i->{ioriginal}, shorten $i->{ititle}, 80;
-        b class => 'grayedout'; lit bb2html $i->{comments}, 150; end;
-       end;
-      end 'tr';
-    },
-  );
 }
 
 

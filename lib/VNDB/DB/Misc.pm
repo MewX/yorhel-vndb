@@ -79,11 +79,11 @@ sub dbRevisionGet {
   );
 
   my($r, $np) = $self->dbPage(\%o, q|
-    SELECT c.id, c.type, c.itemid, c.requester, c.comments, c.rev, extract('epoch' from c.added) as added, u.username
+    SELECT c.id, c.type, c.itemid, c.comments, c.rev, extract('epoch' from c.added) as added, !s
       FROM changes c
       JOIN users u ON c.requester = u.id
       !W
-      ORDER BY c.id DESC|, \%where
+      ORDER BY c.id DESC|, VNWeb::DB::sql_user(), \%where
   );
 
   # I couldn't find a way to fetch the titles the main query above without slowing it down considerably, so let's just do it this way.

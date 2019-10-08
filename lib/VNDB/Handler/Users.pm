@@ -34,13 +34,13 @@ sub posts {
 
   my($posts, $np) = $self->dbPostGet(uid => $uid, hide => 1, what => 'thread', page => $f->{p}, sort => 'date', reverse => 1);
 
-  my $title = "Posts made by $u->{username}";
+  my $title = 'Posts made by '.VNWeb::HTML::user_displayname($u);
   $self->htmlHeader(title => $title, noindex => 1);
   $self->htmlMainTabs(u => $u, 'posts');
   div class => 'mainbox';
    h1 $title;
    if(!@$posts) {
-     p "$u->{username} hasn't made any posts yet.";
+     p VNWeb::HTML::user_displayname($u)." hasn't made any posts yet.";
    }
   end;
 
@@ -168,7 +168,7 @@ sub list {
       my($s, $n, $l) = @_;
       Tr;
        td class => 'tc1';
-        a href => '/u'.$l->{id}, $l->{username};
+        VNWeb::HTML::user_($l);
        end;
        td class => 'tc2', fmtdate $l->{registered};
        td class => 'tc3'.($l->{hide_list} && $self->authCan('usermod') ? ' linethrough' : '');
@@ -283,11 +283,10 @@ sub notifies {
           a href => "/u$uid/notify/$l->{id}", "$l->{ltype}$l->{iid}".($l->{subid}?".$l->{subid}":'');
          end;
          td class => 'tc5 clickable', id => "notify_$l->{id}";
-          lit sprintf
-              $l->{ltype} ne 't' ? 'Edit of %s by %s' :
-              $l->{subid} == 1   ? 'New thread %s by %s' : 'Reply to %s by %s',
-            sprintf('<i>%s</i>', xml_escape $l->{c_title}),
-            sprintf('<i>%s</i>', xml_escape $l->{username});
+          txt $l->{ltype} eq 't' ? 'Edit of ' : $l->{subid} == 1 ? 'New thread ' : 'Reply to ';
+          i $l->{c_title};
+          txt ' by ';
+          i VNWeb::HTML::user_displayname($l);
          end;
         end 'tr';
       },

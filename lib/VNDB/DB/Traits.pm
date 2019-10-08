@@ -46,7 +46,7 @@ sub dbTraitGet {
   my @select = (
     qw|t.id t.searchable t.applicable t.name t.description t.state t.alias t."group" t."order" t.sexual t.c_items t.defaultspoil|,
     'tg.name AS groupname', 'tg."order" AS grouporder', q|extract('epoch' from t.added) as added|,
-    $o{what} =~ /addedby/ ? ('t.addedby', 'u.username') : (),
+    $o{what} =~ /addedby/ ? (VNWeb::DB::sql_user()) : (),
   );
   my @join = $o{what} =~ /addedby/ ? 'JOIN users u ON u.id = t.addedby' : ();
   push @join, 'LEFT JOIN traits tg ON tg.id = t."group"';

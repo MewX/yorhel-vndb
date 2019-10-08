@@ -21,7 +21,7 @@ our @EXPORT = qw/
     clearfloat_
     debug_
     join_
-    user_
+    user_ user_displayname
     elm_
     framework_
     revision_
@@ -56,11 +56,32 @@ sub join_($&@) {
 }
 
 
-# Display a user link.
+# Display a user link, the given object must have the columns as fetched using DB::sql_user().
+# Args: $object, $prefix
 sub user_ {
-    my($uid, $username) = @_;
-    return lit_ '[deleted]' if !$uid;
-    a_ href => "/u$uid", $username;
+    my $obj = shift;
+    my $prefix = shift||'user_';
+    my sub f($) { $obj->{"${prefix}$_[0]"} }
+
+    return lit_ '[deleted]' if !f 'id';
+    my $fancy = !(auth->pref('nodistract_can') && auth->pref('nodistract_nofancy'));
+    my $uniname = f 'uniname_can' && f 'uniname';
+    a_ href => '/u'.f('id'),
+        $fancy && $uniname ? (title => f('name'), $uniname) :
+        (!$fancy && $uniname ? (title => $uniname) : (), f 'name');
+    txt_ '⭐' if $fancy && f 'support_can' && f 'support_enabled';
+}
+
+
+# Similar to user_(), but just returns a string. Mainly for use in titles.
+sub user_displayname {
+    my $obj = shift;
+    my $prefix = shift||'user_';
+    my sub f($) { $obj->{"${prefix}$_[0]"} }
+
+    return '[deleted]' if !f 'id';
+    my $fancy = !(auth->pref('nodistract_can') && auth->pref('nodistract_nofancy'));
+    $fancy && f 'uniname_can' && f 'uniname' ? f 'uniname' : f 'name'
 }
 
 
@@ -160,7 +181,7 @@ sub _menu_ {
     div_ class => 'menubox', sub {
         my $uid = sprintf '/u%d', auth->uid;
         my $nc = auth && tuwf->dbVali('SELECT count(*) FROM notifications WHERE uid =', \auth->uid, 'AND read IS NULL');
-        h2_ sub { a_ href => $uid, ucfirst auth->username };
+        h2_ sub { user_ auth->user };
         div_ sub {
             a_ href => "$uid/edit", 'My Profile'; br_;
             a_ href => "$uid/list", 'My Visual Novel List'; br_;
@@ -377,15 +398,15 @@ sub _revision_header_ {
     if(auth) {
         lit_ ' (';
         a_ href => "/$type$obj->{id}.$obj->{chrev}/edit", $obj->{chrev} == $obj->{maxrev} ? 'edit' : 'revert to';
-        if($obj->{rev_requester}) {
+        if($obj->{rev_user_id}) {
             lit_ ' / ';
-            a_ href => "/t/u$obj->{rev_requester}/new?title=Regarding%20$type$obj->{id}.$obj->{chrev}", 'msg user';
+            a_ href => "/t/u$obj->{rev_user_id}/new?title=Regarding%20$type$obj->{id}.$obj->{chrev}", 'msg user';
         }
         lit_ ')';
     }
     br_;
     lit_ 'By ';
-    user_ @{$obj}{'rev_requester', 'rev_username'};
+    user_ $obj, 'rev_user_';
     lit_ ' on ';
     txt_ fmtdate $obj->{rev_added}, 'full';
 }
@@ -540,8 +561,7 @@ sub revision_ {
     $enrich->($old) if $old;
 
     enrich_merge chid => sql(
-        'SELECT c.id AS chid, c.comments as rev_comments,', sql_totime('c.added'), 'as rev_added
-              , c.requester as rev_requester, u.username as rev_username
+        'SELECT c.id AS chid, c.comments as rev_comments,', sql_totime('c.added'), 'as rev_added, ', sql_user('u', 'rev_user_'), '
            FROM changes c LEFT JOIN users u ON u.id = c.requester
           WHERE c.id IN'),
         $new, $old||();

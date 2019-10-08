@@ -41,7 +41,7 @@ sub dbThreadGet {
 
   my @select = (
     qw|t.id t.title t.count t.locked t.hidden t.private|, 't.poll_question IS NOT NULL AS haspoll',
-    $o{what} =~ /lastpost/  ? ('tpl.uid AS luid', q|EXTRACT('epoch' from tpl.date) AS ldate|, 'ul.username AS lusername') : (),
+    $o{what} =~ /lastpost/  ? (q|EXTRACT('epoch' from tpl.date) AS lastpost_date|, VNWeb::DB::sql_user('ul', 'lastpost_')) : (),
     $o{what} =~ /poll/      ? (qw|t.poll_question t.poll_max_options t.poll_preview t.poll_recast|) : (),
   );
 
@@ -94,12 +94,12 @@ sub dbThreadGet {
     }
 
     if($o{what} =~ /firstpost/) {
-      do { my $x = $r->[$r{$_->{tid}}]; $x->{fuid} = $_->{uid}; $x->{fdate} = $_->{date}; $x->{fusername} = $_->{username} } for (@{$self->dbAll(q|
-        SELECT tpf.tid, tpf.uid, EXTRACT('epoch' from tpf.date) AS date, uf.username
+      do { my $idx = $r{ delete $_->{tid} }; $r->[$idx] = { $r->[$idx]->%*, %$_ } } for (@{$self->dbAll(q|
+        SELECT tpf.tid, EXTRACT('epoch' from tpf.date) AS firstpost_date, !s
           FROM threads_posts tpf
           JOIN users uf ON tpf.uid = uf.id
           WHERE tpf.num = 1 AND tpf.tid IN(!l)|,
-        [ keys %r ]
+         VNWeb::DB::sql_user('uf', 'firstpost_'), [ keys %r ]
       )});
     }
 
@@ -237,7 +237,7 @@ sub dbPostGet {
   my @select = (
     qw|tp.tid tp.num tp.hidden|, q|extract('epoch' from tp.date) as date|, q|extract('epoch' from tp.edited) as edited|,
     $o{search} ? () : 'tp.msg',
-    $o{what} =~ /user/ ? qw|tp.uid u.username| : (),
+    $o{what} =~ /user/ ? (VNWeb::DB::sql_user()) : (),
     $o{what} =~ /thread/ ? ('t.title', 't.hidden AS thread_hidden') : (),
   );
   my @join = (

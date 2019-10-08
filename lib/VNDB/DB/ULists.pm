@@ -193,7 +193,7 @@ sub dbVoteGet {
 
   my @select = (
     qw|n.vid n.vote n.uid|, q|extract('epoch' from n.date) as date|,
-    $o{what} =~ /user/ ? ('u.username') : (),
+    $o{what} =~ /user/ ? (VNWeb::DB::sql_user()) : (),
     $o{what} =~ /vn/ ? (qw|v.title v.original|) : (),
     $o{what} =~ /hide_list/ ? ('u.hide_list') : (),
   );

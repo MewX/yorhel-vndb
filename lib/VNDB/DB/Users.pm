@@ -13,7 +13,7 @@ our @EXPORT = qw|
 
 
 # %options->{ username session uid ip registered search results page what sort reverse notperm }
-# what: notifycount stats scryptargs extended
+# what: extended
 # sort: username registered votes changes tags
 sub dbUserGet {
   my $s = shift;
@@ -54,19 +54,9 @@ sub dbUserGet {
 
   my @select = (
     qw|id username c_votes c_changes c_tags hide_list|,
+    VNWeb::DB::sql_user(), # XXX: This duplicates id and username, but updating all the code isn't going to be easy
     q|extract('epoch' from registered) as registered|,
     $o{what} =~ /extended/ ? qw|perm ign_votes| : (), # mail
-    $o{what} =~ /scryptargs/ ? 'user_getscryptargs(id) AS scryptargs' : (),
-    $o{what} =~ /notifycount/ ?
-      '(SELECT COUNT(*) FROM notifications WHERE uid = u.id AND read IS NULL) AS notifycount' : (),
-    $o{what} =~ /stats/ ? (
-      '(SELECT COUNT(*) FROM rlists WHERE uid = u.id) AS releasecount',
-      '(SELECT COUNT(*) FROM vnlists WHERE uid = u.id) AS vncount',
-      '(SELECT COUNT(*) FROM threads_posts WHERE uid = u.id) AS postcount',
-      '(SELECT COUNT(*) FROM threads_posts WHERE uid = u.id AND num = 1) AS threadcount',
-      '(SELECT COUNT(DISTINCT tag) FROM tags_vn WHERE uid = u.id) AS tagcount',
-      '(SELECT COUNT(DISTINCT vid) FROM tags_vn WHERE uid = u.id) AS tagvncount',
-    ) : (),
     $token ? qq|extract('epoch' from user_isloggedin(id, decode('$token', 'hex'))) as session_lastused| : (),
   );
 
@@ -122,7 +112,7 @@ sub dbNotifyGet {
     qw|n.id n.ntype n.ltype n.iid n.subid|,
     q|extract('epoch' from n.date) as date|,
     q|extract('epoch' from n.read) as read|,
-    $o{what} =~ /titles/ ? qw|u.username n.c_title| : (),
+    $o{what} =~ /titles/ ? ('n.c_title', VNWeb::DB::sql_user()) : (),
   );
 
   my($r, $np) = $s->dbPage(\%o, q|

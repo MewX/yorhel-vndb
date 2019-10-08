@@ -63,9 +63,9 @@ sub authAdminSetPass {
 
 
 sub authInfo {
-  # Used to return a lot more, but this was by far the most common use
+  # Used to return a lot more, but only the id is still used now.
   # (code using other fields has been migrated)
-  +{ id => auth->uid, username => auth->username }
+  +{ id => auth->uid }
 }
 
 

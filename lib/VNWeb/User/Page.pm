@@ -7,13 +7,25 @@ use VNWeb::Misc::History;
 sub _info_table_ {
     my($u, $vis) = @_;
 
+    my sub sup {
+        b_ ' ⭐supporter⭐' if $u->{user_support_can} && $u->{user_support_enabled};
+    }
+
+    tr_ sub {
+        td_ class => 'key', 'Display name';
+        td_ sub {
+            txt_ $u->{user_uniname};
+            sup;
+        };
+    } if $u->{user_uniname_can} && $u->{user_uniname};
     tr_ sub {
         td_ class => 'key', 'Username';
         td_ sub {
-            txt_ ucfirst $u->{username};
+            txt_ $u->{user_name};
             txt_ ' ('; a_ href => "/u$u->{id}", "u$u->{id}";
             txt_ ')';
             debug_ $u;
+            sup if !($u->{user_uniname_can} && $u->{user_uniname});
         };
     };
     tr_ sub {
@@ -113,9 +125,10 @@ sub _votestats_ {
 
 TUWF::get qr{/$RE{uid}}, sub {
     my $u = tuwf->dbRowi(q{
-        SELECT id, username, hide_list, c_changes, c_votes, c_tags
+        SELECT id, hide_list, c_changes, c_votes, c_tags
              ,}, sql_totime('registered'), q{ AS registered
-          FROM users
+             ,}, sql_user(), q{
+          FROM users u
          WHERE id =}, \tuwf->capture('id')
     );
     return tuwf->resNotFound if !$u->{id};
@@ -129,7 +142,7 @@ TUWF::get qr{/$RE{uid}}, sub {
          GROUP BY (vote::numeric/10)::int
     });
 
-    my $title = "$u->{username}'s profile";
+    my $title = user_displayname($u)."'s profile";
     framework_ title => $title, index => 0, type => 'u', dbobj => $u,
     sub {
         div_ class => 'mainbox userpage', sub {

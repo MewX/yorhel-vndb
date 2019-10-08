@@ -165,9 +165,9 @@ view model =
       , if not data.nodistract_can && not data.authmod then text ""
         else formField "" [ label [] [ inputCheck "" data.nodistract_noads (Set << NoAds), text " Disable advertising and other distractions (doesn't hide affiliate links for the moment)" ] ]
       , if not data.nodistract_can && not data.authmod then text ""
-        else formField "" [ label [] [ inputCheck "" data.nodistract_nofancy (Set << NoFancy), text " Disable supporters badges, custom usernames and profile skins" ] ]
+        else formField "" [ label [] [ inputCheck "" data.nodistract_nofancy (Set << NoFancy), text " Disable supporters badges, custom display names and profile skins" ] ]
       , if not data.support_can && not data.authmod then text ""
-        else formField "" [ label [] [ inputCheck "" data.support_enabled (Set << Support), text " Display supporters badge" ] ]
+        else formField "" [ label [] [ inputCheck "" data.support_enabled (Set << Support), text " Display my supporters badge" ] ]
       , if not data.pubskin_can && not data.authmod then text ""
         else formField "" [ label [] [ inputCheck "" data.pubskin_enabled (Set << PubSkin), text " Apply my skin and custom CSS when others visit my profile" ] ]
       , if not data.uniname_can && not data.authmod then text ""

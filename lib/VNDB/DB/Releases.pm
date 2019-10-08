@@ -127,7 +127,7 @@ sub dbReleaseGetRev {
 
   my $select = 'c.itemid AS id, r.title, r.original, r.website, r.released, r.minage, r.type, r.patch';
   $select .= ', r.notes, r.catalog, r.gtin, r.resolution, r.voiced, r.freeware, r.doujin, r.uncensored, r.ani_story, r.ani_ero, r.engine, ro.hidden, ro.locked' if $o{what} =~ /extended/;
-  $select .= ', extract(\'epoch\' from c.added) as added, c.requester, c.comments, u.username, c.rev, c.ihid, c.ilock';
+  $select .= ', extract(\'epoch\' from c.added) as added, c.comments, c.rev, c.ihid, c.ilock, '.VNWeb::DB::sql_user();
   $select .= ', c.id AS cid, NOT EXISTS(SELECT 1 FROM changes c2 WHERE c2.type = c.type AND c2.itemid = c.itemid AND c2.rev = c.rev+1) AS lastrev';
 
   my $r = $self->dbAll(q|

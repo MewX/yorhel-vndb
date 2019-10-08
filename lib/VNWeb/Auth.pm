@@ -11,7 +11,6 @@
 #   auth->logout;
 #
 #   my $uid = auth->uid;
-#   my $username = auth->username;
 #   my $wants_spoilers = auth->pref('spoilers');
 #   ..etc
 #
@@ -56,17 +55,17 @@ TUWF::hook after => sub { $auth = __PACKAGE__->new() };
 # have a lot of influence in this)
 TUWF::set log_format => sub {
     my(undef, $uri, $msg) = @_;
-    sprintf "[%s] %s %s: %s\n", scalar localtime(), $uri, auth ? auth->uid : '-', $msg;
+    sprintf "[%s] %s %s: %s\n", scalar localtime(), $uri, auth ? 'u'.auth->uid : '-', $msg;
 };
 
 
 
-use overload bool => sub { defined shift->{uid} };
+use overload bool => sub { defined shift->{user}{user_id} };
 
-sub uid      { shift->{uid} }
-sub username { shift->{username} }
-sub perm     { shift->{perm}||0 }
-sub token    { shift->{token} }
+sub uid   { shift->{user}{user_id} }
+sub perm  { shift->{user}{perm}||0 }
+sub user  { shift->{user} }
+sub token { shift->{token} }
 
 
 
@@ -150,18 +149,16 @@ sub _load_session {
     my($self, $uid, $token_db) = @_;
 
     my $user = $uid ? tuwf->dbRowi(
-        'SELECT id, username, perm FROM users
+        'SELECT perm, ', sql_user(), ' FROM users u
           WHERE id = ', \$uid,
            'AND', sql_func(user_isvalidsession => 'id', sql_fromhex($token_db), \'web')
     ) : {};
 
     # Drop the cookie if it's not valid
-  	tuwf->resCookie(auth => undef) if !$user->{id} && tuwf->reqCookie('auth');
+    tuwf->resCookie(auth => undef) if !$user->{user_id} && tuwf->reqCookie('auth');
 
-    $self->{uid}      = $user->{id};
-    $self->{username} = $user->{username};
-    $self->{perm}     = $user->{perm}||0;
-    $self->{token}    = $token_db;
+    $self->{user}  = $user;
+    $self->{token} = $token_db;
     delete $self->{pref};
 }
 
@@ -279,7 +276,7 @@ sub csrfcheck {
 
 my @pref_columns = qw/
     email_confirmed skin customcss filter_vn filter_release show_nsfw hide_list notify_dbedit notify_announce
-    vn_list_own vn_list_wish tags_all tags_cont tags_ero tags_tech spoilers traits_sexual
+    vn_list_own vn_list_wish tags_all tags_cont tags_ero tags_tech spoilers traits_sexual nodistract_can nodistract_nofancy
 /;
 
 # Returns a user preference column for the current user. Lazily loads all

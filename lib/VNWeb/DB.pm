@@ -10,7 +10,7 @@ use VNDB::Schema;
 
 our @EXPORT = qw/
     sql
-    sql_join sql_comma sql_and sql_or sql_array sql_func sql_fromhex sql_tohex sql_fromtime sql_totime
+    sql_join sql_comma sql_and sql_or sql_array sql_func sql_fromhex sql_tohex sql_fromtime sql_totime sql_user
     enrich enrich_merge enrich_flatten
     db_entry db_edit
 /;
@@ -86,6 +86,21 @@ sub sql_fromtime($) {
 # Convert a Postgres timestamp into a Perl time value
 sub sql_totime($) {
     sql "extract('epoch' from ", $_[0], ')';
+}
+
+# Returns a list of column names to fetch for displaying a username with HTML::user_().
+# Arguments: Name of the 'users' table (default: 'u'), prefix for the fetched fields (default: 'user_').
+# (This function returns a plain string so that old non-SQL-Interp functions can also use it)
+sub sql_user {
+    my $tbl = shift||'u';
+    my $prefix = shift||'user_';
+    join ', ',
+       "$tbl.id              as ${prefix}id",
+       "$tbl.username        as ${prefix}name",
+       "$tbl.support_can     as ${prefix}support_can",
+       "$tbl.support_enabled as ${prefix}support_enabled",
+       "$tbl.uniname_can     as ${prefix}uniname_can",
+       "$tbl.uniname         as ${prefix}uniname";
 }
 
 

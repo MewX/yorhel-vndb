@@ -155,7 +155,7 @@ sub votelist {
     $type eq 'u' && $f->{c} ne 'all' ? (vn_char => $f->{c}) : (),
   );
 
-  my $title = $type eq 'v' ? "Votes for $obj->{title}" : "Votes by $obj->{username}";
+  my $title = $type eq 'v' ? "Votes for $obj->{title}" : 'Votes by '.VNWeb::HTML::user_displayname($obj);
   $self->htmlHeader(noindex => 1, title => $title);
   $self->htmlMainTabs($type => $obj, 'votes');
   div class => 'mainbox';
@@ -201,7 +201,7 @@ sub votelist {
         } elsif($l->{hide_list}) {
           b class => 'grayedout', 'hidden';
         } else {
-          a href => "/u$l->{uid}", $l->{username};
+          VNWeb::HTML::user_($l);
         }
        end;
       end;
@@ -265,7 +265,7 @@ sub wishlist {
     page => $f->{p},
   );
 
-  my $title = $own ? 'My wishlist' : "$u->{username}'s wishlist";
+  my $title = $own ? 'My wishlist' : VNWeb::HTML::user_displayname($u)."'s wishlist";
   $self->htmlHeader(title => $title, noindex => 1);
   $self->htmlMainTabs('u', $u, 'wish');
   div class => 'mainbox';
@@ -382,7 +382,7 @@ sub vnlist {
     $f->{t} >= 0 ? (status => $f->{t}) : (),
   );
 
-  my $title = $own ? 'My visual novel list' : "$u->{username}'s visual novel list";
+  my $title = $own ? 'My visual novel list' : VNWeb::HTML::user_displayname($u)."'s visual novel list";
   $self->htmlHeader(title => $title, noindex => 1);
   $self->htmlMainTabs('u', $u, 'list');
 

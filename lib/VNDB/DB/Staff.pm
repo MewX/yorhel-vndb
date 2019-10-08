@@ -85,7 +85,7 @@ sub dbStaffGetRev {
   $o{rev} ||= $self->dbRow('SELECT MAX(rev) AS rev FROM changes WHERE type = \'s\' AND itemid = ?', $o{id})->{rev};
 
   my $select = 'c.itemid AS id, sa.aid, sa.name, sa.original, s.gender, s.lang';
-  $select .= ', extract(\'epoch\' from c.added) as added, c.requester, c.comments, u.username, c.rev, c.ihid, c.ilock';
+  $select .= ', extract(\'epoch\' from c.added) as added, c.comments, c.rev, c.ihid, c.ilock, '.VNWeb::DB::sql_user();
   $select .= ', c.id AS cid, NOT EXISTS(SELECT 1 FROM changes c2 WHERE c2.type = c.type AND c2.itemid = c.itemid AND c2.rev = c.rev+1) AS lastrev';
   $select .= ', s.desc, s.l_wp, s.l_site, s.l_twitter, s.l_anidb, s.l_wikidata, s.l_pixiv, so.hidden, so.locked' if $o{what} =~ /extended/;
 

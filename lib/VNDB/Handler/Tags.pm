@@ -255,7 +255,7 @@ sub tagedit {
     [ input    => short => 'name',     name => 'Primary name' ],
     $self->authCan('tagmod') ? (
       $tag ?
-        [ static   => label => 'Added by', content => fmtuser($t->{addedby}, $t->{username}) ] : (),
+        [ static   => label => 'Added by', content => sub { VNWeb::HTML::user_($t); '' } ] : (),
       [ select   => short => 'state',    name => 'State', options => [
         [0, 'Awaiting moderation'], [1, 'Deleted/hidden'], [2, 'Approved']  ] ],
       [ checkbox => short => 'searchable', name => 'Searchable (people can use this tag to filter VNs)' ],
@@ -428,7 +428,7 @@ sub taglinks {
         li;
          txt '['; a href => $url->(u=>0), 'remove'; txt '] ';
          txt 'User: ';
-         a href => "/u$f->{u}", $o->{username}||'Unknown user';
+         VNWeb::HTML::user_($o);
         end;
       }
       if($f->{t}) {
@@ -472,12 +472,8 @@ sub taglinks {
       Tr;
        td class => 'tc1', fmtdate $l->{date};
        td class => 'tc2';
-        if($l->{uid}) {
-          a href => $url->(u=>$l->{uid}), class => 'setfil', '> ' if !$f->{u};
-          a href => "/u$l->{uid}", $l->{username};
-        } else {
-          txt '[deleted]';
-        }
+        a href => $url->(u=>$l->{uid}), class => 'setfil', '> ' if $l->{user_id} && !$f->{u};
+        VNWeb::HTML::user_($l);
        end;
        td class => 'tc3'.($l->{ignore}?' ignored':'');
         tagscore $l->{vote};
