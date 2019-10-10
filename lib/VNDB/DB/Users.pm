@@ -13,7 +13,7 @@ our @EXPORT = qw|
 
 
 # %options->{ username session uid ip registered search results page what sort reverse notperm }
-# what: extended
+# what: extended pubskin
 # sort: username registered votes changes tags
 sub dbUserGet {
   my $s = shift;
@@ -57,6 +57,7 @@ sub dbUserGet {
     VNWeb::DB::sql_user(), # XXX: This duplicates id and username, but updating all the code isn't going to be easy
     q|extract('epoch' from registered) as registered|,
     $o{what} =~ /extended/ ? qw|perm ign_votes| : (), # mail
+    $o{what} =~ /pubskin/ ? qw|pubskin_can customcss skin| : (),
     $token ? qq|extract('epoch' from user_isloggedin(id, decode('$token', 'hex'))) as session_lastused| : (),
   );
 

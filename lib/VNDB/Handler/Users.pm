@@ -24,7 +24,7 @@ sub posts {
   my($self, $uid) = @_;
 
   # fetch user info
-  my $u = $self->dbUserGet(uid => $uid, what => 'hide_list')->[0];
+  my $u = $self->dbUserGet(uid => $uid, what => 'hide_list pubskin')->[0];
   return $self->resNotFound if !$u->{id};
 
   my $f = $self->formValidate(
@@ -35,7 +35,7 @@ sub posts {
   my($posts, $np) = $self->dbPostGet(uid => $uid, hide => 1, what => 'thread', page => $f->{p}, sort => 'date', reverse => 1);
 
   my $title = 'Posts made by '.VNWeb::HTML::user_displayname($u);
-  $self->htmlHeader(title => $title, noindex => 1);
+  $self->htmlHeader(title => $title, noindex => 1, pubskin => $u);
   $self->htmlMainTabs(u => $u, 'posts');
   div class => 'mainbox';
    h1 $title;

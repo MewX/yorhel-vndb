@@ -117,8 +117,11 @@ sub _sanitize_css {
 
 sub _head_ {
     my $o = shift;
-    my $skin = tuwf->reqGet('skin') || auth->pref('skin') || config->{skin_default};
+
+    my $fancy = !(auth->pref('nodistract_can') && auth->pref('nodistract_nofancy'));
+    my $skin = tuwf->reqGet('skin') || ($fancy && $o->{pubskin}{pubskin_can} ? $o->{pubskin}{skin} : auth->pref('skin'));
     $skin = config->{skin_default} if !tuwf->{skins}{$skin};
+    my $customcss = $fancy && $o->{pubskin}{pubskin_can} ? $o->{pubskin}{customcss} : auth->pref('customcss');
 
     meta_ charset => 'utf-8';
     title_ $o->{title}.' | vndb';
@@ -126,7 +129,7 @@ sub _head_ {
     link_ rel => 'shortcut icon', href => '/favicon.ico', type => 'image/x-icon';
     link_ rel => 'stylesheet', href => config->{url_static}.'/s/'.$skin.'/style.css?'.config->{version}, type => 'text/css', media => 'all';
     link_ rel => 'search', type => 'application/opensearchdescription+xml', title => 'VNDB VN Search', href => tuwf->reqBaseURI().'/opensearch.xml';
-    style_ type => 'text/css', _sanitize_css(auth->pref('customcss')) if auth->pref('customcss');
+    style_ type => 'text/css', _sanitize_css($customcss) if $customcss;
     if($o->{feeds}) {
         link_ rel => 'alternate', type => 'application/atom+xml', href => "/feeds/announcements.atom", title => 'Site Announcements';
         link_ rel => 'alternate', type => 'application/atom+xml', href => "/feeds/changes.atom",       title => 'Recent Changes';
@@ -362,6 +365,7 @@ sub _hidden_msg_ {
 #   feeds      => 1/0
 #   search     => $query
 #   og         => { opengraph metadata }
+#   pubskin    => { object with: pubskin_can, customcss, skin }
 #   type       => Database entry type (used for the main tabs & hidden message)
 #   dbobj      => Database entry object (used for the main tabs & hidden message)
 #                 Recognized object fields: id, entry_hidden, entry_locked

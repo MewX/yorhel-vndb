@@ -187,7 +187,7 @@ TUWF::get qr{/(?:([upvrcsd])([1-9]\d*)/)?hist} => sub {
     };
 
     my $obj = !$type ? undef :
-        $type eq 'u' ? tuwf->dbRowi('SELECT id, ', sql_user(), 'FROM users u WHERE id =', \$id) :
+        $type eq 'u' ? tuwf->dbRowi('SELECT id, ', sql_user(), ', pubskin_can, customcss, skin FROM users u WHERE id =', \$id) :
         $type eq 'p' ? dbitem producers => 'name' :
         $type eq 'v' ? dbitem vn        => 'title' :
         $type eq 'r' ? dbitem releases  => 'title' :
@@ -199,7 +199,7 @@ TUWF::get qr{/(?:([upvrcsd])([1-9]\d*)/)?hist} => sub {
     $obj->{title} = user_displayname $obj if $type eq 'u';
 
     my $title = $type ? "Edit history of $obj->{title}" : 'Recent changes';
-    framework_ title => $title, index => 0, type => $type, dbobj => $obj, tab => 'hist',
+    framework_ title => $title, index => 0, type => $type, dbobj => $obj, tab => 'hist', $type eq 'u' ? (pubskin => $obj) : (),
     sub {
         my $filt;
         div_ class => 'mainbox', sub {
