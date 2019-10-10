@@ -13,6 +13,7 @@ sub htmlHeader { # %options->{ title, noindex, search, feeds, metadata }
   my($self, %o) = @_;
 
   $o{og} = $o{metadata} ? +{ map +(s/og://r, $o{metadata}{$_}), keys $o{metadata}->%* } : undef;
+  $o{index} = !$o{noindex};
 
   html lang => 'en';
    head sub { VNWeb::HTML::_head_(\%o) };
