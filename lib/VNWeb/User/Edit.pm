@@ -25,7 +25,7 @@ my $FORM = form_compile in => {
     support_can     => { anybool => 1 },
     support_enabled => { anybool => 1 },
     uniname_can     => { anybool => 1 },
-    uniname         => { required => 0, default => '', length => [ 2, 15 ] },
+    uniname         => { required => 0, default => '', regex => qr/^.{2,15}$/ }, # Use regex to check length, HTML5 `maxlength` attribute counts UTF-16 code units...
     pubskin_can     => { anybool => 1 },
     pubskin_enabled => { anybool => 1 },
 

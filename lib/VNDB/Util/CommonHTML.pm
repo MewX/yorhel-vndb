@@ -207,9 +207,9 @@ sub revheader { # type, obj
   b "Revision $obj->{rev}";
   txt ' (';
   a href => "/$type$obj->{id}.$obj->{rev}/edit", 'revert to';
-  if($obj->{requester} && $self->authCan('board')) {
+  if($obj->{user_id} && $self->authCan('board')) {
     lit ' / ';
-    a href => "/t/u$obj->{requester}/new?title=Regarding%20$type$obj->{id}.$obj->{rev}", 'msg user';
+    a href => "/t/u$obj->{user_id}/new?title=Regarding%20$type$obj->{id}.$obj->{rev}", 'msg user';
   }
   txt ')';
   br;
