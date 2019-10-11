@@ -163,7 +163,7 @@ view model =
     supportform =
       [ tr [ class "newpart" ] [ td [ colspan 2 ] [ text "Supporter options" ] ]
       , if not data.nodistract_can && not data.authmod then text ""
-        else formField "" [ label [] [ inputCheck "" data.nodistract_noads (Set << NoAds), text " Disable advertising and other distractions (doesn't hide affiliate links for the moment)" ] ]
+        else formField "" [ label [] [ inputCheck "" data.nodistract_noads (Set << NoAds), text " Disable advertising and other distractions (only hides the Patreon icon for the moment)" ] ]
       , if not data.nodistract_can && not data.authmod then text ""
         else formField "" [ label [] [ inputCheck "" data.nodistract_nofancy (Set << NoFancy), text " Disable supporters badges, custom display names and profile skins" ] ]
       , if not data.support_can && not data.authmod then text ""

@@ -119,7 +119,7 @@ sub _head_ {
     my $o = shift;
 
     my $fancy = !(auth->pref('nodistract_can') && auth->pref('nodistract_nofancy'));
-    my $skin = tuwf->reqGet('skin') || ($fancy && $o->{pubskin}{pubskin_can} ? $o->{pubskin}{skin} : auth->pref('skin'));
+    my $skin = tuwf->reqGet('skin') || ($fancy && $o->{pubskin}{pubskin_can} ? $o->{pubskin}{skin} : auth->pref('skin')) || '';
     $skin = config->{skin_default} if !tuwf->{skins}{$skin};
     my $customcss = $fancy && $o->{pubskin}{pubskin_can} ? $o->{pubskin}{customcss} : auth->pref('customcss');
 
@@ -152,6 +152,11 @@ sub _head_ {
 
 sub _menu_ {
     my $o = shift;
+
+    a_ href => 'https://www.patreon.com/vndb', id => 'patreon', sub {
+        img_ src => config->{url_static}.'/f/patreon.png', alt => 'Support VNDB on Patreon', width => 160, height => 38;
+    } if !(auth->pref('nodistract_can') && auth->pref('nodistract_noads'));
+
     div_ class => 'menubox', sub {
         h2_ 'Menu';
         div_ sub {

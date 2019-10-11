@@ -185,6 +185,9 @@ div.spinner { content: ''; border: 3px solid #9eaebd; border-bottom-color: trans
 #menulist .logout            { border: 0; background: none; color: $maintext$; cursor: pointer }
 #menulist .logout:hover      { text-decoration: underline }
 
+#patreon { opacity: 0.6; border-bottom: none!important }
+#patreon:hover { opacity: 1 }
+
 
 
 
