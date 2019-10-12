@@ -119,9 +119,10 @@ sub _head_ {
     my $o = shift;
 
     my $fancy = !(auth->pref('nodistract_can') && auth->pref('nodistract_nofancy'));
-    my $skin = tuwf->reqGet('skin') || ($fancy && $o->{pubskin}{pubskin_can} ? $o->{pubskin}{skin} : auth->pref('skin')) || '';
+    my $pubskin = $fancy && $o->{pubskin}{pubskin_can} && $o->{pubskin}{pubskin_enabled};
+    my $skin = tuwf->reqGet('skin') || ($pubskin ? $o->{pubskin}{skin} : auth->pref('skin')) || '';
     $skin = config->{skin_default} if !tuwf->{skins}{$skin};
-    my $customcss = $fancy && $o->{pubskin}{pubskin_can} ? $o->{pubskin}{customcss} : auth->pref('customcss');
+    my $customcss = $pubskin ? $o->{pubskin}{customcss} : auth->pref('customcss');
 
     meta_ charset => 'utf-8';
     title_ $o->{title}.' | vndb';

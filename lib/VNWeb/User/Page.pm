@@ -125,7 +125,7 @@ sub _votestats_ {
 
 TUWF::get qr{/$RE{uid}}, sub {
     my $u = tuwf->dbRowi(q{
-        SELECT id, hide_list, c_changes, c_votes, c_tags, pubskin_can, skin, customcss
+        SELECT id, hide_list, c_changes, c_votes, c_tags, pubskin_can, pubskin_enabled, skin, customcss
              ,}, sql_totime('registered'), q{ AS registered
              ,}, sql_user(), q{
           FROM users u

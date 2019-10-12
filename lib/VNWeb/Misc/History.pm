@@ -187,7 +187,7 @@ TUWF::get qr{/(?:([upvrcsd])([1-9]\d*)/)?hist} => sub {
     };
 
     my $obj = !$type ? undef :
-        $type eq 'u' ? tuwf->dbRowi('SELECT id, ', sql_user(), ', pubskin_can, customcss, skin FROM users u WHERE id =', \$id) :
+        $type eq 'u' ? tuwf->dbRowi('SELECT id, ', sql_user(), ', pubskin_can, pubskin_enabled, customcss, skin FROM users u WHERE id =', \$id) :
         $type eq 'p' ? dbitem producers => 'name' :
         $type eq 'v' ? dbitem vn        => 'title' :
         $type eq 'r' ? dbitem releases  => 'title' :

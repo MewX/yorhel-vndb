@@ -55,7 +55,7 @@ sub dbUserGet {
     VNWeb::DB::sql_user(), # XXX: This duplicates id and username, but updating all the code isn't going to be easy
     q|extract('epoch' from registered) as registered|,
     $o{what} =~ /extended/ ? qw|perm ign_votes| : (), # mail
-    $o{what} =~ /pubskin/ ? qw|pubskin_can customcss skin| : (),
+    $o{what} =~ /pubskin/ ? qw|pubskin_can pubskin_enabled customcss skin| : (),
     $token ? qq|extract('epoch' from user_isloggedin(id, decode('$token', 'hex'))) as session_lastused| : (),
   );
 
