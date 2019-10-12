@@ -10,7 +10,7 @@ use VNDB::Schema;
 
 our @EXPORT = qw/
     sql
-    sql_join sql_comma sql_and sql_or sql_array sql_func sql_fromhex sql_tohex sql_fromtime sql_totime sql_user
+    sql_identifier sql_join sql_comma sql_and sql_or sql_array sql_func sql_fromhex sql_tohex sql_fromtime sql_totime sql_user
     enrich enrich_merge enrich_flatten
     db_entry db_edit
 /;
@@ -45,6 +45,13 @@ $Carp::Internal{ (__PACKAGE__) }++;
 
 # sql_* are macros for SQL::Interp use
 
+# A table, column or function name
+sub sql_identifier($) {
+    carp "Invalid identifier '$_[0]'" if $_[0] !~ /^[a-z_][a-z0-9_]*$/; # This regex is specific to VNDB
+    $_[0] =~ /^(?:desc|group|order)$/ ? qq{"$_[0]"} : $_[0]
+}
+
+
 # join(), but for sql objects.
 sub sql_join {
     my $sep = shift;
@@ -65,7 +72,7 @@ sub sql_array { 'ARRAY[', sql_join(',', map \$_, @_), ']' }
 # Call an SQL function
 sub sql_func {
     my($funcname, @args) = @_;
-    sql $funcname, '(', sql_comma(@args), ')';
+    sql sql_identifier($funcname), '(', sql_comma(@args), ')';
 }
 
 # Convert a Perl hex value into Postgres bytea
@@ -92,7 +99,7 @@ sub sql_totime($) {
 # Arguments: Name of the 'users' table (default: 'u'), prefix for the fetched fields (default: 'user_').
 # (This function returns a plain string so that old non-SQL-Interp functions can also use it)
 sub sql_user {
-    my $tbl = shift||'u';
+    my $tbl = sql_identifier(shift||'u');
     my $prefix = shift||'user_';
     join ', ',
        "$tbl.id              as ${prefix}id",
@@ -258,19 +265,19 @@ sub db_entry {
         $entry->{entry_locked} = $entry->{locked};
     } else {
         my $base = $t->{base}{name} =~ s/_hist$//r;
-        enrich_merge id => "SELECT id, hidden AS entry_hidden, locked AS entry_locked FROM \"$base\" WHERE id IN", $entry;
+        enrich_merge id => sql('SELECT id, hidden AS entry_hidden, locked AS entry_locked FROM', sql_identifier($base), 'WHERE id IN'), $entry;
     }
 
     enrich_merge chid => sql(
-        SELECT => sql_comma(map "\"$_->{name}\"", $t->{base}{cols}->@*),
-        FROM => "\"$t->{base}{name}\"",
+        SELECT => sql_comma(map sql_identifier($_->{name}), $t->{base}{cols}->@*),
+        FROM => sql_identifier($t->{base}{name}),
         'WHERE chid IN'
     ), $entry;
 
     while(my($name, $tbl) = each $t->{tables}->%*) {
         $entry->{$name} = tuwf->dbAlli(
-            SELECT => sql_comma(map "\"$_->{name}\"", grep $_->{name} ne 'chid', $tbl->{cols}->@*),
-            FROM => "\"$tbl->{name}\"",
+            SELECT => sql_comma(map sql_identifier($_->{name}), grep $_->{name} ne 'chid', $tbl->{cols}->@*),
+            FROM => sql_identifier($tbl->{name}),
             WHERE => { chid => $entry->{chid} }
         );
     }
@@ -304,14 +311,14 @@ sub db_edit {
     {
         my $base = $t->{base}{name} =~ s/_hist$//r;
         tuwf->dbExeci("UPDATE edit_${base} SET ", sql_comma(
-            map sql("\"$_->{name}\"", ' = ', \$data->{$_->{name}}),
+            map sql(sql_identifier($_->{name}), ' = ', \$data->{$_->{name}}),
                 grep exists $data->{$_->{name}}, $t->{base}{cols}->@*
         ));
     }
 
     while(my($name, $tbl) = each $t->{tables}->%*) {
         my $base = $tbl->{name} =~ s/_hist$//r;
-        my @cols = map sql_comma(map "\"$_->{name}\""), $tbl->{cols}->$@;
+        my @cols = sql_comma(map sql_identifier($_->{name}), $tbl->{cols}->$@);
         my @rows = map {
             my $d = $_;
             sql '(', sql_comma(map \$d, $tbl->{cols}->@*), ')'
