@@ -79,19 +79,6 @@ if(byId('listsel'))
       ulist_redirect('[rv]', '/list', this.name, 'e='+this.options[this.selectedIndex].value);
   };
 
-// Notification list onclick
-(function(){
-  var d = byId('notifies');
-  if(!d)
-    return;
-  var l = byClass(d, 'td', 'clickable');
-  for(var i=0; i<l.length; i++)
-    l[i].onclick = function() {
-      var baseurl = location.href.replace(/\/u([0-9]+)\/notifies.*$/, '/u$1/notify/');
-      location.href = baseurl + this.id.replace(/notify_/, '');
-    };
-})();
-
 
 // BBCode spoiler tags
 (function(){

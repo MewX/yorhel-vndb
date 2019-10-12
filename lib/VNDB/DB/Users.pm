@@ -7,8 +7,6 @@ use Exporter 'import';
 
 our @EXPORT = qw|
   dbUserGet dbUserDel
-  dbNotifyGet dbNotifyMarkRead dbNotifyRemove
-  dbThrottleGet dbThrottleSet
 |;
 
 
@@ -86,74 +84,6 @@ sub dbUserGet {
 # uid
 sub dbUserDel {
   $_[0]->dbExec(q|DELETE FROM users WHERE id = ?|, $_[1]);
-}
-
-
-# %options->{ uid id what results page reverse }
-# what: titles
-sub dbNotifyGet {
-  my($s, %o) = @_;
-  $o{what} ||= '';
-  $o{results} ||= 10;
-  $o{page} ||= 1;
-
-  my %where = (
-    'n.uid = ?' => $o{uid},
-    $o{id} ? (
-      'n.id = ?' => $o{id} ) : (),
-    defined($o{read}) ? (
-      'n.read !s' => $o{read} ? 'IS NOT NULL' : 'IS NULL' ) : (),
-  );
-
-  my @join = (
-    $o{what} =~ /titles/ ? 'LEFT JOIN users u ON n.c_byuser = u.id' : (),
-  );
-
-  my @select = (
-    qw|n.id n.ntype n.ltype n.iid n.subid|,
-    q|extract('epoch' from n.date) as date|,
-    q|extract('epoch' from n.read) as read|,
-    $o{what} =~ /titles/ ? ('n.c_title', VNWeb::DB::sql_user()) : (),
-  );
-
-  my($r, $np) = $s->dbPage(\%o, q|
-    SELECT !s
-      FROM notifications n
-      !s
-      !W
-      ORDER BY n.id !s
-  |, join(', ', @select), join(' ', @join), \%where, $o{reverse} ? 'DESC' : 'ASC');
-  return wantarray ? ($r, $np) : $r;
-}
-
-
-# ids
-sub dbNotifyMarkRead {
-  my $s = shift;
-  $s->dbExec('UPDATE notifications SET read = NOW() WHERE id IN(!l)', \@_);
-}
-
-
-# ids
-sub dbNotifyRemove {
-  my $s = shift;
-  $s->dbExec('DELETE FROM notifications WHERE id IN(!l)', \@_);
-}
-
-
-# ip
-sub dbThrottleGet {
-  my $s = shift;
-  my $t = $s->dbRow("SELECT extract('epoch' from timeout) as timeout FROM login_throttle WHERE ip = ?", shift)->{timeout};
-  return $t && $t >= time ? $t : time;
-}
-
-# ip, timeout
-sub dbThrottleSet {
-  my($s, $ip, $timeout) = @_;
-  !$timeout ? $s->dbExec('DELETE FROM login_throttle WHERE ip = ?', $ip)
-   : $s->dbExec('UPDATE login_throttle SET timeout = to_timestamp(?) WHERE ip = ?', $timeout, $ip)
-  || $s->dbExec('INSERT INTO login_throttle (ip, timeout) VALUES (?, to_timestamp(?))', $ip, $timeout);
 }
 
 1;

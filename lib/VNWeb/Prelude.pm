@@ -13,7 +13,7 @@
 #  use VNDB::BBCode;
 #  use VNDB::Types;
 #  use VNDB::Config;
-#  use VNDB::Func 'fmtdate', 'fmtvote';
+#  use VNDB::Func 'fmtdate', 'fmtage', 'fmtvote';
 #  use VNWeb::Auth;
 #  use VNWeb::HTML;
 #  use VNWeb::DB;
@@ -55,7 +55,7 @@ sub import {
     use VNDB::BBCode;
     use VNDB::Types;
     use VNDB::Config;
-    use VNDB::Func 'fmtdate', 'fmtvote';
+    use VNDB::Func 'fmtdate', 'fmtage', 'fmtvote';
     use VNWeb::Auth;
     use VNWeb::HTML;
     use VNWeb::DB;
@@ -71,10 +71,11 @@ sub import {
 
 
 # Regular expressions for use in path registration
-my $num = qr{[1-9][0-9]{0,6}};
+my $num = qr{[1-9][0-9]{0,8}};
 my $id = qr{(?<id>$num)};
 my $rev = qr{(?:\.(?<rev>$num))};
 our %RE = (
+    num  => qr{(?<num>$num)},
     uid  => qr{u$id},
     vid  => qr{v$id},
     rid  => qr{r$id},

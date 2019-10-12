@@ -24,3 +24,15 @@ document.querySelectorAll('div[data-elm-module]').forEach(function(el) {
     else
         mod.init({ node: el });
 });
+
+
+/* "check all" checkbox */
+document.querySelectorAll('input[type=checkbox].checkall').forEach(function(el) {
+    el.onclick = function() {
+        document.querySelectorAll('input[type=checkbox][name="'+el.name+'"]').forEach(function(el2) {
+            if(!el2.classList.contains('hidden')) {
+                el2.checked = el.checked;
+            }
+        });
+    };
+});
