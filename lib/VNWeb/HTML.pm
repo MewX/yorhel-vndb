@@ -57,10 +57,11 @@ sub join_($&@) {
 
 
 # Display a user link, the given object must have the columns as fetched using DB::sql_user().
-# Args: $object, $prefix
+# Args: $object, $prefix, $capital
 sub user_ {
     my $obj = shift;
     my $prefix = shift||'user_';
+    my $capital = shift;
     my sub f($) { $obj->{"${prefix}$_[0]"} }
 
     return lit_ '[deleted]' if !f 'id';
@@ -68,7 +69,7 @@ sub user_ {
     my $uniname = f 'uniname_can' && f 'uniname';
     a_ href => '/u'.f('id'),
         $fancy && $uniname ? (title => f('name'), $uniname) :
-        (!$fancy && $uniname ? (title => $uniname) : (), f 'name');
+        (!$fancy && $uniname ? (title => $uniname) : (), $capital ? ucfirst f 'name' : f 'name');
     txt_ '⭐' if $fancy && f 'support_can' && f 'support_enabled';
 }
 
@@ -190,7 +191,7 @@ sub _menu_ {
     div_ class => 'menubox', sub {
         my $uid = sprintf '/u%d', auth->uid;
         my $nc = auth && tuwf->dbVali('SELECT count(*) FROM notifications WHERE uid =', \auth->uid, 'AND read IS NULL');
-        h2_ sub { user_ auth->user };
+        h2_ sub { user_ auth->user, 'user_', 1 };
         div_ sub {
             a_ href => "$uid/edit", 'My Profile'; br_;
             a_ href => "$uid/list", 'My Visual Novel List'; br_;

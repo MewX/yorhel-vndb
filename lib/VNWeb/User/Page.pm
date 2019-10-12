@@ -21,7 +21,7 @@ sub _info_table_ {
     tr_ sub {
         td_ class => 'key', 'Username';
         td_ sub {
-            txt_ $u->{user_name};
+            txt_ ucfirst $u->{user_name};
             txt_ ' ('; a_ href => "/u$u->{id}", "u$u->{id}";
             txt_ ')';
             debug_ $u;
