@@ -280,7 +280,7 @@ sub edit {
     [ select => name => 'Gender',short => 'gender', options => [
        map [ $_, $GENDER{$_} ], qw(unknown m f) ] ],
     [ select => name => 'Primary language', short => 'lang',
-      options => [ map [ $_, "$_ ($LANGUAGE{$_})" ], keys %LANGUAGE ] ],
+      options => [ map [ $_, "$LANGUAGE{$_} ($_)" ], sort { $LANGUAGE{$a} cmp $LANGUAGE{$b} } keys %LANGUAGE ] ],
     [ input  => name => 'Official page', short => 'l_site' ],
     [ input    => short => 'l_wikidata',name => 'Wikidata ID',
         value => $frm->{l_wikidata} ? "Q$frm->{l_wikidata}" : '',

@@ -341,7 +341,7 @@ sub edit {
     [ textarea => short => 'alias', name => 'Aliases', rows => 4 ],
     [ static => content => '(Un)official aliases, separated by a newline.' ],
     [ select => name => 'Primary language', short => 'lang',
-      options => [ map [ $_, "$_ ($LANGUAGE{$_})" ], keys %LANGUAGE ] ],
+      options => [ map [ $_, "$LANGUAGE{$_} ($_)" ], sort { $LANGUAGE{$a} cmp $LANGUAGE{$b} } keys %LANGUAGE ] ],
     [ input  => name => 'Website', short => 'website' ],
     [ input  => short => 'l_wikidata',name => 'Wikidata ID',
         value => $frm->{l_wikidata} ? "Q$frm->{l_wikidata}" : '',

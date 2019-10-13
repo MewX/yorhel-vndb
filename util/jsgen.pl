@@ -37,7 +37,7 @@ sub vars {
     rlist_status  => [ map [ $_, $RLIST_STATUS{$_} ], keys %RLIST_STATUS ],
     cookie_prefix => config->{tuwf}{cookie_prefix},
     age_ratings   => [ map [ $_, $AGE_RATING{$_}{txt}], keys %AGE_RATING ],
-    languages     => [ map [ $_, $LANGUAGE{$_} ], keys %LANGUAGE ],
+    languages     => [ map [ $_, $LANGUAGE{$_} ], sort { $LANGUAGE{$a} cmp $LANGUAGE{$b} } keys %LANGUAGE ],
     platforms     => [ map [ $_, $PLATFORM{$_} ], keys %PLATFORM ],
     char_roles    => [ map [ $_, $CHAR_ROLE{$_}{txt} ], keys %CHAR_ROLE ],
     media         => [ map [ $_, $MEDIUM{$_}{txt}, $MEDIUM{$_}{qty} ], keys %MEDIUM ],
