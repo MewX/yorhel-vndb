@@ -150,7 +150,7 @@ TUWF::post qr{/$RE{uid}/notify_update}, sub {
 
     my $frm = tuwf->validate(post =>
         url       => { regex => qr{^/u$id/notifies} },
-        notifysel => { required => 0, type => 'array', scalar => 1, values => { id => 1 } },
+        notifysel => { required => 0, default => [], type => 'array', scalar => 1, values => { id => 1 } },
         markread  => { anybool => 1 },
         remove    => { anybool => 1 },
     )->data;
