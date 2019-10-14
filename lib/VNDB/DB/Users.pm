@@ -6,7 +6,7 @@ use warnings;
 use Exporter 'import';
 
 our @EXPORT = qw|
-  dbUserGet dbUserDel
+  dbUserGet
 |;
 
 
@@ -77,13 +77,6 @@ sub dbUserGet {
   );
 
   return wantarray ? ($r, $np) : $r;
-}
-
-
-
-# uid
-sub dbUserDel {
-  $_[0]->dbExec(q|DELETE FROM users WHERE id = ?|, $_[1]);
 }
 
 1;

@@ -13,7 +13,6 @@ use PWLookup;
 
 TUWF::register(
   qr{u([1-9]\d*)/posts}       => \&posts,
-  qr{u([1-9]\d*)/del(/[od])?} => \&delete,
   qr{u/(all|[0a-z])}          => \&list,
 );
 
@@ -68,49 +67,6 @@ sub posts {
     },
   ) if @$posts;
   $self->htmlFooter;
-}
-
-
-sub delete {
-  my($self, $uid, $act) = @_;
-  return $self->htmlDenied if ($self->authInfo->{id}) != 2; # Yeah, yorhel-only function
-
-  # rarely used admin function, won't really need translating
-
-  # confirm
-  if(!$act) {
-    my $code = $self->authGetCode("/u$uid/del/o");
-    my $u = $self->dbUserGet(uid => $uid, what => 'hide_list')->[0];
-    return $self->resNotFound if !$u->{id};
-    $self->htmlHeader(title => 'Delete user', noindex => 1);
-    $self->htmlMainTabs('u', $u, 'del');
-    div class => 'mainbox';
-     div class => 'warning';
-      h2 'Delete user';
-      p;
-       lit qq|Are you sure you want to remove <a href="/u$uid">$u->{username}</a>'s account?<br /><br />|
-          .qq|<a href="/u$uid/del/o?formcode=$code">Yes, I'm not kidding!</a>|;
-      end;
-     end;
-    end;
-    $self->htmlFooter;
-  }
-  # delete
-  elsif($act eq '/o') {
-    return if !$self->authCheckCode;
-    $self->dbUserDel($uid);
-    $self->resRedirect("/u$uid/del/d", 'post');
-  }
-  # done
-  elsif($act eq '/d') {
-    $self->htmlHeader(title => 'Delete user', noindex => 1);
-    div class => 'mainbox';
-     div class => 'notice';
-      p 'User deleted.';
-     end;
-    end;
-    $self->htmlFooter;
-  }
 }
 
 

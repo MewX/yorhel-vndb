@@ -82,12 +82,6 @@ sub htmlMainTabs {
      end;
    }
 
-   if($type eq 'u' && ($self->authInfo->{id}||0) == 2) {
-     li $sel eq 'del' ? (class => 'tabselected') : ();
-      a href => "/$id/del", 'remove';
-     end;
-   }
-
    if($type eq 'v') {
     li $sel eq 'releases' ? (class => 'tabselected') : ();
     a href => "/$id/releases", 'releases';

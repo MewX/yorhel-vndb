@@ -322,7 +322,6 @@ sub _maintabs_ {
         t tagmod => "/$id/tagmod", 'modify tags' if $t eq 'v' && auth->permTag && !$o->{entry_hidden};
         t copy => "/$id/copy", 'copy' if $t =~ /[rc]/ && can_edit $t, $o;
         t edit => "/$id/edit", 'edit' if can_edit $t, $o;
-        t del => "/$id/del", 'remove' if $t eq 'u' && auth && auth->uid == 2;
         t releases => "/$id/releases", 'releases' if $t eq 'v';
 
         t rgraph => "/$id/rg", 'relations'
