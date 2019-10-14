@@ -26,6 +26,8 @@ our @EXPORT = qw/
     framework_
     revision_
     paginate_
+    sortable_
+    searchbox_
 /;
 
 
@@ -598,7 +600,7 @@ sub revision_ {
 
 # Creates next/previous buttons (tabs), if needed.
 # Arguments:
-#   url generator (code reference that takes $_ and returns a url for that page).
+#   url generator (code reference that takes ('p', $pagenumber) as arguments with $_=$pagenumber and returns a url for that page).
 #   current page number (1..n),
 #   nextpage (0/1 or, if the full count is known: [$total, $perpage]),
 #   alignment (t/b)
@@ -611,7 +613,7 @@ sub paginate_ {
         my($left, $page, $label) = @_;
         li_ mkclass(left => $left), sub {
             local $_ = $page;
-            my $u = $url->();
+            my $u = $url->(p => $page);
             a_ href => $u, $label;
         }
     }
@@ -633,6 +635,37 @@ sub paginate_ {
         $l > $_    and tab_ 0, $p+$_, $p+$_ for (reverse 2..($nc>$l-2?$l-2:$nc-1));
         $l > 1     and tab_ 0, $p+1, 'next ›';
     }
+}
+
+
+# Generate sort buttons for a table header. This function assumes that sorting
+# options are given as query parameters: 's' for the $column_name to sort on
+# and 'o' for order ('a'sc/'d'esc).
+# Options: $column_title, $column_name, $opt, $url
+# Where $url is a function that is given ('p', undef, 's', $column_name, 'o', $order) and returns a URL.
+sub sortable_ {
+    my($name, $opt, $url) = @_;
+    $opt->{s} eq $name && $opt->{o} eq 'a' ? txt_ ' ▴' : a_ href => $url->(p => undef, s => $name, o => 'a'), ' ▴';
+    $opt->{s} eq $name && $opt->{o} eq 'd' ? txt_  '▾' : a_ href => $url->(p => undef, s => $name, o => 'd'),  '▾';
+}
+
+
+sub searchbox_ {
+      my($sel, $value) = @_;
+      fieldset_ class => 'search', sub {
+          p_ id => 'searchtabs', sub {
+              a_ href => '/v/all', $sel eq 'v' ? (class => 'sel') : (), 'Visual novels';
+              a_ href => '/r',     $sel eq 'r' ? (class => 'sel') : (), 'Releases';
+              a_ href => '/p/all', $sel eq 'p' ? (class => 'sel') : (), 'Producers';
+              a_ href => '/s/all', $sel eq 's' ? (class => 'sel') : (), 'Staff';
+              a_ href => '/c/all', $sel eq 'c' ? (class => 'sel') : (), 'Characters';
+              a_ href => '/g',     $sel eq 'g' ? (class => 'sel') : (), 'Tags';
+              a_ href => '/i',     $sel eq 'i' ? (class => 'sel') : (), 'Traits';
+              a_ href => '/u/all', $sel eq 'u' ? (class => 'sel') : (), 'Users';
+          };
+          input_ type => 'text', name => 'q', id => 'q', class => 'text', value => $value;
+          input_ type => 'submit', class => 'submit', value => 'Search!';
+      };
 }
 
 1;

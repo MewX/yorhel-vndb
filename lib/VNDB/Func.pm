@@ -3,7 +3,7 @@ package VNDB::Func;
 
 use strict;
 use warnings;
-use TUWF ':html', 'kv_validate', 'xml_escape';
+use TUWF ':html', 'kv_validate', 'xml_escape', 'uri_escape';
 use Exporter 'import';
 use POSIX 'strftime', 'ceil', 'floor';
 use JSON::XS;
@@ -17,6 +17,7 @@ our @EXPORT = (@VNDBUtil::EXPORT, 'bb2html', 'bb2text', qw|
   lang_attr
   json_encode json_decode script_json
   form_compare
+  query_encode
 |);
 
 
@@ -332,6 +333,16 @@ sub form_compare {
     }
   }
   return 0;
+}
+
+
+# Encode query parameters. Takes a hash or hashref with key/values, supports array values.
+sub query_encode {
+    my $o = @_ == 1 ? $_[0] : {@_};
+    return join '&', map {
+        my($k, $v) = ($_, $o->{$_});
+        !defined $v ? () : ref $v ? map "$k=".uri_escape($_), sort @$v : "$k=".uri_escape($v)
+    } sort keys %$o;
 }
 
 1;

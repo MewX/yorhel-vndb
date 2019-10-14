@@ -51,15 +51,6 @@ sub fetch {
 }
 
 
-sub _filturl {
-    my($filt) = @_;
-    return '?'.join '&', map {
-        my $k = $_;
-        ref $filt->{$k} ? map "$k=$_", sort $filt->{$k}->@* : "$k=$filt->{$k}"
-    } sort keys %$filt;
-}
-
-
 # Also used by User::Page.
 # %opt: nopage => 1/0, results => $num
 sub tablebox_ {
@@ -67,7 +58,7 @@ sub tablebox_ {
 
     my($lst, $np) = fetch $type, $id, $filt, \%opt;
 
-    my sub url { _filturl {%$filt, p => $_} }
+    my sub url { '?'.query_encode %$filt, p => $_ }
 
     paginate_ \&url, $filt->{p}, $np, 't' unless $opt{nopage};
     div_ class => 'mainbox browse history', sub {

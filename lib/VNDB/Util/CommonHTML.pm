@@ -418,22 +418,7 @@ sub htmlVoteStats {
 
 
 sub htmlSearchBox {
-  my($self, $sel, $v) = @_;
-
-  fieldset class => 'search';
-   p id => 'searchtabs';
-    a href => '/v/all', $sel eq 'v' ? (class => 'sel') : (), 'Visual novels';
-    a href => '/r',     $sel eq 'r' ? (class => 'sel') : (), 'Releases';
-    a href => '/p/all', $sel eq 'p' ? (class => 'sel') : (), 'Producers';
-    a href => '/s/all', $sel eq 's' ? (class => 'sel') : (), 'Staff';
-    a href => '/c/all', $sel eq 'c' ? (class => 'sel') : (), 'Characters';
-    a href => '/g',     $sel eq 'g' ? (class => 'sel') : (), 'Tags';
-    a href => '/i',     $sel eq 'i' ? (class => 'sel') : (), 'Traits';
-    a href => '/u/all', $sel eq 'u' ? (class => 'sel') : (), 'Users';
-   end;
-   input type => 'text', name => 'q', id => 'q', class => 'text', value => $v;
-   input type => 'submit', class => 'submit', value => 'Search!';
-  end 'fieldset';
+  shift; VNWeb::HTML::searchbox_(@_);
 }
 
 
