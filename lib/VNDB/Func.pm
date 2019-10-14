@@ -14,6 +14,7 @@ our @EXPORT = (@VNDBUtil::EXPORT, 'bb2html', 'bb2text', qw|
   clearfloat cssicon tagscore minage fil_parse fil_serialize parenttags
   childtags charspoil imgpath imgurl
   fmtvote fmtmedia fmtvnlen fmtage fmtdatestr fmtdate fmtrating fmtspoil
+  lang_attr
   json_encode json_decode script_json
   form_compare
 |);
@@ -273,6 +274,19 @@ sub fmtspoil {
    'no spoiler',
    'minor spoiler',
    'major spoiler']->[shift()+1];
+}
+
+
+# Generates a HTML 'lang' attribute given a list of possible languages.
+# This is used for the 'original language' field, which we can safely assume is not used for latin-alphabet languages.
+sub lang_attr {
+    my @l = ref $_[0] ? $_[0]->@* : @_;
+    # Choose Japanese, Chinese or Korean (in order of likelyness) if those are in the list.
+    return (lang => 'ja') if grep $_ eq 'ja', @l;
+    return (lang => 'zh') if grep $_ eq 'zh', @l;
+    return (lang => 'ko') if grep $_ eq 'ko', @l;
+    return (lang => $l[0]) if @l == 1;
+    ()
 }
 
 

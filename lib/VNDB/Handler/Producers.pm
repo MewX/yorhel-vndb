@@ -86,7 +86,7 @@ sub page {
   div class => 'mainbox';
    $self->htmlItemMessage('p', $p);
    h1 $p->{name};
-   h2 class => 'alttitle', $p->{original} if $p->{original};
+   h2 class => 'alttitle', lang => $p->{lang}, $p->{original} if $p->{original};
    p class => 'center';
     txt "$LANGUAGE{$p->{lang}} $PRODUCER_TYPE{$p->{type}}";
     if($p->{alias}) {

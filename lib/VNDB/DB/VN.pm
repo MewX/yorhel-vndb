@@ -111,7 +111,7 @@ sub dbVNGet {
 
   my $tag_ids = $o{tag_inc} && join ',', ref $o{tag_inc} ? @{$o{tag_inc}} : $o{tag_inc};
   my @select = ( # see https://rt.cpan.org/Ticket/Display.html?id=54224 for the cast on c_languages and c_platforms
-    qw|v.id v.locked v.hidden v.c_released v.c_languages::text[] v.c_platforms::text[] v.title v.original v.rgraph|,
+    qw|v.id v.locked v.hidden v.c_released v.c_languages::text[] v.c_olang::text[] v.c_platforms::text[] v.title v.original v.rgraph|,
     $o{what} =~ /extended/ ? (
       qw|v.alias v.image v.img_nsfw v.length v.desc v.l_wp v.l_encubed v.l_renai v.l_wikidata| ) : (),
     $o{what} =~ /relgraph/ ? 'vg.svg' : (),

@@ -361,7 +361,7 @@ sub page {
   div class => 'mainbox';
    $self->htmlItemMessage('v', $v);
    h1 $v->{title};
-   h2 class => 'alttitle', $v->{original} if $v->{original};
+   h2 class => 'alttitle', lang_attr($v->{c_olang}), $v->{original} if $v->{original};
 
    div class => 'vndetails';
 
@@ -402,7 +402,7 @@ sub page {
      if($v->{original}) {
        Tr;
         td 'Original title';
-        td $v->{original};
+        td lang_attr($v->{c_olang}), $v->{original};
        end;
      }
      if($v->{alias}) {

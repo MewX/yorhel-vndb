@@ -91,7 +91,7 @@ sub page {
       [ ani_ero    => 'Ero animation',   serialize => sub { $ANIMATED{$_[0]}{txt} } ],
       [ engine     => 'Engine' ],
       [ producers  => 'Producers',       join => '<br />', split => sub {
-        map sprintf('<a href="/p%d" title="%s">%s</a> (%s)', $_->{id}, $_->{original}||$_->{name}, shorten($_->{name}, 50),
+        map sprintf('<a href="/p%d" title="%s">%s</a> (%s)', $_->{id}, xml_escape($_->{original}||$_->{name}), xml_escape(shorten($_->{name}, 50)),
           join(', ', $_->{developer} ? 'developer' :(), $_->{publisher} ? 'publisher' :())
         ), @{$_[0]};
       } ],
@@ -101,7 +101,7 @@ sub page {
   div class => 'mainbox release';
    $self->htmlItemMessage('r', $r);
    h1 $r->{title};
-   h2 class => 'alttitle', $r->{original} if $r->{original};
+   h2 class => 'alttitle', lang_attr($r->{languages}), $r->{original} if $r->{original};
 
    _infotable($self, $r);
 
@@ -138,7 +138,7 @@ sub _infotable {
    if($r->{original}) {
      Tr;
       td 'Original title';
-      td $r->{original};
+      td lang_attr($r->{languages}), $r->{original};
      end;
    }
 

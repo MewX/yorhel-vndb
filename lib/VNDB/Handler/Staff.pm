@@ -60,7 +60,7 @@ sub page {
   div class => 'mainbox staffpage';
    $self->htmlItemMessage('s', $s);
    h1 $s->{name};
-   h2 class => 'alttitle', $s->{original} if $s->{original};
+   h2 class => 'alttitle', lang => $s->{lang}, $s->{original} if $s->{original};
 
    # info table
    table class => 'stripe';
@@ -68,7 +68,7 @@ sub page {
      Tr;
       td colspan => 2;
        b style => 'margin-right: 10px', $s->{name};
-       b class => 'grayedout', style => 'margin-right: 10px', $s->{original} if $s->{original};
+       b class => 'grayedout', style => 'margin-right: 10px', lang => $s->{lang}, $s->{original} if $s->{original};
        cssicon "gen $s->{gender}", $GENDER{$s->{gender}} if $s->{gender} ne 'unknown';
       end;
      end;
@@ -87,7 +87,7 @@ sub page {
             td $alias->{original} ? () : (colspan => 2), class => 'key';
              txt $alias->{name};
             end;
-            td $alias->{original} if $alias->{original};
+            td lang => $s->{lang}, $alias->{original} if $alias->{original};
            end;
          }
         end;
