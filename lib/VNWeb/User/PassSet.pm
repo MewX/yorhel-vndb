@@ -32,7 +32,10 @@ json_api $reset_url, {
     my $token = tuwf->capture('token');
 
     return elm_InsecurePass if is_insecurepass($data->{password});
-    die "Invalid reset token" if !auth->setpass($id, $token, undef, $data->{password});
+    # "CSRF" is kind of wrong here, but the message advices to reload the page,
+    # which will give a 404, which should be a good enough indication that the
+    # token has expired. This case won't happen often.
+    return elm_CSRF if !auth->setpass($id, $token, undef, $data->{password});
     tuwf->dbExeci('UPDATE users SET email_confirmed = true WHERE id =', \$id);
     elm_Success
 };
