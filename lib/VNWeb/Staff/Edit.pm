@@ -1,0 +1,103 @@
+package VNWeb::Staff::Edit;
+
+use VNWeb::Prelude;
+
+
+my $FORM = {
+    aid         => { int => 1, range => [ -1000, 1<<40 ] }, # X
+    alias       => { maxlength => 100, sort_keys => 'aid', aoh => {
+        aid       => { int => 1, range => [ -1000, 1<<40 ] }, # X, negative IDs are for new aliases
+        name      => { maxlength => 200 },
+        original  => { maxlength => 200, required => 0, default => '' },
+        inuse     => { anybool => 1, _when => 'out' },
+    } },
+    desc       => { required => 0, default => '', maxlength => 5000 },
+    gender     => { required => 0, default => 'unknown', enum => [qw[unknown m f]] },
+    lang       => { language => 1 },
+    l_site     => { required => 0, default => '', weburl => 1 },
+    l_wikidata => { required => 0, default => 0,  id => 1 },
+    l_twitter  => { required => 0, default => '', regex => qr/^\S+$/, maxlength => 16 },
+    l_anidb    => { required => 0, id => 1, default => undef },
+    l_pixiv    => { required => 0, id => 1, default => 0 },
+    hidden     => { anybool => 1 },
+    locked     => { anybool => 1 },
+
+    id         => { _when => 'out', id => 1 },
+    authmod    => { _when => 'out', anybool => 1 },
+    editsum    => { _when => 'in out', editsum => 1 },
+};
+
+my $FORM_OUT = form_compile out => $FORM;
+my $FORM_IN  = form_compile in  => $FORM;
+my $FORM_CMP = form_compile cmp => $FORM;
+
+elm_form StaffEdit => $FORM_OUT, $FORM_IN;
+
+
+TUWF::get qr{/$RE{srev}/edit} => sub {
+    my $e = db_entry s => tuwf->capture('id'), tuwf->capture('rev') or return tuwf->resNotFound;
+    return tuwf->resDenied if !can_edit s => $e;
+
+    $e->{authmod} = auth->permDbmod;
+    $e->{editsum} = $e->{chrev} == $e->{maxrev} ? '' : "Reverted to revision s$e->{id}.$e->{chrev}";
+
+    enrich_merge aid => sub {
+        'SELECT aid, EXISTS(SELECT 1 FROM vn_staff WHERE aid = x.aid UNION ALL SELECT 1 FROM vn_seiyuu WHERE aid = x.aid) AS inuse
+           FROM unnest(', sql_array(@$_), '::int[]) AS x(aid)'
+    }, $e->{alias};
+
+    my $name = (grep $_->{aid} == $e->{aid}, @{$e->{alias}})[0]{name};
+    framework_ title => "Edit $name", type => 's', dbobj => $e, tab => 'edit',
+    sub {
+        editmsg_ s => $e, "Edit $name";
+        elm_ 'StaffEdit.Main' => $FORM_OUT, $e;
+    };
+};
+
+
+TUWF::get qr{/s/new}, sub {
+    return tuwf->resDenied if !can_edit s => undef;
+    framework_ title => 'Add staff member',
+    sub {
+        editmsg_ s => undef, 'Add staff member';
+        elm_ 'StaffEdit.New';
+    };
+};
+
+
+json_api qr{/(?:$RE{sid}/edit|s/add)}, $FORM_IN, sub {
+    my $data = shift;
+    my $new = !tuwf->capture('id');
+    my $e = $new ? { id => 0 } : db_entry s => tuwf->capture('id') or return tuwf->resNotFound;
+    return elm_Unauth if !can_edit s => $e;
+
+    if(!auth->permDbmod) {
+        $data->{hidden} = $e->{hidden}||0;
+        $data->{locked} = $e->{locked}||0;
+    }
+    $data->{l_wp} = $e->{l_wp}||'';
+    $data->{desc} = bb_subst_links $data->{desc};
+
+    # The form validation only checks for duplicate aid's, but the name+original should also be unique.
+    my %names;
+    die "Duplicate aliases" if grep $names{"$_->{name}\x00$_->{original}"}++, $data->{alias}->@*;
+
+    # For positive alias IDs: Make sure they exist and are owned by this entry.
+    validate_dbid
+        sql('SELECT aid FROM staff_alias WHERE id =', \$e->{id}, 'AND aid IN'),
+        grep $_>=0, map $_->{aid}, $data->{alias}->@*;
+
+    # For negative alias IDs: Assign a new ID.
+    for my $alias (grep $_->{aid} < 0, $data->{alias}->@*) {
+        my $new = tuwf->dbVali(select => sql_func nextval => \'staff_alias_aid_seq');
+        $data->{aid} = $new if $alias->{aid} == $data->{aid};
+        $alias->{aid} = $new;
+    }
+    # We rely on Postgres to throw an error if we attempt to delete an alias that is still being referenced.
+
+    return elm_Unchanged if !$new && !form_changed $FORM_CMP, $data, $e;
+    my($id,undef,$rev) = db_edit s => $e->{id}, $data;
+    elm_Changed $id, $rev;
+};
+
+1;

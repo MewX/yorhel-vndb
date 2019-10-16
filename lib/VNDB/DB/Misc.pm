@@ -40,7 +40,6 @@ sub dbItemEdit {
   $self->dbProducerRevisionInsert(\%o) if $type eq 'p';
   $self->dbReleaseRevisionInsert( \%o) if $type eq 'r';
   $self->dbCharRevisionInsert(    \%o) if $type eq 'c';
-  $self->dbStaffRevisionInsert(   \%o) if $type eq 's';
 
   return $self->dbRow('SELECT * FROM edit_!s_commit()', $type);
 }

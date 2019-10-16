@@ -161,7 +161,7 @@ sub _enrich {
     return if !keys %ids;
 
     # Fetch the data
-    $sql = ref $sql eq 'CODE' ? $sql->([keys %ids]) : sql $sql, [keys %ids];
+    $sql = ref $sql eq 'CODE' ? do { local $_ = [keys %ids]; sql $sql->($_) } : sql $sql, [keys %ids];
     my $data = tuwf->dbAlli($sql);
 
     # And merge
@@ -237,7 +237,7 @@ my $entry_types = do {
 # Returns everything for a specific entry ID. The top-level hash also includes
 # the following keys:
 #
-#   id, chid, rev, maxrev, hidden, locked, entry_hidden, entry_locked
+#   id, chid, chrev, maxrev, hidden, locked, entry_hidden, entry_locked
 #
 # (Ordering of arrays is unspecified)
 #
@@ -318,10 +318,11 @@ sub db_edit {
 
     while(my($name, $tbl) = each $t->{tables}->%*) {
         my $base = $tbl->{name} =~ s/_hist$//r;
-        my @cols = sql_comma(map sql_identifier($_->{name}), $tbl->{cols}->$@);
+        my @colnames = grep $_ ne 'chid', map $_->{name}, $tbl->{cols}->@*;
+        my @cols = sql_comma(map sql_identifier($_), @colnames);
         my @rows = map {
             my $d = $_;
-            sql '(', sql_comma(map \$d, $tbl->{cols}->@*), ')'
+            sql '(', sql_comma(map \$d->{$_}, @colnames), ')'
         } $data->{$name}->@*;
 
         tuwf->dbExeci("DELETE FROM edit_${base}");

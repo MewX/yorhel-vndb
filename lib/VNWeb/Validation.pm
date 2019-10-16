@@ -3,14 +3,18 @@ package VNWeb::Validation;
 use v5.26;
 use TUWF;
 use PWLookup;
+use VNDB::Types;
 use VNDB::Config;
 use VNWeb::Auth;
+use VNWeb::DB;
+use Carp 'croak';
 use Exporter 'import';
 
 our @EXPORT = qw/
     is_insecurepass
     form_compile
     form_changed
+    validate_dbid
     can_edit
 /;
 
@@ -22,6 +26,20 @@ TUWF::set custom_validations => {
     upage       => { uint => 1, min => 1, required => 0, default => 1 }, # pagination without a maximum
     username    => { regex => qr/^(?!-*[a-z][0-9]+-*$)[a-z0-9-]*$/, minlength => 2, maxlength => 15 },
     password    => { length => [ 4, 500 ] },
+    language    => { enum => \%LANGUAGE },
+    # Sort an array by the listed hash keys, using string comparison on each key
+    sort_keys   => sub {
+        my @keys = ref $_[0] eq 'ARRAY' ? @{$_[0]} : $_[0];
+        +{ type => 'array', sort => sub {
+            for(@keys) {
+                my $c = defined($_[0]{$_}) cmp defined($_[1]{$_}) || (defined($_[0]{$_}) && $_[0]{$_} cmp $_[1]{$_});
+                return $c if $c;
+            }
+            0
+        } }
+    },
+    # Sorted and unique array-of-hashes (default order is sort_keys on the sorted keys...)
+    aoh         => sub { +{ type => 'array', unique => 1, sort_keys => [sort keys %{$_[0]}], values => { type => 'hash', keys => $_[0] } } },
 };
 
 
@@ -85,6 +103,24 @@ sub form_changed {
     #warn "a=".JSON::XS->new->pretty->canonical->encode($na);
     #warn "b=".JSON::XS->new->pretty->canonical->encode($nb);
     !_eq_deep $na, $nb;
+}
+
+
+# Validate identifiers against an SQL query. The query must end with a 'id IN'
+# clause, where the @ids array is appended. The query must return exactly 1
+# column, the id of each entry. This function throws an error if an id is
+# missing from the query. For example, to test for non-hidden VNs:
+#
+#   validate_dbid 'SELECT id FROM vn WHERE NOT hidden AND id IN', 2,3,5,7,...;
+#
+# If any of those ids is hidden or not in the database, an error is thrown.
+sub validate_dbid {
+    my($sql, @ids) = @_;
+    return if !@ids;
+    $sql = ref $sql eq 'CODE' ? do { local $_ = \@ids; sql $sql->(\@ids) } : sql $sql, \@ids;
+    my %dbids = map +((values %$_)[0],1), @{ tuwf->dbAlli($sql) };
+    my @missing = grep !$dbids{$_}, @ids;
+    croak "Invalid database IDs: ".join(',', @missing) if @missing;
 }
 
 

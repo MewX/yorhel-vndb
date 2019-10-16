@@ -1,11 +1,11 @@
 package VNDB::BBCode;
 
-use strict;
+use v5.26;
 use warnings;
 use Exporter 'import';
 use TUWF::XML 'xml_escape';
 
-our @EXPORT = qw/bb2html bb2text/;
+our @EXPORT = qw/bb2html bb2text bb_subst_links/;
 
 # Supported BBCode:
 #  [spoiler] .. [/spoiler]
@@ -246,6 +246,53 @@ sub bb2text {
     1;
   };
   $ret;
+}
+
+
+# Turn (most) 'dblink's into [url=..] links. This function relies on TUWF to do
+# the database querying, so can't be used from Multi.
+# Doesn't handle:
+# - d+, t+, r+ and u+ links
+# - item revisions
+sub bb_subst_links {
+  my $msg = shift;
+
+  # Parse a message and create an index of links to resolve
+  my %lookup;
+  parse $msg, sub {
+    my($code, $tag) = @_;
+    $lookup{$1}{$2} = 1 if $tag eq 'dblink' && $code =~ /^(.)(\d+)/;
+    1;
+  };
+  return $msg unless %lookup;
+
+  # Now resolve the links
+  state $types = { # Query must return 'id' and 'name' columns, list of IDs will be appended to it.
+    v => 'SELECT id, title AS name FROM vn WHERE id IN',
+    c => 'SELECT id, name FROM chars WHERE id IN',
+    p => 'SELECT id, name FROM producers WHERE id IN',
+    g => 'SELECT id, name FROM tags WHERE id IN',
+    i => 'SELECT id, name FROM traits WHERE id IN',
+    s => 'SELECT s.id, sa.name FROM staff_alias sa JOIN staff s ON s.aid = sa.id WHERE s.id IN',
+  };
+  my %links;
+  for my $type (keys %$types) {
+    next if !$lookup{$type};
+    my $lst = $TUWF::OBJ->dbAlli($types->{$type}, [keys %{$lookup{$type}}]);
+    $links{$type . $_->{id}} = $_->{name} for @$lst;
+  }
+  return $msg unless %links;
+
+  # Now substitute
+  my $result = '';
+  parse $msg, sub {
+    my($code, $tag) = @_;
+    $result .= $tag eq 'dblink' && $links{$code}
+      ? sprintf '[url=/%s]%s[/url]', $code, $links{$code}
+      : $code;
+    1;
+  };
+  return $result;
 }
 
 

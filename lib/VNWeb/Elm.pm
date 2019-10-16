@@ -234,6 +234,9 @@ sub write_types {
     $data .= def skins      => 'List (String, String)' =>
                 list map tuple(string $_, string tuwf->{skins}{$_}[0]),
                 sort { tuwf->{skins}{$a}[0] cmp tuwf->{skins}{$b}[0] } keys tuwf->{skins}->%*;
+    $data .= def languages  => 'List (String, String)' =>
+                list map tuple(string $_, string $LANGUAGE{$_}),
+                sort { $LANGUAGE{$a} cmp $LANGUAGE{$b} } keys %LANGUAGE;
 
     write_module Types => $data;
 }

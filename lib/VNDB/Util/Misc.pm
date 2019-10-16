@@ -7,7 +7,7 @@ use Exporter 'import';
 use TUWF ':html';
 use VNDB::Func;
 use VNDB::Types;
-use VNDB::BBCode ();
+use VNDB::BBCode;
 
 our @EXPORT = qw|filFetchDB filCompat bbSubstLinks entryLinks|;
 
@@ -114,52 +114,9 @@ sub filCompat {
 
 
 sub bbSubstLinks {
-  my ($self, $msg) = @_;
-
-  # Parse a message and create an index of links to resolve
-  my %lookup;
-  VNDB::BBCode::parse $msg, sub {
-    my($code, $tag) = @_;
-    $lookup{$1}{$2} = 1 if $tag eq 'dblink' && $code =~ /^(.)(\d+)/;
-    1;
-  };
-  return $msg unless %lookup;
-
-  # Now resolve the links
-  my %links;
-  my @opt = (results => 50);
-
-  if ($lookup{v}) {
-    $links{"v$_->{id}"} = $_->{title} for (@{$self->dbVNGet(id => [keys %{$lookup{v}}], @opt)});
-  }
-  if ($lookup{c}) {
-    $links{"c$_->{id}"} = $_->{name} for (@{$self->dbCharGet(id => [keys %{$lookup{c}}], @opt)});
-  }
-  if ($lookup{p}) {
-    $links{"p$_->{id}"} = $_->{name} for (@{$self->dbProducerGet(id => [keys %{$lookup{p}}], @opt)});
-  }
-  if ($lookup{g}) {
-    $links{"g$_->{id}"} = $_->{name} for (@{$self->dbTagGet(id => [keys %{$lookup{g}}], @opt)});
-  }
-  if ($lookup{i}) {
-    $links{"i$_->{id}"} = $_->{name} for (@{$self->dbTraitGet(id => [keys %{$lookup{i}}], @opt)});
-  }
-  if ($lookup{s}) {
-    $links{"s$_->{id}"} = $_->{name} for (@{$self->dbStaffGet(id => [keys %{$lookup{s}}], @opt)});
-  }
-  return $msg unless %links;
-
-  # Now substitute
-  my $result = '';
-  VNDB::BBCode::parse $msg, sub {
-    my($code, $tag) = @_;
-    $result .= $tag eq 'dblink' && $links{$code}
-      ? sprintf '[url=/%s]%s[/url]', $code, $links{$code}
-      : $code;
-    1;
-  };
-  return $result;
+  shift; bb_subst_links @_;
 }
+
 
 
 # Returns an arrayref of links, each link being [$title, $url, $price]

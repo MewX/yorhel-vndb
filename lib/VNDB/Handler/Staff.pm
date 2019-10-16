@@ -10,8 +10,6 @@ use List::Util qw(first);
 
 TUWF::register(
   qr{s([1-9]\d*)(?:\.([1-9]\d*))?} => \&page,
-  qr{s(?:([1-9]\d*)(?:\.([1-9]\d*))?/edit|/new)}
-    => \&edit,
   qr{s/([a-z0]|all)}               => \&list,
   qr{xml/staff\.xml}               => \&staffxml,
 );
@@ -175,124 +173,6 @@ sub _cast {
       end;
     },
   );
-}
-
-
-sub edit {
-  my($self, $sid, $rev) = @_;
-
-  my $s = $sid && $self->dbStaffGetRev(id => $sid, what => 'extended aliases roles', $rev ? (rev => $rev) : ())->[0];
-  return $self->resNotFound if $sid && !$s->{id};
-  $rev = undef if !$s || $s->{lastrev};
-
-  return $self->htmlDenied if !$self->authCan('edit')
-    || $sid && (($s->{locked} || $s->{hidden}) && !$self->authCan('dbmod'));
-
-  my %b4 = !$sid ? () : (
-    (map { $_ => $s->{$_} } qw|name original gender lang desc l_site l_wikidata l_twitter l_anidb l_pixiv ihid ilock|),
-    primary => $s->{aid},
-    aliases => [
-      map +{ aid => $_->{aid}, name => $_->{name}, orig => $_->{original} },
-      sort { $a->{name} cmp $b->{name} || $a->{original} cmp $b->{original} } @{$s->{aliases}}
-    ],
-  );
-  my $frm;
-
-  if ($self->reqMethod eq 'POST') {
-    return if !$self->authCheckCode;
-    $frm = $self->formValidate (
-      { post => 'name',          maxlength => 200 },
-      { post => 'original',      required  => 0, maxlength => 200,  default => '' },
-      { post => 'primary',       required  => 0, template => 'id', default => 0 },
-      { post => 'desc',          required  => 0, maxlength => 5000, default => '' },
-      { post => 'gender',        required  => 0, default => 'unknown', enum => [qw|unknown m f|] },
-      { post => 'lang',          enum      => [ keys %LANGUAGE ] },
-      { post => 'l_site',        required => 0, template => 'weburl', maxlength => 250, default => '' },
-      { post => 'l_wikidata',    required => 0, template => 'wikidata' },
-      { post => 'l_twitter',     required => 0, maxlength => 16, default => '', regex => [ qr/^\S+$/, 'Invalid twitter username' ] },
-      { post => 'l_anidb',       required => 0, template => 'id', default => undef },
-      { post => 'l_pixiv',       required => 0, default => 0, template => 'uint' },
-      { post => 'aliases',       template => 'json', json_sort => ['name','orig'], json_fields => [
-        { field => 'name', required => 1, maxlength => 200 },
-        { field => 'orig', required => 0, maxlength => 200, default => '' },
-        { field => 'aid',  required => 0, template => 'id', default => 0 },
-      ]},
-      { post => 'editsum',       template => 'editsum' },
-      { post => 'ihid',          required  => 0 },
-      { post => 'ilock',         required  => 0 },
-    );
-
-    if(!$frm->{_err}) {
-      my %old_aliases = $sid ? ( map +($_->{aid} => 1), @{$self->dbStaffAliasIds($sid)} ) : ();
-      $frm->{primary} = 0 unless exists $old_aliases{$frm->{primary}};
-
-      # reset aid to zero for newly added aliases.
-      $_->{aid} *= $old_aliases{$_->{aid}} ? 1 : 0 for(@{$frm->{aliases}});
-
-      # Make sure no aliases that have been linked to a VN are removed.
-      my %new_aliases = map +($_, 1), grep $_, $frm->{primary}, map $_->{aid}, @{$frm->{aliases}};
-      $frm->{_err} = [ "Can't remove an alias that is still linked to a VN." ]
-        if grep !$new_aliases{$_->{aid}}, @{$s->{roles}}, @{$self->{cast}};
-    }
-
-    if(!$frm->{_err}) {
-      $frm->{ihid}   = $frm->{ihid} ?1:0;
-      $frm->{ilock}  = $frm->{ilock}?1:0;
-      $frm->{aid}    = $frm->{primary} if $sid;
-      $frm->{desc}   = $self->bbSubstLinks($frm->{desc});
-      return $self->resRedirect("/s$sid", 'post') if $sid && !form_compare(\%b4, $frm);
-
-      my $nrev = $self->dbItemEdit(s => $sid ? ($s->{id}, $s->{rev}) : (undef, undef), %$frm);
-      return $self->resRedirect("/s$nrev->{itemid}.$nrev->{rev}", 'post');
-    }
-  }
-
-  $frm->{$_} //= $b4{$_} for keys %b4;
-  $frm->{editsum} //= sprintf 'Reverted to revision s%d.%d', $sid, $rev if $rev;
-  $frm->{lang} = 'ja' if !$sid && !defined $frm->{lang};
-
-  my $title = $s ? "Edit $s->{name}" : 'Add staff member';
-  $self->htmlHeader(title => $title, noindex => 1);
-  $self->htmlMainTabs('s', $s, 'edit') if $s;
-  $self->htmlEditMessage('s', $s, $title);
-  $self->htmlForm({ frm => $frm, action => $s ? "/s$sid/edit" : '/s/new', editsum => 1 },
-  staffe_geninfo => [ 'General info',
-    [ hidden => short => 'name' ],
-    [ hidden => short => 'original' ],
-    [ hidden => short => 'primary' ],
-    [ json   => short => 'aliases' ],
-    $sid && @{$s->{aliases}} ?
-      [ static => content => 'You may choose a different primary name.' ] : (),
-    [ static => label => 'Names', content => sub {
-      table id => 'names';
-       thead; Tr;
-        td class => 'tc_id'; end;
-        td class => 'tc_name', 'Name (romaji)';
-        td class => 'tc_original', 'Original'; td; end;
-       end; end;
-       tbody id => 'alias_tbl';
-        # filled with javascript
-       end;
-      end;
-    }],
-    [ static => content => '<br />' ],
-    [ text   => name => 'Staff note<br /><b class="standout">English please!</b>', short => 'desc', rows => 4 ],
-    [ select => name => 'Gender',short => 'gender', options => [
-       map [ $_, $GENDER{$_} ], qw(unknown m f) ] ],
-    [ select => name => 'Primary language', short => 'lang',
-      options => [ map [ $_, "$LANGUAGE{$_} ($_)" ], sort { $LANGUAGE{$a} cmp $LANGUAGE{$b} } keys %LANGUAGE ] ],
-    [ input  => name => 'Official page', short => 'l_site' ],
-    [ input    => short => 'l_wikidata',name => 'Wikidata ID',
-        value => $frm->{l_wikidata} ? "Q$frm->{l_wikidata}" : '',
-        post  => qq{ (<a href="$self->{url_static}/f/wikidata.png">How to find this</a>)}
-    ],
-    [ input  => name => 'Twitter username', short => 'l_twitter' ],
-    [ input  => name => 'AniDB creator ID', short => 'l_anidb' ],
-    [ input  => name => 'Pixiv ID',         short => 'l_pixiv' ],
-    [ static => content => '<br />' ],
-  ]);
-
-  $self->htmlFooter;
 }
 
 

@@ -145,7 +145,7 @@ fieldset.submit input[type=submit] { width: 150px; }
 fieldset.submit input[type=checkbox] { margin: 0 5px 0 15px; }
 fieldset.submit h2       { font-size: 13px!important; }
 fieldset.submit textarea { margin: 0 20px 5px 20px; }
-td.label, td.label label { width: 110px; }
+td.label, td.label label { width: 130px; }
 td.label label           { display: block; }
 td.field label           { margin: 0 5px 0 5px; }
 table.formtable          { margin: 0 20px 20px 20px; }
@@ -711,27 +711,27 @@ div.charsum_list .charsum_bubble {
 #jt_box_vn_staff h2 { margin: 0 0 3px 0px; }
 #jt_box_vn_cast  td,
 #jt_box_vn_staff td,
-#jt_box_staffe_geninfo table#names td { padding: 1px 2px; vertical-align: middle; }
-#jt_box_staffe_geninfo table#names tr#alias_new td { padding-top: 8px }
 #jt_box_vn_cast  td.tc_role,
 #jt_box_vn_cast  td.tc_role select,
 #jt_box_vn_staff td.tc_role,
 #jt_box_vn_staff td.tc_role select { width: 120px }
-#jt_box_vn_cast        td.tc_staff,
-#jt_box_vn_staff       td.tc_staff,
-#jt_box_staffe_geninfo td.tc_name,
-#jt_box_staffe_geninfo td.tc_original { width: 200px }
-#jt_box_vn_cast        td.tc_staff input,
-#jt_box_vn_staff       td.tc_staff input,
-#jt_box_staffe_geninfo td.tc_name input,
-#jt_box_staffe_geninfo td.tc_original input { width: 200px }
+#jt_box_vn_cast  td.tc_staff,
+#jt_box_vn_staff td.tc_staff,
+.staffedit       td.tc_name,
+.staffedit       td.tc_original { width: 200px }
+#jt_box_vn_cast  td.tc_staff input,
+#jt_box_vn_staff td.tc_staff input,
+.staffedit       td.tc_name input,
+.staffedit       td.tc_original input { width: 200px }
 #jt_box_vn_cast  td.tc_note,
 #jt_box_vn_cast  td.tc_note input,
 #jt_box_vn_staff td.tc_note,
 #jt_box_vn_staff td.tc_note input { width: 250px }
 #jt_box_vn_cast  td.tc_add,
 #jt_box_vn_staff td.tc_add,
-#jt_box_staffe_geninfo td.tc_add { width: 40px; text-align: left }
+.staffedit       td.tc_add { width: 40px; text-align: left }
+.staffedit table.names td { padding: 1px 2px; vertical-align: middle; }
+.staffedit table.names tr.alias_new td { padding-top: 8px }
 
 /***** Documentation pages *****/
 

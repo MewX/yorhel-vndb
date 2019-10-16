@@ -48,6 +48,3 @@ VARS = /*VARS*/;
 // Character editing (/c+/edit)
 //include chartraits.js
 //include charvns.js
-
-// Staff editing (/s+/edit)
-//include staffalias.js

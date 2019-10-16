@@ -82,6 +82,8 @@ inputTextArea : String -> String -> (String -> m) -> List (Attribute m) -> Html 
 inputTextArea nam val onch attrs = textarea (
     [ tabindex 10
     , onInput onch
+    , rows 4
+    , cols 50
     ]
     ++ attrs
     ++ (if nam == "" then [] else [ id nam, name nam ])
@@ -99,12 +101,33 @@ inputCheck nam val onch = input (
   ) []
 
 
+inputRadio : String -> Bool -> (Bool -> m) -> Html m
+inputRadio nam val onch = input (
+    [ type_ "radio"
+    , tabindex 10
+    , onCheck onch
+    , checked val
+    ]
+    ++ (if nam == "" then [] else [ name nam ])
+  ) []
+
+
+-- Same as an inputText, but formats/parses an integer as Q###
+inputWikidata : String -> Int -> (Int -> m) -> Html m
+inputWikidata nam val onch =
+  inputText nam
+            (if val == 0 then "" else "Q" ++ String.fromInt val)
+            (\v -> onch <| if v == "" then 0 else Maybe.withDefault val <| String.toInt <| if String.startsWith "Q" v then String.dropLeft 1 v else v)
+            [ pattern "^Q?[1-9][0-9]{0,8}$" ]
+
+
 -- Generate a form field (table row) with a label. The `label` string can be:
 --
---   "none"          -> To generate a full-width field (colspan=2)
---   ""              -> Empty label
---   "Some string"   -> Text label
---   "input::String" -> Label that refers to the named input
+--   "none"            -> To generate a full-width field (colspan=2)
+--   ""                -> Empty label
+--   "Some string"     -> Text label
+--   "Some string#eng" -> Text label with (English please!) message
+--   "input::String"   -> Label that refers to the named input (also supports #eng)
 --
 -- (Yeah, stringly typed arguments; I wish Elm had typeclasses)
 formField : String -> List (Html m) -> Html m
@@ -113,10 +136,13 @@ formField lbl cont =
   [ if lbl == "none"
     then text ""
     else
-      td [ class "label" ]
-      [ case String.split "::" lbl of
-          [name, txt] -> label [ for name ] [ text txt ]
-          txt         -> text <| String.concat txt
-      ]
+      let
+        (nlbl, eng) = if String.endsWith "#eng" lbl then (String.dropRight 4 lbl, True) else (lbl, False)
+        genlbl str = text str :: if eng then [ br [] [], b [ class "standout" ] [ text "English please!" ] ] else []
+      in
+        td [ class "label" ] <|
+          case String.split "::" nlbl of
+            [name, txt] -> [ label [ for name ] (genlbl txt) ]
+            txt         -> genlbl (String.concat txt)
   , td (class "field" :: if lbl == "none" then [ colspan 2 ] else []) cont
   ]

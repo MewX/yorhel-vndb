@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Exporter 'import';
 
-our @EXPORT = qw|dbStaffGet dbStaffGetRev dbStaffRevisionInsert dbStaffAliasIds|;
+our @EXPORT = qw|dbStaffGet dbStaffGetRev|;
 
 # options: results, page, id, aid, search, exact, truename, role, gender
 # what: extended changes roles aliases
@@ -151,46 +151,6 @@ sub _enrich {
   }
 
   return wantarray ? ($r, $np) : $r;
-}
-
-
-# Updates the edit_* tables, used from dbItemEdit()
-# Arguments: { columns in staff_rev and staff_alias},
-sub dbStaffRevisionInsert {
-  my($self, $o) = @_;
-
-  $self->dbExec('DELETE FROM edit_staff_alias');
-  if($o->{aid}) {
-    $self->dbExec(q|
-      INSERT INTO edit_staff_alias (aid, name, original) VALUES (?, ?, ?)|,
-      $o->{aid}, $o->{name}, $o->{original});
-  } else {
-    $o->{aid} = $self->dbRow(q|
-      INSERT INTO edit_staff_alias (name, original) VALUES (?, ?) RETURNING aid|,
-      $o->{name}, $o->{original})->{aid};
-  }
-
-  my %staff = map exists($o->{$_}) ? (qq|"$_" = ?|, $o->{$_}) : (),
-    qw|aid gender lang desc l_wp l_site l_twitter l_anidb l_wikidata l_pixiv|;
-  $self->dbExec('UPDATE edit_staff !H', \%staff) if %staff;
-  for my $a (@{$o->{aliases}}) {
-    if($a->{aid}) {
-      $self->dbExec('INSERT INTO edit_staff_alias (aid, name, original) VALUES (!l)', [ @{$a}{qw|aid name orig|} ]);
-    } else {
-      $self->dbExec('INSERT INTO edit_staff_alias (name, original) VALUES (?, ?)', $a->{name}, $a->{orig});
-    }
-  }
-}
-
-
-# returns alias IDs that are and were related to the given staff ID
-sub dbStaffAliasIds {
-  my($self, $sid) = @_;
-  return $self->dbAll(q|
-    SELECT DISTINCT sa.aid
-      FROM changes c
-      JOIN staff_alias_hist sa ON sa.chid = c.id
-      WHERE c.type = 's' AND c.itemid = ?|, $sid);
 }
 
 1;

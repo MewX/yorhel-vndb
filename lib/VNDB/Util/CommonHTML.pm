@@ -268,59 +268,9 @@ sub revdiff {
 
 
 # Generates a generic message to show as the header of the edit forms
-# Arguments: v/r/p, obj
+# Arguments: v/r/p, obj, title, copy
 sub htmlEditMessage {
-  my($self, $type, $obj, $title, $copy) = @_;
-  my $typename   = {v => 'visual novel', r => 'release', p => 'producer', c => 'character', s => 'person'}->{$type};
-  my $guidelines = {v => 2, r => 3, p => 4, c => 12, 's' => 16}->{$type};
-
-  div class => 'mainbox';
-   h1 $title;
-   if($copy) {
-     div class => 'warning';
-      h2 'You\'re not editing an entry!';
-      p;
-       txt 'You\'re about to insert a new entry into the database with information based on ';
-       a href => "/$type$obj->{id}", $obj->{title}||$obj->{name};
-       txt '.';
-       br;
-       txt 'Hit the \'edit\' tab on the right-top if you intended to edit the entry instead of creating a new one.';
-      end;
-     end;
-   }
-   div class => 'notice';
-    h2 'Before editing:';
-    ul;
-     li;
-      txt "Read the ";
-      a href=> "/d$guidelines", 'guidelines';
-      txt '!';
-     end;
-     if($obj) {
-       li;
-        txt 'Check for any existing discussions on the ';
-        a href => $type =~ /[cs]/ ? '/t/db' : $type eq 'r' ? "/t/v$obj->{vn}[0]{vid}" : "/t/$type$obj->{id}", 'discussion board';
-       end;
-       li;
-        txt 'Browse the ';
-        a href => "/$type$obj->{id}/hist", 'edit history';
-        txt ' for any recent changes related to what you want to change.';
-       end;
-     } elsif($type ne 'r') {
-       li;
-        a href => "/$type/all", 'Search the database';
-        txt " to see if we already have information about this $typename.";
-       end;
-     }
-    end;
-   end;
-   if($obj && !$obj->{lastrev}) {
-     div class => 'warning';
-      h2 'Reverting';
-      p "You are editing an old revision of this $typename. If you save it, all changes made after this revision will be reverted!";
-     end;
-   }
-  end 'div';
+    shift; VNWeb::HTML::editmsg_(@_);
 }
 
 

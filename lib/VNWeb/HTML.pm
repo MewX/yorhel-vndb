@@ -9,6 +9,7 @@ use JSON::XS;
 use TUWF ':html5_', 'uri_escape', 'html_escape', 'mkclass';
 use Exporter 'import';
 use POSIX 'ceil';
+use Carp 'croak';
 use JSON::XS;
 use VNDB::Config;
 use VNDB::BBCode;
@@ -28,6 +29,7 @@ our @EXPORT = qw/
     paginate_
     sortable_
     searchbox_
+    editmsg_
 /;
 
 
@@ -336,6 +338,15 @@ sub _maintabs_ {
 }
 
 
+# Attempt to figure out the board id from a database entry ($type, $dbobj) combination
+sub _board_id {
+    my($type, $obj) = @_;
+    $type =~ /[vp]/ ? $type.$obj->{id} :
+       $type eq 'r' && $obj->{vn}->@*  ? 'v'.$obj->{vn}[0]{vid} :
+       $type eq 'c' && $obj->{vns}->@* ? 'v'.$obj->{vns}[0]{vid} : 'db';
+}
+
+
 # Returns 1 if the page contents should be hidden.
 sub _hidden_msg_ {
     my $o = shift;
@@ -349,14 +360,13 @@ sub _hidden_msg_ {
           WHERE', { type => $o->{type}, itemid => $o->{dbobj}{id} },
          'ORDER BY id DESC LIMIT 1'
     );
-    my $board = $o->{type} =~ /[vp]/ ? $o->{type}.$o->{dbobj}{id} : 'db'; # TODO: Link to VN board for characters and releases?
     div_ class => 'mainbox', sub {
         h1_ $o->{title};
         div_ class => 'warning', sub {
             h2_ 'Item deleted';
             p_ sub {
                 txt_ 'This item has been deleted from the database. You may file a request on the ';
-                a_ href => "/t/$board", "discussion board";
+                a_ href => '/t/'._board_id($o->{type}, $o->{dbobj}), "discussion board";
                 txt_ ' if you believe that this entry should be restored.';
                 br_;
                 br_;
@@ -667,6 +677,70 @@ sub searchbox_ {
           input_ type => 'text', name => 'q', id => 'q', class => 'text', value => $value;
           input_ type => 'submit', class => 'submit', value => 'Search!';
       };
+}
+
+
+# Generate the initial mainbox when adding or editing a database entry, with a
+# friendly message pointing to the guidelines and stuff.
+# Args: $type ('v','r', etc), $obj (from db_entry(), or undef for new page), $page_title, $is_this_a_copy?
+sub editmsg_ {
+  my($type, $obj, $title, $copy) = @_;
+  my $typename   = {v => 'visual novel', r => 'release', p => 'producer', c => 'character', s => 'person'}->{$type};
+  my $guidelines = {v => 2,              r => 3,         p => 4,          c => 12,          s => 16      }->{$type};
+  croak "Unknown type: $type" if !$typename;
+
+  div_ class => 'mainbox', sub {
+      h1_ sub {
+          txt_ $title;
+          debug_ $obj if $obj;
+      };
+      if($copy) {
+          div_ class => 'warning', sub {
+              h2_ "You're not editing an entry!";
+              p_ sub {;
+                  txt_ "You're about to insert a new entry into the database with information based on ";
+                  a_ href => "/$type$obj->{id}", "$type$obj->{id}";
+                  txt_ '.';
+                  br_;
+                  txt_ "Hit the 'edit' tab on the right-top if you intended to edit the entry instead of creating a new one.";
+              }
+          }
+      }
+      # 'lastrev' is for compatibility with VNDB::*
+      if($obj && ($obj->{maxrev} ? $obj->{maxrev} != $obj->{chrev} : !$obj->{lastrev})) {
+          div_ class => 'warning', sub {
+              h2_ 'Reverting';
+              p_ "You are editing an old revision of this $typename. If you save it, all changes made after this revision will be reverted!";
+          }
+      }
+      div_ class => 'notice', sub {
+          h2_ 'Before editing:';
+          ul_ sub {
+              li_ sub {
+                  txt_ 'Read the ';
+                  a_ href=> "/d$guidelines", 'guidelines';
+                  txt_ '!';
+              };
+              if($obj) {
+                  li_ sub {
+                      txt_ 'Check for any existing discussions on the ';
+                      a_ href => '/t/'._board_id($type, $obj), 'discussion board';
+                  };
+                  # TODO: Include a list of the most recent edits in this page.
+                  li_ sub {
+                      txt_ 'Browse the ';
+                      a_ href => "/$type$obj->{id}/hist", 'edit history';
+                      txt_ ' for any recent changes related to what you want to change.';
+                  };
+              } elsif($type ne 'r') {
+                  li_ sub {
+                      a_ href => "/$type/all", 'Search the database';
+                      txt_ " to see if we already have information about this $typename.";
+                  }
+              }
+          }
+      };
+  }
 }
 
 1;
