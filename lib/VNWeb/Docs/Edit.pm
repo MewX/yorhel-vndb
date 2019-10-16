@@ -27,7 +27,7 @@ TUWF::get qr{/$RE{drev}/edit} => sub {
 
     $d->{editsum} = $d->{chrev} == $d->{maxrev} ? '' : "Reverted to revision d$d->{id}.$d->{chrev}";
 
-    framework_ title => "Edit $d->{title}", index => 0, type => 'd', dbobj => $d, tab => 'edit',
+    framework_ title => "Edit $d->{title}", type => 'd', dbobj => $d, tab => 'edit',
     sub {
         elm_ DocEdit => $FORM_OUT, $d;
     };

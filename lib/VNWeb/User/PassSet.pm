@@ -18,7 +18,7 @@ TUWF::get $reset_url, sub {
 
     return tuwf->resNotFound if !$name || !auth->isvalidtoken($id, $token);
 
-    framework_ title => 'Set password', index => 0, sub {
+    framework_ title => 'Set password', sub {
         elm_ 'User.PassSet', tuwf->compile({}), tuwf->reqPath;
     };
 };

@@ -5,7 +5,7 @@ use VNWeb::Prelude;
 
 TUWF::get '/u/register', sub {
     return tuwf->resRedirect('/', 'temp') if auth;
-    framework_ title => 'Register', index => 0, sub {
+    framework_ title => 'Register', sub {
         elm_ 'User.Register';
     };
 };

@@ -4,7 +4,7 @@ use VNWeb::Prelude;
 
 TUWF::get '/u/newpass' => sub {
     return tuwf->resRedirect('/', 'temp') if auth;
-    framework_ title => 'Password reset', index => 0, sub {
+    framework_ title => 'Password reset', sub {
         elm_ 'User.PassReset';
     };
 };

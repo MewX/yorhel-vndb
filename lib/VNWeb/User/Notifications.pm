@@ -111,7 +111,7 @@ TUWF::get qr{/$RE{uid}/notifies}, sub {
         'ORDER BY n.id', $opt->{r} ? 'DESC' : 'ASC'
     );
 
-    framework_ title => 'My notifications', index => 0,
+    framework_ title => 'My notifications',
     sub {
         div_ class => 'mainbox', sub {
             h1_ 'My notifications';

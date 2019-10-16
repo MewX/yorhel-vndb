@@ -140,7 +140,7 @@ sub _head_ {
         link_ rel => 'alternate', type => 'application/atom+xml', href => "/feeds/posts.atom",         title => 'Recent Posts';
     }
     meta_ name => 'csrf-token', content => auth->csrftoken;
-    meta_ name => 'robots', content => 'noindex' if defined $o->{index} && !$o->{index};
+    meta_ name => 'robots', content => 'noindex' if !$o->{index};
 
     # Opengraph metadata
     if($o->{og}) {
@@ -369,7 +369,7 @@ sub _hidden_msg_ {
 
 # Options:
 #   title      => $title
-#   index      => 1/0, default 1
+#   index      => 1/0, default 0
 #   feeds      => 1/0
 #   search     => $query
 #   og         => { opengraph metadata }

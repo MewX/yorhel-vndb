@@ -9,7 +9,7 @@ TUWF::get '/u/login' => sub {
     my $ref = tuwf->reqGet('ref');
     $ref = '/' if !$ref || $ref !~ /^\//;
 
-    framework_ title => 'Login', index => 0, sub {
+    framework_ title => 'Login', sub {
         elm_ 'User.Login' => tuwf->compile({}), $ref;
     };
 };

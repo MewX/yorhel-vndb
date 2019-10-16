@@ -50,7 +50,7 @@ TUWF::get qr{/$RE{drev}} => sub {
     my $html = $cache{$d->{chid}} || md2html $d->{content};
     $cache{$d->{chid}} ||= $html if $d->{chrev} == $d->{maxrev};
 
-    framework_ title => $d->{title}, type => 'd', dbobj => $d, hiddenmsg => 1,
+    framework_ title => $d->{title}, index => 1, type => 'd', dbobj => $d, hiddenmsg => 1,
     sub {
         _rev_ $d if tuwf->capture('rev');
         div_ class => 'mainbox', sub {

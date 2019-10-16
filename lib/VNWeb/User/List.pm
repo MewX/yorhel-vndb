@@ -78,7 +78,7 @@ TUWF::get qr{/u/(?<char>[0a-z]|all)}, sub {
     );
     my $count = @where ? tuwf->dbVali('SELECT count(*) FROM users WHERE', sql_and @where) : tuwf->{stats}{users};
 
-    framework_ title => 'Browse users', index => 0, sub {
+    framework_ title => 'Browse users', sub {
         div_ class => 'mainbox', sub {
             h1_ 'Browse users';
             form_ action => '/u/all', method => 'get', sub {

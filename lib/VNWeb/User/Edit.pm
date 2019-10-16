@@ -71,7 +71,7 @@ TUWF::get qr{/$RE{uid}/edit}, sub {
     }
 
     my $title = $u->{id} == auth->uid ? 'My Account' : "Edit $u->{username}";
-    framework_ title => $title, index => 0, type => 'u', dbobj => $u, tab => 'edit',
+    framework_ title => $title, type => 'u', dbobj => $u, tab => 'edit',
     sub {
         elm_ 'User.Edit', $FORM, $u;
     };
@@ -153,7 +153,7 @@ json_api qr{/u/edit}, $FORM, sub {
 TUWF::get qr{/$RE{uid}/setmail/(?<token>[a-f0-9]{40})}, sub {
     my $success = auth->setmail_confirm(tuwf->capture('id'), tuwf->capture('token'));
     my $title = $success ? 'E-mail confirmed' : 'Error confirming email';
-    framework_ title => $title, index => 0, sub {
+    framework_ title => $title, sub {
         div_ class => 'mainbox', sub {
             h1_ $title;
             div_ class => $success ? 'notice' : 'warning', sub {

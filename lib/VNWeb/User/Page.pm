@@ -143,7 +143,7 @@ TUWF::get qr{/$RE{uid}}, sub {
     });
 
     my $title = user_displayname($u)."'s profile";
-    framework_ title => $title, index => 0, type => 'u', pubskin => $u, dbobj => $u,
+    framework_ title => $title, type => 'u', pubskin => $u, dbobj => $u,
     sub {
         div_ class => 'mainbox userpage', sub {
             h1_ $title;
