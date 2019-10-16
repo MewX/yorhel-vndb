@@ -15,7 +15,7 @@ my $FORM = {
     gender     => { required => 0, default => 'unknown', enum => [qw[unknown m f]] },
     lang       => { language => 1 },
     l_site     => { required => 0, default => '', weburl => 1 },
-    l_wikidata => { required => 0, default => 0,  id => 1 },
+    l_wikidata => { required => 0, id => 1 },
     l_twitter  => { required => 0, default => '', regex => qr/^\S+$/, maxlength => 16 },
     l_anidb    => { required => 0, id => 1, default => undef },
     l_pixiv    => { required => 0, id => 1, default => 0 },

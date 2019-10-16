@@ -33,7 +33,7 @@ type alias Model =
   , gender      : String
   , lang        : String
   , l_site      : String
-  , l_wikidata  : Int
+  , l_wikidata  : Maybe Int
   , l_twitter   : String
   , l_anidb     : Maybe Int
   , l_pixiv     : Int
@@ -71,7 +71,7 @@ new =
   , gender      = "unknown"
   , lang        = "ja"
   , l_site      = ""
-  , l_wikidata  = 0
+  , l_wikidata  = Nothing
   , l_twitter   = ""
   , l_anidb     = Nothing
   , l_pixiv     = 0
@@ -110,7 +110,7 @@ type Msg
   | Lang String
   | Gender String
   | Website String
-  | LWikidata Int
+  | LWikidata (Maybe Int)
   | LTwitter String
   | LAnidb String
   | LPixiv String

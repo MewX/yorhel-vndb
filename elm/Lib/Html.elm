@@ -113,11 +113,13 @@ inputRadio nam val onch = input (
 
 
 -- Same as an inputText, but formats/parses an integer as Q###
-inputWikidata : String -> Int -> (Int -> m) -> Html m
+inputWikidata : String -> Maybe Int -> (Maybe Int -> m) -> Html m
 inputWikidata nam val onch =
   inputText nam
-            (if val == 0 then "" else "Q" ++ String.fromInt val)
-            (\v -> onch <| if v == "" then 0 else Maybe.withDefault val <| String.toInt <| if String.startsWith "Q" v then String.dropLeft 1 v else v)
+            (case val of
+              Nothing -> ""
+              Just v  -> "Q" ++ String.fromInt v)
+            (\v -> onch <| if v == "" then Nothing else String.toInt <| if String.startsWith "Q" v then String.dropLeft 1 v else v)
             [ pattern "^Q?[1-9][0-9]{0,8}$" ]
 
 
