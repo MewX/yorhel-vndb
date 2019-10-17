@@ -156,8 +156,8 @@ sub copy_entry {
     print "\\i util/sql/tableattrs.sql\n";
 
     # Update some caches
-    print "SELECT tag_vn_calc();\n";
-    print "SELECT traits_chars_calc();\n";
+    print "SELECT tag_vn_calc(NULL);\n";
+    print "SELECT traits_chars_calc(NULL);\n";
     print "SELECT update_vncache(id) FROM vn;\n";
     print "SELECT update_stats_cache_full();\n";
     print "SELECT update_vnpopularity();\n";
