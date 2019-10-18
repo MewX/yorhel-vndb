@@ -57,7 +57,7 @@ TUWF::get qr{/$RE{uid}/edit}, sub {
           FROM users WHERE id =}, \tuwf->capture('id')
     );
 
-    return tuwf->resNotFound if !can_edit u => $u;
+    return tuwf->resNotFound if !$u->{id} || !can_edit u => $u;
 
     $u->{email} = _getmail $u->{id};
     $u->{authmod} = auth->permUsermod;
