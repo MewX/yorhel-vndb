@@ -42,7 +42,7 @@ table.stripe tbody tr:nth-child(odd):not(.nostripe),
 #debug h2 { color: #f00!important; font-size: 20px; }
 #debug, #debug a { color: #fff!important; }
 
-.visuallyhidden, p.linkradio input {
+.visuallyhidden, .linkradio input {
   position: absolute !important;
   left: 0;
   height: 1px; width: 1px;
@@ -153,10 +153,12 @@ table.formtable td       { padding: 0; }
 table.formtable tr.newfield td { padding-top: 5px; }
 table.formtable tr.newpart td { padding-top: 20px; font-weight: bold; }
 
-p.linkradio { padding: 2px }
-p.linkradio label { color: $link$; cursor: pointer }
-p.linkradio input:checked + label { color: $maintext$ }
-p.linkradio em { font-weight: normal; font-style: normal; color: $grayedout$ }
+.linkradio { padding: 2px }
+.linkradio label { color: $link$; cursor: pointer }
+.linkradio label:before { content: '✗' }
+.linkradio input:checked + label { color: $maintext$ }
+.linkradio input:checked + label:before { content: '✓' }
+.linkradio em { font-weight: normal; font-style: normal; color: $grayedout$ }
 
 div.spinner { content: ''; border: 3px solid #9eaebd; border-bottom-color: transparent; border-radius: 100%; animation: spin 1s infinite linear; width: 14px; height: 14px; display: inline-block; margin: auto }
 @keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }

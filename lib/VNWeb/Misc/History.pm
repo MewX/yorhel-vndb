@@ -124,9 +124,9 @@ sub filters_ {
     delete $filt->{r} if $type ne 'v';
 
     my sub opt_ {
-        my($key, $val, $label) = @_;
-        input_ type => 'radio', name => $key, id => "form_${key}{$val}", value => $val,
-            $filt->{$key} eq $val ? (checked => 'checked') : ();
+        my($type, $key, $val, $label, $checked) = @_;
+        input_ type => $type, name => $key, id => "form_${key}{$val}", value => $val,
+            $checked // $filt->{$key} eq $val ? (checked => 'checked') : ();
         label_ for => "form_${key}{$val}", $label;
     };
 
@@ -135,30 +135,28 @@ sub filters_ {
             td_ style => 'padding: 10px', sub {
                 p_ class => 'linkradio', sub {
                     join_ \&br_, sub {
-                        input_ type => 'checkbox', name => 't', value => $_->[0], id => "form_t$_->[0]", $t{$_->[0]}? (checked => 'checked') : ();
-                        label_ for => "form_t$_->[0]", ' '.$_->[1]
+                        opt_ checkbox => t => $_->[0], $_->[1], $t{$_->[0]}||0;
                     }, @types;
                 }
             } if exists $filt->{t};
 
             td_ style => 'padding: 10px', sub {
                 p_ class => 'linkradio', sub {
-                    opt_ e => 0, 'All'; em_ ' | ';
-                    opt_ e => 1, 'Only changes to existing items'; em_ ' | ';
-                    opt_ e =>-1, 'Only newly created items';
+                    opt_ radio => e => 0, 'All'; em_ ' | ';
+                    opt_ radio => e => 1, 'Only changes to existing items'; em_ ' | ';
+                    opt_ radio => e =>-1, 'Only newly created items';
                 } if exists $filt->{e};
                 p_ class => 'linkradio', sub {
-                    opt_ h => 0, 'All'; em_ ' | ';
-                    opt_ h => 1, 'Only non-deleted items'; em_ ' | ';
-                    opt_ h =>-1, 'Only deleted';
+                    opt_ radio => h => 0, 'All'; em_ ' | ';
+                    opt_ radio => h => 1, 'Only non-deleted items'; em_ ' | ';
+                    opt_ radio => h =>-1, 'Only deleted';
                 } if exists $filt->{h};
                 p_ class => 'linkradio', sub {
-                    opt_ m => 0, 'Show'; em_ ' | ';
-                    opt_ m => 1, 'Hide'; txt_ ' automated edits';
+                    opt_ checkbox => m => 0, 'Show automated edits' if !$type;
+                    opt_ checkbox => m => 1, 'Hide automated edits' if $type;
                 } if exists $filt->{m};
                 p_ class => 'linkradio', sub {
-                    opt_ r => 0, 'Exclude'; em_ ' | ';
-                    opt_ r => 1, 'Include'; txt_ ' releases';
+                    opt_ checkbox => r => 1, 'Include releases'
                 } if exists $filt->{r};
                 input_ type => 'submit', class => 'submit', value => 'Update';
                 debug_ $filt;
