@@ -17,6 +17,12 @@ onClickN action = custom "click" (JD.succeed { message = action, stopPropagation
 br_ : Int -> Html m
 br_ n = if n == 1 then br [] [] else span [] <| List.repeat n <| br [] []
 
+
+inputButton : String -> m -> List (Attribute m) -> Html m
+inputButton val onch attrs =
+  input ([ type_ "button", class "submit", tabindex 10, value val, onClick onch] ++ attrs) []
+
+
 -- Submit button with loading indicator and error message display
 submitButton : String -> Api.State -> Bool -> Bool -> Html m
 submitButton val state valid load = div []

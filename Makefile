@@ -116,6 +116,7 @@ static/f/vndb.min.js: static/f/vndb.js
 
 # v2-rw
 
+JS_FILES=elm/*.js elm/*/*.js
 ELM_FILES=elm/*.elm elm/*/*.elm
 ELM_MODULES=$(shell grep -l '^main =' ${ELM_FILES} | sed 's/^elm\///')
 
@@ -127,7 +128,7 @@ define fix-js
 	sed -i 's/var \$$author\$$project\$$Lib\$$Ffi\$$/var __unused__/g' $@
 	sed -Ei 's/\$$author\$$project\$$Lib\$$Ffi\$$([a-zA-Z0-9_]+)/window.elmFfi_\1(_Json_wrap)/g' $@
 	sed -Ei "s/([^ ]+) !== 'checked'/\\1 !== 'checked' \&\& \\1 !== 'selected'/g" $@
-	for fn in elm/*.js; do \
+	for fn in ${JS_FILES}; do \
 		echo "(function(){'use strict';"; \
 		cat $$fn; \
 		echo "})();"; \
@@ -137,11 +138,11 @@ endef
 elm/Gen/.generated: lib/VNWeb/*.pm lib/VNWeb/*/*.pm lib/VNDB/Types.pm lib/VNDB/Config.pm data/conf.pl
 	util/vndb.pl elmgen
 
-static/f/v2rw.js: ${ELM_FILES} elm/*.js elm/Gen/.generated | static/f
+static/f/v2rw.js: ${ELM_FILES} ${JS_FILES} elm/Gen/.generated | static/f
 	cd elm && ELM_HOME=elm-stuff elm make ${ELM_MODULES} --output ../$@
 	${fix-js}
 
-static/f/v2rw.min.js: ${ELM_FILES} elm/*.js elm/Gen/.generated | static/f
+static/f/v2rw.min.js: ${ELM_FILES} ${JS_FILES} elm/Gen/.generated | static/f
 	cd elm && ELM_HOME=elm-stuff elm make --optimize ${ELM_MODULES} --output ../$@
 	${fix-js}
 	uglifyjs $@ --compress 'pure_funcs="F2,F3,F4,F5,F6,F7,F8,F9,A2,A3,A4,A5,A6,A7,A8,A9",pure_getters,keep_fargs=false,unsafe_comps,unsafe' | uglifyjs --mangle -o $@~

@@ -138,7 +138,7 @@ input.text, input.submit, select, textarea {
 form, fieldset           { border: 0; display: block }
 legend                   { display: none; }
 optgroup option          { padding-left: 10px; font-style: normal; }
-input.submit             { background: $boxbg$; padding: 1px; }
+input.submit             { background: $boxbg$; padding: 1px 5px; }
 input.text, select       { width: 200px; }
 fieldset.submit          { width: 100%; text-align: center; margin: 5px; }
 fieldset.submit input[type=submit] { width: 150px; }
@@ -168,6 +168,10 @@ div.spinner { content: ''; border: 3px solid #9eaebd; border-bottom-color: trans
 .textpreview .preview { width: 100%; box-sizing: border-box; border: 1px solid $secborder$; margin: 1px; padding: 5px }
 fieldset.submit .textpreview { margin: -15px auto 0 auto }
 
+.compact input.text, .compact select { margin: -2px -1px; padding: 1px 0 }
+.stealth input, .stealth select { font: inherit; background: none; border: 1px solid transparent; -moz-appearance: none; -webkit-appearance: none; appearance: none }
+.stealth input:hover, .stealth input:focus,
+.stealth select:hover, .stealth select:focus { border: 1px solid $secborder$; background: $secbg$ }
 
 
 /***** menu *****/
@@ -772,6 +776,18 @@ div.votelist td.tc2 { width: 50px; text-align: right; padding-right: 10px }
 .wishlist .tc1     { padding-top: 0; padding-bottom: 0; }
 .wishlist tfoot td { padding: 0 0 0 25px }
 
+
+/***** New User's VN list *****/
+
+.labelfilters { text-align: center }
+.labelfilters input.submit { margin-top: 5px }
+
+.labeledit > div { width: 600px; margin: 10px auto }
+.labeledit table { margin: 0 auto }
+.labeledit tbody td:nth-child(1) { text-align: right }
+.labeledit tbody td:nth-child(4) { padding-left: 10px; width: 300px}
+.labeledit select { width: 100% }
+.labeledit tfoot div { float: right; text-align: right }
 
 
 /***** User VN list browser ******/

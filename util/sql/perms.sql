@@ -61,6 +61,9 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON threads_posts            TO vndb_site;
 GRANT SELECT, INSERT, UPDATE, DELETE ON traits                   TO vndb_site;
 GRANT SELECT, INSERT, UPDATE, DELETE ON traits_chars             TO vndb_site;
 GRANT SELECT, INSERT, UPDATE, DELETE ON traits_parents           TO vndb_site;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ulists                   TO vndb_site;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ulists_labels            TO vndb_site;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ulists_vn_labels         TO vndb_site;
 
 -- users table is special; The 'perm', 'passwd' and 'mail' columns are
 -- protected and can only be accessed through the user_* functions.
