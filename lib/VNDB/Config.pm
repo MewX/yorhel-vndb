@@ -32,8 +32,10 @@ my $config = {
         CatSystem2
         codeX RScript
         EntisGLS
+        Flash Player
         Ikura GDL
         KiriKiri
+        LiveMaker
         Majiro
         NScripter
         QLIE
@@ -41,6 +43,8 @@ my $config = {
         RealLive
         Ren'Py
         Shiina Rio
+        SiglusEngine
+        TyranoScript
         Unity
         YU-RIS
     }],
