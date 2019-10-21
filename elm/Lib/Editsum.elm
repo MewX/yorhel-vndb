@@ -6,20 +6,21 @@ module Lib.Editsum exposing (Model, Msg, new, update, view)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Lib.Html exposing (..)
+import Lib.TextPreview as TP
 
 
 type alias Model =
   { authmod  : Bool
   , locked   : Bool
   , hidden   : Bool
-  , editsum  : String
+  , editsum  : TP.Model
   }
 
 
 type Msg
   = Locked Bool
   | Hidden Bool
-  | Editsum String
+  | Editsum TP.Msg
 
 
 new : Model
@@ -27,16 +28,16 @@ new =
   { authmod = False
   , locked  = False
   , hidden  = False
-  , editsum = ""
+  , editsum = TP.bbcode ""
   }
 
 
-update : Msg -> Model -> Model
+update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    Locked b  -> { model | locked  = b }
-    Hidden b  -> { model | hidden  = b }
-    Editsum s -> { model | editsum = s }
+    Locked b  -> ({ model | locked  = b }, Cmd.none)
+    Hidden b  -> ({ model | hidden  = b }, Cmd.none)
+    Editsum m -> let (nm,nc) = TP.update m model.editsum in ({ model | editsum = nm }, Cmd.map Editsum nc)
 
 
 view : Model -> Html Msg
@@ -60,6 +61,5 @@ view model =
       [ text "Edit summary"
       , b [class "standout"] [text " (English please!)"]
       ]
-      -- TODO: BBCode preview
-    , inputTextArea "editsum" model.editsum Editsum [rows 4, cols 50, minlength 2, maxlength 5000, required True]
+    , TP.view "" model.editsum Editsum 600 [rows 4, cols 50, minlength 2, maxlength 5000, required True]
     ]

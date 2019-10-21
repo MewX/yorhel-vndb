@@ -7,6 +7,7 @@ import Browser
 import Browser.Navigation exposing (load)
 import Json.Encode as JE
 import Lib.Html exposing (..)
+import Lib.TextPreview as TP
 import Lib.Api as Api
 import Lib.Ffi as Ffi
 import Lib.Editsum as Editsum
@@ -27,30 +28,28 @@ type alias Model =
   { state       : Api.State
   , editsum     : Editsum.Model
   , title       : String
-  , content     : String
+  , content     : TP.Model
   , id          : Int
-  , preview     : String
   }
 
 
 init : GD.Recv -> Model
 init d =
   { state       = Api.Normal
-  , editsum     = { authmod = True, editsum = d.editsum, locked = d.locked, hidden = d.hidden }
+  , editsum     = { authmod = True, editsum = TP.bbcode d.editsum, locked = d.locked, hidden = d.hidden }
   , title       = d.title
-  , content     = d.content
+  , content     = TP.markdown d.content
   , id          = d.id
-  , preview     = ""
   }
 
 
 encode : Model -> GD.Send
 encode model =
-  { editsum     = model.editsum.editsum
+  { editsum     = model.editsum.editsum.data
   , hidden      = model.editsum.hidden
   , locked      = model.editsum.locked
   , title       = model.title
-  , content     = model.content
+  , content     = model.content.data
   }
 
 
@@ -59,17 +58,15 @@ type Msg
   | Submit
   | Submitted GApi.Response
   | Title String
-  | Content String
-  | Preview
-  | HandlePreview GApi.Response
+  | Content TP.Msg
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    Editsum e -> ({ model | editsum = Editsum.update e model.editsum }, Cmd.none)
+    Editsum m  -> let (nm,nc) = Editsum.update m model.editsum in ({ model | editsum = nm }, Cmd.map Editsum nc)
     Title s   -> ({ model | title   = s }, Cmd.none)
-    Content s -> ({ model | content = s }, Cmd.none)
+    Content m -> let (nm,nc) = TP.update m model.content in ({ model | content = nm }, Cmd.map Content nc)
 
     Submit ->
       let
@@ -79,16 +76,6 @@ update msg model =
 
     Submitted (GApi.Changed id rev) -> (model, load <| "/d" ++ String.fromInt id ++ "." ++ String.fromInt rev)
     Submitted r -> ({ model | state = Api.Error r }, Cmd.none)
-
-    Preview ->
-      if model.preview /= "" then ( { model | preview = "" }, Cmd.none )
-      else
-        ( { model | state = Api.Loading, preview = "" }
-        , Api.post "/js/markdown.json" (JE.object [("content", JE.string model.content)]) HandlePreview
-        )
-
-    HandlePreview (GApi.Content s) -> ({ model | state = Api.Normal, preview = s }, Cmd.none)
-    HandlePreview r -> ({ model | state = Api.Error r }, Cmd.none)
 
 
 view : Model -> Html Msg
@@ -107,14 +94,7 @@ view model =
           , text " with some "
           , a [ href "http://fletcher.github.io/MultiMarkdown-5/syntax.html", target "_blank" ][ text "extensions" ]
           , text "."
-          , a [ href "#", style "float" "right", onClickN Preview ]
-            [ text <| if model.preview == "" then "Preview" else "Edit"
-            , if model.state == Api.Loading then div [ class "spinner" ] [] else text ""
-            ]
-          , br_ 1
-          , if model.preview == ""
-            then inputTextArea "content" model.content Content ([rows 50, cols 90, style "width" "850px"] ++ GD.valContent)
-            else div [ class "docs preview", style "width" "850px", Ffi.innerHtml model.preview ] []
+          , TP.view "content" model.content Content 850 ([rows 50, cols 90] ++ GD.valContent)
           ]
         ]
       ]

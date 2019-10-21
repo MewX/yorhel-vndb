@@ -7,6 +7,7 @@ import Browser
 import Browser.Navigation exposing (load)
 import Lib.Util exposing (..)
 import Lib.Html exposing (..)
+import Lib.TextPreview as TP
 import Lib.Api as Api
 import Lib.Editsum as Editsum
 import Gen.StaffEdit as GSE
@@ -29,7 +30,7 @@ type alias Model =
   , alias       : List GSE.RecvAlias
   , aliasDup    : Bool
   , aid         : Int
-  , desc        : String
+  , desc        : TP.Model
   , gender      : String
   , lang        : String
   , l_site      : String
@@ -44,11 +45,11 @@ type alias Model =
 init : GSE.Recv -> Model
 init d =
   { state       = Api.Normal
-  , editsum     = { authmod = d.authmod, editsum = d.editsum, locked = d.locked, hidden = d.hidden }
+  , editsum     = { authmod = d.authmod, editsum = TP.bbcode d.editsum, locked = d.locked, hidden = d.hidden }
   , alias       = d.alias
   , aliasDup    = False
   , aid         = d.aid
-  , desc        = d.desc
+  , desc        = TP.bbcode d.desc
   , gender      = d.gender
   , lang        = d.lang
   , l_site      = d.l_site
@@ -67,7 +68,7 @@ new =
   , alias       = [ { aid = -1, name = "", original = "", inuse = False } ]
   , aliasDup    = False
   , aid         = -1
-  , desc        = ""
+  , desc        = TP.bbcode ""
   , gender      = "unknown"
   , lang        = "ja"
   , l_site      = ""
@@ -81,12 +82,12 @@ new =
 
 encode : Model -> GSE.Send
 encode model =
-  { editsum     = model.editsum.editsum
+  { editsum     = model.editsum.editsum.data
   , hidden      = model.editsum.hidden
   , locked      = model.editsum.locked
   , aid         = model.aid
   , alias       = List.map (\e -> { aid = e.aid, name = e.name, original = e.original }) model.alias
-  , desc        = model.desc
+  , desc        = model.desc.data
   , gender      = model.gender
   , lang        = model.lang
   , l_site      = model.l_site
@@ -114,7 +115,7 @@ type Msg
   | LTwitter String
   | LAnidb String
   | LPixiv String
-  | Desc String
+  | Desc TP.Msg
   | AliasDel Int
   | AliasName Int String
   | AliasOrig Int String
@@ -129,7 +130,7 @@ validate model = { model | aliasDup = hasDuplicates <| List.map (\e -> (e.name, 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    Editsum m  -> ({ model | editsum   = Editsum.update m model.editsum }, Cmd.none)
+    Editsum m  -> let (nm,nc) = Editsum.update m model.editsum in ({ model | editsum = nm }, Cmd.map Editsum nc)
     Lang s     -> ({ model | lang      = s }, Cmd.none)
     Gender s   -> ({ model | gender    = s }, Cmd.none)
     Website s  -> ({ model | l_site    = s }, Cmd.none)
@@ -137,7 +138,7 @@ update msg model =
     LTwitter s -> ({ model | l_twitter = s }, Cmd.none)
     LAnidb s   -> ({ model | l_anidb   = if s == "" then Nothing else String.toInt s }, Cmd.none)
     LPixiv s   -> ({ model | l_pixiv   = Maybe.withDefault model.l_pixiv (String.toInt s) }, Cmd.none)
-    Desc s     -> ({ model | desc      = s }, Cmd.none)
+    Desc m     -> let (nm,nc) = TP.update m model.desc in ({ model | desc = nm }, Cmd.map Desc nc)
 
     AliasDel i    -> (validate { model | alias = delidx i model.alias }, Cmd.none)
     AliasName i s -> (validate { model | alias = modidx i (\e -> { e | name     = s }) model.alias }, Cmd.none)
@@ -204,7 +205,7 @@ view model =
       [ h1 [] [ text "General info" ]
       , table [ class "formtable" ]
         [ formField "Names" [ names, br_ 1 ]
-        , formField "desc::Biography#eng" [ inputTextArea "desc" model.desc Desc GSE.valDesc ]
+        , formField "desc::Biography#eng" [ TP.view "desc" model.desc Desc 500 GSE.valDesc ]
         , formField "gender::Gender" [ inputSelect "gender" model.gender Gender []
           [ ("unknown", "Unknown or N/A")
           , ("f",       "Female")

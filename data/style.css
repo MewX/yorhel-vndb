@@ -98,6 +98,7 @@ b.standout,
 a.standout    { font-weight: normal; color: $standout$; }
 .clearfloat   { clear: both; height: 0; }
 .hidden       { display: none!important }
+.invisible    { visibility: hidden }
 .linethrough  { text-decoration: line-through }
 b.spoiler, b.spoiler a { color: #000!important; background-color: #000; font-weight: normal; }
 b.spoiler_shown { font-weight: normal }
@@ -134,7 +135,6 @@ input.text, input.submit, select, textarea {
   padding: 0 1px 1px 1px;
   margin: 1px;
 }
-div.preview              { border: 1px solid $secborder$; margin: 1px; padding: 5px }
 form, fieldset           { border: 0; display: block }
 legend                   { display: none; }
 optgroup option          { padding-left: 10px; font-style: normal; }
@@ -144,7 +144,6 @@ fieldset.submit          { width: 100%; text-align: center; margin: 5px; }
 fieldset.submit input[type=submit] { width: 150px; }
 fieldset.submit input[type=checkbox] { margin: 0 5px 0 15px; }
 fieldset.submit h2       { font-size: 13px!important; }
-fieldset.submit textarea { margin: 0 20px 5px 20px; }
 td.label, td.label label { width: 130px; }
 td.label label           { display: block; }
 td.field label           { margin: 0 5px 0 5px; }
@@ -163,6 +162,11 @@ table.formtable tr.newpart td { padding-top: 20px; font-weight: bold; }
 div.spinner { content: ''; border: 3px solid #9eaebd; border-bottom-color: transparent; border-radius: 100%; animation: spin 1s infinite linear; width: 14px; height: 14px; display: inline-block; margin: auto }
 @keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
 
+.textpreview .head { width: 100%; text-align: right }
+.textpreview .head > * { margin-left: 10px; font-style: normal }
+.textpreview textarea { width: 100%; box-sizing: border-box }
+.textpreview .preview { width: 100%; box-sizing: border-box; border: 1px solid $secborder$; margin: 1px; padding: 5px }
+fieldset.submit .textpreview { margin: -15px auto 0 auto }
 
 
 
