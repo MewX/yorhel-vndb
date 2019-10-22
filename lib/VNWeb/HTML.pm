@@ -198,7 +198,7 @@ sub _menu_ {
         my $support_opt = auth->pref('nodistract_can') || auth->pref('support_can') || auth->pref('uniname_can') || auth->pref('pubskin_can');
         h2_ sub { user_ auth->user, 'user_', 1 };
         div_ sub {
-            a_ href => "$uid/edit", 'My Profile'; txt_ '⭐' if $support_opt; br_;
+            a_ href => "$uid/edit", 'My Profile'; txt_ '⭐' if $support_opt && !auth->pref('nodistract_nofancy'); br_;
             a_ href => "$uid/list", 'My Visual Novel List'; br_;
             a_ href => "$uid/votes",'My Votes'; br_;
             a_ href => "$uid/wish", 'My Wishlist'; br_;
