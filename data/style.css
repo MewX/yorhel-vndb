@@ -716,7 +716,7 @@ div.charsum_list .charsum_bubble {
 #jt_box_vn_cast  h2,
 #jt_box_vn_staff h2 { margin: 0 0 3px 0px; }
 #jt_box_vn_cast  td,
-#jt_box_vn_staff td,
+#jt_box_vn_staff td { padding: 1px 2px; vertical-align: middle; }
 #jt_box_vn_cast  td.tc_role,
 #jt_box_vn_cast  td.tc_role select,
 #jt_box_vn_staff td.tc_role,
