@@ -41,9 +41,8 @@ RUN cd /root \
     && cd tuwf \
     && perl Build.PL \
     && ./Build install \
-    && cd /tmp \
-    && curl -sL https://github.com/elm/compiler/releases/download/0.19.0/binaries-for-linux.tar.gz | tar -xzf- \
-    && mv elm /usr/bin \
+    && curl -sL https://github.com/elm/compiler/releases/download/0.19.1/binary-for-linux-64-bit.gz | zcat >/usr/bin/elm \
+    && chmod 755 /usr/bin/elm \
     && touch /var/vndb-docker-image
 
 CMD /var/www/util/docker-init.sh
