@@ -132,8 +132,8 @@ sub entryLinks {
 
   $lnk->($obj->{l_site},      'Official website',  '%s'); # (staff) Homepage always comes first
   $lnk->($obj->{website},     'Official website',  '%s'); # (producers, releases)
-  $lnk->($w->{enwiki},        'Wikipedia (en)',    'https://en.wikipedia.org/wiki/%s', sub { shift =~ s/ /_/rg });
-  $lnk->($w->{jawiki},        'Wikipedia (ja)',    'https://ja.wikipedia.org/wiki/%s', sub { shift =~ s/ /_/rg });
+  $lnk->($w->{enwiki},        'Wikipedia (en)',    'https://en.wikipedia.org/wiki/%s', sub { (shift =~ s/ /_/rg) =~ s/\?/%3f/rg });
+  $lnk->($w->{jawiki},        'Wikipedia (ja)',    'https://ja.wikipedia.org/wiki/%s', sub { (shift =~ s/ /_/rg) =~ s/\?/%3f/rg });
   $lnk->($obj->{l_wikidata},  'Wikidata',          'https://www.wikidata.org/wiki/Q%d');
 
   # Not everything in the wikidata table is actually used, only those links that
