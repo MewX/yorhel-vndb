@@ -52,7 +52,7 @@ update msg model =
     Noop -> (model, Cmd.none)
     Private n b -> ({ model | labels = modidx n (\l -> { l | private = b }) model.labels }, Cmd.none)
     Label n s   -> ({ model | labels = modidx n (\l -> { l | label   = s }) model.labels }, Cmd.none)
-    Delete n o  -> ({ model | labels = List.filter (\l -> l.count > 0 || l.delete == Nothing) <| modidx n (\l -> { l | delete = o }) model.labels }, Cmd.none)
+    Delete n o  -> ({ model | labels = List.filter (\l -> l.id > 0 || l.delete == Nothing) <| modidx n (\l -> { l | delete = o }) model.labels }, Cmd.none)
     Add -> ({ model | labels = model.labels ++ [{ id = -1, label = "New label", private = List.all (\il -> il.private) model.labels, count = 0, delete = Nothing }] }, Cmd.none)
 
     Submit -> ({ model | state = Api.Loading }, Api.post "/u/ulist/labels.json" (GML.encode { uid = model.uid, labels = model.labels }) Submitted)
@@ -69,14 +69,14 @@ view model =
       in tr [ class "compact" ]
       [ td [] [ text <| if l.count == 0 then "" else String.fromInt l.count ]
       , td [ class "stealth" ]
-        [ if l.id > 0 && l.id < 1000 then text l.label
+        [ if l.id > 0 && l.id < 10 then text l.label
           else inputText "" l.label (Label n) GML.valLabelsLabel
         ]
       , td [ class "linkradio" ] [ inputCheck strid l.private (Private n), label [ for strid ] [ text "private" ] ]
       , td [ class "stealth" ]
-        [      if l.id == 7               then b [ class "grayedout" ] [ text "applied when you vote" ]
-          else if l.id > 0 && l.id < 1000 then b [ class "grayedout" ] [ text "built-in" ]
-          else if l.delete == Nothing     then a [ onClick (Delete n (Just 1)) ] [ text "remove" ]
+        [      if l.id == 7             then b [ class "grayedout" ] [ text "applied when you vote" ]
+          else if l.id > 0 && l.id < 10 then b [ class "grayedout" ] [ text "built-in" ]
+          else if l.delete == Nothing   then a [ onClick (Delete n (Just 1)) ] [ text "remove" ]
           else inputSelect "" l.delete (Delete n) []
             [ (Nothing, "Keep label")
             , (Just 1,  "Delete label but keep VNs in my list")
