@@ -26,13 +26,34 @@ document.querySelectorAll('div[data-elm-module]').forEach(function(el) {
 });
 
 
-/* "check all" checkbox */
+/* "checkall" checkbox, usage:
+ *
+ *    <input type="checkbox" class="checkall" name="$somename">
+ *
+ *  Checking that will synchronize all other checkboxes with name="$somename".
+ */
 document.querySelectorAll('input[type=checkbox].checkall').forEach(function(el) {
     el.onclick = function() {
         document.querySelectorAll('input[type=checkbox][name="'+el.name+'"]').forEach(function(el2) {
             if(!el2.classList.contains('hidden')) {
-                el2.checked = el.checked;
+                if(el2.checked != el.checked)
+                    el2.click();
             }
+        });
+    };
+});
+
+
+/* "checkhidden" checkbox, usage:
+ *
+ *    <input type="checkbox" class="checkhidden" value="$somename">
+ *
+ * Checking that will toggle the 'hidden' class of all elements with the "$somename" class.
+ */
+document.querySelectorAll('input[type=checkbox].checkhidden').forEach(function(el) {
+    el.onclick = function() {
+        document.querySelectorAll('.'+el.value).forEach(function(el2) {
+            el2.classList.toggle('hidden', !el.checked);
         });
     };
 });

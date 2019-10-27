@@ -23,8 +23,10 @@ sub filters_ {
 
     my $opt = eval { tuwf->validate(get =>
         p => { upage => 1 },
-        l => { type => 'array', scalar => 1, required => 0, default => [], values => { id => 1 } }
-    )->data } || { p => 1, l => [] };
+        l => { type => 'array', scalar => 1, required => 0, default => [], values => { id => 1 } },
+        s => { required => 0, default => 'title', enum => [qw[ title vote added started finished ]] },
+        o => { required => 0, default => 'a', enum => ['a', 'd'] },
+    )->data } || { p => 1, l => [], s => 'title', o => 'a' };
 
     # $labels only includes labels we are allowed to see, getting rid of any labels in 'l' that aren't in $labels ensures we only filter on visible labels
     my %accessible_labels = map +($_->{id}, 1), @$labels;
@@ -65,6 +67,42 @@ sub filters_ {
 }
 
 
+sub vn_ {
+    my($n, $v, $labels) = @_;
+    tr_ mkclass(odd => $n % 2 == 0), sub {
+        td_ class => 'tc1', sub {
+            input_ type => 'checkbox', class => 'checkhidden', name => 'collapse_vid', id => 'collapse_vid'.$v->{id}, value => 'collapsed_vid'.$v->{id};
+            label_ for => 'collapse_vid'.$v->{id}, sub {
+                my $obtained = grep $_->{status} == 2, $v->{rels}->@*;
+                my $total = $v->{rels}->@*;
+                my $txt = sprintf '%d/%d', $obtained, $total;
+                if($total && $obtained == $total) { b_ class => 'done', $txt }
+                elsif($obtained < $total)         { b_ class => 'todo', $txt }
+                else                              { txt_ $txt }
+            };
+        };
+        td_ class => 'tc2', sub {
+            a_ href => "/v$v->{id}", title => $v->{original}||$v->{title}, shorten $v->{title}, 70;
+            b_ class => 'grayedout', $v->{notes} if $v->{notes};
+        };
+        td_ class => 'tc3', sub {
+            my %l = map +($_,1), $v->{labels}->@*;
+            my @l = grep $l{$_->{id}} && $_->{id} != 7, @$labels;
+            join_ ', ', sub { txt_ $_->{label} }, @l if @l;
+            txt_ '-' if !@l;
+        };
+        td_ class => 'tc4', fmtvote $v->{vote};
+        td_ class => 'tc5', fmtdate $v->{added}, 'compact';
+        td_ class => 'tc6', $v->{started}||'';
+        td_ class => 'tc7', $v->{finished}||'';
+    };
+
+    tr_ mkclass(hidden => 1, 'collapsed_vid'.$v->{id} => 1, odd => $n % 2 == 0), sub {
+        td_ colspan => 7, 'Options, releases and note stuff here (likely Elm)';
+    };
+}
+
+
 sub listing_ {
     my($uid, $own, $opt, $labels) = @_;
 
@@ -83,50 +121,50 @@ sub listing_ {
            FROM ulists ul
            JOIN vn v ON v.id = ul.vid
           WHERE', $where, '
-          ORDER BY v.title'
+          ORDER BY', {
+                    title    => 'v.title',
+                    vote     => 'ul.vote',
+                    added    => 'ul.added',
+                    started  => 'ul.started',
+                    finished => 'ul.finished'
+                }->{$opt->{s}}, $opt->{o} eq 'd' ? 'DESC' : 'ASC', 'NULLS LAST, v.title'
     );
 
     enrich_flatten labels => id => vid => sql('SELECT vid, lbl FROM ulists_vn_labels WHERE uid =', \$uid, 'AND vid IN'), $lst;
 
+    enrich rels => id => vid => sub { sql '
+        SELECT rv.vid, r.id, r.title, r.original, r.released, r.type, rl.status
+          FROM rlists rl
+          JOIN releases r ON rl.rid = r.id
+          JOIN releases_vn rv ON rv.id = r.id
+         WHERE rl.uid =', \$uid, '
+           AND rv.vid IN', $_, '
+         ORDER BY r.released ASC'
+    }, $lst;
+
+    enrich_flatten lang => id => id => sub { sql('SELECT id, lang FROM releases_lang WHERE id IN', $_, 'ORDER BY lang') }, map $_->{rels}, @$lst;
+
     my sub url { '?'.query_encode %$opt, @_ }
 
     # TODO: In-line editable
-    # TODO: Sorting
     # TODO: Releases
-    # TODO: Styling
     # TODO: Thumbnail view
     paginate_ \&url, $opt->{p}, [ $count, 50 ], 't';
     div_ class => 'mainbox browse ulist', sub {
-        table_ class => 'stripe', sub {
+        table_ sub {
             thead_ sub { tr_ sub {
-                td_ class => 'tc1', sub { txt_ '▸'; debug_ $lst };
-                td_ class => 'tc2', 'Title';
+                td_ class => 'tc1', sub {
+                    input_ type => 'checkbox', class => 'checkall', name => 'collapse_vid', id => 'collapse_vid';
+                    label_ for => 'collapse_vid', sub { txt_ 'Opt' };
+                };
+                td_ class => 'tc2', sub { txt_ 'Title';      sortable_ 'title',    $opt, \&url; debug_ $lst };
                 td_ class => 'tc3', 'Labels';
-                td_ class => 'tc4', 'Vote';
-                td_ class => 'tc5', 'Added';
-                td_ class => 'tc6', 'Start date';
-                td_ class => 'tc7', 'End date';
-                td_ class => 'tc8', 'Options';
+                td_ class => 'tc4', sub { txt_ 'Vote';       sortable_ 'vote',     $opt, \&url };
+                td_ class => 'tc5', sub { txt_ 'Added';      sortable_ 'added',    $opt, \&url };
+                td_ class => 'tc6', sub { txt_ 'Start date'; sortable_ 'started',  $opt, \&url };
+                td_ class => 'tc7', sub { txt_ 'End date';   sortable_ 'finished', $opt, \&url };
             }};
-            tr_ sub {
-                my $v = $_;
-                td_ class => 'tc1', '▸ 0/0';
-                td_ class => 'tc2', sub {
-                    a_ href => "/v$v->{id}", title => $v->{original}||$v->{title}, shorten $v->{title}, 70;
-                    b_ class => 'grayedout', $v->{notes} if $v->{notes};
-                };
-                td_ class => 'tc3', sub {
-                    my %l = map +($_,1), $v->{labels}->@*;
-                    my @l = grep $l{$_->{id}} && $_->{id} != 7, @$labels;
-                    join_ ', ', sub { txt_ $_->{label} }, @l if @l;
-                    txt_ '-' if !@l;
-                };
-                td_ class => 'tc4', fmtvote $v->{vote};
-                td_ class => 'tc5', fmtdate $v->{added}, 'compact';
-                td_ class => 'tc6', $v->{started}||'';
-                td_ class => 'tc7', $v->{finished}||'';
-                td_ class => 'tc8', '';
-            } for @$lst;
+            vn_ $_, $lst->[$_], $labels for (0..$#$lst);
         };
     };
     paginate_ \&url, $opt->{p}, [ $count, 50 ], 'b';
