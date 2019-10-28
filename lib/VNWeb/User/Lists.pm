@@ -17,6 +17,15 @@ my $LABELS = form_compile any => {
 elm_form 'ManageLabels', undef, $LABELS;
 
 
+my $VNVOTE = form_compile any => {
+    uid  => { id => 1 },
+    vid  => { id => 1 },
+    vote => { vnvote => 1 },
+};
+
+elm_form 'VoteEdit', undef, $VNVOTE;
+
+
 # TODO: Filters to find unlabeled VNs or VNs with notes?
 sub filters_ {
     my($own, $labels) = @_;
@@ -68,7 +77,7 @@ sub filters_ {
 
 
 sub vn_ {
-    my($n, $v, $labels) = @_;
+    my($uid, $own, $n, $v, $labels) = @_;
     tr_ mkclass(odd => $n % 2 == 0), sub {
         td_ class => 'tc1', sub {
             input_ type => 'checkbox', class => 'checkhidden', name => 'collapse_vid', id => 'collapse_vid'.$v->{id}, value => 'collapsed_vid'.$v->{id};
@@ -91,7 +100,10 @@ sub vn_ {
             join_ ', ', sub { txt_ $_->{label} }, @l if @l;
             txt_ '-' if !@l;
         };
-        td_ class => 'tc4', fmtvote $v->{vote};
+        td_ mkclass(tc4 => 1, compact => $own, stealth => $own), sub {
+            txt_ fmtvote $v->{vote} if !$own;
+            elm_ 'ULists.VoteEdit' => $VNVOTE, { uid => $uid*1, vid => $v->{id}*1, vote => fmtvote($v->{vote}) } if $own;
+        };
         td_ class => 'tc5', fmtdate $v->{added}, 'compact';
         td_ class => 'tc6', $v->{started}||'';
         td_ class => 'tc7', $v->{finished}||'';
@@ -146,7 +158,7 @@ sub listing_ {
 
     my sub url { '?'.query_encode %$opt, @_ }
 
-    # TODO: In-line editable
+    # TODO: In-line editable labels, start/end dates, notes, remove-from-list
     # TODO: Releases
     # TODO: Thumbnail view
     paginate_ \&url, $opt->{p}, [ $count, 50 ], 't';
@@ -164,7 +176,7 @@ sub listing_ {
                 td_ class => 'tc6', sub { txt_ 'Start date'; sortable_ 'started',  $opt, \&url };
                 td_ class => 'tc7', sub { txt_ 'End date';   sortable_ 'finished', $opt, \&url };
             }};
-            vn_ $_, $lst->[$_], $labels for (0..$#$lst);
+            vn_ $uid, $own, $_, $lst->[$_], $labels for (0..$#$lst);
         };
     };
     paginate_ \&url, $opt->{p}, [ $count, 50 ], 'b';
@@ -173,6 +185,7 @@ sub listing_ {
 
 # TODO: Keep this URL? Steal /u+/list when that one's gone?
 # TODO: Display something useful when all labels are private?
+# TODO: Ability to add VNs from this page
 TUWF::get qr{/$RE{uid}/ulist}, sub {
     my $u = tuwf->dbRowi('SELECT id,', sql_user(), 'FROM users u WHERE id =', \tuwf->capture('id'));
     return tuwf->resNotFound if !$u->{id};
@@ -249,6 +262,20 @@ json_api qr{/u/ulist/labels.json}, $LABELS, sub {
     # (This will also delete all relevant vn<->label rows from ulists_vn_labels)
     tuwf->dbExeci('DELETE FROM ulists_labels WHERE uid =', \$uid, 'AND id IN', [ map $_->{id}, @delete ]) if @delete;
 
+    elm_Success
+};
+
+
+# XXX: Doesn't add the VN to the list if it isn't in there, yet.
+json_api qr{/u/ulist/setvote.json}, $VNVOTE, sub {
+    my($data) = @_;
+    return elm_Unauth if !auth || auth->uid != $data->{uid};
+    tuwf->dbExeci(
+        'UPDATE ulists
+            SET vote =', \$data->{vote},
+             ', vote_date = CASE WHEN', \$data->{vote}, '::smallint IS NULL THEN NULL WHEN vote IS NULL THEN NOW() ELSE vote_date END
+          WHERE uid =', \$data->{uid}, 'AND vid =', \$data->{vid}
+    );
     elm_Success
 };
 

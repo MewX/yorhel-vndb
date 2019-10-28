@@ -126,7 +126,7 @@ ELM_MODULES=$(shell grep -l '^main =' ${ELM_FILES} | sed 's/^elm\///')
 # - Patch the virtualdom diffing algorithm to always apply the 'selected' attribute
 define fix-js
 	sed -i 's/var \$$author\$$project\$$Lib\$$Ffi\$$/var __unused__/g' $@
-	sed -Ei 's/\$$author\$$project\$$Lib\$$Ffi\$$([a-zA-Z0-9_]+)/window.elmFfi_\1(_Json_wrap)/g' $@
+	sed -Ei 's/\$$author\$$project\$$Lib\$$Ffi\$$([a-zA-Z0-9_]+)/window.elmFfi_\1(_Json_wrap,_Browser_call)/g' $@
 	sed -Ei "s/([^ ]+) !== 'checked'/\\1 !== 'checked' \&\& \\1 !== 'selected'/g" $@
 	for fn in ${JS_FILES}; do \
 		echo "(function(){'use strict';"; \

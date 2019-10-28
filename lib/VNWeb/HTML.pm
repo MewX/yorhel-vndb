@@ -95,7 +95,7 @@ sub elm_ {
     my($mod, $schema, $data) = @_;
     div_ 'data-elm-module' => $mod,
          $data ? (
-            'data-elm-flags' => JSON::XS->new->allow_nonref->encode($schema->analyze->coerce_for_json($data, unknown => 'remove'))
+            'data-elm-flags' => JSON::XS->new->allow_nonref->encode($schema ? $schema->analyze->coerce_for_json($data, unknown => 'remove') : $data)
          ) : (), '';
 }
 

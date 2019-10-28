@@ -10,9 +10,15 @@
 -- Use sparingly, all of this will likely break in future Elm versions.
 module Lib.Ffi exposing (..)
 
-import Html exposing (Attribute)
-import Html.Attributes exposing (title)
+import Html
+import Html.Attributes
+import Browser.Dom
+import Task
 
 -- Set the innerHTML attribute of a node
-innerHtml : String -> Attribute msg
-innerHtml = always (title "")
+innerHtml : String -> Html.Attribute msg
+innerHtml s = Html.Attributes.title ""
+
+-- Like Browser.Dom.focus, except it can call any function (without arguments)
+elemCall : String -> String -> Task.Task Browser.Dom.Error ()
+elemCall s = Browser.Dom.focus

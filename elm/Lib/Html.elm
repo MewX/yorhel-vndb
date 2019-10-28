@@ -12,6 +12,13 @@ import Lib.Api as Api
 onClickN : m -> Attribute m
 onClickN action = custom "click" (JD.succeed { message = action, stopPropagation = True, preventDefault = True})
 
+-- onInput that also tells us whether the input is valid
+onInputValidation : (String -> Bool -> msg) -> Attribute msg
+onInputValidation msg = custom "input" <|
+  JD.map2 (\value valid -> { preventDefault = False, stopPropagation = True, message = msg value valid })
+          targetValue
+          (JD.at ["target", "validity", "valid"] JD.bool)
+
 
 -- Multi-<br> (ugly but oh, so, convenient)
 br_ : Int -> Html m
