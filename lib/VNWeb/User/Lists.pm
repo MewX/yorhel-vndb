@@ -26,6 +26,21 @@ my $VNVOTE = form_compile any => {
 elm_form 'VoteEdit', undef, $VNVOTE;
 
 
+my $VNLABELS = {
+    uid      => { id => 1 },
+    vid      => { id => 1 },
+    label    => { _when => 'in', id => 1 },
+    applied  => { _when => 'in', anybool => 1 },
+    labels   => { _when => 'out', aoh => { id => { int => 1 }, label => {} } },
+    selected => { _when => 'out', type => 'array', values => { id => 1 } },
+};
+
+my $VNLABELS_OUT = form_compile out => $VNLABELS;
+my $VNLABELS_IN  = form_compile in  => $VNLABELS;
+
+elm_form 'LabelEdit', $VNLABELS_OUT, $VNLABELS_IN;
+
+
 # TODO: Filters to find unlabeled VNs or VNs with notes?
 sub filters_ {
     my($own, $labels) = @_;
@@ -69,7 +84,7 @@ sub filters_ {
             }
             br_;
             input_ type => 'submit', class => 'submit', value => 'Update filters';
-            input_ type => 'button', class => 'submit', id => 'labeledit', value => 'Manage labels' if $own;
+            input_ type => 'button', class => 'submit', id => 'managelabels', value => 'Manage labels' if $own;
         };
     };
     $opt;
@@ -95,14 +110,21 @@ sub vn_ {
             b_ class => 'grayedout', $v->{notes} if $v->{notes};
         };
         td_ class => 'tc3', sub {
-            my %l = map +($_,1), $v->{labels}->@*;
-            my @l = grep $l{$_->{id}} && $_->{id} != 7, @$labels;
-            join_ ', ', sub { txt_ $_->{label} }, @l if @l;
-            txt_ '-' if !@l;
+            if($own) {
+                # XXX: Copying the entire $labels list for each entry is rather inefficient, would be nice if we could store that globally.
+                my @labels = grep $_->{id} != 7, @$labels;
+                elm_ 'ULists.LabelEdit' => $VNLABELS_OUT,
+                    { uid => $uid, vid => $v->{id}, labels => \@labels, selected => [ grep $_ != 7, $v->{labels}->@* ] };
+            } else {
+                my %l = map +($_,1), $v->{labels}->@*;
+                my @l = grep $l{$_->{id}} && $_->{id} != 7, @$labels;
+                join_ ', ', sub { txt_ $_->{label} }, @l if @l;
+                txt_ '-' if !@l;
+            }
         };
         td_ mkclass(tc4 => 1, compact => $own, stealth => $own), sub {
             txt_ fmtvote $v->{vote} if !$own;
-            elm_ 'ULists.VoteEdit' => $VNVOTE, { uid => $uid*1, vid => $v->{id}*1, vote => fmtvote($v->{vote}) } if $own;
+            elm_ 'ULists.VoteEdit' => $VNVOTE, { uid => $uid, vid => $v->{id}, vote => fmtvote($v->{vote}) } if $own;
         };
         td_ class => 'tc5', fmtdate $v->{added}, 'compact';
         td_ class => 'tc6', $v->{started}||'';
@@ -276,6 +298,25 @@ json_api qr{/u/ulist/setvote.json}, $VNVOTE, sub {
              ', vote_date = CASE WHEN', \$data->{vote}, '::smallint IS NULL THEN NULL WHEN vote IS NULL THEN NOW() ELSE vote_date END
           WHERE uid =', \$data->{uid}, 'AND vid =', \$data->{vid}
     );
+    elm_Success
+};
+
+
+json_api qr{/u/ulist/setlabel.json}, $VNLABELS_IN, sub {
+    my($data) = @_;
+    return elm_Unauth if !auth || auth->uid != $data->{uid};
+    die "Attempt to set vote label" if $data->{label} == 7;
+
+    tuwf->dbExeci(
+        'DELETE FROM ulists_vn_labels
+          WHERE uid =', \$data->{uid}, 'AND vid =', \$data->{vid}, 'AND lbl =', \$data->{label}
+    ) if !$data->{applied};
+    tuwf->dbExeci(
+        'INSERT INTO ulists_vn_labels (uid, vid, lbl)
+         VALUES (', sql_comma(\$data->{uid}, \$data->{vid}, \$data->{label}), ')
+             ON CONFLICT (uid, vid, lbl) DO NOTHING'
+    ) if $data->{applied};
+
     elm_Success
 };
 

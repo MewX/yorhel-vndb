@@ -86,7 +86,7 @@ view model =
         ]
       ]
   in
-    Html.form [ onSubmit Submit, class "labeledit hidden" ]
+    Html.form [ onSubmit Submit, class "managelabels hidden" ]
     [ div [ ]
       [ b [] [ text "How to use labels" ]
       , ul []

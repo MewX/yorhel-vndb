@@ -12,6 +12,10 @@ import Lib.Api as Api
 onClickN : m -> Attribute m
 onClickN action = custom "click" (JD.succeed { message = action, stopPropagation = True, preventDefault = True})
 
+-- onClick with preventDefault
+onClickD : m -> Attribute m
+onClickD action = custom "click" (JD.succeed { message = action, stopPropagation = False, preventDefault = True})
+
 -- onInput that also tells us whether the input is valid
 onInputValidation : (String -> Bool -> msg) -> Attribute msg
 onInputValidation msg = custom "input" <|

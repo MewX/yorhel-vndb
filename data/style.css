@@ -152,14 +152,15 @@ table.formtable td       { padding: 0; }
 table.formtable tr.newfield td { padding-top: 5px; }
 table.formtable tr.newpart td { padding-top: 20px; font-weight: bold; }
 
-.linkradio { padding: 2px }
+p.linkradio { padding: 2px }
 .linkradio label { color: $link$; cursor: pointer }
 .linkradio label:before { content: '✗' }
 .linkradio input:checked + label { color: $maintext$ }
 .linkradio input:checked + label:before { content: '✓' }
 .linkradio em { font-weight: normal; font-style: normal; color: $grayedout$ }
 
-div.spinner { content: ''; border: 3px solid #9eaebd; border-bottom-color: transparent; border-radius: 100%; animation: spin 1s infinite linear; width: 14px; height: 14px; display: inline-block; margin: auto }
+.spinner { content: ''; border: 3px solid #9eaebd; border-bottom-color: transparent; border-radius: 100%; animation: spin 1s infinite linear; width: 14px; height: 14px; display: inline-block; margin: auto }
+span.spinner { width: 1ex; height: 1ex }
 @keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
 
 .textpreview .head { width: 100%; text-align: right }
@@ -782,12 +783,12 @@ div.votelist td.tc2 { width: 50px; text-align: right; padding-right: 10px }
 .labelfilters { text-align: center }
 .labelfilters input.submit { margin-top: 5px }
 
-.labeledit > div { width: 600px; margin: 10px auto }
-.labeledit table { margin: 0 auto }
-.labeledit tbody td:nth-child(1) { text-align: right }
-.labeledit tbody td:nth-child(4) { padding-left: 10px; width: 300px}
-.labeledit select { width: 100% }
-.labeledit tfoot div { float: right; text-align: right }
+.managelabels > div { width: 600px; margin: 10px auto }
+.managelabels table { margin: 0 auto }
+.managelabels tbody td:nth-child(1) { text-align: right }
+.managelabels tbody td:nth-child(4) { padding-left: 10px; width: 300px}
+.managelabels select { width: 100% }
+.managelabels tfoot div { float: right; text-align: right }
 
 .ulist .tc1 label { cursor: pointer }
 .ulist .tc1 input { display: none }
@@ -798,6 +799,17 @@ div.votelist td.tc2 { width: 50px; text-align: right; padding-right: 10px }
 .ulist .tc4 { white-space: nowrap; width: 60px; text-align: right; padding-right: 10px }
 .ulist .tc4 input { width: 55px; text-align: right }
 .ulist .tc5, .ulist .tc6, .ulist .tc7 { white-space: nowrap; width: 100px }
+
+.labeledit > a { color: $maintext$; display: block; border: none!important }
+.labeledit > a > span { float: right; width: 16px; text-align: right; display: inline-block }
+.labeledit > a > span i { visibility: hidden; font-style: normal }
+.labeledit > a:hover > span > i,
+.labeledit > a:focus > span > i { visibility: visible }
+.labeledit > div { position: relative; float: right; width: 0; height: 0 }
+.labeledit > div > ul { position: absolute; right: -10px; top: 0; border: 1px solid $border$; background-color: $secbg$; z-index: 1000; list-style-type: none; margin: 0; padding: 0 }
+.labeledit > div > ul li { white-space: nowrap }
+.labeledit > div > ul li label { display: block; padding-left: 10px; border: 0; padding: 3px 5px 3px 3px }
+.labeledit > div > ul li label:hover { background: $boxbg$ }
 
 
 /***** User VN list browser ******/
