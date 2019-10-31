@@ -258,14 +258,13 @@ sub _footer_ {
         txt_ '"';
         br_;
     }
-    txt_ sprintf 'vndb %s | ', config->{version};
+    a_ href => config->{source_url}, config->{version};
+    txt_ ' | ';
     a_ href => '/d7', 'about us';
     lit_ ' | ';
     a_ href => 'irc://irc.synirc.net/vndb', '#vndb';
     lit_ ' | ';
     a_ href => sprintf('mailto:%s', config->{admin_email}), config->{admin_email};
-    lit_ ' | ';
-    a_ href => config->{source_url}, 'source';
 
     if(tuwf->debug) {
         lit_ ' | ';

@@ -21,7 +21,7 @@ my $config = {
     scrypt_args       => [ 65536, 8, 1 ], # N, r, p
     scrypt_salt       => 'another-random-string',
     form_salt         => 'a-private-string-here',
-    source_url        => 'http://git.blicky.net/vndb.git/?h=master',
+    source_url        => 'https://code.blicky.net/yorhel/vndb',
     admin_email       => 'contact@vndb.org',
     login_throttle    => [ 24*3600/10, 24*3600 ], # interval between attempts, max burst (10 a day)
     board_edit_time   => 7*24*3600, # Time after which posts become immutable
@@ -76,7 +76,7 @@ sub config {
         $c->{tuwf}{$_}  = $config_file->{tuwf}{$_}  for keys %{ $config_file->{tuwf}  || {} };
 
         $c->{url_static} ||= $c->{url};
-        $c->{version} ||= `git -C "$ROOT" describe` =~ /^(.+)$/ && $1;
+        $c->{version} ||= `git -C "$ROOT" describe` =~ /^(.+)\-g[0-9a-f]+$/ && $1;
         $c->{root} = $ROOT;
         $c->{Multi}{Core}{log_level} ||= 'debug';
         $c->{Multi}{Core}{log_dir}   ||= $ROOT.'/data/log';
