@@ -92,11 +92,11 @@ sub user_displayname {
 
 # Instantiate an Elm module
 sub elm_ {
-    my($mod, $schema, $data) = @_;
+    my($mod, $schema, $data, $placeholder) = @_;
     div_ 'data-elm-module' => $mod,
          $data ? (
             'data-elm-flags' => JSON::XS->new->allow_nonref->encode($schema ? $schema->analyze->coerce_for_json($data, unknown => 'remove') : $data)
-         ) : (), '';
+         ) : (), $placeholder//'';
 }
 
 

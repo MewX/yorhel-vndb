@@ -121,30 +121,30 @@ sub vn_ {
             b_ class => 'grayedout', $v->{notes} if $v->{notes};
         };
         td_ class => 'tc3', sub {
+            my %l = map +($_,1), $v->{labels}->@*;
+            my @l = grep $l{$_->{id}} && $_->{id} != 7, @$labels;
+            my $txt = @l ? join ', ', map $_->{label}, @l : '-';
             if($own) {
                 # XXX: Copying the entire $labels list for each entry is rather inefficient, would be nice if we could store that globally.
                 my @labels = grep $_->{id} != 7, @$labels;
                 elm_ 'ULists.LabelEdit' => $VNLABELS_OUT,
-                    { uid => $uid, vid => $v->{id}, labels => \@labels, selected => [ grep $_ != 7, $v->{labels}->@* ] };
+                    { uid => $uid, vid => $v->{id}, labels => \@labels, selected => [ grep $_ != 7, $v->{labels}->@* ] }, $txt;
             } else {
-                my %l = map +($_,1), $v->{labels}->@*;
-                my @l = grep $l{$_->{id}} && $_->{id} != 7, @$labels;
-                join_ ', ', sub { txt_ $_->{label} }, @l if @l;
-                txt_ '-' if !@l;
+                txt_ $txt;
             }
         };
         td_ mkclass(tc4 => 1, compact => $own, stealth => $own), sub {
             txt_ fmtvote $v->{vote} if !$own;
-            elm_ 'ULists.VoteEdit' => $VNVOTE, { uid => $uid, vid => $v->{id}, vote => fmtvote($v->{vote}) } if $own;
+            elm_ 'ULists.VoteEdit' => $VNVOTE, { uid => $uid, vid => $v->{id}, vote => fmtvote($v->{vote}) }, fmtvote $v->{vote} if $own;
         };
         td_ class => 'tc5', fmtdate $v->{added}, 'compact';
         td_ class => 'tc6', sub {
             txt_ $v->{started}||'' if !$own;
-            elm_ 'ULists.DateEdit' => $VNDATE, { uid => $uid, vid => $v->{id}, date => $v->{started}||'', start => 1 } if $own;
+            elm_ 'ULists.DateEdit' => $VNDATE, { uid => $uid, vid => $v->{id}, date => $v->{started}||'', start => 1 }, $v->{started}||'' if $own;
         };
         td_ class => 'tc7', sub {
             txt_ $v->{finished}||'' if !$own;
-            elm_ 'ULists.DateEdit' => $VNDATE, { uid => $uid, vid => $v->{id}, date => $v->{finished}||'', start => 0 } if $own;
+            elm_ 'ULists.DateEdit' => $VNDATE, { uid => $uid, vid => $v->{id}, date => $v->{finished}||'', start => 0 }, $v->{finished}||'' if $own;
         };
     };
 
@@ -213,7 +213,7 @@ sub listing_ {
                 td_ class => 'tc4', sub { txt_ 'Vote';       sortable_ 'vote',     $opt, \&url };
                 td_ class => 'tc5', sub { txt_ 'Added';      sortable_ 'added',    $opt, \&url };
                 td_ class => 'tc6', sub { txt_ 'Start date'; sortable_ 'started',  $opt, \&url };
-                td_ class => 'tc7', sub { txt_ 'End date';   sortable_ 'finished', $opt, \&url };
+                td_ class => 'tc7', sub { txt_ 'Finish date';sortable_ 'finished', $opt, \&url };
             }};
             vn_ $uid, $own, $_, $lst->[$_], $labels for (0..$#$lst);
         };
