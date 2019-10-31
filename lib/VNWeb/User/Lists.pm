@@ -41,6 +41,16 @@ my $VNLABELS_IN  = form_compile in  => $VNLABELS;
 elm_form 'LabelEdit', $VNLABELS_OUT, $VNLABELS_IN;
 
 
+my $VNDATE = form_compile any => {
+    uid   => { id => 1 },
+    vid   => { id => 1 },
+    date  => { required => 0, default => '', regex => qr/^(?:19[7-9][0-9]|20[0-9][0-9])-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])$/ }, # 1970 - 2099 for sanity
+    start => { anybool => 1 }, # Field selection, started/finished
+};
+
+elm_form 'DateEdit', undef, $VNDATE;
+
+
 # TODO: Filters to find unlabeled VNs or VNs with notes?
 sub filters_ {
     my($own, $labels) = @_;
@@ -94,6 +104,7 @@ sub filters_ {
 sub vn_ {
     my($uid, $own, $n, $v, $labels) = @_;
     tr_ mkclass(odd => $n % 2 == 0), sub {
+        # TODO: Public/private indicator
         td_ class => 'tc1', sub {
             input_ type => 'checkbox', class => 'checkhidden', name => 'collapse_vid', id => 'collapse_vid'.$v->{id}, value => 'collapsed_vid'.$v->{id};
             label_ for => 'collapse_vid'.$v->{id}, sub {
@@ -127,8 +138,14 @@ sub vn_ {
             elm_ 'ULists.VoteEdit' => $VNVOTE, { uid => $uid, vid => $v->{id}, vote => fmtvote($v->{vote}) } if $own;
         };
         td_ class => 'tc5', fmtdate $v->{added}, 'compact';
-        td_ class => 'tc6', $v->{started}||'';
-        td_ class => 'tc7', $v->{finished}||'';
+        td_ class => 'tc6', sub {
+            txt_ $v->{started}||'' if !$own;
+            elm_ 'ULists.DateEdit' => $VNDATE, { uid => $uid, vid => $v->{id}, date => $v->{started}||'', start => 1 } if $own;
+        };
+        td_ class => 'tc7', sub {
+            txt_ $v->{finished}||'' if !$own;
+            elm_ 'ULists.DateEdit' => $VNDATE, { uid => $uid, vid => $v->{id}, date => $v->{finished}||'', start => 0 } if $own;
+        };
     };
 
     tr_ mkclass(hidden => 1, 'collapsed_vid'.$v->{id} => 1, odd => $n % 2 == 0), sub {
@@ -317,6 +334,17 @@ json_api qr{/u/ulist/setlabel.json}, $VNLABELS_IN, sub {
              ON CONFLICT (uid, vid, lbl) DO NOTHING'
     ) if $data->{applied};
 
+    elm_Success
+};
+
+
+json_api qr{/u/ulist/setdate.json}, $VNDATE, sub {
+    my($data) = @_;
+    return elm_Unauth if !auth || auth->uid != $data->{uid};
+    tuwf->dbExeci(
+        'UPDATE ulists SET lastmod = NOW(), ', $data->{start} ? 'started' : 'finished', '=', \($data->{date}||undef),
+         'WHERE uid =', \$data->{uid}, 'AND vid =', \$data->{vid}
+    );
     elm_Success
 };
 
