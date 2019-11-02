@@ -302,7 +302,13 @@ function show() {
 
 
 var curSlider = null;
-function filFSlider(c, n, min, max, def, unit) {
+function filFSlider(c, n, min, max, def, unit, ser, deser) {
+  // min/max/def/fil_val are in serialized form (i.e. a "value")
+  if(!ser)   ser   = function(v) { return v }; // integer -> value
+  if(!deser) deser = function(v) { return parseInt(v) }; // value -> integer
+
+  min = deser(min);
+  max = deser(max);
   var bw = 200; var pw = 1;  // slidebar width and pointer width
   var s = tag('p', {fil_val:def, 'class':'slider'});
   var b = tag('div', {style:'width:'+(bw-2)+'px;', s:s});
@@ -318,12 +324,12 @@ function filFSlider(c, n, min, max, def, unit) {
 
     if(v) {
       s = e;
-      x = v[0] == '' ? def : parseInt(v[0]);
+      x = deser(v[0] == '' ? def : v[0]);
       x = (x-min)*w/(max-min);
     } else {
       s = curSlider;
       if(!e) e = window.event;
-      x = (!e) ? (def-min)*w/(max-min)
+      x = (!e) ? (deser(def)-min)*w/(max-min)
         : (e.pageX || e.clientX + document.body.scrollLeft - document.body.clientLeft)-5;
       var o = s.childNodes[0];
       while(o.offsetParent) {
@@ -333,7 +339,7 @@ function filFSlider(c, n, min, max, def, unit) {
     }
 
     if(x<0) x = 0; if(x>w) x = w;
-    s.fil_val = min + Math.floor(x*(max-min)/w);
+    s.fil_val = ser(min + Math.floor(x*(max-min)/w));
     s.childNodes[1].innerHTML = s.fil_val+' '+unit;
     s.childNodes[0].childNodes[0].style.left = x+'px';
     return false;
@@ -574,6 +580,14 @@ function filFStaffInput(code, name) {
 function filChars() {
   var ontraitpage = location.pathname.indexOf('/i') == 0;
 
+  var cup_ser = function(v) { return VARS.cup_size[parseInt(v)] };
+  var cup_deser = function(v) {
+    for(var i=0; i<VARS.cup_size.length; i++)
+      if(VARS.cup_size[i] == v)
+        return i;
+    return 0;
+  };
+
   return [
     'Character filters',
     [ 'General',
@@ -591,6 +605,8 @@ function filChars() {
       filFSlider('height_max', 'Height max', 0, 300, 240, 'cm'),
       filFSlider('weight_min', 'Weight min', 0, 400, 80,  'kg'),
       filFSlider('weight_max', 'Weight max', 0, 400, 320, 'kg'),
+      filFSlider('cup_min',    'Cup size min', 'AAA', 'Z', 'AAA', '', cup_ser, cup_deser),
+      filFSlider('cup_max',    'Cup size max', 'AAA', 'Z', 'E',   '', cup_ser, cup_deser)
     ],
     ontraitpage ? [ 'Traits',
       [ '', ' ', tag('Additional trait filters are not available on this page. Use the character browser instead (available from the main menu -> characters).') ],

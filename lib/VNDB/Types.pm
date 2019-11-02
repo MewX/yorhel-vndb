@@ -324,6 +324,15 @@ hash GENDER =>
 
 
 
+# SQL: ENUM cup_size
+hash CUP_SIZE =>
+    ''  => 'Unknown or N/A',
+    AAA => 'AAA',
+    AA  => 'AA',
+    map +($_,$_), 'A'..'Z';
+
+
+
 # SQL: ENUM char_role
 hash CHAR_ROLE =>
     main    => { txt => 'Protagonist',         plural => 'Protagonists'       },

@@ -15,7 +15,7 @@ our @EXPORT = qw|filFetchDB filCompat bbSubstLinks entryLinks|;
 our %filfields = (
   vn      => [qw|date_before date_after released length hasani hasshot tag_inc tag_exc taginc tagexc tagspoil lang olang plat staff_inc staff_exc ul_notblack ul_onwish ul_voted ul_onlist|],
   release => [qw|type patch freeware doujin uncensored date_before date_after released minage lang olang resolution plat prod_inc prod_exc med voiced ani_story ani_ero engine|],
-  char    => [qw|gender bloodt bust_min bust_max waist_min waist_max hip_min hip_max height_min height_max va_inc va_exc weight_min weight_max trait_inc trait_exc tagspoil role|],
+  char    => [qw|gender bloodt bust_min bust_max waist_min waist_max hip_min hip_max height_min height_max va_inc va_exc weight_min weight_max cup_min cup_max trait_inc trait_exc tagspoil role|],
   staff   => [qw|gender role truename lang|],
 );
 

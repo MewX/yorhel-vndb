@@ -48,6 +48,7 @@ sub vars {
     blood_types   => [ map [ $_, $BLOOD_TYPE{$_} ], keys %BLOOD_TYPE ],
     genders       => [ map [ $_, $GENDER{$_} ], keys %GENDER ],
     credit_type   => [ map [ $_, $CREDIT_TYPE{$_} ], keys %CREDIT_TYPE ],
+    cup_size      => [ grep $_, keys %CUP_SIZE ],
     resolutions   => scalar resolutions(),
   );
   JSON::XS->new->encode(\%vars);

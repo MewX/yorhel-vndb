@@ -56,6 +56,7 @@ sub page {
       [ height    => 'Height',        serialize => sub { $_[0]||'[empty]' } ],
       [ weight    => 'Weight',        serialize => sub { $_[0]//'[empty]' } ],
       [ bloodt    => 'Blood type',    serialize => sub { $BLOOD_TYPE{$_[0]} } ],
+      [ cup_size  => 'Cup size',      serialize => sub { $CUP_SIZE{$_[0]} } ],
       [ main      => 'Main character',htmlize => sub { $_[0] ? sprintf '<a href="/c%d">c%d</a>', $_[0], $_[0] : '[empty]' } ],
       [ main_spoil=> 'Spoiler',       serialize => \&fmtspoil ],
       [ image     => 'Image', htmlize => sub {
@@ -171,14 +172,15 @@ sub charTable {
        td $r->{alias};
       end;
     }
-    if(defined($r->{weight}) || $r->{height} || $r->{s_bust} || $r->{s_waist} || $r->{s_hip}) {
+    if(defined($r->{weight}) || $r->{height} || $r->{s_bust} || $r->{s_waist} || $r->{s_hip} || $r->{cup_size}) {
       Tr;
        td class => 'key', 'Measurements';
        td join ', ',
-         $r->{height} ? "Height: $r->{height}cm" : (),
+         $r->{height}   ? "Height: $r->{height}cm" : (),
          defined($r->{weight}) ? "Weight: $r->{weight}kg" : (),
          $r->{s_bust} || $r->{s_waist} || $r->{s_hip} ?
-           sprintf 'Bust-Waist-Hips: %s-%s-%scm', $r->{s_bust}||'??', $r->{s_waist}||'??', $r->{s_hip}||'??' : ();
+           sprintf 'Bust-Waist-Hips: %s-%s-%scm', $r->{s_bust}||'??', $r->{s_waist}||'??', $r->{s_hip}||'??' : (),
+         $r->{cup_size} ? "$CUP_SIZE{$r->{cup_size}} cup" : ();
       end;
     }
     if($r->{b_month} && $r->{b_day}) {
@@ -303,7 +305,7 @@ sub edit {
     || $id && (($r->{locked} || $r->{hidden}) && !$self->authCan('dbmod'));
 
   my %b4 = !$id ? () : (
-    (map +($_ => $r->{$_}), qw|name original alias desc image ihid ilock s_bust s_waist s_hip height weight bloodt gender main_spoil|),
+    (map +($_ => $r->{$_}), qw|name original alias desc image ihid ilock s_bust s_waist s_hip height weight bloodt cup_size gender main_spoil|),
     main => $r->{main}||0,
     bday => $r->{b_month} ? sprintf('%02d-%02d', $r->{b_month}, $r->{b_day}) : '',
     traits => join(' ', map sprintf('%d-%d', $_->{tid}, $_->{spoil}), sort { $a->{tid} <=> $b->{tid} } @{$r->{traits}}),
@@ -328,6 +330,7 @@ sub edit {
       { post => 'height',        required  => 0, default => 0, template => 'uint', max => 32767 },
       { post => 'weight',        required  => 0, default => undef, template => 'uint', max => 32767 },
       { post => 'bloodt',        required  => 0, default => 'unknown', enum => [ keys %BLOOD_TYPE ] },
+      { post => 'cup_size',      required  => 0, default => '', enum => [ keys %CUP_SIZE ] },
       { post => 'main',          required  => 0, default => 0, template => 'id' },
       { post => 'main_spoil',    required  => 0, default => 0, enum => [ 0..2 ] },
       { post => 'traits',        required  => 0, default => '', regex => [ qr/^(?:[1-9]\d*-[0-2])(?: +[1-9]\d*-[0-2])*$/, 'Incorrect trait format.' ] },
@@ -414,6 +417,8 @@ sub edit {
     [ input  => name => 'Weight',    short => 'weight', width => 50, post => ' kg', allow0 => 1 ],
     [ select => name => 'Blood type',short => 'bloodt', options => [
        map [ $_, $BLOOD_TYPE{$_} ], keys %BLOOD_TYPE ] ],
+    [ select => name => 'Cup size',  short => 'cup_size', options => [
+       map [ $_, $CUP_SIZE{$_} ], keys %CUP_SIZE ] ],
     [ static => content => '<br />' ],
     [ input  => name => 'Instance of',short => 'main', width => 50, post => ' ID of the main character - the character of which this is an instance of.' ],
     [ select => name => 'Spoiler',  short => 'main_spoil', options => [

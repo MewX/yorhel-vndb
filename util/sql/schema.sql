@@ -51,6 +51,7 @@ CREATE TYPE blood_type        AS ENUM ('unknown', 'a', 'b', 'ab', 'o');
 CREATE TYPE board_type        AS ENUM ('an', 'db', 'ge', 'v', 'p', 'u');
 CREATE TYPE char_role         AS ENUM ('main', 'primary', 'side', 'appears');
 CREATE TYPE credit_type       AS ENUM ('scenario', 'chardesign', 'art', 'music', 'songs', 'director', 'staff');
+CREATE TYPE cup_size          AS ENUM ('', 'AAA', 'AA', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z');
 CREATE TYPE dbentry_type      AS ENUM ('v', 'r', 'p', 'c', 's', 'd');
 CREATE TYPE edit_rettype      AS (itemid integer, chid integer, rev integer);
 CREATE TYPE gender            AS ENUM ('unknown', 'm', 'f', 'b');
@@ -119,7 +120,8 @@ CREATE TABLE chars ( -- dbentry_type=c
   weight     smallint, -- [pub]
   bloodt     blood_type NOT NULL DEFAULT 'unknown', -- [pub]
   main       integer, -- [pub] chars.id
-  main_spoil smallint NOT NULL DEFAULT 0 -- [pub]
+  main_spoil smallint NOT NULL DEFAULT 0, -- [pub]
+  cup_size   cup_size NOT NULL DEFAULT '' -- [pub]
 );
 
 -- chars_hist
@@ -140,7 +142,8 @@ CREATE TABLE chars_hist (
   weight     smallint,
   bloodt     blood_type NOT NULL DEFAULT 'unknown',
   main       integer, -- chars.id
-  main_spoil smallint NOT NULL DEFAULT 0
+  main_spoil smallint NOT NULL DEFAULT 0,
+  cup_size   cup_size NOT NULL DEFAULT ''
 );
 
 -- chars_traits
