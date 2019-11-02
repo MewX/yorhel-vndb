@@ -121,7 +121,8 @@ CREATE TABLE chars ( -- dbentry_type=c
   bloodt     blood_type NOT NULL DEFAULT 'unknown', -- [pub]
   main       integer, -- [pub] chars.id
   main_spoil smallint NOT NULL DEFAULT 0, -- [pub]
-  cup_size   cup_size NOT NULL DEFAULT '' -- [pub]
+  cup_size   cup_size NOT NULL DEFAULT '', -- [pub]
+  age        smallint -- [pub]
 );
 
 -- chars_hist
@@ -143,7 +144,8 @@ CREATE TABLE chars_hist (
   bloodt     blood_type NOT NULL DEFAULT 'unknown',
   main       integer, -- chars.id
   main_spoil smallint NOT NULL DEFAULT 0,
-  cup_size   cup_size NOT NULL DEFAULT ''
+  cup_size   cup_size NOT NULL DEFAULT '',
+  age        smallint
 );
 
 -- chars_traits

@@ -57,6 +57,7 @@ sub page {
       [ weight    => 'Weight',        serialize => sub { $_[0]//'[empty]' } ],
       [ bloodt    => 'Blood type',    serialize => sub { $BLOOD_TYPE{$_[0]} } ],
       [ cup_size  => 'Cup size',      serialize => sub { $CUP_SIZE{$_[0]} } ],
+      [ age       => 'Age',           serialize => sub { $_[0]//'[empty]' } ],
       [ main      => 'Main character',htmlize => sub { $_[0] ? sprintf '<a href="/c%d">c%d</a>', $_[0], $_[0] : '[empty]' } ],
       [ main_spoil=> 'Spoiler',       serialize => \&fmtspoil ],
       [ image     => 'Image', htmlize => sub {
@@ -189,6 +190,12 @@ sub charTable {
        td $r->{b_day}.' '.[qw{January February March April May June July August September October November December}]->[$r->{b_month}-1];
       end;
     }
+    if(defined $r->{age}) {
+      Tr;
+       td class => 'key', 'Age';
+       td $r->{age};
+      end;
+    }
 
     # traits
     my %groups;
@@ -305,7 +312,7 @@ sub edit {
     || $id && (($r->{locked} || $r->{hidden}) && !$self->authCan('dbmod'));
 
   my %b4 = !$id ? () : (
-    (map +($_ => $r->{$_}), qw|name original alias desc image ihid ilock s_bust s_waist s_hip height weight bloodt cup_size gender main_spoil|),
+    (map +($_ => $r->{$_}), qw|name original alias desc image ihid ilock s_bust s_waist s_hip height weight bloodt cup_size age gender main_spoil|),
     main => $r->{main}||0,
     bday => $r->{b_month} ? sprintf('%02d-%02d', $r->{b_month}, $r->{b_day}) : '',
     traits => join(' ', map sprintf('%d-%d', $_->{tid}, $_->{spoil}), sort { $a->{tid} <=> $b->{tid} } @{$r->{traits}}),
@@ -331,6 +338,7 @@ sub edit {
       { post => 'weight',        required  => 0, default => undef, template => 'uint', max => 32767 },
       { post => 'bloodt',        required  => 0, default => 'unknown', enum => [ keys %BLOOD_TYPE ] },
       { post => 'cup_size',      required  => 0, default => '', enum => [ keys %CUP_SIZE ] },
+      { post => 'age',           required  => 0, default => undef, template => 'uint', max => 32767 },
       { post => 'main',          required  => 0, default => 0, template => 'id' },
       { post => 'main_spoil',    required  => 0, default => 0, enum => [ 0..2 ] },
       { post => 'traits',        required  => 0, default => '', regex => [ qr/^(?:[1-9]\d*-[0-2])(?: +[1-9]\d*-[0-2])*$/, 'Incorrect trait format.' ] },
@@ -410,6 +418,7 @@ sub edit {
     [ select => name => 'Sex',       short => 'gender', options => [
        map [ $_, $GENDER{$_} ], keys %GENDER ] ],
     [ input  => name => 'Birthday',  short => 'bday',   width => 100,post => ' MM-DD (e.g. "01-26" for the 26th of January)'  ],
+    [ input  => name => 'Age',       short => 'age',    width => 50, post => ' years', allow0 => 1 ],
     [ input  => name => 'Bust',      short => 's_bust', width => 50, post => ' cm' ],
     [ input  => name => 'Waist',     short => 's_waist',width => 50, post => ' cm' ],
     [ input  => name => 'Hips',      short => 's_hip',  width => 50, post => ' cm' ],

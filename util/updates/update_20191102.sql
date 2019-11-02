@@ -2,6 +2,8 @@ CREATE TYPE cup_size AS ENUM ('', 'AAA', 'AA', 'A', 'B', 'C', 'D', 'E', 'F', 'G'
 
 ALTER TABLE chars      ADD COLUMN cup_size cup_size NOT NULL DEFAULT '';
 ALTER TABLE chars_hist ADD COLUMN cup_size cup_size NOT NULL DEFAULT '';
+ALTER TABLE chars      ADD COLUMN age smallint;
+ALTER TABLE chars_hist ADD COLUMN age smallint;
 
 \i util/sql/editfunc.sql
 
@@ -21,11 +23,11 @@ UPDATE traits SET state = 1 WHERE id IN(722, 1182, 1183, 1178, 1184);
 
 -- This takes a while (slowness is likely due to traits_chars_calc(), can be temporarily disabled, but w/e)
 \timing
-SELECT migrate_trait_to_cup(c.id, 'AA') FROM chars c JOIN chars_traits ct ON ct.id = c.id WHERE NOT c.hidden AND c.cup_size = '' AND ct.tid = 722;
-SELECT migrate_trait_to_cup(c.id, 'A' ) FROM chars c JOIN chars_traits ct ON ct.id = c.id WHERE NOT c.hidden AND c.cup_size = '' AND ct.tid = 1182;
-SELECT migrate_trait_to_cup(c.id, 'B' ) FROM chars c JOIN chars_traits ct ON ct.id = c.id WHERE NOT c.hidden AND c.cup_size = '' AND ct.tid = 1183;
-SELECT migrate_trait_to_cup(c.id, 'C' ) FROM chars c JOIN chars_traits ct ON ct.id = c.id WHERE NOT c.hidden AND c.cup_size = '' AND ct.tid = 1178;
-SELECT migrate_trait_to_cup(c.id, 'D' ) FROM chars c JOIN chars_traits ct ON ct.id = c.id WHERE NOT c.hidden AND c.cup_size = '' AND ct.tid = 1184;
+SELECT count(*) FROM (SELECT migrate_trait_to_cup(c.id, 'AA') FROM chars c JOIN chars_traits ct ON ct.id = c.id WHERE NOT c.hidden AND c.cup_size = '' AND ct.tid = 722) x;
+SELECT count(*) FROM (SELECT migrate_trait_to_cup(c.id, 'A' ) FROM chars c JOIN chars_traits ct ON ct.id = c.id WHERE NOT c.hidden AND c.cup_size = '' AND ct.tid = 1182) x;
+SELECT count(*) FROM (SELECT migrate_trait_to_cup(c.id, 'B' ) FROM chars c JOIN chars_traits ct ON ct.id = c.id WHERE NOT c.hidden AND c.cup_size = '' AND ct.tid = 1183) x;
+SELECT count(*) FROM (SELECT migrate_trait_to_cup(c.id, 'C' ) FROM chars c JOIN chars_traits ct ON ct.id = c.id WHERE NOT c.hidden AND c.cup_size = '' AND ct.tid = 1178) x;
+SELECT count(*) FROM (SELECT migrate_trait_to_cup(c.id, 'D' ) FROM chars c JOIN chars_traits ct ON ct.id = c.id WHERE NOT c.hidden AND c.cup_size = '' AND ct.tid = 1184) x;
 \timing
 
 DROP FUNCTION migrate_trait_to_cup(integer, cup_size);
@@ -45,7 +47,26 @@ END;
 $$ LANGUAGE plpgsql;
 
 \timing
-SELECT migrate_desc_to_cup(id) FROM chars WHERE NOT hidden AND cup_size = '' AND "desc" ~* '.*(cup[\s]*(size)?:[\s]*[A-Z]).*';
+SELECT count(*) FROM (SELECT migrate_desc_to_cup(id) FROM chars WHERE NOT hidden AND cup_size = '' AND "desc" ~* '.*(cup[\s]*(size)?:[\s]*[A-Z]).*') x;
 \timing
 
 DROP FUNCTION migrate_desc_to_cup(integer);
+
+
+
+CREATE OR REPLACE FUNCTION migrate_desc_to_age(cid integer) RETURNS void AS $$
+BEGIN
+    PERFORM edit_c_init(cid, (SELECT MAX(rev) FROM changes WHERE itemid = cid AND type = 'c'));
+    UPDATE edit_chars SET
+        age = regexp_replace("desc", '^.*age:\s*([0-9]+).*$', '\1', 'i')::smallint,
+        "desc" = trim(both E' \t\r\n' from regexp_replace("desc", '(?<=^|\n)\s*age:\s*([0-9]+)(?:\n|\s*$|\.\s*)', '', 'ig'));
+    UPDATE edit_revision SET requester = 1, ip = '0.0.0.0', comments = 'Automatic extraction of age from the description.';
+    PERFORM edit_c_commit();
+END;
+$$ LANGUAGE plpgsql;
+
+\timing
+SELECT count(*) FROM (SELECT migrate_desc_to_age(id) FROM chars WHERE NOT hidden AND age IS NULL AND "desc" ~* '(?<=^|\n)\s*age:\s*([0-9]+)(?:\n|\s*$|\.\s*)') x;
+\timing
+
+DROP FUNCTION migrate_desc_to_age(integer);

@@ -71,7 +71,7 @@ sub dbCharGet {
   );
 
   my @select = (qw|c.id c.name c.original c.gender|);
-  push @select, qw|c.hidden c.locked c.alias c.desc c.image c.b_month c.b_day c.s_bust c.s_waist c.s_hip c.height c.weight c.bloodt c.cup_size c.main c.main_spoil| if $o{what} =~ /extended/;
+  push @select, qw|c.hidden c.locked c.alias c.desc c.image c.b_month c.b_day c.s_bust c.s_waist c.s_hip c.height c.weight c.bloodt c.cup_size c.age c.main c.main_spoil| if $o{what} =~ /extended/;
 
   my($r, $np) = $self->dbPage(\%o, q|
     SELECT !s
@@ -94,7 +94,7 @@ sub dbCharGetRev {
   my $select = 'c.itemid AS id, ch.name, ch.original, ch.gender';
   $select .= ', extract(\'epoch\' from c.added) as added, c.comments, c.rev, c.ihid, c.ilock, '.VNWeb::DB::sql_user();
   $select .= ', c.id AS cid, NOT EXISTS(SELECT 1 FROM changes c2 WHERE c2.type = c.type AND c2.itemid = c.itemid AND c2.rev = c.rev+1) AS lastrev';
-  $select .= ', ch.alias, ch.desc, ch.image, ch.b_month, ch.b_day, ch.s_bust, ch.s_waist, ch.s_hip, ch.height, ch.weight, ch.bloodt, ch.cup_size, ch.main, ch.main_spoil, co.hidden, co.locked' if $o{what} =~ /extended/;
+  $select .= ', ch.alias, ch.desc, ch.image, ch.b_month, ch.b_day, ch.s_bust, ch.s_waist, ch.s_hip, ch.height, ch.weight, ch.bloodt, ch.cup_size, ch.age, ch.main, ch.main_spoil, co.hidden, co.locked' if $o{what} =~ /extended/;
 
   my $r = $self->dbAll(q|
     SELECT !s
@@ -177,7 +177,7 @@ sub dbCharRevisionInsert {
   my($self, $o) = @_;
 
   my %set = map exists($o->{$_}) ? (qq|"$_" = ?|, $o->{$_}) : (),
-    qw|name original alias desc image b_month b_day s_bust s_waist s_hip height weight bloodt cup_size gender main main_spoil|;
+    qw|name original alias desc image b_month b_day s_bust s_waist s_hip height weight bloodt cup_size age gender main main_spoil|;
   $self->dbExec('UPDATE edit_chars !H', \%set) if keys %set;
 
   if($o->{traits}) {
