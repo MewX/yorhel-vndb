@@ -125,10 +125,7 @@ sub vn_ {
             my @l = grep $l{$_->{id}} && $_->{id} != 7, @$labels;
             my $txt = @l ? join ', ', map $_->{label}, @l : '-';
             if($own) {
-                # XXX: Copying the entire $labels list for each entry is rather inefficient, would be nice if we could store that globally.
-                my @labels = grep $_->{id} != 7, @$labels;
-                elm_ 'ULists.LabelEdit' => $VNLABELS_OUT,
-                    { uid => $uid, vid => $v->{id}, labels => \@labels, selected => [ grep $_ != 7, $v->{labels}->@* ] }, $txt;
+                elm_ 'ULists.LabelEdit' => $VNLABELS_OUT, { vid => $v->{id}, selected => [ grep $_ != 7, $v->{labels}->@* ] }, $txt;
             } else {
                 txt_ $txt;
             }
@@ -240,12 +237,16 @@ TUWF::get qr{/$RE{uid}/ulist}, sub {
 
     my $title = $own ? 'My list' : user_displayname($u)."'s list";
     framework_ title => $title, type => 'u', dbobj => $u, tab => 'list',
+        $own ? ( pagevars => {
+            uid    => $u->{id}*1,
+            labels => $LABELS->analyze->{keys}{labels}->coerce_for_json($labels),
+        } ) : (),
     sub {
         my $opt;
         div_ class => 'mainbox', sub {
             h1_ $title;
             $opt = filters_ $own, $labels;
-            elm_ 'ULists.ManageLabels', $LABELS, { uid => $u->{id}, labels => $labels } if $own;
+            elm_ 'ULists.ManageLabels' if $own;
         };
         listing_ $u->{id}, $own, $opt, $labels;
     };

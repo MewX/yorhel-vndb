@@ -112,6 +112,6 @@ view model =
       ]
     , div []
       [ ul [ classList [("hidden", not model.opened)] ]
-        <| List.map item model.labels
+        <| List.map item <| List.filter (\l -> l.id /= 7) model.labels
       ]
     ]

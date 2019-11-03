@@ -116,7 +116,17 @@ static/f/vndb.min.js: static/f/vndb.js
 
 # v2-rw
 
-JS_FILES=elm/*.js elm/*/*.js
+# Order matters!
+JS_FILES=\
+	elm/polyfills.js \
+	elm/pagevars.js \
+	elm/ULists/ManageLabels.js \
+	elm/ULists/LabelEdit.js \
+	elm/Lib/Ffi.js \
+	elm/elm-init.js \
+	elm/checkall.js \
+	elm/checkhidden.js
+
 ELM_FILES=elm/*.elm elm/*/*.elm
 ELM_MODULES=$(shell grep -l '^main =' ${ELM_FILES} | sed 's/^elm\///')
 
