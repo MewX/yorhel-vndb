@@ -1,5 +1,5 @@
 -- Replaces the current vnlists, votes and wlists tables
-CREATE TABLE ulists (
+CREATE TABLE ulist_vns (
     uid       integer NOT NULL, -- users.id
     vid       integer NOT NULL, -- vn.id
     added     timestamptz NOT NULL DEFAULT NOW(),
@@ -12,7 +12,7 @@ CREATE TABLE ulists (
     PRIMARY KEY(uid, vid)
 );
 
-CREATE TABLE ulists_labels (
+CREATE TABLE ulist_labels (
     uid      integer NOT NULL, -- user.id
     id       integer NOT NULL, -- 0 < builtin < 10 <= custom, ids are reused
     label    text NOT NULL,
@@ -20,7 +20,7 @@ CREATE TABLE ulists_labels (
     PRIMARY KEY(uid, id)
 );
 
-CREATE TABLE ulists_vn_labels (
+CREATE TABLE ulist_vns_labels (
     uid integer NOT NULL, -- user.id
     lbl integer NOT NULL,
     vid integer NOT NULL, -- vn.id
@@ -48,7 +48,7 @@ CREATE TABLE ulists_vn_labels (
 
 \timing
 
-INSERT INTO ulists_labels (uid, id, label, private)
+INSERT INTO ulist_labels (uid, id, label, private)
               SELECT id,  1, 'Playing',   hide_list FROM users
     UNION ALL SELECT id,  2, 'Finished',  hide_list FROM users
     UNION ALL SELECT id,  3, 'Stalled',   hide_list FROM users
@@ -60,7 +60,7 @@ INSERT INTO ulists_labels (uid, id, label, private)
     UNION ALL SELECT id, 11, 'Wishlist-Medium', hide_list FROM users WHERE id IN(SELECT DISTINCT uid FROM wlists WHERE wstat = 1)
     UNION ALL SELECT id, 12, 'Wishlist-Low',    hide_list FROM users WHERE id IN(SELECT DISTINCT uid FROM wlists WHERE wstat = 2);
 
-INSERT INTO ulists (uid, vid, added, lastmod, vote_date, vote, notes)
+INSERT INTO ulist_vns (uid, vid, added, lastmod, vote_date, vote, notes)
     SELECT COALESCE(wl.uid, vl.uid, vo.uid)
          , COALESCE(wl.vid, vl.vid, vo.vid)
          , LEAST(wl.added, vl.added, vo.date)
@@ -71,7 +71,7 @@ INSERT INTO ulists (uid, vid, added, lastmod, vote_date, vote, notes)
       FULL JOIN vnlists vl ON vl.uid = wl.uid AND vl.vid = wl.vid
       FULL JOIN votes   vo ON vo.uid = COALESCE(wl.uid, vl.uid) AND vo.vid = COALESCE(wl.vid, vl.vid);
 
-INSERT INTO ulists_vn_labels (uid, vid, lbl)
+INSERT INTO ulist_vns_labels (uid, vid, lbl)
               SELECT uid, vid,  5 FROM wlists WHERE wstat <> 3 -- All wishlisted items except the blacklist
     UNION ALL SELECT uid, vid, 10 FROM wlists WHERE wstat = 0 -- Wishlist-High
     UNION ALL SELECT uid, vid, 11 FROM wlists WHERE wstat = 1 -- Wishlist-Medium
@@ -82,14 +82,14 @@ INSERT INTO ulists_vn_labels (uid, vid, lbl)
 
 
 
-ALTER TABLE ulists                   ADD CONSTRAINT ulists_uid_fkey                    FOREIGN KEY (uid)       REFERENCES users         (id) ON DELETE CASCADE;
-ALTER TABLE ulists                   ADD CONSTRAINT ulists_vid_fkey                    FOREIGN KEY (vid)       REFERENCES vn            (id);
-ALTER TABLE ulists_labels            ADD CONSTRAINT ulists_labels_uid_fkey             FOREIGN KEY (uid)       REFERENCES users         (id) ON DELETE CASCADE;
-ALTER TABLE ulists_vn_labels         ADD CONSTRAINT ulists_vn_labels_uid_fkey          FOREIGN KEY (uid)       REFERENCES users         (id) ON DELETE CASCADE;
-ALTER TABLE ulists_vn_labels         ADD CONSTRAINT ulists_vn_labels_vid_fkey          FOREIGN KEY (vid)       REFERENCES vn            (id);
-ALTER TABLE ulists_vn_labels         ADD CONSTRAINT ulists_vn_labels_uid_lbl_fkey      FOREIGN KEY (uid,lbl)   REFERENCES ulists_labels (uid,id) ON DELETE CASCADE;
-ALTER TABLE ulists_vn_labels         ADD CONSTRAINT ulists_vn_labels_uid_vid_fkey      FOREIGN KEY (uid,vid)   REFERENCES ulists        (uid,vid) ON DELETE CASCADE;
+ALTER TABLE ulist_vns                ADD CONSTRAINT ulist_vns_uid_fkey                 FOREIGN KEY (uid)       REFERENCES users         (id) ON DELETE CASCADE;
+ALTER TABLE ulist_vns                ADD CONSTRAINT ulist_vns_vid_fkey                 FOREIGN KEY (vid)       REFERENCES vn            (id);
+ALTER TABLE ulist_labels             ADD CONSTRAINT ulist_labels_uid_fkey              FOREIGN KEY (uid)       REFERENCES users         (id) ON DELETE CASCADE;
+ALTER TABLE ulist_vns_labels         ADD CONSTRAINT ulist_vns_labels_uid_fkey          FOREIGN KEY (uid)       REFERENCES users         (id) ON DELETE CASCADE;
+ALTER TABLE ulist_vns_labels         ADD CONSTRAINT ulist_vns_labels_vid_fkey          FOREIGN KEY (vid)       REFERENCES vn            (id);
+ALTER TABLE ulist_vns_labels         ADD CONSTRAINT ulist_vns_labels_uid_lbl_fkey      FOREIGN KEY (uid,lbl)   REFERENCES ulist_labels  (uid,id) ON DELETE CASCADE;
+ALTER TABLE ulist_vns_labels         ADD CONSTRAINT ulist_vns_labels_uid_vid_fkey      FOREIGN KEY (uid,vid)   REFERENCES ulist_vns     (uid,vid) ON DELETE CASCADE;
 
-GRANT SELECT, INSERT, UPDATE, DELETE ON ulists                   TO vndb_site;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ulists_labels            TO vndb_site;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ulists_vn_labels         TO vndb_site;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ulist_vns                TO vndb_site;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ulist_labels             TO vndb_site;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ulist_vns_labels         TO vndb_site;
