@@ -31,7 +31,7 @@ my $VNLABELS = {
     vid      => { id => 1 },
     label    => { _when => 'in', id => 1 },
     applied  => { _when => 'in', anybool => 1 },
-    labels   => { _when => 'out', aoh => { id => { int => 1 }, label => {} } },
+    labels   => { _when => 'out', aoh => { id => { int => 1 }, label => {}, private => { anybool => 1 } } },
     selected => { _when => 'out', type => 'array', values => { id => 1 } },
 };
 
@@ -104,7 +104,8 @@ sub filters_ {
 sub vn_ {
     my($uid, $own, $n, $v, $labels) = @_;
     tr_ mkclass(odd => $n % 2 == 0), sub {
-        # TODO: Public/private indicator
+        my %labels = map +($_,1), $v->{labels}->@*;
+
         td_ class => 'tc1', sub {
             input_ type => 'checkbox', class => 'checkhidden', name => 'collapse_vid', id => 'collapse_vid'.$v->{id}, value => 'collapsed_vid'.$v->{id};
             label_ for => 'collapse_vid'.$v->{id}, sub {
@@ -114,6 +115,16 @@ sub vn_ {
                 if($total && $obtained == $total) { b_ class => 'done', $txt }
                 elsif($obtained < $total)         { b_ class => 'todo', $txt }
                 else                              { txt_ $txt }
+                span_ $v->{notes} ? () : (style => 'opacity: 0.5'), ' 💬';
+                if($own) {
+                    my $public = List::Util::any { $labels{$_->{id}} && !$_->{private} } @$labels;
+                    my $publicLabel = List::Util::any { $_->{id} != 7 && $labels{$_->{id}} && !$_->{private} } @$labels;
+                    span_ mkclass(invisible => !$public),
+                          id              => 'ulist_public_'.$v->{id},
+                          'data-publabel' => !!$publicLabel,
+                          'data-voted'    => !!$labels{7},
+                          title           => 'This item is public', ' 👁';
+                }
             };
         };
         td_ class => 'tc2', sub {
@@ -121,8 +132,7 @@ sub vn_ {
             b_ class => 'grayedout', $v->{notes} if $v->{notes};
         };
         td_ class => 'tc3', sub {
-            my %l = map +($_,1), $v->{labels}->@*;
-            my @l = grep $l{$_->{id}} && $_->{id} != 7, @$labels;
+            my @l = grep $labels{$_->{id}} && $_->{id} != 7, @$labels;
             my $txt = @l ? join ', ', map $_->{label}, @l : '-';
             if($own) {
                 elm_ 'ULists.LabelEdit' => $VNLABELS_OUT, { vid => $v->{id}, selected => [ grep $_ != 7, $v->{labels}->@* ] }, $txt;
@@ -194,7 +204,7 @@ sub listing_ {
 
     my sub url { '?'.query_encode %$opt, @_ }
 
-    # TODO: In-line editable labels, start/end dates, notes, remove-from-list
+    # TODO: In-line editable notes, remove-from-list
     # TODO: Releases
     # TODO: Thumbnail view
     paginate_ \&url, $opt->{p}, [ $count, 50 ], 't';
@@ -238,8 +248,9 @@ TUWF::get qr{/$RE{uid}/ulist}, sub {
     my $title = $own ? 'My list' : user_displayname($u)."'s list";
     framework_ title => $title, type => 'u', dbobj => $u, tab => 'list',
         $own ? ( pagevars => {
-            uid    => $u->{id}*1,
-            labels => $LABELS->analyze->{keys}{labels}->coerce_for_json($labels),
+            uid         => $u->{id}*1,
+            labels      => $LABELS->analyze->{keys}{labels}->coerce_for_json($labels),
+            voteprivate => (map \($_->{private}?1:0), grep $_->{id} == 7, @$labels),
         } ) : (),
     sub {
         my $opt;

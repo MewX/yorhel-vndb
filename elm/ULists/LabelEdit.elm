@@ -1,4 +1,4 @@
-module ULists.LabelEdit exposing (main)
+port module ULists.LabelEdit exposing (main)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -23,6 +23,8 @@ main = Browser.element
   , view = view
   , update = update
   }
+
+port ulistsLabelChanged : Bool -> Cmd msg
 
 type alias Model =
   { uid      : Int
@@ -74,7 +76,10 @@ update msg model =
       , Api.post "/u/ulist/setlabel.json" (GLE.encode { uid = model.uid, vid = model.vid, label = l, applied = b }) (Saved l b)
       )
 
-    Saved l b (GApi.Success) -> ({ model | sel = if b then Set.insert l model.sel else Set.remove l model.sel, state = Dict.remove l model.state }, Cmd.none)
+    Saved l b (GApi.Success) ->
+      let nmodel = { model | sel = if b then Set.insert l model.sel else Set.remove l model.sel, state = Dict.remove l model.state }
+          public = List.any (\lb -> lb.id /= 7 && not lb.private && Set.member lb.id nmodel.sel) nmodel.labels
+       in (nmodel, ulistsLabelChanged public)
     Saved l b e -> ({ model | state = Dict.insert l (Api.Error e) model.state }, Cmd.none)
 
 

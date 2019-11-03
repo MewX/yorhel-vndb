@@ -1,4 +1,4 @@
-module ULists.VoteEdit exposing (main)
+port module ULists.VoteEdit exposing (main)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -20,6 +20,8 @@ main = Browser.element
   , view = view
   , update = update
   }
+
+port ulistsVoteChanged : Bool -> Cmd msg
 
 type alias Model =
   { state   : Api.State
@@ -64,7 +66,7 @@ update msg model =
     Saved GApi.Success ->
       let flags = model.flags
           nflags = { flags | vote = Just model.text }
-      in ({ model | flags = nflags, state = Api.Normal }, Cmd.none)
+      in ({ model | flags = nflags, state = Api.Normal }, ulistsVoteChanged (model.text /= "" && model.text /= "-"))
     Saved e -> ({ model | state = Api.Error e }, Cmd.none)
 
 

@@ -122,6 +122,7 @@ JS_FILES=\
 	elm/pagevars.js \
 	elm/ULists/ManageLabels.js \
 	elm/ULists/LabelEdit.js \
+	elm/ULists/VoteEdit.js \
 	elm/Lib/Ffi.js \
 	elm/elm-init.js \
 	elm/checkall.js \
