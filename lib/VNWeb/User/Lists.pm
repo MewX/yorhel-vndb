@@ -13,8 +13,8 @@ my $LABELS = form_compile any => {
     } }
 };
 
-
 elm_form 'ManageLabels', undef, $LABELS;
+
 
 
 my $VNVOTE = form_compile any => {
@@ -24,6 +24,7 @@ my $VNVOTE = form_compile any => {
 };
 
 elm_form 'VoteEdit', undef, $VNVOTE;
+
 
 
 my $VNLABELS = {
@@ -41,6 +42,7 @@ my $VNLABELS_IN  = form_compile in  => $VNLABELS;
 elm_form 'LabelEdit', $VNLABELS_OUT, $VNLABELS_IN;
 
 
+
 my $VNDATE = form_compile any => {
     uid   => { id => 1 },
     vid   => { id => 1 },
@@ -51,7 +53,28 @@ my $VNDATE = form_compile any => {
 elm_form 'DateEdit', undef, $VNDATE;
 
 
-# TODO: Filters to find unlabeled VNs or VNs with notes?
+
+my $VNOPT = form_compile any => {
+    own   => { anybool => 1 },
+    uid   => { id => 1 },
+    vid   => { id => 1 },
+    notes => { required => 0, default => '', maxlength => 2000 },
+    rels  => { aoh => {
+        id       => { id => 1 },
+        title    => {},
+        original => {},
+        released => { uint => 1 },
+        rtype    => {},
+        status   => { uint => 1 },
+        lang     => { type => 'array', values => {} },
+    } },
+};
+
+elm_form 'UListVNOpt', undef, $VNOPT;
+
+
+
+# TODO: Filters to find unlabeled VNs or VNs with/without notes?
 sub filters_ {
     my($own, $labels) = @_;
 
@@ -135,28 +158,30 @@ sub vn_ {
             my @l = grep $labels{$_->{id}} && $_->{id} != 7, @$labels;
             my $txt = @l ? join ', ', map $_->{label}, @l : '-';
             if($own) {
-                elm_ 'ULists.LabelEdit' => $VNLABELS_OUT, { vid => $v->{id}, selected => [ grep $_ != 7, $v->{labels}->@* ] }, $txt;
+                elm_ 'UList.LabelEdit' => $VNLABELS_OUT, { vid => $v->{id}, selected => [ grep $_ != 7, $v->{labels}->@* ] }, $txt;
             } else {
                 txt_ $txt;
             }
         };
         td_ mkclass(tc4 => 1, compact => $own, stealth => $own), sub {
             txt_ fmtvote $v->{vote} if !$own;
-            elm_ 'ULists.VoteEdit' => $VNVOTE, { uid => $uid, vid => $v->{id}, vote => fmtvote($v->{vote}) }, fmtvote $v->{vote} if $own;
+            elm_ 'UList.VoteEdit' => $VNVOTE, { uid => $uid, vid => $v->{id}, vote => fmtvote($v->{vote}) }, fmtvote $v->{vote} if $own;
         };
         td_ class => 'tc5', fmtdate $v->{added}, 'compact';
         td_ class => 'tc6', sub {
             txt_ $v->{started}||'' if !$own;
-            elm_ 'ULists.DateEdit' => $VNDATE, { uid => $uid, vid => $v->{id}, date => $v->{started}||'', start => 1 }, $v->{started}||'' if $own;
+            elm_ 'UList.DateEdit' => $VNDATE, { uid => $uid, vid => $v->{id}, date => $v->{started}||'', start => 1 }, $v->{started}||'' if $own;
         };
         td_ class => 'tc7', sub {
             txt_ $v->{finished}||'' if !$own;
-            elm_ 'ULists.DateEdit' => $VNDATE, { uid => $uid, vid => $v->{id}, date => $v->{finished}||'', start => 0 }, $v->{finished}||'' if $own;
+            elm_ 'UList.DateEdit' => $VNDATE, { uid => $uid, vid => $v->{id}, date => $v->{finished}||'', start => 0 }, $v->{finished}||'' if $own;
         };
     };
 
     tr_ mkclass(hidden => 1, 'collapsed_vid'.$v->{id} => 1, odd => $n % 2 == 0), sub {
-        td_ colspan => 7, 'Options, releases and note stuff here (likely Elm)';
+        td_ colspan => 7, class => 'tc_opt', sub {
+            elm_ 'UList.Opt' => $VNOPT, { own => $own, uid => $uid, vid => $v->{id}, notes => $v->{notes}, rels => $v->{rels} };
+        };
     };
 }
 
@@ -191,7 +216,7 @@ sub listing_ {
     enrich_flatten labels => id => vid => sql('SELECT vid, lbl FROM ulist_vns_labels WHERE uid =', \$uid, 'AND vid IN'), $lst;
 
     enrich rels => id => vid => sub { sql '
-        SELECT rv.vid, r.id, r.title, r.original, r.released, r.type, rl.status
+        SELECT rv.vid, r.id, r.title, r.original, r.released, r.type as rtype, rl.status
           FROM rlists rl
           JOIN releases r ON rl.rid = r.id
           JOIN releases_vn rv ON rv.id = r.id
@@ -204,9 +229,7 @@ sub listing_ {
 
     my sub url { '?'.query_encode %$opt, @_ }
 
-    # TODO: In-line editable notes, remove-from-list
-    # TODO: Releases
-    # TODO: Thumbnail view
+    # TODO: Thumbnail view?
     paginate_ \&url, $opt->{p}, [ $count, 50 ], 't';
     div_ class => 'mainbox browse ulist', sub {
         table_ sub {
@@ -229,7 +252,6 @@ sub listing_ {
 }
 
 
-# TODO: Keep this URL? Steal /u+/list when that one's gone?
 # TODO: Display something useful when all labels are private?
 # TODO: Ability to add VNs from this page
 TUWF::get qr{/$RE{uid}/ulist}, sub {
@@ -257,7 +279,7 @@ TUWF::get qr{/$RE{uid}/ulist}, sub {
         div_ class => 'mainbox', sub {
             h1_ $title;
             $opt = filters_ $own, $labels;
-            elm_ 'ULists.ManageLabels' if $own;
+            elm_ 'UList.ManageLabels' if $own;
         };
         listing_ $u->{id}, $own, $opt, $labels;
     };

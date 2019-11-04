@@ -120,9 +120,9 @@ static/f/vndb.min.js: static/f/vndb.js
 JS_FILES=\
 	elm/polyfills.js \
 	elm/pagevars.js \
-	elm/ULists/ManageLabels.js \
-	elm/ULists/LabelEdit.js \
-	elm/ULists/VoteEdit.js \
+	elm/UList/ManageLabels.js \
+	elm/UList/LabelEdit.js \
+	elm/UList/VoteEdit.js \
 	elm/Lib/Ffi.js \
 	elm/elm-init.js \
 	elm/checkall.js \

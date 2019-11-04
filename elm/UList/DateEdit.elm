@@ -1,4 +1,4 @@
-module ULists.DateEdit exposing (main)
+module UList.DateEdit exposing (main)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)

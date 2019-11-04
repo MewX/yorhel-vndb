@@ -1,4 +1,4 @@
-port module ULists.LabelEdit exposing (main)
+port module UList.LabelEdit exposing (main)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -24,7 +24,7 @@ main = Browser.element
   , update = update
   }
 
-port ulistsLabelChanged : Bool -> Cmd msg
+port ulistLabelChanged : Bool -> Cmd msg
 
 type alias Model =
   { uid      : Int
@@ -79,7 +79,7 @@ update msg model =
     Saved l b (GApi.Success) ->
       let nmodel = { model | sel = if b then Set.insert l model.sel else Set.remove l model.sel, state = Dict.remove l model.state }
           public = List.any (\lb -> lb.id /= 7 && not lb.private && Set.member lb.id nmodel.sel) nmodel.labels
-       in (nmodel, ulistsLabelChanged public)
+       in (nmodel, ulistLabelChanged public)
     Saved l b e -> ({ model | state = Dict.insert l (Api.Error e) model.state }, Cmd.none)
 
 

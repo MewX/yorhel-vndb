@@ -6,6 +6,8 @@ import Html.Events exposing (..)
 import Json.Decode as JD
 import List
 import Lib.Api as Api
+import Lib.Util exposing (..)
+import Gen.Types as T
 
 
 -- onClick with stopPropagation & preventDefault
@@ -165,3 +167,11 @@ formField lbl cont =
             txt         -> genlbl (String.concat txt)
   , td (class "field" :: if lbl == "none" then [ colspan 2 ] else []) cont
   ]
+
+
+
+langIcon : String -> Html m
+langIcon l = abbr [ class "icons lang", class l, title (Maybe.withDefault "" <| lookup l T.languages) ] [ text " " ]
+
+releaseTypeIcon : String -> Html m
+releaseTypeIcon t = abbr [ class ("icons rt"++t), title (Maybe.withDefault "" <| lookup t T.releaseTypes) ] [ text " " ]

@@ -237,6 +237,8 @@ sub write_types {
     $data .= def languages  => 'List (String, String)' =>
                 list map tuple(string $_, string $LANGUAGE{$_}),
                 sort { $LANGUAGE{$a} cmp $LANGUAGE{$b} } keys %LANGUAGE;
+    $data .= def releaseTypes => 'List (String, String)' => list map tuple(string $_, string $RELEASE_TYPE{$_}), keys %RELEASE_TYPE;
+    $data .= def rlistStatus => 'List (Int, String)' => list map tuple($_, string $RLIST_STATUS{$_}), keys %RLIST_STATUS;
 
     write_module Types => $data;
 }

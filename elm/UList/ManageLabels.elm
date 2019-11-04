@@ -1,4 +1,4 @@
-module ULists.ManageLabels exposing (main)
+module UList.ManageLabels exposing (main)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)

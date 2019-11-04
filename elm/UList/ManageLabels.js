@@ -5,8 +5,8 @@ document.querySelectorAll('#managelabels').forEach(function(b) {
     return false;
 });
 
-var init = Elm.ULists.ManageLabels.init;
-Elm.ULists.ManageLabels.init = function(opt) {
+var init = Elm.UList.ManageLabels.init;
+Elm.UList.ManageLabels.init = function(opt) {
     opt.flags = { uid: pageVars.uid, labels: pageVars.labels };
     init(opt);
 };

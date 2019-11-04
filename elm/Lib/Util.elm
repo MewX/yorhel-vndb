@@ -30,3 +30,8 @@ hasDuplicates l =
     case List.foldr step (Just Dict.empty) l of
       Nothing -> True
       Just _  -> False
+
+
+-- Haskell's 'lookup' - find an entry in an association list
+lookup : a -> List (a,b) -> Maybe b
+lookup n l = List.filter (\(a,_) -> a == n) l |> List.head |> Maybe.map Tuple.second
