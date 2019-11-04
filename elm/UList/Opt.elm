@@ -1,4 +1,4 @@
-module UList.Opt exposing (main)
+port module UList.Opt exposing (main)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -12,7 +12,7 @@ import Lib.Api as Api
 import Gen.Types as T
 import Gen.Api as GApi
 import Gen.UListVNOpt as GVO
-
+import Gen.UListDel as GDE
 
 main : Program GVO.Send Model Msg
 main = Browser.element
@@ -22,27 +22,34 @@ main = Browser.element
   , update = update
   }
 
+port ulistVNDeleted : Bool -> Cmd msg
+
 type alias Model =
-  { state  : Api.State
-  , flags  : GVO.Send
-  , del    : Bool
+  { flags    : GVO.Send
+  , del      : Bool
+  , delState : Api.State
   }
 
 init : GVO.Send -> Model
 init f =
-  { state  = Api.Normal
-  , flags  = f
-  , del    = False
+  { flags    = f
+  , del      = False
+  , delState = Api.Normal
   }
 
 type Msg
   = Del Bool
+  | Delete
+  | Deleted GApi.Response
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     Del b -> ({ model | del = b }, Cmd.none)
+    Delete -> ({ model | delState = Api.Loading }, Api.post "/u/ulist/del.json" (GDE.encode { uid = model.flags.uid, vid = model.flags.vid }) Deleted)
+    Deleted GApi.Success -> (model, ulistVNDeleted True)
+    Deleted e -> ({ model | delState = Api.Error e }, Cmd.none)
 
 
 view : Model -> Html Msg
@@ -53,7 +60,7 @@ view model =
         [ td [ colspan 5 ]
           [ textarea ([ placeholder "Notes", rows 2, cols 100 ] ++ GVO.valNotes) [ text model.flags.notes ]
           , div [ ]
-            [ div [ class "spinner" ] []
+            [ div [ class "spinner invisible" ] []
             , br_ 2
             , a [ href "#", onClickD (Del True) ] [ text "Remove VN" ]
             ]
@@ -76,4 +83,16 @@ view model =
       , td [ class "tco5" ] [ a [ href ("/r"++String.fromInt r.id), title r.original ] [ text r.title ] ]
       ]
 
-  in table [] <| (if model.flags.own then opt else []) ++ List.indexedMap rel model.flags.rels
+    confirm =
+      div []
+      [ text "Are you sure you want to remove this visual novel from your list? "
+      , a [ onClickD Delete ] [ text "Yes" ]
+      , text " | "
+      , a [ onClickD (Del False) ] [ text "Cancel" ]
+      ]
+
+  in case (model.del, model.delState) of
+      (False, _) -> table [] <| (if model.flags.own then opt else []) ++ List.indexedMap rel model.flags.rels
+      (_, Api.Normal)  -> confirm
+      (_, Api.Loading) -> div [ class "spinner" ] []
+      (_, Api.Error e) -> b [ class "standout" ] [ text <| "Error removing item: " ++ Api.showResponse e ]

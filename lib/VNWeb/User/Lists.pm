@@ -74,6 +74,15 @@ elm_form 'UListVNOpt', undef, $VNOPT;
 
 
 
+my $VNDEL = form_compile any => {
+    uid => { id => 1 },
+    vid => { id => 1 },
+};
+
+elm_form 'UListDel', undef, $VNDEL;
+
+
+
 # TODO: Filters to find unlabeled VNs or VNs with/without notes?
 sub filters_ {
     my($own, $labels) = @_;
@@ -126,7 +135,7 @@ sub filters_ {
 
 sub vn_ {
     my($uid, $own, $n, $v, $labels) = @_;
-    tr_ mkclass(odd => $n % 2 == 0), sub {
+    tr_ mkclass(odd => $n % 2 == 0), id => "ulist_tr_$v->{id}", sub {
         my %labels = map +($_,1), $v->{labels}->@*;
 
         td_ class => 'tc1', sub {
@@ -379,6 +388,14 @@ json_api qr{/u/ulist/setdate.json}, $VNDATE, sub {
         'UPDATE ulist_vns SET lastmod = NOW(), ', $data->{start} ? 'started' : 'finished', '=', \($data->{date}||undef),
          'WHERE uid =', \$data->{uid}, 'AND vid =', \$data->{vid}
     );
+    elm_Success
+};
+
+
+json_api qr{/u/ulist/del.json}, $VNDEL, sub {
+    my($data) = @_;
+    return elm_Unauth if !auth || auth->uid != $data->{uid};
+    tuwf->dbExeci('DELETE FROM ulist_vns WHERE uid =', \$data->{uid}, 'AND vid =', \$data->{vid});
     elm_Success
 };
 
