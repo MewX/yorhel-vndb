@@ -1,3 +1,8 @@
+// @license magnet:?xt=urn:btih:0b31508aeb0634b347b8270c7bee4d411b5d4109&dn=agpl-3.0.txt AGPL-3.0-only
+// @source: https://code.blicky.net/yorhel/vndb/src/branch/master/data/js
+// SPDX-License-Identifier: AGPL-3.0-only
+
+
 /* This is the main Javascript file. This file is processed by util/jsgen.pl to
  * generate the final JS file(s) used by the site. */
 
@@ -48,3 +53,5 @@ VARS = /*VARS*/;
 // Character editing (/c+/edit)
 //include chartraits.js
 //include charvns.js
+
+// @license-end

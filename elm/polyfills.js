@@ -1,3 +1,5 @@
+//order:0 - Must be loaded before anything else.
+
 /* classList.toggle() */
 (function() {
     var historic = DOMTokenList.prototype.toggle;

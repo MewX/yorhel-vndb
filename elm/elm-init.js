@@ -1,3 +1,5 @@
+//order:8 - After all regular JS, as other files may modify pageVars or modules in the Elm.* namespace.
+
 /* Add the X-CSRF-Token header to every POST request. Based on:
  * https://stackoverflow.com/questions/24196140/adding-x-csrf-token-header-globally-to-all-instances-of-xmlhttprequest/24196317#24196317
  */
