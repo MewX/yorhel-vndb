@@ -8,7 +8,7 @@ import Process
 import Browser
 import Lib.Api as Api
 import Gen.Api as GApi
-import Gen.DateEdit as GDE
+import Gen.UListDateEdit as GDE
 
 
 main : Program GDE.Send Model Msg

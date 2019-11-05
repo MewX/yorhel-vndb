@@ -13,7 +13,7 @@ import Dict exposing (Dict)
 import Lib.Html exposing (..)
 import Lib.Api as Api
 import Gen.Api as GApi
-import Gen.LabelEdit as GLE
+import Gen.UListLabelEdit as GLE
 
 
 main : Program GLE.Recv Model Msg

@@ -13,4 +13,9 @@ Elm.UList.Opt.init = function(opt) {
         for(var i=0; i<rows.length; i++)
             rows[i].classList.toggle('odd', Math.floor(i/2) % 2 == 0);
     });
+
+    app.ports.ulistNotesChanged.subscribe(function(n) {
+        document.getElementById('ulist_notes_'+opt.flags.vid).innerText = n;
+        document.getElementById('ulist_noteflag_'+opt.flags.vid).classList.toggle('blurred', n.length == 0);
+    });
 };

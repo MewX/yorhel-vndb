@@ -10,7 +10,7 @@ import Lib.Html exposing (..)
 import Lib.Api as Api
 import Lib.Ffi as Ffi
 import Gen.Api as GApi
-import Gen.VoteEdit as GVE
+import Gen.UListVoteEdit as GVE
 
 
 main : Program GVE.Send Model Msg

@@ -795,6 +795,7 @@ div.votelist td.tc2 { width: 50px; text-align: right; padding-right: 10px }
 .ulist .tc1 input { display: none }
 .ulist .tc1 label:before { content: '▸ ' }
 .ulist .tc1 input:checked + label:before { content: '▾ ' }
+.ulist .tc1 span.blurred { opacity: 0.5 }
 .ulist .tc2 b { margin-left: 10px }
 .ulist .tc4 { white-space: nowrap; width: 60px; text-align: right; padding-right: 10px }
 .ulist .tc4 input { width: 55px; text-align: right }

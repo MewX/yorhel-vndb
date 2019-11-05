@@ -10,7 +10,7 @@ import Lib.Html exposing (..)
 import Lib.Util exposing (..)
 import Lib.Api as Api
 import Gen.Api as GApi
-import Gen.ManageLabels as GML
+import Gen.UListManageLabels as GML
 
 
 main : Program GML.Send Model Msg

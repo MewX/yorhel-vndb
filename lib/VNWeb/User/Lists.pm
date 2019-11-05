@@ -2,6 +2,8 @@ package VNWeb::User::Lists;
 
 use VNWeb::Prelude;
 
+
+
 my $LABELS = form_compile any => {
     uid => { id => 1 },
     labels => { aoh => {
@@ -13,7 +15,60 @@ my $LABELS = form_compile any => {
     } }
 };
 
-elm_form 'ManageLabels', undef, $LABELS;
+elm_form 'UListManageLabels', undef, $LABELS;
+
+json_api qr{/u/ulist/labels.json}, $LABELS, sub {
+    my($uid, $labels) = ($_[0]{uid}, $_[0]{labels});
+    return elm_Unauth if !auth || auth->uid != $uid;
+
+    # Insert new labels
+    my @new = grep $_->{id} < 0 && !$_->{delete}, @$labels;
+    # Subquery to get the lowest unused id
+    my $newid = sql '(
+        SELECT min(x.n)
+         FROM generate_series(10,
+                greatest((SELECT max(id)+1 from ulist_labels ul WHERE ul.uid =', \$uid, '), 10)
+              ) x(n)
+        WHERE NOT EXISTS(SELECT 1 FROM ulist_labels ul WHERE ul.uid =', \$uid, 'AND ul.id = x.n)
+    )';
+    tuwf->dbExeci(
+        'INSERT INTO ulist_labels (id, uid, label, private)
+         VALUES (', sql_comma($newid, \$uid, \$_->{label}, \$_->{private}), ')'
+    ) for @new;
+
+    # Update private flag
+    tuwf->dbExeci(
+        'UPDATE ulist_labels SET private =', \$_->{private},
+         'WHERE uid =', \$uid, 'AND id =', \$_->{id}, 'AND private <>', \$_->{private}
+    ) for grep $_->{id} > 0 && !$_->{delete}, @$labels;
+
+    # Update label
+    tuwf->dbExeci(
+        'UPDATE ulist_labels SET label =', \$_->{label},
+         'WHERE uid =', \$uid, 'AND id =', \$_->{id}, 'AND label <>', \$_->{label}
+    ) for grep $_->{id} >= 10 && !$_->{delete}, @$labels;
+
+    # Delete labels
+    my @delete = grep $_->{id} >= 10 && $_->{delete}, @$labels;
+    my @delete_lblonly = map $_->{id}, grep $_->{delete} == 1, @delete;
+    my @delete_empty   = map $_->{id}, grep $_->{delete} == 2, @delete;
+    my @delete_all     = map $_->{id}, grep $_->{delete} == 3, @delete;
+
+    # delete vns with: (a label in option 3) OR ((a label in option 2) AND (no labels other than in option 1 or 2))
+    my @where =
+        @delete_all ? sql('vid IN(SELECT vid FROM ulist_vns_labels WHERE uid =', \$uid, 'AND lbl IN', \@delete_all, ')') : (),
+        @delete_empty ? sql(
+                'vid IN(SELECT vid FROM ulist_vns_labels WHERE uid =', \$uid, 'AND lbl IN', \@delete_empty, ')',
+            'AND NOT EXISTS(SELECT 1 FROM ulist_vns_labels WHERE uid =', \$uid, 'AND lbl NOT IN(', [ @delete_lblonly, @delete_empty ], '))'
+        ) : ();
+    tuwf->dbExeci('DELETE FROM ulist_vns WHERE uid =', \$uid, 'AND (', sql_or(@where), ')') if @where;
+
+    # (This will also delete all relevant vn<->label rows from ulist_vns_labels)
+    tuwf->dbExeci('DELETE FROM ulist_labels WHERE uid =', \$uid, 'AND id IN', [ map $_->{id}, @delete ]) if @delete;
+
+    elm_Success
+};
+
 
 
 
@@ -23,7 +78,20 @@ my $VNVOTE = form_compile any => {
     vote => { vnvote => 1 },
 };
 
-elm_form 'VoteEdit', undef, $VNVOTE;
+elm_form 'UListVoteEdit', undef, $VNVOTE;
+
+json_api qr{/u/ulist/setvote.json}, $VNVOTE, sub {
+    my($data) = @_;
+    return elm_Unauth if !auth || auth->uid != $data->{uid};
+    tuwf->dbExeci(
+        'UPDATE ulist_vns
+            SET vote =', \$data->{vote},
+             ', vote_date = CASE WHEN', \$data->{vote}, '::smallint IS NULL THEN NULL WHEN vote IS NULL THEN NOW() ELSE vote_date END
+          WHERE uid =', \$data->{uid}, 'AND vid =', \$data->{vid}
+    );
+    elm_Success
+};
+
 
 
 
@@ -39,7 +107,26 @@ my $VNLABELS = {
 my $VNLABELS_OUT = form_compile out => $VNLABELS;
 my $VNLABELS_IN  = form_compile in  => $VNLABELS;
 
-elm_form 'LabelEdit', $VNLABELS_OUT, $VNLABELS_IN;
+elm_form 'UListLabelEdit', $VNLABELS_OUT, $VNLABELS_IN;
+
+json_api qr{/u/ulist/setlabel.json}, $VNLABELS_IN, sub {
+    my($data) = @_;
+    return elm_Unauth if !auth || auth->uid != $data->{uid};
+    die "Attempt to set vote label" if $data->{label} == 7;
+
+    tuwf->dbExeci(
+        'DELETE FROM ulist_vns_labels
+          WHERE uid =', \$data->{uid}, 'AND vid =', \$data->{vid}, 'AND lbl =', \$data->{label}
+    ) if !$data->{applied};
+    tuwf->dbExeci(
+        'INSERT INTO ulist_vns_labels (uid, vid, lbl)
+         VALUES (', sql_comma(\$data->{uid}, \$data->{vid}, \$data->{label}), ')
+             ON CONFLICT (uid, vid, lbl) DO NOTHING'
+    ) if $data->{applied};
+
+    elm_Success
+};
+
 
 
 
@@ -50,7 +137,18 @@ my $VNDATE = form_compile any => {
     start => { anybool => 1 }, # Field selection, started/finished
 };
 
-elm_form 'DateEdit', undef, $VNDATE;
+elm_form 'UListDateEdit', undef, $VNDATE;
+
+json_api qr{/u/ulist/setdate.json}, $VNDATE, sub {
+    my($data) = @_;
+    return elm_Unauth if !auth || auth->uid != $data->{uid};
+    tuwf->dbExeci(
+        'UPDATE ulist_vns SET lastmod = NOW(), ', $data->{start} ? 'started' : 'finished', '=', \($data->{date}||undef),
+         'WHERE uid =', \$data->{uid}, 'AND vid =', \$data->{vid}
+    );
+    elm_Success
+};
+
 
 
 
@@ -58,7 +156,7 @@ my $VNOPT = form_compile any => {
     own   => { anybool => 1 },
     uid   => { id => 1 },
     vid   => { id => 1 },
-    notes => { required => 0, default => '', maxlength => 2000 },
+    notes => {},
     rels  => { aoh => {
         id       => { id => 1 },
         title    => {},
@@ -70,7 +168,29 @@ my $VNOPT = form_compile any => {
     } },
 };
 
-elm_form 'UListVNOpt', undef, $VNOPT;
+elm_form 'UListVNOpt', $VNOPT, undef;
+
+
+
+
+my $VNNOTES = form_compile any => {
+    uid   => { id => 1 },
+    vid   => { id => 1 },
+    notes => { required => 0, default => '', maxlength => 2000 },
+};
+
+elm_form 'UListVNNotes', undef, $VNNOTES;
+
+json_api qr{/u/ulist/setnote.json}, $VNNOTES, sub {
+    my($data) = @_;
+    return elm_Unauth if !auth || auth->uid != $data->{uid};
+    tuwf->dbExeci(
+        'UPDATE ulist_vns SET lastmod = NOW(), notes = ', \$data->{notes},
+         'WHERE uid =', \$data->{uid}, 'AND vid =', \$data->{vid}
+    );
+    elm_Success
+};
+
 
 
 
@@ -80,6 +200,14 @@ my $VNDEL = form_compile any => {
 };
 
 elm_form 'UListDel', undef, $VNDEL;
+
+json_api qr{/u/ulist/del.json}, $VNDEL, sub {
+    my($data) = @_;
+    return elm_Unauth if !auth || auth->uid != $data->{uid};
+    tuwf->dbExeci('DELETE FROM ulist_vns WHERE uid =', \$data->{uid}, 'AND vid =', \$data->{vid});
+    elm_Success
+};
+
 
 
 
@@ -147,7 +275,7 @@ sub vn_ {
                 if($total && $obtained == $total) { b_ class => 'done', $txt }
                 elsif($obtained < $total)         { b_ class => 'todo', $txt }
                 else                              { txt_ $txt }
-                span_ $v->{notes} ? () : (style => 'opacity: 0.5'), ' 💬';
+                span_ id => 'ulist_noteflag_'.$v->{id}, mkclass(blurred => !$v->{notes}), ' 💬';
                 if($own) {
                     my $public = List::Util::any { $labels{$_->{id}} && !$_->{private} } @$labels;
                     my $publicLabel = List::Util::any { $_->{id} != 7 && $labels{$_->{id}} && !$_->{private} } @$labels;
@@ -161,7 +289,7 @@ sub vn_ {
         };
         td_ class => 'tc2', sub {
             a_ href => "/v$v->{id}", title => $v->{original}||$v->{title}, shorten $v->{title}, 70;
-            b_ class => 'grayedout', $v->{notes} if $v->{notes};
+            b_ class => 'grayedout', id => 'ulist_notes_'.$v->{id}, $v->{notes} if $v->{notes} || $own;
         };
         td_ class => 'tc3', sub {
             my @l = grep $labels{$_->{id}} && $_->{id} != 7, @$labels;
@@ -292,111 +420,6 @@ TUWF::get qr{/$RE{uid}/ulist}, sub {
         };
         listing_ $u->{id}, $own, $opt, $labels;
     };
-};
-
-
-json_api qr{/u/ulist/labels.json}, $LABELS, sub {
-    my($uid, $labels) = ($_[0]{uid}, $_[0]{labels});
-    return elm_Unauth if !auth || auth->uid != $uid;
-
-    # Insert new labels
-    my @new = grep $_->{id} < 0 && !$_->{delete}, @$labels;
-    # Subquery to get the lowest unused id
-    my $newid = sql '(
-        SELECT min(x.n)
-         FROM generate_series(10,
-                greatest((SELECT max(id)+1 from ulist_labels ul WHERE ul.uid =', \$uid, '), 10)
-              ) x(n)
-        WHERE NOT EXISTS(SELECT 1 FROM ulist_labels ul WHERE ul.uid =', \$uid, 'AND ul.id = x.n)
-    )';
-    tuwf->dbExeci(
-        'INSERT INTO ulist_labels (id, uid, label, private)
-         VALUES (', sql_comma($newid, \$uid, \$_->{label}, \$_->{private}), ')'
-    ) for @new;
-
-    # Update private flag
-    tuwf->dbExeci(
-        'UPDATE ulist_labels SET private =', \$_->{private},
-         'WHERE uid =', \$uid, 'AND id =', \$_->{id}, 'AND private <>', \$_->{private}
-    ) for grep $_->{id} > 0 && !$_->{delete}, @$labels;
-
-    # Update label
-    tuwf->dbExeci(
-        'UPDATE ulist_labels SET label =', \$_->{label},
-         'WHERE uid =', \$uid, 'AND id =', \$_->{id}, 'AND label <>', \$_->{label}
-    ) for grep $_->{id} >= 10 && !$_->{delete}, @$labels;
-
-    # Delete labels
-    my @delete = grep $_->{id} >= 10 && $_->{delete}, @$labels;
-    my @delete_lblonly = map $_->{id}, grep $_->{delete} == 1, @delete;
-    my @delete_empty   = map $_->{id}, grep $_->{delete} == 2, @delete;
-    my @delete_all     = map $_->{id}, grep $_->{delete} == 3, @delete;
-
-    # delete vns with: (a label in option 3) OR ((a label in option 2) AND (no labels other than in option 1 or 2))
-    my @where =
-        @delete_all ? sql('vid IN(SELECT vid FROM ulist_vns_labels WHERE uid =', \$uid, 'AND lbl IN', \@delete_all, ')') : (),
-        @delete_empty ? sql(
-                'vid IN(SELECT vid FROM ulist_vns_labels WHERE uid =', \$uid, 'AND lbl IN', \@delete_empty, ')',
-            'AND NOT EXISTS(SELECT 1 FROM ulist_vns_labels WHERE uid =', \$uid, 'AND lbl NOT IN(', [ @delete_lblonly, @delete_empty ], '))'
-        ) : ();
-    tuwf->dbExeci('DELETE FROM ulist_vns WHERE uid =', \$uid, 'AND (', sql_or(@where), ')') if @where;
-
-    # (This will also delete all relevant vn<->label rows from ulist_vns_labels)
-    tuwf->dbExeci('DELETE FROM ulist_labels WHERE uid =', \$uid, 'AND id IN', [ map $_->{id}, @delete ]) if @delete;
-
-    elm_Success
-};
-
-
-# XXX: Doesn't add the VN to the list if it isn't in there, yet.
-json_api qr{/u/ulist/setvote.json}, $VNVOTE, sub {
-    my($data) = @_;
-    return elm_Unauth if !auth || auth->uid != $data->{uid};
-    tuwf->dbExeci(
-        'UPDATE ulist_vns
-            SET vote =', \$data->{vote},
-             ', vote_date = CASE WHEN', \$data->{vote}, '::smallint IS NULL THEN NULL WHEN vote IS NULL THEN NOW() ELSE vote_date END
-          WHERE uid =', \$data->{uid}, 'AND vid =', \$data->{vid}
-    );
-    elm_Success
-};
-
-
-json_api qr{/u/ulist/setlabel.json}, $VNLABELS_IN, sub {
-    my($data) = @_;
-    return elm_Unauth if !auth || auth->uid != $data->{uid};
-    die "Attempt to set vote label" if $data->{label} == 7;
-
-    tuwf->dbExeci(
-        'DELETE FROM ulist_vns_labels
-          WHERE uid =', \$data->{uid}, 'AND vid =', \$data->{vid}, 'AND lbl =', \$data->{label}
-    ) if !$data->{applied};
-    tuwf->dbExeci(
-        'INSERT INTO ulist_vns_labels (uid, vid, lbl)
-         VALUES (', sql_comma(\$data->{uid}, \$data->{vid}, \$data->{label}), ')
-             ON CONFLICT (uid, vid, lbl) DO NOTHING'
-    ) if $data->{applied};
-
-    elm_Success
-};
-
-
-json_api qr{/u/ulist/setdate.json}, $VNDATE, sub {
-    my($data) = @_;
-    return elm_Unauth if !auth || auth->uid != $data->{uid};
-    tuwf->dbExeci(
-        'UPDATE ulist_vns SET lastmod = NOW(), ', $data->{start} ? 'started' : 'finished', '=', \($data->{date}||undef),
-         'WHERE uid =', \$data->{uid}, 'AND vid =', \$data->{vid}
-    );
-    elm_Success
-};
-
-
-json_api qr{/u/ulist/del.json}, $VNDEL, sub {
-    my($data) = @_;
-    return elm_Unauth if !auth || auth->uid != $data->{uid};
-    tuwf->dbExeci('DELETE FROM ulist_vns WHERE uid =', \$data->{uid}, 'AND vid =', \$data->{vid});
-    elm_Success
 };
 
 1;

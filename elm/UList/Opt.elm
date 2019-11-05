@@ -12,9 +12,10 @@ import Lib.Api as Api
 import Gen.Types as T
 import Gen.Api as GApi
 import Gen.UListVNOpt as GVO
+import Gen.UListVNNotes as GVN
 import Gen.UListDel as GDE
 
-main : Program GVO.Send Model Msg
+main : Program GVO.Recv Model Msg
 main = Browser.element
   { init = \f -> (init f, Cmd.none)
   , subscriptions = always Sub.none
@@ -23,24 +24,34 @@ main = Browser.element
   }
 
 port ulistVNDeleted : Bool -> Cmd msg
+port ulistNotesChanged : String -> Cmd msg
 
 type alias Model =
-  { flags    : GVO.Send
-  , del      : Bool
-  , delState : Api.State
+  { flags      : GVO.Recv
+  , del        : Bool
+  , delState   : Api.State
+  , notes      : String
+  , notesRev   : Int
+  , notesState : Api.State
   }
 
-init : GVO.Send -> Model
+init : GVO.Recv -> Model
 init f =
-  { flags    = f
-  , del      = False
-  , delState = Api.Normal
+  { flags      = f
+  , del        = False
+  , delState   = Api.Normal
+  , notes      = f.notes
+  , notesRev   = 0
+  , notesState = Api.Normal
   }
 
 type Msg
   = Del Bool
   | Delete
   | Deleted GApi.Response
+  | Notes String
+  | NotesSave Int
+  | NotesSaved Int GApi.Response
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -51,6 +62,19 @@ update msg model =
     Deleted GApi.Success -> (model, ulistVNDeleted True)
     Deleted e -> ({ model | delState = Api.Error e }, Cmd.none)
 
+    Notes s -> ({ model | notes = s, notesRev = model.notesRev + 1 }, Task.perform (\_ -> NotesSave (model.notesRev+1)) <| Process.sleep 1000)
+    NotesSave rev ->
+      if rev /= model.notesRev || model.notes == model.flags.notes
+      then (model, Cmd.none)
+      else ({ model | notesState = Api.Loading }, Api.post "/u/ulist/setnote.json" (GVN.encode { uid = model.flags.uid, vid = model.flags.vid, notes = model.notes }) (NotesSaved rev))
+    NotesSaved rev GApi.Success ->
+      let f = model.flags
+          nf = { f | notes = model.notes }
+       in if model.notesRev /= rev
+          then (model, Cmd.none)
+          else ({model | flags = nf, notesState = Api.Normal }, ulistNotesChanged model.notes)
+    NotesSaved _ e -> ({ model | notesState = Api.Error e }, Cmd.none)
+
 
 view : Model -> Html Msg
 view model =
@@ -58,10 +82,14 @@ view model =
     opt =
       [ tr []
         [ td [ colspan 5 ]
-          [ textarea ([ placeholder "Notes", rows 2, cols 100 ] ++ GVO.valNotes) [ text model.flags.notes ]
+          [ textarea ([ placeholder "Notes", rows 2, cols 80, onInput Notes, onBlur (NotesSave model.notesRev) ] ++ GVN.valNotes) [ text model.notes ]
           , div [ ]
-            [ div [ class "spinner invisible" ] []
-            , br_ 2
+            [ div [ class "spinner", classList [("invisible", model.notesState /= Api.Loading)] ] []
+            , br [] []
+            , case model.notesState of
+                Api.Error e -> b [ class "standout" ] [ text <| Api.showResponse e ]
+                _ -> text ""
+            , br [] []
             , a [ href "#", onClickD (Del True) ] [ text "Remove VN" ]
             ]
           ]
