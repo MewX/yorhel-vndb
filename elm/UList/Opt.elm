@@ -6,9 +6,11 @@ import Html.Events exposing (..)
 import Task
 import Process
 import Browser
+import Date
 import Lib.Util exposing (..)
 import Lib.Html exposing (..)
 import Lib.Api as Api
+import Lib.RDate as RDate
 import Gen.Types as T
 import Gen.Api as GApi
 import Gen.UListVNOpt as GVO
@@ -17,7 +19,7 @@ import Gen.UListDel as GDE
 
 main : Program GVO.Recv Model Msg
 main = Browser.element
-  { init = \f -> (init f, Cmd.none)
+  { init = \f -> (init f, Date.today |> Task.perform Today)
   , subscriptions = always Sub.none
   , view = view
   , update = update
@@ -28,6 +30,7 @@ port ulistNotesChanged : String -> Cmd msg
 
 type alias Model =
   { flags      : GVO.Recv
+  , today      : Date.Date
   , del        : Bool
   , delState   : Api.State
   , notes      : String
@@ -38,6 +41,7 @@ type alias Model =
 init : GVO.Recv -> Model
 init f =
   { flags      = f
+  , today      = Date.fromOrdinalDate 2100 1
   , del        = False
   , delState   = Api.Normal
   , notes      = f.notes
@@ -46,7 +50,8 @@ init f =
   }
 
 type Msg
-  = Del Bool
+  = Today Date.Date
+  | Del Bool
   | Delete
   | Deleted GApi.Response
   | Notes String
@@ -57,6 +62,8 @@ type Msg
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
+    Today d -> ({ model | today = d }, Cmd.none)
+
     Del b -> ({ model | del = b }, Cmd.none)
     Delete -> ({ model | delState = Api.Loading }, Api.post "/u/ulist/del.json" (GDE.encode { uid = model.flags.uid, vid = model.flags.vid }) Deleted)
     Deleted GApi.Success -> (model, ulistVNDeleted True)
@@ -106,7 +113,7 @@ view model =
         then td [ class "tco1" ] [ a [ href "#" ] [ text "remove" ] ]
         else text ""
       , td [ class "tco2" ] [ text <| Maybe.withDefault "status" <| lookup r.status T.rlistStatus ]
-      , td [ class "tco3" ] [ text "2018-11-10" ]
+      , td [ class "tco3" ] [ RDate.display model.today r.released ]
       , td [ class "tco4" ] <| List.map langIcon r.lang ++ [ releaseTypeIcon r.rtype ]
       , td [ class "tco5" ] [ a [ href ("/r"++String.fromInt r.id), title r.original ] [ text r.title ] ]
       ]
