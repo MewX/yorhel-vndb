@@ -291,10 +291,9 @@ sub vn_ {
             label_ for => 'collapse_vid'.$v->{id}, sub {
                 my $obtained = grep $_->{status} == 2, $v->{rels}->@*;
                 my $total = $v->{rels}->@*;
-                my $txt = sprintf '%d/%d', $obtained, $total;
-                if($total && $obtained == $total) { b_ class => 'done', $txt }
-                elsif($obtained < $total)         { b_ class => 'todo', $txt }
-                else                              { txt_ $txt }
+                b_ id => 'ulist_relsum_'.$v->{id},
+                    mkclass(done => $total && $obtained == $total, todo => $obtained < $total, neutral => 1),
+                    sprintf '%d/%d', $obtained, $total;
                 span_ id => 'ulist_noteflag_'.$v->{id}, mkclass(blurred => !$v->{notes}), ' 💬';
                 if($own) {
                     my $public = List::Util::any { $labels{$_->{id}} && !$_->{private} } @$labels;

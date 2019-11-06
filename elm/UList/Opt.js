@@ -18,4 +18,11 @@ Elm.UList.Opt.init = function(opt) {
         document.getElementById('ulist_notes_'+opt.flags.vid).innerText = n;
         document.getElementById('ulist_noteflag_'+opt.flags.vid).classList.toggle('blurred', n.length == 0);
     });
+
+    app.ports.ulistRelChanged.subscribe(function(rels) {
+        var e = document.getElementById('ulist_relsum_'+opt.flags.vid);
+        e.classList.toggle('todo', rels[0] != rels[1]);
+        e.classList.toggle('done', rels[1] > 0 && rels[0] == rels[1]);
+        e.innerText = rels[0] + '/' + rels[1];
+    });
 };

@@ -29,6 +29,7 @@ main = Browser.element
 
 port ulistVNDeleted : Bool -> Cmd msg
 port ulistNotesChanged : String -> Cmd msg
+port ulistRelChanged : (Int, Int) -> Cmd msg
 
 type alias Rel =
   { nfo    : GVO.RecvRels
@@ -113,9 +114,10 @@ update msg model =
       ( { model | rels = modrel rid (\r -> { r | dd = DD.toggle r.dd False, status = st, state = Api.Loading }) model.rels }
       , Api.post "/u/ulist/rstatus.json" (GRS.encode { uid = model.flags.uid, rid = rid, status = st }) (RelSaved rid st) )
     RelSaved rid st GApi.Success ->
-      ( { model | rels = if st == -1 then List.filter (\r -> r.nfo.id /= rid) model.rels
-                                     else modrel rid (\r -> { r | state = Api.Normal }) model.rels }
-      , Cmd.none)
+      let nr = if st == -1 then List.filter (\r -> r.nfo.id /= rid) model.rels
+                           else modrel rid (\r -> { r | state = Api.Normal }) model.rels
+      in ( { model | rels = nr }
+         , ulistRelChanged (List.length <| List.filter (\r -> r.status == 2) nr, List.length nr) )
     RelSaved rid _ e -> ({ model | rels = modrel rid (\r -> { r | state = Api.Error e }) model.rels }, Cmd.none)
 
 

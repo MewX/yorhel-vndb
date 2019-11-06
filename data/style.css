@@ -106,6 +106,7 @@ i.grayedout   { font-style: normal; color: $grayedout$ }
 p.description { margin: 10px 100px!important; }
 b.done        { font-weight: normal; color: $statok$ }
 b.todo        { font-weight: normal; color: $statnok$ }
+b.neutral     { font-weight: normal }
 p.center      { text-align: center; }
 b.future,
 b.standout,
