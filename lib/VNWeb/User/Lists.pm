@@ -210,6 +210,26 @@ json_api qr{/u/ulist/del.json}, $VNDEL, sub {
 
 
 
+my $RSTATUS = form_compile any => {
+    uid => { id => 1 },
+    rid => { id => 1 },
+    status => { int => 1, enum => [ -1, keys %RLIST_STATUS ] }, # -1 meaning delete
+};
+
+elm_form 'UListRStatus', undef, $RSTATUS;
+
+json_api qr{/u/ulist/rstatus.json}, $RSTATUS, sub {
+    my($data) = @_;
+    return elm_Unauth if !auth || auth->uid != $data->{uid};
+    if($data->{status} == -1) {
+        tuwf->dbExeci('DELETE FROM rlists WHERE uid =', \$data->{uid}, 'AND rid =', \$data->{rid})
+    } else {
+        tuwf->dbExeci('UPDATE rlists SET status =', \$data->{status}, 'WHERE uid =', \$data->{uid}, 'AND rid =', \$data->{rid})
+    }
+    elm_Success
+};
+
+
 
 # TODO: Filters to find unlabeled VNs or VNs with/without notes?
 sub filters_ {

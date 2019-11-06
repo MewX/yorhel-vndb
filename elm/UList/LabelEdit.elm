@@ -3,15 +3,12 @@ port module UList.LabelEdit exposing (main)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Task
-import Process
 import Browser
-import Browser.Events as E
-import Json.Decode as JD
 import Set exposing (Set)
 import Dict exposing (Dict)
 import Lib.Html exposing (..)
 import Lib.Api as Api
+import Lib.DropDown as DD
 import Gen.Api as GApi
 import Gen.UListLabelEdit as GLE
 
@@ -19,7 +16,7 @@ import Gen.UListLabelEdit as GLE
 main : Program GLE.Recv Model Msg
 main = Browser.element
   { init = \f -> (init f, Cmd.none)
-  , subscriptions = \model -> if model.opened then E.onClick (JD.succeed (Open False)) else Sub.none
+  , subscriptions = \model -> DD.sub model.dd
   , view = view
   , update = update
   }
@@ -33,7 +30,7 @@ type alias Model =
   , sel      : Set Int -- Set of label IDs applied on the server
   , tsel     : Set Int -- Set of label IDs applied on the client
   , state    : Dict Int Api.State -- Only for labels that are being changed
-  , opened   : Bool
+  , dd       : DD.Config Msg
   }
 
 init : GLE.Recv -> Model
@@ -44,12 +41,11 @@ init f =
   , sel      = Set.fromList f.selected
   , tsel     = Set.fromList f.selected
   , state    = Dict.empty
-  , opened   = False
+  , dd       = DD.init ("ulist_labeledit_dd" ++ String.fromInt f.vid) Open
   }
 
 type Msg
-  = Redo Msg
-  | Open Bool
+  = Open Bool
   | Toggle Int Bool
   | Saved Int Bool GApi.Response
 
@@ -57,20 +53,11 @@ type Msg
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    -- 'Redo' will process the same message again after a very short timeout,
-    -- this is used to overrule an 'Open False' triggered by the onClick
-    -- subscription.
-    Redo m -> (model, Cmd.batch [ Task.perform (\_ -> m) (Task.succeed ()), Task.perform (\_ -> m) (Process.sleep 0) ])
-    Open b -> ({ model | opened = b }, Cmd.none)
+    Open b -> ({ model | dd = DD.toggle model.dd b }, Cmd.none)
 
-    -- The 'opened = True' counters the onClick subscription that would have
-    -- closed the dropdown, this works because that subscription triggers
-    -- before the Toggle (I just hope this is well-defined, otherwise we need
-    -- to use Redo for this one as well).
     Toggle l b ->
       ( { model
-        | opened = True
-        , tsel   = if b then Set.insert l model.tsel else Set.remove l model.tsel
+        | tsel   = if b then Set.insert l model.tsel else Set.remove l model.tsel
         , state  = Dict.insert l Api.Loading model.state
         }
       , Api.post "/u/ulist/setlabel.json" (GLE.encode { uid = model.uid, vid = model.vid, label = l, applied = b }) (Saved l b)
@@ -102,21 +89,8 @@ view model =
               _ -> text ""
           ]
         ]
-
-    loading = List.any (\s -> s == Api.Loading) <| Dict.values model.state
-
   in
-    div [ class "labeledit" ]
-    [ a [ href "#", onClickD (Redo (Open (not model.opened))) ]
-      [ text <| if str == "" then "-" else str
-      , span []
-        [ if loading && not model.opened
-          then span [ class "spinner" ] []
-          else i [] [ text "▾" ]
-        ]
-      ]
-    , div []
-      [ ul [ classList [("hidden", not model.opened)] ]
-        <| List.map item <| List.filter (\l -> l.id /= 7) model.labels
-      ]
-    ]
+    DD.view model.dd
+      (if List.any (\s -> s == Api.Loading) <| Dict.values model.state then Api.Loading else Api.Normal)
+      (text <| if str == "" then "-" else str)
+      (\_ -> [ ul [] <| List.map item <| List.filter (\l -> l.id /= 7) model.labels ])
