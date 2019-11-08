@@ -83,6 +83,7 @@ my %props = (
   P1733 => [ 'steam',              'integer' ],
   P2725 => [ 'gog',                'text'    ],
   P5435 => [ 'pixiv_user',         'integer' ],
+  P7511 => [ 'doujinshi_author',   'integer' ],
 );
 
 

@@ -930,7 +930,8 @@ CREATE TABLE wikidata (
   pcgamingwiki       text[],    -- [pub] P6337
   steam              integer[], -- [pub] P1733
   gog                text[],    -- [pub] P2725
-  pixiv_user         integer[]  -- [pub] P5435
+  pixiv_user         integer[], -- [pub] P5435
+  doujinshi_author   integer[]  -- [pub] P7511
 );
 
 -- wlists

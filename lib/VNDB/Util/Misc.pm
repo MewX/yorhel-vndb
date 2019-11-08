@@ -186,6 +186,7 @@ sub entryLinks {
     $lnk->($w->{musicbrainz_artist}, 'MusicBrainz',  'https://musicbrainz.org/artist/%s');
     $lnk->($w->{vgmdb_artist},       'VGMdb',        'https://vgmdb.net/artist/%s');
     $lnk->($w->{discogs_artist},     'Discogs',      'https://www.discogs.com/artist/%s');
+    $lnk->($w->{doujinshi_author},   'Doujinshi.org','https://www.doujinshi.org/browse/author/%d/');
   }
 
   # Producer links
@@ -193,6 +194,7 @@ sub entryLinks {
     $lnk->($w->{twitter},           'Twitter',   'https://twitter.com/%s');
     $lnk->($w->{mobygames_company}, 'MobyGames', 'https://www.mobygames.com/company/%s');
     $lnk->($w->{gamefaqs_company},  'GameFAQs',  'https://gamefaqs.gamespot.com/company/%s-');
+    $lnk->($w->{doujinshi_author},  'Doujinshi.org','https://www.doujinshi.org/browse/author/%d/');
     push @links, [ 'VNStat', sprintf 'https://vnstat.net/developer/%d', $obj->{id} ];
   }
 
