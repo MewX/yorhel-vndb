@@ -273,7 +273,7 @@ sub bb_subst_links {
     p => 'SELECT id, name FROM producers WHERE id IN',
     g => 'SELECT id, name FROM tags WHERE id IN',
     i => 'SELECT id, name FROM traits WHERE id IN',
-    s => 'SELECT s.id, sa.name FROM staff_alias sa JOIN staff s ON s.aid = sa.id WHERE s.id IN',
+    s => 'SELECT s.id, sa.name FROM staff_alias sa JOIN staff s ON s.aid = sa.aid WHERE s.id IN',
   };
   my %links;
   for my $type (keys %$types) {
