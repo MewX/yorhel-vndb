@@ -46,6 +46,14 @@ my %apis = (
     DoubleIP       => [], # Account with same IP already exists
     BadCurPass     => [], # Current password is incorrect when changing password
     MailChange     => [], # A confirmation mail has been sent to change a user's email address
+    Releases       => [ { aoh => { # Response to /r/get.json
+        id       => { id => 1 },
+        title    => {},
+        original => { required => 0, default => '' },
+        released => { uint => 1 },
+        rtype    => {},
+        lang     => { type => 'array', values => {} },
+    } } ],
 );
 
 

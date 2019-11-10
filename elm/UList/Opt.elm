@@ -3,10 +3,12 @@ port module UList.Opt exposing (main)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
+import Json.Encode as JE
 import Task
 import Process
 import Browser
 import Date
+import Dict exposing (Dict)
 import Lib.Util exposing (..)
 import Lib.Html exposing (..)
 import Lib.Api as Api
@@ -32,10 +34,18 @@ port ulistNotesChanged : String -> Cmd msg
 port ulistRelChanged : (Int, Int) -> Cmd msg
 
 type alias Rel =
-  { nfo    : GVO.RecvRels
+  { id     : Int
   , status : Int -- Special value -1 means 'delete this release from my list'
   , state  : Api.State
   , dd     : DD.Config Msg
+  }
+
+newrel : Int -> Int -> Int -> Rel
+newrel rid vid st =
+  { id     = rid
+  , status = st
+  , state  = Api.Normal
+  , dd     = DD.init ("ulist_reldd" ++ String.fromInt vid ++ "_" ++ String.fromInt rid) (RelOpen rid)
   }
 
 type alias Model =
@@ -47,6 +57,9 @@ type alias Model =
   , notesRev   : Int
   , notesState : Api.State
   , rels       : List Rel
+  , relNfo     : Dict Int GApi.ApiReleases
+  , relOptions : Maybe (List (Int, String))
+  , relState   : Api.State
   }
 
 init : GVO.Recv -> Model
@@ -58,10 +71,10 @@ init f =
   , notes      = f.notes
   , notesRev   = 0
   , notesState = Api.Normal
-  , rels       = List.map (\r ->
-      { nfo = r, status = r.status, state = Api.Normal
-      , dd = DD.init ("ulist_reldd" ++ String.fromInt f.vid ++ "_" ++ String.fromInt r.id) (RelOpen r.id)
-      } ) f.rels
+  , rels       = List.map2 (\st nfo -> newrel nfo.id f.vid st) f.relstatus f.rels
+  , relNfo     = Dict.fromList <| List.map (\r -> (r.id, r)) f.rels
+  , relOptions = Nothing
+  , relState   = Api.Normal
   }
 
 type Msg
@@ -75,10 +88,17 @@ type Msg
   | RelOpen Int Bool
   | RelSet Int Int Bool
   | RelSaved Int Int GApi.Response
+  | RelLoad
+  | RelLoaded GApi.Response
+  | RelAdd Int
 
 
 modrel : Int -> (Rel -> Rel) -> List Rel -> List Rel
-modrel rid f = List.map (\r -> if r.nfo.id == rid then f r else r)
+modrel rid f = List.map (\r -> if r.id == rid then f r else r)
+
+
+showrel : GApi.ApiReleases -> String
+showrel r = "[" ++ (RDate.format (RDate.expand r.released)) ++ " " ++ (String.join "," r.lang) ++ "] " ++ r.title ++ " (r" ++ String.fromInt r.id ++ ")"
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -114,11 +134,25 @@ update msg model =
       ( { model | rels = modrel rid (\r -> { r | dd = DD.toggle r.dd False, status = st, state = Api.Loading }) model.rels }
       , Api.post "/u/ulist/rstatus.json" (GRS.encode { uid = model.flags.uid, rid = rid, status = st }) (RelSaved rid st) )
     RelSaved rid st GApi.Success ->
-      let nr = if st == -1 then List.filter (\r -> r.nfo.id /= rid) model.rels
+      let nr = if st == -1 then List.filter (\r -> r.id /= rid) model.rels
                            else modrel rid (\r -> { r | state = Api.Normal }) model.rels
       in ( { model | rels = nr }
          , ulistRelChanged (List.length <| List.filter (\r -> r.status == 2) nr, List.length nr) )
     RelSaved rid _ e -> ({ model | rels = modrel rid (\r -> { r | state = Api.Error e }) model.rels }, Cmd.none)
+
+    RelLoad ->
+      ( { model | relState = Api.Loading }
+      , Api.post "/r/get.json" (JE.object [("vid", JE.int model.flags.vid)]) RelLoaded )
+    RelLoaded (GApi.Releases rels) ->
+      ( { model
+        | relState = Api.Normal
+        , relNfo = Dict.union (Dict.fromList <| List.map (\r -> (r.id, r)) rels) model.relNfo
+        , relOptions = Just <| List.map (\r -> (r.id, showrel r)) rels
+        }, Cmd.none)
+    RelLoaded e -> ({ model | relState = Api.Error e }, Cmd.none)
+    RelAdd rid ->
+      ( { model | rels = model.rels ++ (if rid == 0 then [] else [newrel rid model.flags.vid 2]) }
+      , Task.perform (RelSet rid 2) <| Task.succeed True)
 
 
 view : Model -> Html Msg
@@ -141,12 +175,26 @@ view model =
         ]
       , tfoot []
         [ tr []
-          [ td [ colspan 5 ] [ a [ href "#" ] [ text "Add release" ] ] ]
+          [ td [ colspan 5 ] <|
+            -- TODO: This <select> solution is ugly as hell, a Lib.DropDown-based solution would be nicer.
+            -- Or just throw all releases in the table and use the status field for add stuff.
+            case (model.relOptions, model.relState) of
+              (Just opts, _)   -> [ inputSelect "" 0 RelAdd [ style "width" "500px" ]
+                                    <| (0, "-- add release --") :: List.filter (\(rid,_) -> not <| List.any (\r -> r.id == rid) model.rels) opts ]
+              (_, Api.Normal)  -> [ a [ href "#", onClickD RelLoad ] [ text "Add release" ] ]
+              (_, Api.Loading) -> [ span [ class "spinner" ] [], text "Loading releases..." ]
+              (_, Api.Error e) -> [ b [ class "standout" ] [ text <| Api.showResponse e ], text ". ", a [ href "#", onClickD RelLoad ] [ text "Try again" ] ]
+          ]
         ]
       ]
 
     rel r =
-      let name = "ulist_relstatus" ++ String.fromInt model.flags.vid ++ "_" ++ String.fromInt r.nfo.id ++ "_"
+      case Dict.get r.id model.relNfo of
+        Nothing -> text ""
+        Just nfo -> relnfo r nfo
+
+    relnfo r nfo =
+      let name = "ulist_relstatus" ++ String.fromInt model.flags.vid ++ "_" ++ String.fromInt nfo.id ++ "_"
       in
         tr []
         [ td [ class "tco1" ]
@@ -154,16 +202,16 @@ view model =
             <| \_ ->
               [ ul [] <| List.map (\(n, status) ->
                   li [ class "linkradio" ]
-                  [ inputCheck (name ++ String.fromInt n) (n == r.status) (RelSet r.nfo.id n)
+                  [ inputCheck (name ++ String.fromInt n) (n == r.status) (RelSet r.id n)
                   , label [ for <| name ++ String.fromInt n ] [ text status ]
                   ]
                 ) T.rlistStatus
-                ++ [ li [] [ a [ href "#", onClickD (RelSet r.nfo.id -1 True) ] [ text "remove" ] ] ]
+                ++ [ li [] [ a [ href "#", onClickD (RelSet r.id -1 True) ] [ text "remove" ] ] ]
               ]
           ]
-        , td [ class "tco2" ] [ RDate.display model.today r.nfo.released ]
-        , td [ class "tco3" ] <| List.map langIcon r.nfo.lang ++ [ releaseTypeIcon r.nfo.rtype ]
-        , td [ class "tco4" ] [ a [ href ("/r"++String.fromInt r.nfo.id), title r.nfo.original ] [ text r.nfo.title ] ]
+        , td [ class "tco2" ] [ RDate.display model.today nfo.released ]
+        , td [ class "tco3" ] <| List.map langIcon nfo.lang ++ [ releaseTypeIcon nfo.rtype ]
+        , td [ class "tco4" ] [ a [ href ("/r"++String.fromInt nfo.id), title nfo.original ] [ text nfo.title ] ]
         ]
 
     confirm =

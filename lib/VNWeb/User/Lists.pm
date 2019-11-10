@@ -157,15 +157,15 @@ my $VNOPT = form_compile any => {
     uid   => { id => 1 },
     vid   => { id => 1 },
     notes => {},
-    rels  => { aoh => {
+    rels  => { aoh => { # Same structure as 'elm_Releases' response
         id       => { id => 1 },
         title    => {},
         original => {},
         released => { uint => 1 },
         rtype    => {},
-        status   => { uint => 1 },
         lang     => { type => 'array', values => {} },
     } },
+    relstatus => { type => 'array', values => { uint => 1 } }, # List of release statuses, same order as rels
 };
 
 elm_form 'UListVNOpt', $VNOPT, undef;
@@ -218,13 +218,14 @@ my $RSTATUS = form_compile any => {
 
 elm_form 'UListRStatus', undef, $RSTATUS;
 
+# Adds the release when not in the list.
 json_api qr{/u/ulist/rstatus.json}, $RSTATUS, sub {
     my($data) = @_;
     return elm_Unauth if !auth || auth->uid != $data->{uid};
     if($data->{status} == -1) {
         tuwf->dbExeci('DELETE FROM rlists WHERE uid =', \$data->{uid}, 'AND rid =', \$data->{rid})
     } else {
-        tuwf->dbExeci('UPDATE rlists SET status =', \$data->{status}, 'WHERE uid =', \$data->{uid}, 'AND rid =', \$data->{rid})
+        tuwf->dbExeci('INSERT INTO rlists', $data, 'ON CONFLICT (uid, rid) DO UPDATE SET status =', \$data->{status})
     }
     elm_Success
 };
@@ -336,7 +337,8 @@ sub vn_ {
 
     tr_ mkclass(hidden => 1, 'collapsed_vid'.$v->{id} => 1, odd => $n % 2 == 0), sub {
         td_ colspan => 7, class => 'tc_opt', sub {
-            elm_ 'UList.Opt' => $VNOPT, { own => $own, uid => $uid, vid => $v->{id}, notes => $v->{notes}, rels => $v->{rels} };
+            my $relstatus = [ map $_->{status}, $v->{rels}->@* ];
+            elm_ 'UList.Opt' => $VNOPT, { own => $own, uid => $uid, vid => $v->{id}, notes => $v->{notes}, rels => $v->{rels}, relstatus => $relstatus };
         };
     };
 }
