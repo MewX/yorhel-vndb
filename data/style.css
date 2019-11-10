@@ -218,7 +218,7 @@ div.mainbox, table.mainbox td {
   padding: 5px;
   background: $boxbg$;
 }
-div.mainbox-overflow-hack { overflow: hidden }
+div.mainbox-overflow-hack { overflow: hidden; width: 100% }
 .mainbox h1          { color: $boxtitle$; font-size: 24px; margin: -5px 0 15px 0; }
 .mainbox h2.alttitle { color: $alttitle$; margin: -17px 0 15px 15px; font-weight: normal; }
 .mainbox p           { margin: 3px 20px; }
