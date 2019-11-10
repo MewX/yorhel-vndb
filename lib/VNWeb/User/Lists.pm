@@ -388,6 +388,7 @@ sub listing_ {
     my sub url { '?'.query_encode %$opt, @_ }
 
     # TODO: Thumbnail view?
+    # TODO: Add/remove columns (start/finish date; VN rating, etc?)
     paginate_ \&url, $opt->{p}, [ $count, 50 ], 't';
     div_ class => 'mainbox browse ulist', sub {
         table_ sub {

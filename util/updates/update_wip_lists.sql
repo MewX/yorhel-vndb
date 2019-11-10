@@ -1,3 +1,13 @@
+-- This script may be run multiple times while in beta, so clean up after ourselves.
+-- (Or, uh, before ourselves, in this case...)
+DROP TABLE IF EXISTS ulist_vns, ulist_labels, ulist_vns_labels;
+DROP TRIGGER IF EXISTS ulist_labels_create ON users;
+DROP FUNCTION IF EXISTS ulist_labels_create();
+DROP FUNCTION IF EXISTS ulist_voted_label();
+
+
+
+
 -- Replaces the current vnlists, votes and wlists tables
 CREATE TABLE ulist_vns (
     uid       integer NOT NULL, -- users.id
@@ -61,15 +71,21 @@ INSERT INTO ulist_labels (uid, id, label, private)
     UNION ALL SELECT id, 12, 'Wishlist-Low',    hide_list FROM users WHERE id IN(SELECT DISTINCT uid FROM wlists WHERE wstat = 2);
 
 INSERT INTO ulist_vns (uid, vid, added, lastmod, vote_date, vote, notes)
-    SELECT COALESCE(wl.uid, vl.uid, vo.uid)
-         , COALESCE(wl.vid, vl.vid, vo.vid)
-         , LEAST(wl.added, vl.added, vo.date)
-         , GREATEST(wl.added, vl.added, vo.date)
+    SELECT COALESCE(wl.uid, vl.uid, vo.uid, ro.uid)
+         , COALESCE(wl.vid, vl.vid, vo.vid, ro.vid)
+         , LEAST(wl.added, vl.added, vo.date, ro.added)
+         , GREATEST(wl.added, vl.added, vo.date, ro.added)
          , vo.date, vo.vote
          , COALESCE(vl.notes, '')
       FROM wlists wl
       FULL JOIN vnlists vl ON vl.uid = wl.uid AND vl.vid = wl.vid
-      FULL JOIN votes   vo ON vo.uid = COALESCE(wl.uid, vl.uid) AND vo.vid = COALESCE(wl.vid, vl.vid);
+      FULL JOIN votes   vo ON vo.uid = COALESCE(wl.uid, vl.uid) AND vo.vid = COALESCE(wl.vid, vl.vid)
+      FULL JOIN ( -- It used to be possible to have items in rlists without a corresponding entry in vnlists, so also merge rows from there.
+        SELECT rl.uid, rv.vid, MAX(rl.added)
+          FROM rlists rl
+          JOIN releases_vn rv ON rv.id = rl.rid
+         GROUP BY rl.uid, rv.vid
+      ) ro (uid, vid, added) ON ro.uid = COALESCE(wl.uid, vl.uid, vo.uid) AND ro.vid = COALESCE(wl.vid, vl.vid, vo.vid);
 
 INSERT INTO ulist_vns_labels (uid, vid, lbl)
               SELECT uid, vid,  5 FROM wlists WHERE wstat <> 3 -- All wishlisted items except the blacklist
@@ -89,6 +105,42 @@ ALTER TABLE ulist_vns_labels         ADD CONSTRAINT ulist_vns_labels_uid_fkey   
 ALTER TABLE ulist_vns_labels         ADD CONSTRAINT ulist_vns_labels_vid_fkey          FOREIGN KEY (vid)       REFERENCES vn            (id);
 ALTER TABLE ulist_vns_labels         ADD CONSTRAINT ulist_vns_labels_uid_lbl_fkey      FOREIGN KEY (uid,lbl)   REFERENCES ulist_labels  (uid,id) ON DELETE CASCADE;
 ALTER TABLE ulist_vns_labels         ADD CONSTRAINT ulist_vns_labels_uid_vid_fkey      FOREIGN KEY (uid,vid)   REFERENCES ulist_vns     (uid,vid) ON DELETE CASCADE;
+
+\timing
+
+
+CREATE OR REPLACE FUNCTION ulist_labels_create() RETURNS trigger AS $$
+BEGIN
+    INSERT INTO ulist_labels (uid, id, label, private)
+         VALUES (NEW.id, 1, 'Playing',   false),
+                (NEW.id, 2, 'Finished',  false),
+                (NEW.id, 3, 'Stalled',   false),
+                (NEW.id, 4, 'Dropped',   false),
+                (NEW.id, 5, 'Wishlist',  false),
+                (NEW.id, 6, 'Blacklist', false),
+                (NEW.id, 7, 'Voted',     false);
+    RETURN NULL;
+END
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER ulist_labels_create AFTER INSERT ON users FOR EACH ROW EXECUTE PROCEDURE ulist_labels_create();
+
+
+
+CREATE OR REPLACE FUNCTION ulist_voted_label() RETURNS trigger AS $$
+BEGIN
+    IF NEW.vote IS NULL THEN
+        DELETE FROM ulist_vns_labels WHERE uid = NEW.uid AND vid = NEW.vid AND lbl = 7;
+    ELSE
+        INSERT INTO ulist_vns_labels (uid, vid, lbl) VALUES (NEW.uid, NEW.vid, 7) ON CONFLICT (uid, vid, lbl) DO NOTHING;
+    END IF;
+    RETURN NULL;
+END
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER ulist_voted_label AFTER INSERT OR UPDATE ON ulist_vns FOR EACH ROW EXECUTE PROCEDURE ulist_voted_label();
+
+
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON ulist_vns                TO vndb_site;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ulist_labels             TO vndb_site;
