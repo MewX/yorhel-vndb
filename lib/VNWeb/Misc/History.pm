@@ -61,7 +61,7 @@ sub tablebox_ {
     my sub url { '?'.query_encode %$filt, p => $_ }
 
     paginate_ \&url, $filt->{p}, $np, 't' unless $opt{nopage};
-    div_ class => 'mainbox browse history', sub {
+    div_ class => 'mainbox browse history mainbox-overflow-hack', sub {
         table_ class => 'stripe', sub {
             thead_ sub { tr_ sub {
                 td_ class => 'tc1_1', 'Rev.';

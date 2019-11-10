@@ -218,6 +218,7 @@ div.mainbox, table.mainbox td {
   padding: 5px;
   background: $boxbg$;
 }
+div.mainbox-overflow-hack { overflow: hidden }
 .mainbox h1          { color: $boxtitle$; font-size: 24px; margin: -5px 0 15px 0; }
 .mainbox h2.alttitle { color: $alttitle$; margin: -17px 0 15px 15px; font-weight: normal; }
 .mainbox p           { margin: 3px 20px; }
@@ -321,7 +322,7 @@ div.history td       { white-space: nowrap; padding-left: 15px }
 div.history td.tc1_1 { width: 70px; padding-right: 0; text-align: right }
 div.history td.tc1_2 { width: 30px; padding-left: 0 }
 div.history td.tc2   { width: 140px }
-div.history td.tc4   { overflow: hidden; width: 100% }
+div.history td.tc4   { width: 100% }
 div.history td.tc4 b { margin-left: 10px }
 
 
