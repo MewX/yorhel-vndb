@@ -418,6 +418,9 @@ TUWF::get qr{/$RE{uid}/ulist}, sub {
     return tuwf->resNotFound if !$u->{id};
 
     my $own = auth && $u->{id} == auth->uid;
+
+    return tuwf->resNotFound if !$own; # TEMPORARY while in beta.
+
     my $labels = tuwf->dbAlli(
         'SELECT l.id, l.label, l.private, count(vl.vid) as count, null as delete
            FROM ulist_labels l LEFT JOIN ulist_vns_labels vl ON vl.uid = l.uid AND vl.lbl = l.id
@@ -434,6 +437,20 @@ TUWF::get qr{/$RE{uid}/ulist}, sub {
             voteprivate => (map \($_->{private}?1:0), grep $_->{id} == 7, @$labels),
         } ) : (),
     sub {
+        div_ class => 'mainbox', sub {
+            p_ class => 'center', sub { b_ class => 'standout', style => 'font-size: 30px', '!BETA BETA BETA BETA!'; };
+            div_ class => 'warning', sub {
+                p_ 'This is a prototype for the new lists feature. It should eventually replace your visual novel list, votes and wishlist. Feel free to play around, but keep the following in mind:';
+                ul_ sub {
+                    li_ "Changes made on this page will be lost when the feature goes live, and possibly a few times before that as well. The old visual novel list, votes and wishlist are still your primary lists.";
+                    li_ "Exception to the above rule: The releases are synchronized with your visual novel list, so adding/removing/changing release status here will also affect your regular visual novel list and the other way around.";
+                    li_ "You can not share your list or browse other people's list while this is in beta.";
+                    li_ sub { txt_ "More info and feedback go to "; a_ href => '/t13136', 't13136' };
+                };
+            };
+            p_ class => 'center', sub { b_ class => 'standout', style => 'font-size: 30px', '!BETA BETA BETA BETA!'; };
+        };
+
         my $opt;
         div_ class => 'mainbox', sub {
             h1_ $title;
