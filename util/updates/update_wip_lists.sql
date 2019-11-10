@@ -1,6 +1,6 @@
 -- This script may be run multiple times while in beta, so clean up after ourselves.
 -- (Or, uh, before ourselves, in this case...)
-DROP TABLE IF EXISTS ulist_vns, ulist_labels, ulist_vns_labels;
+DROP TABLE IF EXISTS ulist_vns, ulist_labels, ulist_vns_labels CASCADE;
 DROP TRIGGER IF EXISTS ulist_labels_create ON users;
 DROP FUNCTION IF EXISTS ulist_labels_create();
 DROP FUNCTION IF EXISTS ulist_voted_label();
@@ -58,6 +58,10 @@ CREATE TABLE ulist_vns_labels (
 
 \timing
 
+-- The following queries need a consistent view of the database.
+BEGIN;
+SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+
 INSERT INTO ulist_labels (uid, id, label, private)
               SELECT id,  1, 'Playing',   hide_list FROM users
     UNION ALL SELECT id,  2, 'Finished',  hide_list FROM users
@@ -97,7 +101,6 @@ INSERT INTO ulist_vns_labels (uid, vid, lbl)
     UNION ALL SELECT uid, vid,  7 FROM votes;
 
 
-
 ALTER TABLE ulist_vns                ADD CONSTRAINT ulist_vns_uid_fkey                 FOREIGN KEY (uid)       REFERENCES users         (id) ON DELETE CASCADE;
 ALTER TABLE ulist_vns                ADD CONSTRAINT ulist_vns_vid_fkey                 FOREIGN KEY (vid)       REFERENCES vn            (id);
 ALTER TABLE ulist_labels             ADD CONSTRAINT ulist_labels_uid_fkey              FOREIGN KEY (uid)       REFERENCES users         (id) ON DELETE CASCADE;
@@ -105,6 +108,8 @@ ALTER TABLE ulist_vns_labels         ADD CONSTRAINT ulist_vns_labels_uid_fkey   
 ALTER TABLE ulist_vns_labels         ADD CONSTRAINT ulist_vns_labels_vid_fkey          FOREIGN KEY (vid)       REFERENCES vn            (id);
 ALTER TABLE ulist_vns_labels         ADD CONSTRAINT ulist_vns_labels_uid_lbl_fkey      FOREIGN KEY (uid,lbl)   REFERENCES ulist_labels  (uid,id) ON DELETE CASCADE;
 ALTER TABLE ulist_vns_labels         ADD CONSTRAINT ulist_vns_labels_uid_vid_fkey      FOREIGN KEY (uid,vid)   REFERENCES ulist_vns     (uid,vid) ON DELETE CASCADE;
+
+COMMIT;
 
 \timing
 
