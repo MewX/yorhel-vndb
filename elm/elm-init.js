@@ -19,8 +19,10 @@
 
 /* Load all Elm modules listed in the pageVars.elm array */
 if(pageVars.elm) {
+    //var t0 = performance.now();
     for(var i=0; i<pageVars.elm.length; i++) {
         var e = pageVars.elm[i];
+        //if(e[0] != 'UList.DateEdit') continue;
         var mod = e[0].split('.').reduce(function(p, c) { return p[c] }, Elm);
         var node = document.getElementById('elm'+i);
         if(e.length > 1)
@@ -28,4 +30,5 @@ if(pageVars.elm) {
         else
             mod.init({ node: node });
     }
+    //console.log("Elm modules initialized in " + (performance.now() - t0) + " milliseconds.");
 }

@@ -1,6 +1,6 @@
 var init = Elm.UList.Opt.init;
-Elm.UList.Opt.init = function(opt) {
-    // TODO: This module is more often than not hidden from the page, lazily loading it could improve page load time.
+
+var actualInit = function(opt) {
     var app = init(opt);
 
     app.ports.ulistVNDeleted.subscribe(function(b) {
@@ -25,4 +25,13 @@ Elm.UList.Opt.init = function(opt) {
         e.classList.toggle('done', rels[1] > 0 && rels[0] == rels[1]);
         e.innerText = rels[0] + '/' + rels[1];
     });
+};
+
+// This module is typically hidden, lazily load it only when the module is visible to speed up page load time.
+Elm.UList.Opt.init = function(opt) {
+    var e = document.getElementById('collapse_vid'+opt.flags.vid);
+    if(e.checked)
+        actualInit(opt);
+    else
+        e.addEventListener('click', function() { actualInit(opt) }, { once: true });
 };

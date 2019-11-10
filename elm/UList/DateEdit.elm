@@ -20,22 +20,25 @@ main = Browser.element
   }
 
 type alias Model =
-  { state  : Api.State
-  , flags  : GDE.Send
-  , val    : String
-  , debnum : Int -- Debounce for submit
+  { state   : Api.State
+  , flags   : GDE.Send
+  , val     : String
+  , debnum  : Int -- Debounce for submit
+  , visible : Bool
   }
 
 init : GDE.Send -> Model
 init f =
-  { state  = Api.Normal
-  , flags  = f
-  , val    = f.date
-  , debnum = 0
+  { state   = Api.Normal
+  , flags   = f
+  , val     = f.date
+  , debnum  = 0
+  , visible = False
   }
 
 type Msg
-  = Val String
+  = Show
+  | Val String
   | Save Int
   | Saved GApi.Response
 
@@ -43,6 +46,7 @@ type Msg
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
+    Show   -> ({ model | visible = True }, Cmd.none)
     Val s  -> ({ model | val = s, debnum = model.debnum + 1 }, Task.perform (\_ -> Save (model.debnum+1)) <| Process.sleep 500)
 
     Save n ->
@@ -59,11 +63,13 @@ update msg model =
 
 
 view : Model -> Html Msg
-view model = div [ class "compact" ] <|
+view model = div (class "compact" :: if model.visible then [] else [onMouseOver Show]) <|
   case model.state of
     Api.Loading -> [ span [ class "spinner" ] [] ]
     Api.Error _ -> [ b [ class "standout" ] [ text "error" ] ] -- Argh
     Api.Normal ->
-      [ input ([ type_ "date", class "text", value model.val, onInput Val, onBlur (Save model.debnum), pattern "yyyy-mm-dd" ] ++ GDE.valDate) []
+      [ if model.visible
+        then input ([ type_ "date", class "text", value model.val, onInput Val, onBlur (Save model.debnum), pattern "yyyy-mm-dd" ] ++ GDE.valDate) []
+        else text ""
       , span [] [ text model.val ]
       ]

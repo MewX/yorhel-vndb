@@ -816,7 +816,7 @@ div.votelist td.tc2 { width: 50px; text-align: right; padding-right: 10px }
 .ulist .tc4 input { width: 55px; text-align: right }
 .ulist .tc5, .ulist .tc6, .ulist .tc7 { white-space: nowrap; width: 100px }
 
-.ulist .tc6   div,      .ulist .tc7 div      { height: 1em }
+.ulist .tc6   div,      .ulist .tc7 div      { height: 1em; padding-bottom: 4px }
 .ulist .tc6   div span, .ulist .tc7 div span { position: absolute; z-index: 0 }
 .ulist .tc6   div       input,       .ulist .tc7 div       input       { position: absolute; z-index: 900; width: 110px; visibility: hidden }
 .ulist .tc6   div:hover input,       .ulist .tc7 div:hover input,
