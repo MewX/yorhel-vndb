@@ -86,7 +86,8 @@ json_api qr{/u/ulist/setvote.json}, $VNVOTE, sub {
     tuwf->dbExeci(
         'UPDATE ulist_vns
             SET vote =', \$data->{vote},
-             ', vote_date = CASE WHEN', \$data->{vote}, '::smallint IS NULL THEN NULL WHEN vote IS NULL THEN NOW() ELSE vote_date END
+             ', vote_date = CASE WHEN', \$data->{vote}, '::smallint IS NULL THEN NULL WHEN vote IS NULL THEN NOW() ELSE vote_date END',
+             ', lastmod = NOW()
           WHERE uid =', \$data->{uid}, 'AND vid =', \$data->{vid}
     );
     elm_Success
@@ -123,6 +124,7 @@ json_api qr{/u/ulist/setlabel.json}, $VNLABELS_IN, sub {
          VALUES (', sql_comma(\$data->{uid}, \$data->{vid}, \$data->{label}), ')
              ON CONFLICT (uid, vid, lbl) DO NOTHING'
     ) if $data->{applied};
+    tuwf->dbExeci('UPDATE ulist_vns SET lastmod = NOW() WHERE uid =', \$data->{uid}, 'AND vid =', \$data->{vid});
 
     elm_Success
 };
