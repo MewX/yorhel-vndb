@@ -236,17 +236,29 @@ json_api qr{/u/ulist/rstatus.json}, $RSTATUS, sub {
 
 # TODO: Filters to find unlabeled VNs or VNs with/without notes?
 sub filters_ {
-    my($own, $labels) = @_;
+    my($uid, $own, $labels) = @_;
+
+    my @filtlabels = (
+        @$labels,
+        $own ? {
+            id => -1, label => 'No label', count => tuwf->dbVali(
+                'SELECT count(*)
+                   FROM ulist_vns uv
+                  WHERE NOT EXISTS(SELECT 1 FROM ulist_vns_labels uvl WHERE uvl.uid = uv.uid AND uvl.vid = uv.vid AND uvl.lbl <>', \7, ')
+                    AND uid =', \$uid
+            )
+        } : (),
+    );
 
     my $opt = eval { tuwf->validate(get =>
         p => { upage => 1 },
-        l => { type => 'array', scalar => 1, required => 0, default => [], values => { id => 1 } },
+        l => { type => 'array', scalar => 1, required => 0, default => [], values => { int => 1 } },
         s => { required => 0, default => 'title', enum => [qw[ title vote added started finished ]] },
         o => { required => 0, default => 'a', enum => ['a', 'd'] },
     )->data } || { p => 1, l => [], s => 'title', o => 'a' };
 
     # $labels only includes labels we are allowed to see, getting rid of any labels in 'l' that aren't in $labels ensures we only filter on visible labels
-    my %accessible_labels = map +($_->{id}, 1), @$labels;
+    my %accessible_labels = map +($_->{id}, 1), @filtlabels;
     my %opt_l = map +($_, 1), grep $accessible_labels{$_}, $opt->{l}->@*;
     %opt_l = %accessible_labels if !keys %opt_l;
     $opt->{l} = keys %opt_l == keys %accessible_labels ? [] : [ sort keys %opt_l ];
@@ -255,14 +267,14 @@ sub filters_ {
     my sub lblfilt_ {
         input_ type => 'checkbox', name => 'l', value => $_->{id}, id => "form_l$_->{id}", $opt_l{$_->{id}} ? (checked => 'checked') : ();
         label_ for => "form_l$_->{id}", "$_->{label} ";
-        txt_ " ($_->{count})" if !$_->{private};
-        b_ class => 'grayedout', " ($_->{count})" if $_->{private};
+        txt_ " ($_->{count})";
     }
 
     form_ method => 'get', sub {
         p_ class => 'labelfilters', sub {
             span_ class => 'linkradio', sub {
-                join_ sub { em_ ' / ' }, \&lblfilt_, grep $_->{id} < 10, @$labels;
+                join_ sub { em_ ' / ' }, \&lblfilt_, grep $_->{id} < 10, @filtlabels;
+
                 em_ ' | ';
                 input_ type => 'checkbox', name => 'l', class => 'checkall', value => 0, id => 'form_l_all', $opt->{l}->@* == 0 ? (checked => 'checked') : ();
                 label_ for => 'form_l_all', 'Select all';
@@ -349,10 +361,18 @@ sub vn_ {
 sub listing_ {
     my($uid, $own, $opt, $labels) = @_;
 
+    my @l = grep $_ > 0, $opt->{l}->@*;
+    my($unlabeled) = grep $_ == -1, $opt->{l}->@*;
+
+    my @where_vns = (
+              @l ? sql('ul.vid IN(SELECT vid FROM ulist_vns_labels WHERE uid =', \$uid, 'AND lbl IN', \@l, ')') :
+           !$own ? sql('ul.vid IN(SELECT vid FROM ulist_vns_labels WHERE uid =', \$uid, 'AND lbl IN(SELECT id FROM ulist_labels WHERE uid =', \$uid, 'AND NOT private))') : (),
+      $unlabeled ? sql('NOT EXISTS(SELECT 1 FROM ulist_vns_labels WHERE uid =', \$uid, 'AND vid = ul.vid AND lbl <> ', \7, ')') : ()
+    );
+
     my $where = sql_and
         sql('ul.uid =', \$uid),
-        $opt->{l}->@* ? sql('ul.vid IN(SELECT vid FROM ulist_vns_labels WHERE uid =', \$uid, 'AND lbl IN', $opt->{l}, ')') :
-                !$own ? sql('ul.vid IN(SELECT vid FROM ulist_vns_labels WHERE uid =', \$uid, 'AND lbl IN(SELECT id FROM ulist_labels WHERE uid =', \$uid, 'AND NOT private))') : ();
+        @where_vns ? sql_or(@where_vns) : ();
 
     my $count = tuwf->dbVali('SELECT count(*) FROM ulist_vns ul WHERE', $where);
 
@@ -456,7 +476,7 @@ TUWF::get qr{/$RE{uid}/ulist}, sub {
         my $opt;
         div_ class => 'mainbox', sub {
             h1_ $title;
-            $opt = filters_ $own, $labels;
+            $opt = filters_ $u->{id}, $own, $labels;
             elm_ 'UList.ManageLabels' if $own;
         };
         listing_ $u->{id}, $own, $opt, $labels;
