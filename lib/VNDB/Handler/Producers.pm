@@ -6,6 +6,7 @@ use warnings;
 use TUWF ':html', ':xml', 'xml_escape', 'html_escape';
 use VNDB::Func;
 use VNDB::Types;
+use VNDB::ExtLinks;
 
 
 TUWF::register(
@@ -50,6 +51,7 @@ sub page {
     $rev ? ( rev => $rev ) : ()
   )->[0];
   return $self->resNotFound if !$p->{id};
+  enrich_extlinks p => $p;
 
   my $metadata = {
     'og:title' => $p->{name},
@@ -95,11 +97,10 @@ sub page {
       txt "a.k.a. $alias";
     }
 
-    my $links = $self->entryLinks(p => $p);
-    br if @$links;
-    for(@$links) {
+    br if $p->{extlinks}->@*;
+    for($p->{extlinks}->@*) {
       a href => $_->[1], $_->[0];
-      txt ' - ' if $_ ne $links->[$#$links];
+      txt ' - ' if $_ ne $p->{extlinks}[$#{$p->{extlinks}}];
     }
    end 'p';
 
@@ -138,6 +139,8 @@ sub _releases {
 
   # prodpage_(dev|pub)
   my $r = $self->dbReleaseGet(pid => $p->{id}, results => 999, what => 'vn platforms links');
+  enrich_extlinks r => $r;
+
   div class => 'mainbox';
    a href => '#', id => 'expandprodrel', 'collapse';
    h1 'Releases';

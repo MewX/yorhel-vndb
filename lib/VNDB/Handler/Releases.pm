@@ -6,6 +6,7 @@ use warnings;
 use TUWF ':html', ':xml', 'uri_escape', 'xml_escape';
 use VNDB::Func;
 use VNDB::Types;
+use VNDB::ExtLinks;
 use Exporter 'import';
 
 our @EXPORT = ('releaseExtLinks');
@@ -33,6 +34,7 @@ sub page {
     $rev ? (rev => $rev) : (),
   )->[0];
   return $self->resNotFound if !$r->{id};
+  enrich_extlinks r => $r;
 
   my $metadata = {
     'og:title' => $r->{title},
@@ -268,14 +270,13 @@ sub _infotable {
      end;
    }
 
-   my $links = $self->entryLinks(r => $r);
-   if(@$links) {
+   if($r->{extlinks}->@*) {
      Tr;
       td 'Links';
       td;
-       for(@$links) {
+       for($r->{extlinks}->@*) {
          a href => $_->[1], $_->[0];
-         txt ', ' if $_ ne $links->[$#$links];
+         txt ', ' if $_ ne $r->{extlinks}[$#{$r->{extlinks}}];
        }
       end;
      end;
@@ -815,19 +816,18 @@ sub enginexml {
 }
 
 
-# Generate the html for an 'external links' dropdown
+# Generate the html for an 'external links' dropdown, assumes enrich_extlinks() has already been called on this object.
 sub releaseExtLinks {
   my($self, $r) = @_;
-  my $links = $self->entryLinks(r => $r);
-  my $has_dd = @$links > ($r->{website} ? 1 : 0);
-  if(@$links) {
+  my $has_dd = $r->{extlinks}->@* > ($r->{website} ? 1 : 0);
+  if($r->{extlinks}->@*) {
     a href => $r->{website}||'#', class => 'rllinks';
-     txt scalar @$links if $has_dd;
+     txt scalar $r->{extlinks}->@* if $has_dd;
      cssicon 'external', 'External link';
     end;
     if($has_dd) {
       ul class => 'hidden rllinks_dd';
-       for (@$links) {
+       for ($r->{extlinks}->@*) {
          li;
           a href => $_->[1];
            span $_->[2] if $_->[2];

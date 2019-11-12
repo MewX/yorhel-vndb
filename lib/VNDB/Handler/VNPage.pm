@@ -6,6 +6,7 @@ use warnings;
 use TUWF ':html', 'xml_escape';
 use VNDB::Func;
 use VNDB::Types;
+use VNDB::ExtLinks;
 use List::Util 'min';
 use POSIX 'strftime';
 
@@ -341,6 +342,9 @@ sub page {
 
   my $r = $self->dbReleaseGet(vid => $vid, what => 'extended links vns producers platforms media', results => 200);
 
+  enrich_extlinks v => $v;
+  enrich_extlinks r => $r;
+
   my $metadata = {
     'og:title' => $v->{title},
     'og:description' => bb2text $v->{desc},
@@ -422,14 +426,13 @@ sub page {
      _producers($self, $r);
      _relations($self, $v) if @{$v->{relations}};
 
-     my $links = $self->entryLinks(v => $v);
-     if(@$links) {
+     if($v->{extlinks}->@*) {
        Tr;
         td 'Links';
         td;
-         for(@$links) {
+         for($v->{extlinks}->@*) {
            a href => $_->[1], $_->[0];
-           txt ', ' if $_ ne $links->[$#$links];
+           txt ', ' if $_ ne $v->{extlinks}[$#{$v->{extlinks}}];
          }
         end;
        end;
@@ -766,7 +769,7 @@ sub _affiliate_links {
      $rel->{type} eq 'partial' ? 2 :
              @{$rel->{vn}} > 1 ? 0 : 1;
 
-    for my $l (grep $_->[2], @{$self->entryLinks(r => $rel)}) {
+    for my $l (grep $_->[2], $rel->{extlinks}->@*) {
       $links{$l->[1]} = [ @$l, min $type, $links{$l->[1]}[3]||9 ];
     }
   }

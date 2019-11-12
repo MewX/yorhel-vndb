@@ -9,7 +9,7 @@ use VNDB::Func;
 use VNDB::Types;
 use VNDB::BBCode;
 
-our @EXPORT = qw|filFetchDB filCompat bbSubstLinks entryLinks|;
+our @EXPORT = qw|filFetchDB filCompat bbSubstLinks|;
 
 
 our %filfields = (
@@ -117,89 +117,6 @@ sub bbSubstLinks {
   shift; bb_subst_links @_;
 }
 
-
-
-# Returns an arrayref of links, each link being [$title, $url, $price]
-sub entryLinks {
-  my($self, $type, $obj) = @_;
-  my $w = $obj->{l_wikidata} ? $self->dbWikidata($obj->{l_wikidata}) : {};
-
-  my @links;
-  my $lnk = sub {
-    my($v, $title, $url, $xform, $price) = @_;
-    push @links, map [ $title, sprintf($url, $xform ? $xform->($_) : $_), $price ], ref $v ? @$v : $v ? ($v) : ();
-  };
-
-  $lnk->($obj->{l_site},      'Official website',  '%s'); # (staff) Homepage always comes first
-  $lnk->($obj->{website},     'Official website',  '%s'); # (producers, releases)
-  $lnk->($w->{enwiki},        'Wikipedia (en)',    'https://en.wikipedia.org/wiki/%s', sub { (shift =~ s/ /_/rg) =~ s/\?/%3f/rg });
-  $lnk->($w->{jawiki},        'Wikipedia (ja)',    'https://ja.wikipedia.org/wiki/%s', sub { (shift =~ s/ /_/rg) =~ s/\?/%3f/rg });
-  $lnk->($obj->{l_wikidata},  'Wikidata',          'https://www.wikidata.org/wiki/Q%d');
-
-  # Not everything in the wikidata table is actually used, only those links that
-  # seem to be directly mappings (i.e. not displaying anime links on VN pages).
-
-  # VN links
-  if($type eq 'v') {
-    $lnk->($w->{mobygames},     'MobyGames',      'https://www.mobygames.com/game/%s');
-    $lnk->($w->{gamefaqs_game}, 'GameFAQs',       'https://gamefaqs.gamespot.com/-/%s-');
-    $lnk->($w->{vgmdb_product}, 'VGMdb',          'https://vgmdb.net/product/%s');
-    $lnk->($w->{acdb_source},   'ACDB',           'https://www.animecharactersdatabase.com/source.php?id=%s');
-    $lnk->($w->{indiedb_game},  'IndieDB',        'https://www.indiedb.com/games/%s');
-    $lnk->($w->{howlongtobeat}, 'HowLongToBeat',  'http://howlongtobeat.com/game.php?id=%s');
-    $lnk->($w->{igdb_game},     'IGDB',           'https://www.igdb.com/games/%s');
-    $lnk->($obj->{l_renai},     'Renai.us',       'https://renai.us/game/%s');
-    push @links, [ 'VNStat', sprintf 'https://vnstat.net/novel/%d', $obj->{id} ] if $obj->{c_votecount}>=20;
-  }
-
-  # Release links
-  if($type eq 'r') {
-    $lnk->($obj->{l_egs},      'ErogameScape', 'https://erogamescape.dyndns.org/~ap2/ero/toukei_kaiseki/game.php?game=%d');
-    $lnk->($obj->{l_erotrail}, 'ErogeTrailers','http://erogetrailers.com/soft/%d');
-    $lnk->($obj->{l_steam},    'Steam',       'https://store.steampowered.com/app/%d/');
-    $lnk->($obj->{l_steam},    'SteamDB',     'https://steamdb.info/app/%d/info');
-    $lnk->($obj->{l_dlsite},   'DLsite (jpn)',sprintf($self->{dlsite_url}, $obj->{l_dlsite_shop}||'home'), undef, $obj->{l_dlsite_price});
-    $lnk->($obj->{l_dlsiteen}, 'DLsite (eng)',sprintf($self->{dlsite_url}, $obj->{l_dlsiteen_shop}||'eng'), undef, $obj->{l_dlsiteen_price});
-    $lnk->($obj->{l_gog},      'GOG',         'https://www.gog.com/game/%s');
-    $lnk->($obj->{l_itch},     'Itch.io',     'https://%s');
-    $lnk->($obj->{l_denpa},    'Denpasoft',   $self->{denpa_url}, undef, $obj->{l_denpa_price});
-    $lnk->($obj->{l_jlist},    $obj->{l_jlist_jbox} ? 'JBOX' : 'J-List', $self->{ $obj->{l_jlist_jbox} ? 'jbox_url' : 'jlist_url' }, undef, $obj->{l_jlist_price});
-    $lnk->($obj->{l_jastusa},  'JAST USA',    'https://jastusa.com/%s');
-    $lnk->($obj->{l_gyutto},   'Gyutto',      'https://gyutto.com/i/item%d');
-    $lnk->($obj->{l_digiket},  'Digiket',     'https://www.digiket.com/work/show/_data/ID=ITM%07d/');
-    $lnk->($obj->{l_melon},    'Melonbooks',  'https://www.melonbooks.com/index.php?main_page=product_info&products_id=IT%010d');
-    $lnk->($obj->{l_mg},       'MangaGamer',  !defined($obj->{l_mg_r18}) || $obj->{l_mg_r18} ? $self->{mg_r18_url} : $self->{mg_main_url}, undef, $obj->{l_mg_price});
-    $lnk->($obj->{l_getchu},   'Getchu',      'http://www.getchu.com/soft.phtml?id=%d');
-    $lnk->($obj->{l_getchudl}, 'DL.Getchu',   'http://dl.getchu.com/i/item%d');
-    $lnk->($obj->{l_dmm},      'DMM',         'https://%s');
-    push @links, map [ 'PlayAsia', $_->{url}, $_->{price} ], @{$obj->{l_playasia}} if $obj->{l_playasia};
-  }
-
-  # Staff links
-  if($type eq 's') {
-    $lnk->($obj->{l_twitter},        'Twitter',      'https://twitter.com/%s');
-    $lnk->($w->{twitter},            'Twitter',      'https://twitter.com/%s') if !$obj->{l_twitter};
-    $lnk->($obj->{l_anidb},          'AniDB',        'https://anidb.net/cr%s');
-    $lnk->($w->{anidb_person},       'AniDB',        'https://anidb.net/cr%s') if !$obj->{l_anidb};
-    $lnk->($obj->{l_pixiv},          'Pixiv',        'https://www.pixiv.net/member.php?id=%d');
-    $lnk->($w->{pixiv_user},         'Pixiv',        'https://www.pixiv.net/member.php?id=%d') if !$obj->{l_pixiv};
-    $lnk->($w->{musicbrainz_artist}, 'MusicBrainz',  'https://musicbrainz.org/artist/%s');
-    $lnk->($w->{vgmdb_artist},       'VGMdb',        'https://vgmdb.net/artist/%s');
-    $lnk->($w->{discogs_artist},     'Discogs',      'https://www.discogs.com/artist/%s');
-    $lnk->($w->{doujinshi_author},   'Doujinshi.org','https://www.doujinshi.org/browse/author/%d/');
-  }
-
-  # Producer links
-  if($type eq 'p') {
-    $lnk->($w->{twitter},           'Twitter',   'https://twitter.com/%s');
-    $lnk->($w->{mobygames_company}, 'MobyGames', 'https://www.mobygames.com/company/%s');
-    $lnk->($w->{gamefaqs_company},  'GameFAQs',  'https://gamefaqs.gamespot.com/company/%s-');
-    $lnk->($w->{doujinshi_author},  'Doujinshi.org','https://www.doujinshi.org/browse/author/%d/');
-    push @links, [ 'VNStat', sprintf 'https://vnstat.net/developer/%d', $obj->{id} ];
-  }
-
-  \@links
-}
 
 1;
 

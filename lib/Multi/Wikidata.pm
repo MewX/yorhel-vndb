@@ -11,6 +11,7 @@ use Multi::Core;
 use JSON::XS 'decode_json';
 use AnyEvent::HTTP;
 use VNDB::Config;
+use VNDB::ExtLinks;
 
 
 my %C = (
@@ -56,35 +57,10 @@ sub fetch {
 }
 
 
-my %props = (
-  P856  => [ 'website',            'text'    ],
-  P3180 => [ 'vndb',               'text'    ],
-  P1933 => [ 'mobygames',          'text'    ],
-  P4773 => [ 'mobygames_company',  'text'    ],
-  P4769 => [ 'gamefaqs_game',      'integer' ],
-  P6182 => [ 'gamefaqs_company',   'integer' ],
-  P5646 => [ 'anidb_anime',        'integer' ],
-  P5649 => [ 'anidb_person',       'integer' ],
-  P1985 => [ 'ann_anime',          'integer' ],
-  P1984 => [ 'ann_manga',          'integer' ],
-  P434  => [ 'musicbrainz_artist', 'uuid'    ],
-  P2002 => [ 'twitter',            'text'    ],
-  P5659 => [ 'vgmdb_product',      'integer' ],
-  P3435 => [ 'vgmdb_artist',       'integer' ],
-  P1953 => [ 'discogs_artist',     'integer' ],
-  P7013 => [ 'acdb_char',          'integer' ],
-  P7017 => [ 'acdb_source',        'integer' ],
-  P6717 => [ 'indiedb_game',       'text'    ],
-  P2816 => [ 'howlongtobeat',      'integer' ],
-  P4110 => [ 'crunchyroll',        'text'    ],
-  P5794 => [ 'igdb_game',          'text'    ],
-  P5247 => [ 'giantbomb',          'text'    ],
-  P6337 => [ 'pcgamingwiki ',      'text'    ],
-  P1733 => [ 'steam',              'integer' ],
-  P2725 => [ 'gog',                'text'    ],
-  P5435 => [ 'pixiv_user',         'integer' ],
-  P7511 => [ 'doujinshi_author',   'integer' ],
-);
+# property_id -> [ column name, sql element type ]
+my %props =
+    map +($VNDB::ExtLinks::WIKIDATA{$_}{property}, [ $_, $VNDB::ExtLinks::WIKIDATA{$_}{type} =~ s/\[\]$//r ]),
+    grep $VNDB::ExtLinks::WIKIDATA{$_}{property}, keys %VNDB::ExtLinks::WIKIDATA;
 
 
 sub process {

@@ -6,6 +6,7 @@ use warnings;
 use TUWF qw(:html :xml uri_escape xml_escape);
 use VNDB::Func;
 use VNDB::Types;
+use VNDB::ExtLinks;
 use List::Util qw(first);
 
 TUWF::register(
@@ -25,6 +26,7 @@ sub page {
     $rev ? ( rev => $rev ) : ()
   )->[0];
   return $self->resNotFound if !$s->{id};
+  enrich_extlinks s => $s;
 
   my $metadata = {
     'og:title' => $s->{name},
@@ -92,14 +94,13 @@ sub page {
        end;
       end;
     }
-    my $links = $self->entryLinks(s => $s);
-    if(@$links) {
+    if($s->{extlinks}->@*) {
       Tr;
        td class => 'key', 'Links';
        td;
-        for(@$links) {
+        for($s->{extlinks}->@*) {
           a href => $_->[1], $_->[0];
-          br if $_ != $links->[$#$links];
+          br if $_ != $s->{extlinks}[$#{$s->{extlinks}}];
         }
        end;
       end;
