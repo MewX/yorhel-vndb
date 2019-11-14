@@ -14,6 +14,7 @@
 #  use VNDB::Types;
 #  use VNDB::Config;
 #  use VNDB::Func 'fmtdate', 'fmtage', 'fmtvote', 'query_encode';
+#  use VNDB::ExtLinks;
 #  use VNWeb::Auth;
 #  use VNWeb::HTML;
 #  use VNWeb::DB;
@@ -56,6 +57,7 @@ sub import {
     use VNDB::Types;
     use VNDB::Config;
     use VNDB::Func 'fmtdate', 'fmtage', 'fmtvote', 'query_encode';
+    use VNDB::ExtLinks;
     use VNWeb::Auth;
     use VNWeb::HTML;
     use VNWeb::DB;

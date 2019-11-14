@@ -5,7 +5,7 @@ use warnings;
 use VNDB::Config;
 use Exporter 'import';
 
-our @EXPORT = ('enrich_extlinks');
+our @EXPORT = ('enrich_extlinks', 'revision_extlinks');
 
 
 # column name in wikidata table => \%info
@@ -222,6 +222,16 @@ sub enrich_extlinks {
 
         $obj->{extlinks} = \@links
     }
+}
+
+
+# Returns a list of @fields for use in VNWeb::HTML::revision_()
+sub revision_extlinks {
+    my($type) = @_;
+    map {
+        my($f, $p) = ($_, $LINKS{$type}{$_});
+        [ $f, $p->{label}, fmt => sub { TUWF::XML::a_ href => sprintf($p->{fmt}, $_), $_; }, empty => 0 ]
+    } sort keys $LINKS{$type}->%*
 }
 
 

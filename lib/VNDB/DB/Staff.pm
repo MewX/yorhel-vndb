@@ -5,10 +5,9 @@ use strict;
 use warnings;
 use Exporter 'import';
 
-our @EXPORT = qw|dbStaffGet dbStaffGetRev|;
+our @EXPORT = qw|dbStaffGet |;
 
 # options: results, page, id, aid, search, exact, truename, role, gender
-# what: extended changes roles aliases
 sub dbStaffGet {
   my $self = shift;
   my %o = (
@@ -57,7 +56,6 @@ sub dbStaffGet {
   );
 
   my $select = 's.id, sa.aid, sa.name, sa.original, s.gender, s.lang';
-  $select .= ', s.desc, s.l_wp, s.l_site, s.l_twitter, s.l_anidb, s.l_wikidata, s.l_pixiv, s.hidden, s.locked' if $o{what} =~ /extended/;
 
   my($order, @order) = ('sa.name');
   if($o{sort} && $o{sort} eq 'search') {
@@ -74,83 +72,8 @@ sub dbStaffGet {
     $select, \%where, @order
   );
 
-  return _enrich($self, $r, $np, 0, $o{what});
-}
-
-
-sub dbStaffGetRev {
-  my $self = shift;
-  my %o = (what => '', @_);
-
-  $o{rev} ||= $self->dbRow('SELECT MAX(rev) AS rev FROM changes WHERE type = \'s\' AND itemid = ?', $o{id})->{rev};
-
-  my $select = 'c.itemid AS id, sa.aid, sa.name, sa.original, s.gender, s.lang';
-  $select .= ', extract(\'epoch\' from c.added) as added, c.comments, c.rev, c.ihid, c.ilock, '.VNWeb::DB::sql_user();
-  $select .= ', c.id AS cid, NOT EXISTS(SELECT 1 FROM changes c2 WHERE c2.type = c.type AND c2.itemid = c.itemid AND c2.rev = c.rev+1) AS lastrev';
-  $select .= ', s.desc, s.l_wp, s.l_site, s.l_twitter, s.l_anidb, s.l_wikidata, s.l_pixiv, so.hidden, so.locked' if $o{what} =~ /extended/;
-
-  my $r = $self->dbAll(q|
-    SELECT !s
-      FROM changes c
-      JOIN staff so ON so.id = c.itemid
-      JOIN staff_hist s ON s.chid = c.id
-      JOIN staff_alias_hist sa ON sa.chid = c.id AND s.aid = sa.aid
-      JOIN users u ON u.id = c.requester
-      WHERE c.type = 's' AND c.itemid = ? AND c.rev = ?|,
-    $select, $o{id}, $o{rev}
-  );
-
-  return _enrich($self, $r, 0, 1, $o{what});
-}
-
-
-sub _enrich {
-  my($self, $r, $np, $rev, $what) = @_;
-
-  # Role info is linked to VN revisions, so is independent of the selected staff revision
-  if(@$r && $what =~ /roles/) {
-    my %r = map {
-      $_->{roles} = [];
-      $_->{cast} = [];
-      ($_->{id}, $_);
-    } @$r;
-
-    push @{$r{ delete $_->{id} }{roles}}, $_ for (@{$self->dbAll(q|
-      SELECT sa.id, sa.aid, v.id AS vid, sa.name, sa.original, v.c_released, v.title, v.original AS t_original, vs.role, vs.note
-        FROM vn_staff vs
-        JOIN vn v ON v.id = vs.id
-        JOIN staff_alias sa ON vs.aid = sa.aid
-        WHERE sa.id IN(!l) AND NOT v.hidden
-        ORDER BY v.c_released ASC, v.title ASC, vs.role ASC|, [ keys %r ]
-    )});
-    push @{$r{ delete $_->{id} }{cast}}, $_ for (@{$self->dbAll(q|
-      SELECT sa.id, sa.aid, v.id AS vid, sa.name, sa.original, v.c_released, v.title, v.original AS t_original, c.id AS cid, c.name AS c_name, c.original AS c_original, vs.note
-        FROM vn_seiyuu vs
-        JOIN vn v ON v.id = vs.id
-        JOIN chars c ON c.id = vs.cid
-        JOIN staff_alias sa ON vs.aid = sa.aid
-        WHERE sa.id IN(!l) AND NOT v.hidden
-        ORDER BY v.c_released ASC, v.title ASC|, [ keys %r ]
-    )});
-  }
-
-  if(@$r && $what =~ /aliases/) {
-    my ($col, $hist, $colname) = $rev ? ('cid', '_hist', 'chid') : ('id', '', 'id');
-    my %r = map {
-      $_->{aliases} = [];
-      ($_->{$col}, $_);
-    } @$r;
-
-    push @{$r{ delete $_->{xid} }{aliases}}, $_ for (@{$self->dbAll("
-      SELECT s.$colname AS xid, sa.aid, sa.name, sa.original
-        FROM staff_alias$hist sa
-        JOIN staff$hist s ON s.$colname = sa.$colname
-        WHERE s.$colname IN(!l) AND s.aid <> sa.aid
-        ORDER BY sa.name ASC", [ keys %r ]
-    )});
-  }
-
   return wantarray ? ($r, $np) : $r;
 }
+
 
 1;

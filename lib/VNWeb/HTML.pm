@@ -8,7 +8,7 @@ use Encode 'encode_utf8', 'decode_utf8';
 use JSON::XS;
 use TUWF ':html5_', 'uri_escape', 'html_escape', 'mkclass';
 use Exporter 'import';
-use POSIX 'ceil';
+use POSIX 'ceil', 'strftime';
 use Carp 'croak';
 use JSON::XS;
 use VNDB::Config;
@@ -23,12 +23,14 @@ our @EXPORT = qw/
     debug_
     join_
     user_ user_displayname
+    rdate_
     elm_
     framework_
     revision_
     paginate_
     sortable_
     searchbox_
+    itemmsg_
     editmsg_
 /;
 
@@ -90,6 +92,22 @@ sub user_displayname {
     return '[deleted]' if !f 'id';
     my $fancy = !(auth->pref('nodistract_can') && auth->pref('nodistract_nofancy'));
     $fancy && f 'uniname_can' && f 'uniname' ? f 'uniname' : f 'name'
+}
+
+
+# Display a release date.
+sub rdate_ {
+    my $date = sprintf '%08d', shift||0;
+    my $future = $date > strftime '%Y%m%d', gmtime;
+    my($y, $m, $d) = ($1, $2, $3) if $date =~ /^([0-9]{4})([0-9]{2})([0-9]{2})$/;
+
+    my $str = $y ==    0 ? 'unknown' :
+              $y == 9999 ? 'TBA' :
+              $m ==   99 ? sprintf('%04d', $y) :
+              $d ==   99 ? sprintf('%04d-%02d', $y, $m) :
+                           sprintf('%04d-%02d-%02d', $y, $m, $d);
+
+    $future ? b_ class => 'future', $str : txt_ $str
 }
 
 
@@ -426,6 +444,7 @@ sub framework_ {
 sub _revision_header_ {
     my($type, $obj) = @_;
     b_ "Revision $obj->{chrev}";
+    debug_ $obj;
     if(auth) {
         lit_ ' (';
         a_ href => "/$type$obj->{id}.$obj->{chrev}/edit", $obj->{chrev} == $obj->{maxrev} ? 'edit' : 'revert to';
@@ -445,8 +464,12 @@ sub _revision_header_ {
 
 sub _revision_fmtval_ {
     my($opt, $val) = @_;
-    return i_ '[empty]' if !defined $val || !length $val;
+    return i_ '[empty]' if !defined $val || !length $val || (defined $opt->{empty} && $val eq $opt->{empty});
     return lit_ html_escape $val if !$opt->{fmt};
+    if(ref $opt->{fmt} eq 'HASH') {
+        my $h = $opt->{fmt}{$val};
+        return txt_ ref $h eq 'HASH' ? $h->{txt} : $h || '[unknown]';
+    }
     return txt_ $val ? 'True' : 'False' if $opt->{fmt} eq 'bool';
     local $_ = $val;
     $opt->{fmt}->();
@@ -488,9 +511,9 @@ sub _revision_fmtcol_ {
                     }
                 }
 
-            } elsif(@$l > 2 && $i == 2 && ($ch eq '+' || $ch eq 'c')) {
+            } elsif(@$l > 1 && $i == 2 && ($ch eq '+' || $ch eq 'c')) {
                 b_ class => 'diff_add', sub { _revision_fmtval_ $opt, $val }
-            } elsif(@$l > 2 && $i == 1 && ($ch eq '-' || $ch eq 'c')) {
+            } elsif(@$l > 1 && $i == 1 && ($ch eq '-' || $ch eq 'c')) {
                 b_ class => 'diff_del', sub { _revision_fmtval_ $opt, $val }
             } elsif($ch eq 'c' || $ch eq 'u') {
                 _revision_fmtval_ $opt, $val;
@@ -500,6 +523,19 @@ sub _revision_fmtcol_ {
 }
 
 
+# Recursively stringify scalars. This is generally a no-op, except when
+# serializing the data structure to JSON this will cause all numbers to be
+# formatted as strings.  Not very useful for data exchange, but this allows for
+# creating proper canonicalized JSON where equivalent data structures serialize
+# to the same string. (TODO: Might as well write a function that hashes
+# recursive data structures and use that for comparison - a little bit more
+# work but less magical)
+sub _stringify_scalars_rec {
+    defined($_[0]) && !ref $_[0] ? "$_[0]" :
+            ref $_[0] eq 'HASH'  ? map _stringify_scalars_rec($_), values $_[0]->%* :
+            ref $_[0] eq 'ARRAY' ? map _stringify_scalars_rec($_), $_[0]->@* : undef;
+}
+
 sub _revision_diff_ {
     my($type, $old, $new, $field, $name, %opt) = @_;
 
@@ -508,8 +544,8 @@ sub _revision_diff_ {
     my @old = ref $old->{$field} eq 'ARRAY' ? $old->{$field}->@* : ($old->{$field});
     my @new = ref $new->{$field} eq 'ARRAY' ? $new->{$field}->@* : ($new->{$field});
 
-    my $JS = JSON::XS->new->utf8->allow_nonref;
-    my $l = sdiff \@old, \@new, sub { $JS->encode($_[0]) };
+    my $JS = JSON::XS->new->utf8->canonical->allow_nonref;
+    my $l = sdiff \@old, \@new, sub { _stringify_scalars_rec($_[0]); $JS->encode($_[0]) };
     return if !grep $_->[0] ne 'u', @$l;
 
     # Now check if we should do a textual diff on the changed items.
@@ -582,9 +618,13 @@ sub _revision_cmp_ {
 #   [ field_name, display_name, %options ]
 #
 # Options:
-#   fmt     => 'bool'||sub {$_}  - Formatting function for individual values.
+#   fmt     => 'bool'||\%HASH||sub {$_}  - Formatting function for individual values.
 #                 If not given, the field is rendered as plain text and changes are highlighted with a diff.
-#   join    => sub{}             - HTML to join multi-value fields, defaults to \&br_.
+#                 \%HASH -> Look the field up in the hash table (values should be string or {txt=>string}.
+#                 sub($value) {$_} -> Custom formatting function, should output TUWF::XML data HTML.
+#   join    => sub{}  - HTML to join multi-value fields, defaults to \&br_.
+#   empty   => str    - What value should be considered "empty", e.g. (empty => 0) for integer fields.
+#                 undef or empty string are always considered empty values.
 sub revision_ {
     my($type, $new, $enrich, @fields) = @_;
 
@@ -685,6 +725,17 @@ sub searchbox_ {
           input_ type => 'text', name => 'q', id => 'q', class => 'text', value => $value;
           input_ type => 'submit', class => 'submit', value => 'Search!';
       };
+}
+
+
+# Generate a message to display on an entry page when the entry has been locked or the user can't edit it.
+sub itemmsg_ {
+    my($type, $obj) = @_;
+    if($obj->{entry_locked}) {
+        p_ class => 'locked', 'Locked for editing';
+    } elsif(auth && !can_edit $type => $obj) {
+        p_ class => 'locked', 'You can not edit this page';
+    }
 }
 
 

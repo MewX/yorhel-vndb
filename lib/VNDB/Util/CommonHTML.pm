@@ -116,7 +116,6 @@ sub htmlHiddenMessage {
   my $editsum = $type eq 'v' ? $self->dbVNGetRev(id => $obj->{id})->[0]{comments}
               : $type eq 'r' ? $self->dbReleaseGetRev(id => $obj->{id})->[0]{comments}
               : $type eq 'c' ? $self->dbCharGetRev(id => $obj->{id})->[0]{comments}
-              : $type eq 's' ? $self->dbStaffGetRev(id => $obj->{id})->[0]{comments}
                              : $self->dbProducerGetRev(id => $obj->{id})->[0]{comments};
   div class => 'mainbox';
    h1 $obj->{title}||$obj->{name};
