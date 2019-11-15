@@ -18,7 +18,6 @@ TUWF::register(
   qr{t([1-9]\d*)/reply}              => \&edit,
   qr{t([1-9]\d*)\.([1-9]\d*)/edit}   => \&edit,
   qr{t/(db|an|ge|[vpu])([1-9]\d*)?/new} => \&edit,
-  qr{t/search}                       => \&search,
   qr{t}                              => \&index,
 );
 
@@ -483,117 +482,6 @@ sub index {
     _threadlist($self, $list, {p=>1}, 0, "/t", $_);
   }
 
-  $self->htmlFooter;
-}
-
-
-sub search {
-  my $self = shift;
-
-  my $frm = $self->formValidate(
-    { get => 'bq', required => 0, maxlength => 100 },
-    { get => 'b',  required => 0, multi => 1, enum => [ keys %BOARD_TYPE ] },
-    { get => 't',  required => 0 },
-    { get => 'p',  required => 0, default => 1, template => 'page' },
-  );
-  return $self->resNotFound if $frm->{_err};
-
-  $self->htmlHeader(title => 'Search the discussion board', noindex => 1);
-  $self->htmlForm({ frm => $frm, action => '/t/search', method => 'get', nosubmit => 1, noformcode => 1 }, 'boardsearch' => ['Search the discussion board',
-    [ input  => short => 'bq', name => 'Query' ],
-    [ check  => short => 't',  name => 'Only search thread titles' ],
-    [ select => short => 'b',  name => 'Boards', multi => 1, size => scalar keys %BOARD_TYPE,
-      options => [ map [$_,$BOARD_TYPE{$_}{txt}], keys %BOARD_TYPE ] ],
-    [ static => content => sub {
-      input type => 'submit', class => 'submit', tabindex => 10, value => 'Search!';
-    } ],
-  ]);
-  return $self->htmlFooter if !$frm->{bq};
-
-  my %boards = map +($_,1), @{$frm->{b}};
-  %boards = () if keys %boards == keys %BOARD_TYPE;
-
-  my($l, $np);
-  if($frm->{t}) {
-    ($l, $np) = $self->dbThreadGet(
-      keys %boards ? ( type => [keys %boards] ) : (),
-      search => $frm->{bq},
-      results => 50,
-      page => $frm->{p},
-      what => 'firstpost lastpost boardtitles',
-      sort => 'lastpost', reverse => 1,
-    );
-  } else {
-    # TODO: Allow or-matching too. But what syntax?
-    (my $ts = $frm->{bq}) =~ y{+|&:*()="';!?$%^\\[]{}<>~` }{ }s;
-    $ts =~ s/ +/ /;
-    $ts =~ s/^ //;
-    $ts =~ s/ $//;
-    $ts =~ s/ / & /g;
-    $ts =~ s/(?:^| )-([^ ]+)/ !$1 /;
-    ($l, $np) = $self->dbPostGet(
-      keys %boards ? ( type => [keys %boards] ) : (),
-      search => $ts,
-      results => 20,
-      page => $frm->{p},
-      hide => 1,
-      what => 'thread user',
-      sort => 'date', reverse => 1,
-      headline => {
-        # HACK: The bbcodes are stripped from the original messages when
-        # creating the headline, so they are guaranteed not to show up in the
-        # message. This means we can re-use them for highlighting without
-        # worrying that they conflict with the message contents.
-        MaxFragments => 2, MinWords => 15, MaxWords => 40, StartSel => '[raw]', StopSel => '[/raw]', FragmentDelimiter => '[code]',
-      },
-    );
-  }
-
-  my $url = '/t/search?'.join ';', 'bq='.uri_escape($frm->{bq}), $frm->{t} ? 't=1' : (), map "b=$_", keys %boards;
-  if(!@$l) {
-    div class => 'mainbox';
-     h1 'No results';
-     p 'No threads or messages found matching your criteria.';
-    end;
-  } elsif($frm->{t}) {
-    _threadlist($self, $l, $frm, $np, $url, 'all');
-  } else {
-    $self->htmlBrowse(
-      items    => $l,
-      options  => $frm,
-      nextpage => $np,
-      pageurl  => $url,
-      class    => 'postsearch',
-      header   => [
-        sub { td class => 'tc1_1', ''; td class => 'tc1_2', ''; },
-        [ 'Date' ],
-        [ 'User' ],
-        [ 'Message' ],
-      ],
-      row     => sub {
-        my($s, $n, $l) = @_;
-        my $link = "/t$l->{tid}.$l->{num}";
-        Tr;
-         td class => 'tc1_1'; a href => $link, 't'.$l->{tid}; end;
-         td class => 'tc1_2'; a href => $link, '.'.$l->{num}; end;
-         td class => 'tc2', fmtdate $l->{date};
-         td class => 'tc3'; VNWeb::HTML::user_($l); end;
-         td class => 'tc4';
-          div class => 'title';
-           a href => $link, $l->{title};
-          end;
-          my $h = xml_escape $l->{headline};
-          $h =~ s/\[raw\]/<b class="standout">/g;
-          $h =~ s/\[\/raw\]/<\/b>/g;
-          $h =~ s/\[code\]/<b class="grayedout">...<\/b><br \/>/g;
-          div class => 'thread';
-           lit $h;
-          end;
-         end;
-        end;
-      }
-    );
-  }
   $self->htmlFooter;
 }
 

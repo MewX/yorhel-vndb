@@ -366,9 +366,9 @@ div.mainbox.discussions td.tc4     { text-align: right; }
 div.mainbox.discussions a.locked   { text-decoration: line-through; }
 div.mainbox.discussions b.boards   { padding-left: 10px; font-weight: normal; }
 div.mainbox.discussions b.boards a { color: $grayedout$; }
-div.discussions td.tc2             { width: 60px;  }
+div.discussions td.tc2             { width: 60px; text-align: right }
 div.discussions td.tc3             { width: 110px;  }
-div.discussions td.tc4             { width: 230px; }
+div.discussions td.tc4             { width: 250px; }
 div.discussions .pollflag          { color: $grayedout$; padding-right: 6px; }
 div.postsearch td.tc1_1           { width: 60px; padding-left: 0; padding-right: 0; text-align: right }
 div.postsearch td.tc1_2           { width: 25px; padding-left: 0 }

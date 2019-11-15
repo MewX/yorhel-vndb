@@ -228,8 +228,6 @@ sub dbPostGet {
       'tp.hidden = FALSE' => 1 ) : (),
     $o{hide} && $o{what} =~ /thread/ ? (
       't.hidden = FALSE AND t.private = FALSE' => 1 ) : (),
-    $o{search} ? (
-      'bb_tsvector(msg) @@ to_tsquery(?)' => $o{search}) : (),
     $o{type} ? (
       'tp.tid IN(SELECT tid FROM threads_boards WHERE type IN(!l))' => [ ref $o{type} ? $o{type} : [ $o{type} ] ] ) : (),
   );
@@ -258,23 +256,6 @@ sub dbPostGet {
       ORDER BY !s|,
     join(', ', @select), join(' ', @join), \%where, $order
   );
-
-  # Get headlines in a separate query
-  if($o{search} && @$r) {
-    my %r = map {
-      ($r->[$_]{tid}.'.'.$r->[$_]{num}, $_)
-    } 0..$#$r;
-    my $where = join ' or ', ('(tid = ? and num = ?)')x@$r;
-    my @where = map +($_->{tid},$_->{num}), @$r;
-    my $h = join ',', map "$_=$o{headline}{$_}", $o{headline} ? keys %{$o{headline}} : ();
-
-    $r->[$r{$_->{tid}.'.'.$_->{num}}]{headline} = $_->{headline} for (@{$self->dbAll(qq|
-      SELECT tid, num, ts_headline('english', strip_bb_tags(strip_spoilers(msg)), to_tsquery(?), ?) as headline
-        FROM threads_posts
-        WHERE $where|,
-      $o{search}, $h, @where
-    )});
-  }
 
   return wantarray ? ($r, $np) : $r;
 }
