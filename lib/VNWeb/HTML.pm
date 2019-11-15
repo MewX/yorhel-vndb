@@ -144,10 +144,12 @@ sub _head_ {
     my $o = shift;
 
     my $fancy = !(auth->pref('nodistract_can') && auth->pref('nodistract_nofancy'));
-    my $pubskin = $fancy && $o->{pubskin}{pubskin_can} && $o->{pubskin}{pubskin_enabled};
-    my $skin = tuwf->reqGet('skin') || ($pubskin ? $o->{pubskin}{skin} : auth->pref('skin')) || '';
+    my $pubskin = $fancy && $o->{type} && $o->{type} eq 'u' && $o->{dbobj} ? tuwf->dbRowi(
+        'SELECT customcss, skin FROM users WHERE pubskin_can AND pubskin_enabled AND id =', \$o->{dbobj}{id}
+    ) : {};
+    my $skin = tuwf->reqGet('skin') || $pubskin->{skin} || auth->pref('skin') || '';
     $skin = config->{skin_default} if !tuwf->{skins}{$skin};
-    my $customcss = $pubskin ? $o->{pubskin}{customcss} : auth->pref('customcss');
+    my $customcss = $pubskin->{customcss} || auth->pref('customcss');
 
     meta_ charset => 'utf-8';
     title_ $o->{title}.' | vndb';
@@ -405,7 +407,6 @@ sub _hidden_msg_ {
 #   feeds      => 1/0
 #   search     => $query
 #   og         => { opengraph metadata }
-#   pubskin    => { object with: pubskin_can, customcss, skin }
 #   type       => Database entry type (used for the main tabs & hidden message)
 #   dbobj      => Database entry object (used for the main tabs & hidden message)
 #                 Recognized object fields: id, entry_hidden, entry_locked

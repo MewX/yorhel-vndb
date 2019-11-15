@@ -389,7 +389,7 @@ sub board {
   return $self->resNotFound if $f->{_err};
 
   my $obj = !$iid ? undef :
-    $type eq 'u' ? $self->dbUserGet(uid => $iid, what => 'hide_list pubskin')->[0] :
+    $type eq 'u' ? $self->dbUserGet(uid => $iid, what => 'hide_list')->[0] :
     $type eq 'p' ? $self->dbProducerGet(id => $iid)->[0] :
                    $self->dbVNGet(id => $iid)->[0];
   return $self->resNotFound if $iid && !$obj;
@@ -406,7 +406,7 @@ sub board {
     asuser => $self->authInfo()->{id},
   );
 
-  $self->htmlHeader(title => $title, noindex => 1, feeds => [ $type eq 'an' ? 'announcements' : 'posts' ], $type eq 'u' && $obj ? (pubskin => $obj) : ());
+  $self->htmlHeader(title => $title, noindex => 1, feeds => [ $type eq 'an' ? 'announcements' : 'posts' ], type => $type, dbobj => $obj);
 
   $self->htmlMainTabs($type, $obj, 'disc') if $iid;
   form action => '/t/search', method => 'get';

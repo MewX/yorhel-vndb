@@ -35,7 +35,7 @@ sub listing_ {
 
 
 TUWF::get qr{/$RE{uid}/posts}, sub {
-    my $u = tuwf->dbRowi('SELECT id, ', sql_user(), ', pubskin_can, pubskin_enabled, customcss, skin FROM users u WHERE id =', \tuwf->capture('id'));
+    my $u = tuwf->dbRowi('SELECT id, ', sql_user(), 'FROM users u WHERE id =', \tuwf->capture('id'));
     return tuwf->resNotFound if !$u->{id};
 
     my $page = eval { tuwf->validate(get => p => { upage => 1 })->data } || 1;
@@ -55,7 +55,7 @@ TUWF::get qr{/$RE{uid}/posts}, sub {
 
     my $own = auth && $u->{id} == auth->uid;
     my $title = $own ? 'My posts' : 'Posts by '.user_displayname $u;
-    framework_ title => $title, type => 'u', dbobj => $u, tab => 'posts', pubskin => $u,
+    framework_ title => $title, type => 'u', dbobj => $u, tab => 'posts',
     sub {
         div_ class => 'mainbox', sub {
             h1_ $title;

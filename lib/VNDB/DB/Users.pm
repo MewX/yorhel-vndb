@@ -11,7 +11,6 @@ our @EXPORT = qw|
 
 
 # %options->{ uid results page what }
-# what: pubskin
 # sort: username registered votes changes tags
 sub dbUserGet {
   my $s = shift;
@@ -33,7 +32,6 @@ sub dbUserGet {
     qw|id username c_votes c_changes c_tags hide_list|,
     VNWeb::DB::sql_user(), # XXX: This duplicates id and username, but updating all the code isn't going to be easy
     q|extract('epoch' from registered) as registered|,
-    $o{what} =~ /pubskin/ ? qw|pubskin_can pubskin_enabled customcss skin| : (),
   );
 
   my($r, $np) = $s->dbPage(\%o, q|

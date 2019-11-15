@@ -117,7 +117,7 @@ sub rlist_e {
 sub votelist {
   my($self, $type, $id) = @_;
 
-  my $obj = $type eq 'v' ? $self->dbVNGet(id => $id)->[0] : $self->dbUserGet(uid => $id, what => 'hide_list pubskin')->[0];
+  my $obj = $type eq 'v' ? $self->dbVNGet(id => $id)->[0] : $self->dbUserGet(uid => $id, what => 'hide_list')->[0];
   return $self->resNotFound if !$obj->{id};
 
   my $own = $type eq 'u' && $self->authInfo->{id} && $self->authInfo->{id} == $id;
@@ -156,7 +156,7 @@ sub votelist {
   );
 
   my $title = $type eq 'v' ? "Votes for $obj->{title}" : 'Votes by '.VNWeb::HTML::user_displayname($obj);
-  $self->htmlHeader(noindex => 1, $type eq 'u' ? (pubskin => $obj) : (), title => $title);
+  $self->htmlHeader(noindex => 1, type => $type, dbobj => $obj, title => $title);
   $self->htmlMainTabs($type => $obj, 'votes');
   div class => 'mainbox';
    h1 $title;
@@ -232,7 +232,7 @@ sub wishlist {
   my($self, $uid) = @_;
 
   my $own = $self->authInfo->{id} && $self->authInfo->{id} == $uid;
-  my $u = $self->dbUserGet(uid => $uid, what => 'hide_list pubskin')->[0];
+  my $u = $self->dbUserGet(uid => $uid, what => 'hide_list')->[0];
   return $self->resNotFound if !$u || !$own && !(!$u->{hide_list} || $self->authCan('usermod'));
 
   my $f = $self->formValidate(
@@ -266,7 +266,7 @@ sub wishlist {
   );
 
   my $title = $own ? 'My wishlist' : VNWeb::HTML::user_displayname($u)."'s wishlist";
-  $self->htmlHeader(title => $title, noindex => 1, pubskin => $u);
+  $self->htmlHeader(title => $title, noindex => 1, type => 'u', dbobj => $u);
   $self->htmlMainTabs('u', $u, 'wish');
   div class => 'mainbox';
    h1 $title;
@@ -337,7 +337,7 @@ sub vnlist {
   my($self, $uid) = @_;
 
   my $own = $self->authInfo->{id} && $self->authInfo->{id} == $uid;
-  my $u = $self->dbUserGet(uid => $uid, what => 'hide_list pubskin')->[0];
+  my $u = $self->dbUserGet(uid => $uid, what => 'hide_list')->[0];
   return $self->resNotFound if !$u || !$own && !(!$u->{hide_list} || $self->authCan('usermod'));
 
   my $f = $self->formValidate(
@@ -383,7 +383,7 @@ sub vnlist {
   );
 
   my $title = $own ? 'My visual novel list' : VNWeb::HTML::user_displayname($u)."'s visual novel list";
-  $self->htmlHeader(title => $title, noindex => 1, pubskin => $u);
+  $self->htmlHeader(title => $title, noindex => 1, type => 'u', dbobj => $u);
   $self->htmlMainTabs('u', $u, 'list');
 
   # url generator
