@@ -15,8 +15,8 @@ our @EXPORT = ('enrich_extlinks', 'revision_extlinks');
 #   label      How the link is displayed on the website
 #   fmt        How to generate the url (printf-style string or subroutine returning the full URL)
 our %WIKIDATA = (
-    enwiki             => { type => 'text',       property => undef,   label => 'Wikipedia (en)', fmt => sub { (shift =~ s/ /_/rg) =~ s/\?/%3f/rg } },
-    jawiki             => { type => 'text',       property => undef,   label => 'Wikipedia (ja)', fmt => sub { (shift =~ s/ /_/rg) =~ s/\?/%3f/rg } },
+    enwiki             => { type => 'text',       property => undef,   label => 'Wikipedia (en)', fmt => sub { sprintf 'https://en.wikipedia.org/wiki/%s', (shift =~ s/ /_/rg) =~ s/\?/%3f/rg } },
+    jawiki             => { type => 'text',       property => undef,   label => 'Wikipedia (ja)', fmt => sub { sprintf 'https://ja.wikipedia.org/wiki/%s', (shift =~ s/ /_/rg) =~ s/\?/%3f/rg } },
     website            => { type => 'text[]',     property => 'P856',  label => undef,            fmt => undef },
     vndb               => { type => 'text[]',     property => 'P3180', label => undef,            fmt => undef },
     mobygames          => { type => 'text[]',     property => 'P1933', label => 'MobyGames',      fmt => 'https://www.mobygames.com/game/%s' },
