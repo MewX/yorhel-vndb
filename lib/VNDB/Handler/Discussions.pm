@@ -3,7 +3,7 @@ package VNDB::Handler::Discussions;
 
 use strict;
 use warnings;
-use TUWF ':html', 'xml_escape', 'uri_escape';
+use TUWF ':html', 'xml_escape';
 use POSIX 'ceil';
 use VNDB::Func;
 use VNDB::Types;
@@ -18,7 +18,6 @@ TUWF::register(
   qr{t([1-9]\d*)/reply}              => \&edit,
   qr{t([1-9]\d*)\.([1-9]\d*)/edit}   => \&edit,
   qr{t/(db|an|ge|[vpu])([1-9]\d*)?/new} => \&edit,
-  qr{t}                              => \&index,
 );
 
 
@@ -444,43 +443,6 @@ sub board {
   end 'form';
 
   _threadlist($self, $list, $f, $np, "/t/$type$iid", $type.$iid) if @$list;
-
-  $self->htmlFooter;
-}
-
-
-sub index {
-  my $self = shift;
-
-  $self->htmlHeader(title => 'Discussion board index', noindex => 1, feeds => [ 'posts', 'announcements' ]);
-  form action => '/t/search', method => 'get';
-   div class => 'mainbox';
-    h1 'Discussion board index';
-    fieldset class => 'search';
-     input type => 'text', name => 'bq', id => 'bq', class => 'text';
-     input type => 'submit', class => 'submit', value => 'Search!';
-    end 'fieldset';
-    p class => 'browseopts';
-     a href => '/t/all', 'All boards';
-     a href => '/t/'.$_, $BOARD_TYPE{$_}{txt} for (keys %BOARD_TYPE);
-    end;
-   end;
-  end;
-
-  for (keys %BOARD_TYPE) {
-    my $list = $self->dbThreadGet(
-      type => $_,
-      results => $BOARD_TYPE{$_}{index_rows},
-      page => 1,
-      what => 'firstpost lastpost boardtitles',
-      sort => 'lastpost', reverse => 1,
-      asuser => $self->authInfo()->{id},
-    );
-    h1 class => 'boxtitle';
-     a href => "/t/$_", $BOARD_TYPE{$_}{txt};
-    end;
-    _threadlist($self, $list, {p=>1}, 0, "/t", $_);
-  }
 
   $self->htmlFooter;
 }
