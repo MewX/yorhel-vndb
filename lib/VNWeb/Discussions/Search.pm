@@ -123,8 +123,6 @@ sub threads_ {
     my($filt) = @_;
 
     my $where = sql_and
-        'NOT t.hidden',
-        'NOT t.private',
         $filt->{b}->@* < keys %BOARD_TYPE ? sql('t.id IN(SELECT tid FROM threads_boards WHERE type IN', $filt->{b}, ')') : (),
         map sql('t.title ilike', \('%'.($_ =~ s/%//gr).'%')), grep length($_) > 0, split /[ -,._]/, $filt->{bq};
 

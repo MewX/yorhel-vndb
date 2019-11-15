@@ -20,8 +20,14 @@ sub threadlist_ {
     my $count = $opt{paginate} && tuwf->dbVali('SELECT count(*) FROM threads t WHERE', $opt{where});
     return 0 if $opt{paginate} && !$count;
 
+    my $where = sql_and
+        # Make sure we can only see threads we're allowed to see.
+        auth->permBoardmod ? () : ('NOT t.hidden'),
+        sql('NOT t.private OR EXISTS(SELECT 1 FROM threads_boards WHERE tid = t.id AND type = \'u\' AND iid =', \auth->uid, ')'),
+        $opt{where}||();
+
     my $lst = tuwf->dbPagei(\%opt, q{
-        SELECT t.id, t.title, t.count, t.locked, t.poll_question IS NOT NULL AS haspoll
+        SELECT t.id, t.title, t.count, t.locked, t.private, t.hidden, t.poll_question IS NOT NULL AS haspoll
              , }, sql_user('tfu', 'firstpost_'), ',', sql_totime('tf.date'), q{ as firstpost_date
              , }, sql_user('tlu', 'lastpost_'),  ',', sql_totime('tl.date'), q{ as lastpost_date
           FROM threads t
@@ -29,7 +35,7 @@ sub threadlist_ {
           JOIN threads_posts tl ON tl.tid = t.id AND tl.num = t.count
           JOIN users tfu ON tfu.id = tf.uid
           JOIN users tlu ON tlu.id = tl.uid
-         WHERE }, $opt{where}, q{
+         WHERE }, $where, q{
          ORDER BY tl.date DESC
     });
     return 0 if !@$lst;
@@ -59,6 +65,8 @@ sub threadlist_ {
                 td_ class => 'tc1', sub {
                     a_ mkclass(locked => $l->{locked}), href => "/t$l->{id}", sub {
                         span_ class => 'pollflag', '[poll]' if $l->{haspoll};
+                        span_ class => 'pollflag', '[private]' if $l->{private};
+                        span_ class => 'pollflag', '[hidden]' if $l->{hidden};
                         txt_ shorten $l->{title}, 50;
                     };
                     b_ class => 'boards', sub {

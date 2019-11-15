@@ -25,7 +25,7 @@ TUWF::get qr{/t}, sub {
                 a_ href => "/t/$b", $BOARD_TYPE{$b}{txt};
             };
             threadlist_
-                where   => sql('NOT t.private AND NOT t.hidden AND t.id IN(SELECT tid FROM threads_boards WHERE type =', \$b, ')'),
+                where   => sql('t.id IN(SELECT tid FROM threads_boards WHERE type =', \$b, ')'),
                 boards  => sql('NOT (tb.type =', \$b, 'AND tb.iid = 0)'),
                 results => $BOARD_TYPE{$b}{index_rows},
                 page    => 1;
