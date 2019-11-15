@@ -17,14 +17,14 @@ our @EXPORT = qw/threadlist_/;
 sub threadlist_ {
     my %opt = @_;
 
-    my $count = $opt{paginate} && tuwf->dbVali('SELECT count(*) FROM threads t WHERE', $opt{where});
-    return 0 if $opt{paginate} && !$count;
-
     my $where = sql_and
         # Make sure we can only see threads we're allowed to see.
         auth->permBoardmod ? () : ('NOT t.hidden'),
         sql('NOT t.private OR EXISTS(SELECT 1 FROM threads_boards WHERE tid = t.id AND type = \'u\' AND iid =', \auth->uid, ')'),
         $opt{where}||();
+
+    my $count = $opt{paginate} && tuwf->dbVali('SELECT count(*) FROM threads t WHERE', $where);
+    return 0 if $opt{paginate} && !$count;
 
     my $lst = tuwf->dbPagei(\%opt, q{
         SELECT t.id, t.title, t.count, t.locked, t.private, t.hidden, t.poll_question IS NOT NULL AS haspoll
