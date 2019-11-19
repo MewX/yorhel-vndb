@@ -161,19 +161,28 @@ view model =
     opt =
       [ tr []
         [ td [ colspan 5 ]
-          [ textarea ([ placeholder "Notes", rows 2, cols 80, onInput Notes, onBlur (NotesSave model.notesRev) ] ++ GVN.valNotes) [ text model.notes ]
-          , div [ ]
-            [ div [ class "spinner", classList [("invisible", model.notesState /= Api.Loading)] ] []
-            , br [] []
-            , case model.notesState of
-                Api.Error e -> b [ class "standout" ] [ text <| Api.showResponse e ]
-                _ -> text ""
-            , br [] []
+          [ textarea (
+              [ placeholder "Notes", rows 2, cols 80
+              , onInput Notes, onBlur (NotesSave model.notesRev)
+              ] ++ GVN.valNotes
+            ) [ text model.notes ]
+          , div [ ] <|
+            [ div [ class "spinner", classList [("hidden", model.notesState /= Api.Loading)] ] []
             , a [ href "#", onClickD (Del True) ] [ text "Remove VN" ]
-            ]
+            ] ++ (
+              if model.relOptions == Nothing
+              then [ text " | ", a [ href "#", onClickD RelLoad ] [ text "Add release" ] ]
+              else []
+            ) ++ (
+              case model.notesState of
+                Api.Error e -> [ br [] [], b [ class "standout" ] [ text <| Api.showResponse e ] ]
+                _ -> []
+            )
           ]
         ]
-      , tfoot []
+      , if model.relOptions == Nothing && model.relState == Api.Normal
+        then text ""
+        else tfoot []
         [ tr []
           [ td [ colspan 5 ] <|
             -- TODO: This <select> solution is ugly as hell, a Lib.DropDown-based solution would be nicer.
@@ -181,7 +190,7 @@ view model =
             case (model.relOptions, model.relState) of
               (Just opts, _)   -> [ inputSelect "" 0 RelAdd [ style "width" "500px" ]
                                     <| (0, "-- add release --") :: List.filter (\(rid,_) -> not <| List.any (\r -> r.id == rid) model.rels) opts ]
-              (_, Api.Normal)  -> [ a [ href "#", onClickD RelLoad ] [ text "Add release" ] ]
+              (_, Api.Normal)  -> []
               (_, Api.Loading) -> [ span [ class "spinner" ] [], text "Loading releases..." ]
               (_, Api.Error e) -> [ b [ class "standout" ] [ text <| Api.showResponse e ], text ". ", a [ href "#", onClickD RelLoad ] [ text "Try again" ] ]
           ]
