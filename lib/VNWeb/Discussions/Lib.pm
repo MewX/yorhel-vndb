@@ -113,7 +113,7 @@ sub boardsearch_ {
 sub boardtypes_ {
     my($type) = @_;
     p_ class => 'browseopts', sub {
-        a_ href => '/t/'.$_->[0], mkclass(optselected => $type && $type eq $_->[0]), $_->[1] for (
+        a_ href => $_->[0] eq 'index' ? '/t' : '/t/'.$_->[0], mkclass(optselected => $type && $type eq $_->[0]), $_->[1] for (
             [ index => 'Index'      ],
             [ all   => 'All boards' ],
             map [ $_, $BOARD_TYPE{$_}{txt} ], keys %BOARD_TYPE
