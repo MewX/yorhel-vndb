@@ -15,6 +15,7 @@ sub filters_ {
     my %boards = map +($_,1), $filt->{b}->@*;
 
     form_ method => 'get', action => tuwf->reqPath(), sub {
+        boardtypes_;
         table_ style => 'margin: 0 auto', sub { tr_ sub {
                 td_ style => 'padding: 10px', sub {
                     p_ class => 'linkradio', sub {

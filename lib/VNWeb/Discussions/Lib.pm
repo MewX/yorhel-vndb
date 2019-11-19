@@ -3,7 +3,7 @@ package VNWeb::Discussions::Lib;
 use VNWeb::Prelude;
 use Exporter 'import';
 
-our @EXPORT = qw/threadlist_/;
+our @EXPORT = qw/threadlist_ boardsearch_ boardtypes_/;
 
 
 # Generate a thread list table, options:
@@ -12,6 +12,7 @@ our @EXPORT = qw/threadlist_/;
 #   results  => Number of threads to display.
 #   page     => Current page number.
 #   paginate => sub {} reference that generates a url for paginate_(); pagination is disabled when not set.
+#   sort     => SQL (default: tl.date DESC)
 #
 # Returns 1 if something was displayed, 0 if no threads matched the where clause.
 sub threadlist_ {
@@ -36,8 +37,8 @@ sub threadlist_ {
           JOIN users tfu ON tfu.id = tf.uid
           JOIN users tlu ON tlu.id = tl.uid
          WHERE }, $where, q{
-         ORDER BY tl.date DESC
-    });
+         ORDER BY}, $opt{sort}||'tl.date DESC'
+    );
     return 0 if !@$lst;
 
     enrich boards => id => tid => sub { sql q{
@@ -91,5 +92,30 @@ sub threadlist_ {
     paginate_ $opt{paginate}, $opt{page}, [ $count, $opt{results} ], 'b' if $opt{paginate};
     1;
 }
+
+
+sub boardsearch_ {
+    my($type) = @_;
+    form_ action => '/t/search', sub {
+        fieldset_ class => 'search', sub {
+            input_ type => 'text', name => 'bq', id => 'bq', class => 'text';
+            input_ type => 'hidden', name => 'b', value => $type if $type && $type ne 'all';
+            input_ type => 'submit', class => 'submit', value => 'Search!';
+        }
+    }
+}
+
+
+sub boardtypes_ {
+    my($type) = @_;
+    p_ class => 'browseopts', sub {
+        a_ href => '/t/'.$_->[0], mkclass(optselected => $type && $type eq $_->[0]), $_->[1] for (
+            [ index => 'Index'      ],
+            [ all   => 'All boards' ],
+            map [ $_, $BOARD_TYPE{$_}{txt} ], keys %BOARD_TYPE
+        );
+    };
+}
+
 
 1;

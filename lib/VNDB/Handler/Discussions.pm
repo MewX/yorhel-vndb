@@ -14,7 +14,6 @@ TUWF::register(
   qr{t([1-9]\d*)(?:/([1-9]\d*))?}    => \&thread,
   qr{t([1-9]\d*)(/[1-9]\d*)?/vote}   => \&vote,
   qr{t([1-9]\d*)\.([1-9]\d*)}        => \&redirect,
-  qr{t/(all|db|an|ge|[vpu])([1-9]\d*)?}  => \&board,
   qr{t([1-9]\d*)/reply}              => \&edit,
   qr{t([1-9]\d*)\.([1-9]\d*)/edit}   => \&edit,
   qr{t/(db|an|ge|[vpu])([1-9]\d*)?/new} => \&edit,
@@ -375,126 +374,6 @@ sub vote {
 
   $self->dbPollVote($t->{id}, $self->authInfo->{id}, @{$f->{option}});
   $self->resRedirect($url, 'post');
-}
-
-
-sub board {
-  my($self, $type, $iid) = @_;
-  $iid ||= '';
-  return $self->resNotFound if ($type eq 'all' || !$BOARD_TYPE{$type}{dbitem}) && $iid;
-
-  my $f = $self->formValidate(
-    { get => 'p', required => 0, default => 1, template => 'page' },
-  );
-  return $self->resNotFound if $f->{_err};
-
-  my $obj = !$iid ? undef :
-    $type eq 'u' ? $self->dbUserGet(uid => $iid, what => 'hide_list')->[0] :
-    $type eq 'p' ? $self->dbProducerGet(id => $iid)->[0] :
-                   $self->dbVNGet(id => $iid)->[0];
-  return $self->resNotFound if $iid && !$obj;
-  my $ititle = $obj && ($obj->{title}||$obj->{name}||VNWeb::HTML::user_displayname($obj));
-  my $title = $obj ? "Related discussions for $ititle" : $type eq 'all' ? 'All boards' : $BOARD_TYPE{$type}{txt};
-
-  my($list, $np) = $self->dbThreadGet(
-    $type ne 'all' ? (type => $type) : (),
-    $iid ? (iid => $iid) : (),
-    results => 50,
-    page => $f->{p},
-    what => 'firstpost lastpost boardtitles',
-    sort => $type eq 'an' ? 'id' : 'lastpost', reverse => 1,
-    asuser => $self->authInfo()->{id},
-  );
-
-  $self->htmlHeader(title => $title, noindex => 1, feeds => [ $type eq 'an' ? 'announcements' : 'posts' ], type => $type, dbobj => $obj);
-
-  $self->htmlMainTabs($type, $obj, 'disc') if $iid;
-  form action => '/t/search', method => 'get';
-   div class => 'mainbox';
-    h1 $title;
-    p;
-     a href => '/t', 'Discussion board';
-     txt ' > ';
-     a href => "/t/$type", $type eq 'all' ? 'All boards' : $BOARD_TYPE{$type}{txt};
-     if($iid) {
-       txt ' > ';
-       a style => 'font-weight: bold', href => "/t/$type$iid", "$type$iid";
-       txt ':';
-       a href => "/$type$iid", $ititle;
-     }
-    end;
-    if(!$iid) {
-      fieldset class => 'search';
-       input type => 'text', name => 'bq', id => 'bq', class => 'text';
-       input type => 'hidden', name => 'b', value => $type if $type ne 'all';
-       input type => 'submit', class => 'submit', value => 'Search!';
-      end 'fieldset';
-    }
-    p class => 'center';
-     if(!@$list) {
-       b 'No related threads found';
-       br; br;
-       a href => "/t/$type$iid/new", 'Why not create one yourself?';
-     } elsif($type ne 'all' && $self->authCan($BOARD_TYPE{$type}{post_perm})) {
-       a href => '/t/'.($iid ? $type.$iid : $type).'/new', 'Start a new thread';
-     }
-    end;
-   end 'div';
-  end 'form';
-
-  _threadlist($self, $list, $f, $np, "/t/$type$iid", $type.$iid) if @$list;
-
-  $self->htmlFooter;
-}
-
-
-sub _threadlist {
-  my($self, $list, $f, $np, $url, $board) = @_;
-  $self->htmlBrowse(
-    items    => $list,
-    options  => $f,
-    nextpage => $np,
-    pageurl  => $url,
-    class    => 'discussions',
-    header   => [
-      [ 'Topic'    ],
-      [ 'Replies'  ],
-      [ 'Starter'  ],
-      [ 'Last post' ],
-    ],
-    row      => sub {
-      my($self, $n, $o) = @_;
-      Tr;
-       td class => 'tc1';
-        a $o->{locked} ? ( class => 'locked' ) : (), href => "/t$o->{id}";
-         span class => 'pollflag', '[poll]' if $o->{haspoll};
-         txt shorten $o->{title}, 50;
-        end;
-        b class => 'boards';
-         my $i = 1;
-         my @boards = sort { $a->{type}.$a->{iid} cmp $b->{type}.$b->{iid} } grep $_->{type}.($_->{iid}||'') ne $board, @{$o->{boards}};
-         for(@boards) {
-           last if $i++ > 4;
-           txt ', ' if $i > 2;
-           a href => "/t/$_->{type}".($_->{iid}||''),
-             title => $_->{original}||$BOARD_TYPE{$_->{type}}{txt},
-             shorten $_->{title}||$BOARD_TYPE{$_->{type}}{txt}, 30;
-         }
-         txt ', ...' if @boards > 4;
-        end;
-       end;
-       td class => 'tc2', $o->{count}-1;
-       td class => 'tc3';
-        VNWeb::HTML::user_($o, 'firstpost_');
-       end;
-       td class => 'tc4';
-        VNWeb::HTML::user_($o, 'lastpost_');
-        lit ' @ ';
-        a href => "/t$o->{id}.$o->{count}", fmtdate $o->{lastpost_date}, 'full';
-       end;
-      end 'tr';
-    }
-  );
 }
 
 

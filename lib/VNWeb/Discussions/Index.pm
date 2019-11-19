@@ -9,14 +9,8 @@ TUWF::get qr{/t}, sub {
         form_ method => 'get', action => '/t/search', sub {
             div_ class => 'mainbox', sub {
                 h1_ 'Discussion board index';
-                fieldset_ class => 'search', sub {
-                    input_ type => 'text', name => 'bq', id => 'bq', class => 'text';
-                    input_ type => 'submit', class => 'submit', value => 'Search!';
-                };
-                p_ class => 'browseopts', sub {
-                    a_ href => '/t/all', 'All boards';
-                    a_ href => '/t/'.$_, $BOARD_TYPE{$_}{txt} for (keys %BOARD_TYPE);
-                };
+                boardtypes_ 'index';
+                boardsearch_;
             }
         };
 
