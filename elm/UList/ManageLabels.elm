@@ -4,11 +4,13 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Browser
+import Task
 import Browser.Navigation exposing (reload)
 import Json.Encode as JE
 import Lib.Html exposing (..)
 import Lib.Util exposing (..)
 import Lib.Api as Api
+import Lib.Ffi as Ffi
 import Gen.Api as GApi
 import Gen.UListManageLabels as GML
 
@@ -53,7 +55,9 @@ update msg model =
     Private n b -> ({ model | labels = modidx n (\l -> { l | private = b }) model.labels }, Cmd.none)
     Label n s   -> ({ model | labels = modidx n (\l -> { l | label   = s }) model.labels }, Cmd.none)
     Delete n o  -> ({ model | labels = List.filter (\l -> l.id > 0 || l.delete == Nothing) <| modidx n (\l -> { l | delete = o }) model.labels }, Cmd.none)
-    Add -> ({ model | labels = model.labels ++ [{ id = -1, label = "New label", private = List.all (\il -> il.private) model.labels, count = 0, delete = Nothing }] }, Cmd.none)
+    Add ->
+      ( { model | labels = model.labels ++ [{ id = -1, label = "New label", private = List.all (\il -> il.private) model.labels, count = 0, delete = Nothing }] }
+      , Task.attempt (always Noop) <| Ffi.elemCall "select" <| "label_txt_" ++ String.fromInt (List.length model.labels) )
 
     Submit -> ({ model | state = Api.Loading }, Api.post "/u/ulist/labels.json" (GML.encode { uid = model.uid, labels = model.labels }) Submitted)
 
@@ -70,7 +74,7 @@ view model =
       [ td [] [ text <| if l.count == 0 then "" else String.fromInt l.count ]
       , td [ class "stealth" ]
         [ if l.id > 0 && l.id < 10 then text l.label
-          else inputText "" l.label (Label n) GML.valLabelsLabel
+          else inputText ("label_txt_"++String.fromInt n) l.label (Label n) GML.valLabelsLabel
         ]
       , td [ class "linkradio" ] [ inputCheck strid l.private (Private n), label [ for strid ] [ text "private" ] ]
       , td [ class "stealth" ]
