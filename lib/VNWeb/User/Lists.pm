@@ -271,6 +271,8 @@ sub filters_ {
     }
 
     form_ method => 'get', sub {
+        input_ type => 'hidden', name => 's', value => $opt->{s};
+        input_ type => 'hidden', name => 'o', value => $opt->{o};
         p_ class => 'labelfilters', sub {
             span_ class => 'linkradio', sub {
                 join_ sub { em_ ' / ' }, \&lblfilt_, grep $_->{id} < 10, @filtlabels;
