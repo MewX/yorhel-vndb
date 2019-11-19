@@ -376,7 +376,7 @@ sub listing_ {
 
     my $count = tuwf->dbVali('SELECT count(*) FROM ulist_vns ul WHERE', $where);
 
-    my($lst) = tuwf->dbPagei({ page => $opt->{p}, results => 50 },
+    my $lst = tuwf->dbPagei({ page => $opt->{p}, results => 50 },
         'SELECT v.id, v.title, v.original, ul.vote, ul.notes, ul.started, ul.finished
               ,', sql_totime('ul.added'), ' as added
               ,', sql_totime('ul.lastmod'), ' as lastmod

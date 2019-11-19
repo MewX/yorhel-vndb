@@ -46,12 +46,12 @@ TUWF::get qr{/$RE{uid}/posts}, sub {
         WHERE NOT t.private AND NOT t.hidden AND NOT tp.hidden AND tp.uid =', \$u->{id};
 
     my $count = tuwf->dbVali('SELECT count(*)', $from_and_where);
-    my($list) = $count ? tuwf->dbPagei(
+    my $list = $count && tuwf->dbPagei(
         { results => 50, page => $page },
         'SELECT tp.tid, tp.num, substring(tp.msg from 1 for 1000) as msg, t.title
               , ', sql_totime('tp.date'), 'as date',
           $from_and_where, 'ORDER BY tp.date DESC'
-    ) : ();
+    );
 
     my $own = auth && $u->{id} == auth->uid;
     my $title = $own ? 'My posts' : 'Posts by '.user_displayname $u;

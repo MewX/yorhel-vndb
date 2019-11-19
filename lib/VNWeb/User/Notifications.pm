@@ -100,7 +100,7 @@ TUWF::get qr{/$RE{uid}/notifies}, sub {
         $opt->{r} ? () : 'read IS NULL'
     );
     my $count = tuwf->dbVali('SELECT count(*) FROM notifications WHERE', $where);
-    my($list) = tuwf->dbPagei({ results => 25, page => $opt->{p} },
+    my $list = tuwf->dbPagei({ results => 25, page => $opt->{p} },
        'SELECT n.id, n.ntype, n.ltype, n.iid, n.subid, n.c_title
              , ', sql_totime('n.date'), ' as date
              , ', sql_totime('n.read'), ' as read
