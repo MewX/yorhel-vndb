@@ -262,12 +262,10 @@ sub csrftoken {
 
 
 # Returns 1 if the given CSRF token is still valid (meaning: created for this
-# user within the past 3 hours), 0 otherwise.
+# user within the past 12 hours), 0 otherwise.
 sub csrfcheck {
     my($self, $token) = @_;
-    return 1 if $self->csrftoken( 0) eq $token;
-    return 1 if $self->csrftoken(-1) eq $token;
-    return 1 if $self->csrftoken(-2) eq $token;
+    $self->csrftoken($_) eq $token && return 1 for reverse -11..0;
     return 0;
 }
 
