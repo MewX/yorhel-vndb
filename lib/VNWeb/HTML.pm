@@ -333,7 +333,7 @@ sub _maintabs_ {
                 SELECT COUNT(*)
                   FROM threads_boards tb
                   JOIN threads t ON t.id = tb.tid
-                 WHERE}, { 'tb.type' => $t, 'tb.iid' => $o->{id}, 't.hidden' => 0, 't.private' => 0 });
+                 WHERE tb.type =}, \$t, 'AND tb.iid =', \$o->{id}, 'AND', VNWeb::Discussions::Lib::sql_visible_threads());
             t disc => "/t/$id", "discussions ($cnt)";
         };
         t posts => "/$id/posts", 'posts' if $t eq 'u';

@@ -6,6 +6,14 @@ use Exporter 'import';
 our @EXPORT = qw/threadlist_ boardsearch_ boardtypes_/;
 
 
+# Returns a WHERE condition to filter threads that the current user is allowed to see.
+sub sql_visible_threads {
+    sql_and
+        auth->permBoardmod ? () : ('NOT t.hidden'),
+        sql('NOT t.private OR EXISTS(SELECT 1 FROM threads_boards WHERE tid = t.id AND type = \'u\' AND iid =', \auth->uid, ')');
+}
+
+
 # Generate a thread list table, options:
 #   where    => SQL for the WHERE clause ('t' is available as alias for 'threads').
 #   boards   => SQL for the WHERE clause of the boards ('tb' as alias for 'threads_boards').
@@ -18,11 +26,7 @@ our @EXPORT = qw/threadlist_ boardsearch_ boardtypes_/;
 sub threadlist_ {
     my %opt = @_;
 
-    my $where = sql_and
-        # Make sure we can only see threads we're allowed to see.
-        auth->permBoardmod ? () : ('NOT t.hidden'),
-        sql('NOT t.private OR EXISTS(SELECT 1 FROM threads_boards WHERE tid = t.id AND type = \'u\' AND iid =', \auth->uid, ')'),
-        $opt{where}||();
+    my $where = sql_and sql_visible_threads(), $opt{where}||();
 
     my $count = $opt{paginate} && tuwf->dbVali('SELECT count(*) FROM threads t WHERE', $where);
     return 0 if $opt{paginate} && !$count;
