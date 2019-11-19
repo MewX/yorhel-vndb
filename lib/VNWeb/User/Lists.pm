@@ -309,7 +309,6 @@ sub vn_ {
                 b_ id => 'ulist_relsum_'.$v->{id},
                     mkclass(done => $total && $obtained == $total, todo => $obtained < $total, neutral => 1),
                     sprintf '%d/%d', $obtained, $total;
-                span_ id => 'ulist_noteflag_'.$v->{id}, mkclass(blurred => !$v->{notes}), ' 💬';
                 if($own) {
                     my $public = List::Util::any { $labels{$_->{id}} && !$_->{private} } @$labels;
                     my $publicLabel = List::Util::any { $_->{id} != 7 && $labels{$_->{id}} && !$_->{private} } @$labels;
