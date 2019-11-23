@@ -473,6 +473,14 @@ TUWF::get qr{/$RE{uid}/ulist}, sub {
                 };
             };
             p_ class => 'center', sub { b_ class => 'standout', style => 'font-size: 30px', '!BETA BETA BETA BETA!'; };
+            p_ class => 'center', sub {
+                txt_ 'Menu links: ';
+                a_ href => '?l=1&l=2&l=3&l=4&l=7&l=-1&l=0', 'My Visual Novel list';
+                txt_ ' - ';
+                a_ href => '?l=7', 'My Votes'; # TODO: Show and sort by date cast, hide start/end date columns
+                txt_ ' - ';
+                a_ href => '?l=5', 'My Wishlist'; # Hide start/end date columns
+            };
         };
 
         my $opt;
