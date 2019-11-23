@@ -253,7 +253,7 @@ sub filters_ {
     my $opt = eval { tuwf->validate(get =>
         p => { upage => 1 },
         l => { type => 'array', scalar => 1, required => 0, default => [], values => { int => 1 } },
-        s => { required => 0, default => 'title', enum => [qw[ title vote added started finished ]] },
+        s => { required => 0, default => 'title', enum => [qw[ title vote added label started finished ]] },
         o => { required => 0, default => 'a', enum => ['a', 'd'] },
     )->data } || { p => 1, l => [], s => 'title', o => 'a' };
 
@@ -366,31 +366,32 @@ sub listing_ {
     my($unlabeled) = grep $_ == -1, $opt->{l}->@*;
 
     my @where_vns = (
-              @l ? sql('ul.vid IN(SELECT vid FROM ulist_vns_labels WHERE uid =', \$uid, 'AND lbl IN', \@l, ')') :
-           !$own ? sql('ul.vid IN(SELECT vid FROM ulist_vns_labels WHERE uid =', \$uid, 'AND lbl IN(SELECT id FROM ulist_labels WHERE uid =', \$uid, 'AND NOT private))') : (),
-      $unlabeled ? sql('NOT EXISTS(SELECT 1 FROM ulist_vns_labels WHERE uid =', \$uid, 'AND vid = ul.vid AND lbl <> ', \7, ')') : ()
+              @l ? sql('uv.vid IN(SELECT vid FROM ulist_vns_labels WHERE uid =', \$uid, 'AND lbl IN', \@l, ')') :
+           !$own ? sql('uv.vid IN(SELECT vid FROM ulist_vns_labels WHERE uid =', \$uid, 'AND lbl IN(SELECT id FROM ulist_labels WHERE uid =', \$uid, 'AND NOT private))') : (),
+      $unlabeled ? sql('NOT EXISTS(SELECT 1 FROM ulist_vns_labels WHERE uid =', \$uid, 'AND vid = uv.vid AND lbl <> ', \7, ')') : ()
     );
 
     my $where = sql_and
-        sql('ul.uid =', \$uid),
+        sql('uv.uid =', \$uid),
         @where_vns ? sql_or(@where_vns) : ();
 
-    my $count = tuwf->dbVali('SELECT count(*) FROM ulist_vns ul WHERE', $where);
+    my $count = tuwf->dbVali('SELECT count(*) FROM ulist_vns uv WHERE', $where);
 
     my $lst = tuwf->dbPagei({ page => $opt->{p}, results => 50 },
-        'SELECT v.id, v.title, v.original, ul.vote, ul.notes, ul.started, ul.finished
-              ,', sql_totime('ul.added'), ' as added
-              ,', sql_totime('ul.lastmod'), ' as lastmod
-              ,', sql_totime('ul.vote_date'), ' as vote_date
-           FROM ulist_vns ul
-           JOIN vn v ON v.id = ul.vid
+        'SELECT v.id, v.title, v.original, uv.vote, uv.notes, uv.started, uv.finished
+              ,', sql_totime('uv.added'), ' as added
+              ,', sql_totime('uv.lastmod'), ' as lastmod
+              ,', sql_totime('uv.vote_date'), ' as vote_date
+           FROM ulist_vns uv
+           JOIN vn v ON v.id = uv.vid
           WHERE', $where, '
           ORDER BY', {
                     title    => 'v.title',
-                    vote     => 'ul.vote',
-                    added    => 'ul.added',
-                    started  => 'ul.started',
-                    finished => 'ul.finished'
+                    vote     => 'uv.vote',
+                    added    => 'uv.added',
+                    started  => 'uv.started',
+                    finished => 'uv.finished',
+                    label    => sql('ARRAY(SELECT ul.label FROM ulist_vns_labels uvl JOIN ulist_labels ul ON ul.uid = uvl.uid AND ul.id = uvl.lbl WHERE uvl.uid = uv.uid AND uvl.vid = uv.vid AND uvl.lbl <> ', \7, ')')
                 }->{$opt->{s}}, $opt->{o} eq 'd' ? 'DESC' : 'ASC', 'NULLS LAST, v.title'
     );
 
@@ -421,7 +422,7 @@ sub listing_ {
                     label_ for => 'collapse_vid', sub { txt_ 'Opt' };
                 };
                 td_ class => 'tc2', sub { txt_ 'Title';      sortable_ 'title',    $opt, \&url; debug_ $lst };
-                td_ class => 'tc3', 'Labels';
+                td_ class => 'tc3', sub { txt_ 'Labels';     sortable_ 'label',    $opt, \&url };
                 td_ class => 'tc4', sub { txt_ 'Vote';       sortable_ 'vote',     $opt, \&url };
                 td_ class => 'tc5', sub { txt_ 'Added';      sortable_ 'added',    $opt, \&url };
                 td_ class => 'tc6', sub { txt_ 'Start date'; sortable_ 'started',  $opt, \&url };
