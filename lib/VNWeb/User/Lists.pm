@@ -234,7 +234,6 @@ json_api qr{/u/ulist/rstatus.json}, $RSTATUS, sub {
 
 
 
-# TODO: Filters to find unlabeled VNs or VNs with/without notes?
 sub filters_ {
     my($uid, $own, $labels) = @_;
 
@@ -253,9 +252,10 @@ sub filters_ {
     my $opt = eval { tuwf->validate(get =>
         p => { upage => 1 },
         l => { type => 'array', scalar => 1, required => 0, default => [], values => { int => 1 } },
-        s => { required => 0, default => 'title', enum => [qw[ title vote added label started finished ]] },
+        s => { required => 0, default => 'title', enum => [qw[ title label vote voted added modified started finished rel rating ]] },
         o => { required => 0, default => 'a', enum => ['a', 'd'] },
-    )->data } || { p => 1, l => [], s => 'title', o => 'a' };
+        c => { type => 'array', scalar => 1, required => 0, default => [], values => { enum => [qw[ vote voted added modified started finished rel rating ]] } },
+    )->data } || { p => 1, l => [], s => 'title', o => 'a', c => [] };
 
     # $labels only includes labels we are allowed to see, getting rid of any labels in 'l' that aren't in $labels ensures we only filter on visible labels
     my %accessible_labels = map +($_->{id}, 1), @filtlabels;
@@ -273,6 +273,7 @@ sub filters_ {
     form_ method => 'get', sub {
         input_ type => 'hidden', name => 's', value => $opt->{s};
         input_ type => 'hidden', name => 'o', value => $opt->{o};
+        input_ type => 'hidden', name => 'c', value => $_ for $opt->{c}->@*;
         p_ class => 'labelfilters', sub {
             span_ class => 'linkradio', sub {
                 join_ sub { em_ ' / ' }, \&lblfilt_, grep $_->{id} < 10, @filtlabels;
@@ -299,7 +300,7 @@ sub filters_ {
 
 
 sub vn_ {
-    my($uid, $own, $n, $v, $labels) = @_;
+    my($uid, $own, $opt, $n, $v, $labels) = @_;
     tr_ mkclass(odd => $n % 2 == 0), id => "ulist_tr_$v->{id}", sub {
         my %labels = map +($_,1), $v->{labels}->@*;
 
@@ -322,11 +323,12 @@ sub vn_ {
                 }
             };
         };
-        td_ class => 'tc2', sub {
+        td_ class => 'tc_title', sub {
             a_ href => "/v$v->{id}", title => $v->{original}||$v->{title}, shorten $v->{title}, 70;
             b_ class => 'grayedout', id => 'ulist_notes_'.$v->{id}, $v->{notes} if $v->{notes} || $own;
         };
-        td_ class => 'tc3', sub {
+
+        td_ class => 'tc_labels', sub {
             my @l = grep $labels{$_->{id}} && $_->{id} != 7, @$labels;
             my $txt = @l ? join ', ', map $_->{label}, @l : '-';
             if($own) {
@@ -335,19 +337,32 @@ sub vn_ {
                 txt_ $txt;
             }
         };
-        td_ mkclass(tc4 => 1, compact => $own, stealth => $own), sub {
+
+        td_ mkclass(tc_vote => 1, compact => $own, stealth => $own), sub {
             txt_ fmtvote $v->{vote} if !$own;
             elm_ 'UList.VoteEdit' => $VNVOTE, { uid => $uid, vid => $v->{id}, vote => fmtvote($v->{vote}) }, fmtvote $v->{vote} if $own;
-        };
-        td_ class => 'tc5', fmtdate $v->{added}, 'compact';
-        td_ class => 'tc6', sub {
+        } if in vote => $opt->{c};
+
+        td_ class => 'tc_voted',    fmtdate $v->{vote_date}, 'compact' if in voted    => $opt->{c};
+        td_ class => 'tc_added',    fmtdate $v->{added},     'compact' if in added    => $opt->{c};
+        td_ class => 'tc_modified', fmtdate $v->{lastmod},   'compact' if in modified => $opt->{c};
+
+        td_ class => 'tc_started', sub {
             txt_ $v->{started}||'' if !$own;
             elm_ 'UList.DateEdit' => $VNDATE, { uid => $uid, vid => $v->{id}, date => $v->{started}||'', start => 1 }, $v->{started}||'' if $own;
-        };
-        td_ class => 'tc7', sub {
+        } if in started => $opt->{c};
+
+        td_ class => 'tc_finished', sub {
             txt_ $v->{finished}||'' if !$own;
             elm_ 'UList.DateEdit' => $VNDATE, { uid => $uid, vid => $v->{id}, date => $v->{finished}||'', start => 0 }, $v->{finished}||'' if $own;
-        };
+        } if in finished => $opt->{c};
+
+        td_ class => 'tc_rel', sub { rdate_ $v->{c_released} } if in rel => $opt->{c};
+
+        td_ class => 'tc_rating', sub {
+            txt_ sprintf '%.2f', ($v->{c_rating}||0)/10;
+            b_ class => 'grayedout', sprintf ' (%d)', $v->{c_votecount};
+        } if in rating => $opt->{c};
     };
 
     tr_ mkclass(hidden => 1, 'collapsed_vid'.$v->{id} => 1, odd => $n % 2 == 0), sub {
@@ -378,7 +393,7 @@ sub listing_ {
     my $count = tuwf->dbVali('SELECT count(*) FROM ulist_vns uv WHERE', $where);
 
     my $lst = tuwf->dbPagei({ page => $opt->{p}, results => 50 },
-        'SELECT v.id, v.title, v.original, uv.vote, uv.notes, uv.started, uv.finished
+        'SELECT v.id, v.title, v.original, uv.vote, uv.notes, uv.started, uv.finished, v.c_rating, v.c_votecount, v.c_released
               ,', sql_totime('uv.added'), ' as added
               ,', sql_totime('uv.lastmod'), ' as lastmod
               ,', sql_totime('uv.vote_date'), ' as vote_date
@@ -387,11 +402,15 @@ sub listing_ {
           WHERE', $where, '
           ORDER BY', {
                     title    => 'v.title',
+                    label    => sql('ARRAY(SELECT ul.label FROM ulist_vns_labels uvl JOIN ulist_labels ul ON ul.uid = uvl.uid AND ul.id = uvl.lbl WHERE uvl.uid = uv.uid AND uvl.vid = uv.vid AND uvl.lbl <> ', \7, ')'),
                     vote     => 'uv.vote',
+                    voted    => 'uv.vote_date',
                     added    => 'uv.added',
+                    modified => 'uv.lastmod',
                     started  => 'uv.started',
                     finished => 'uv.finished',
-                    label    => sql('ARRAY(SELECT ul.label FROM ulist_vns_labels uvl JOIN ulist_labels ul ON ul.uid = uvl.uid AND ul.id = uvl.lbl WHERE uvl.uid = uv.uid AND uvl.vid = uv.vid AND uvl.lbl <> ', \7, ')')
+                    rel      => 'v.c_released',
+                    rating   => 'v.c_rating',
                 }->{$opt->{s}}, $opt->{o} eq 'd' ? 'DESC' : 'ASC', 'NULLS LAST, v.title'
     );
 
@@ -413,7 +432,18 @@ sub listing_ {
 
     # TODO: Thumbnail view?
     # TODO: Add/remove columns (start/finish date; VN rating, etc?)
-    paginate_ \&url, $opt->{p}, [ $count, 50 ], 't';
+    paginate_ \&url, $opt->{p}, [ $count, 50 ], 't', sub {
+        elm_ ColSelect => undef, [
+            [ vote     => 'Vote'         ],
+            [ voted    => 'Vote date'    ],
+            [ added    => 'Added'        ],
+            [ modified => 'Modified'     ],
+            [ started  => 'Start date'   ],
+            [ finished => 'Finish date'  ],
+            [ rel      => 'Release date' ],
+            [ rating   => 'Rating'       ],
+        ];
+    };
     div_ class => 'mainbox browse ulist', sub {
         table_ sub {
             thead_ sub { tr_ sub {
@@ -421,14 +451,18 @@ sub listing_ {
                     input_ type => 'checkbox', class => 'checkall', name => 'collapse_vid', id => 'collapse_vid';
                     label_ for => 'collapse_vid', sub { txt_ 'Opt' };
                 };
-                td_ class => 'tc2', sub { txt_ 'Title';      sortable_ 'title',    $opt, \&url; debug_ $lst };
-                td_ class => 'tc3', sub { txt_ 'Labels';     sortable_ 'label',    $opt, \&url };
-                td_ class => 'tc4', sub { txt_ 'Vote';       sortable_ 'vote',     $opt, \&url };
-                td_ class => 'tc5', sub { txt_ 'Added';      sortable_ 'added',    $opt, \&url };
-                td_ class => 'tc6', sub { txt_ 'Start date'; sortable_ 'started',  $opt, \&url };
-                td_ class => 'tc7', sub { txt_ 'Finish date';sortable_ 'finished', $opt, \&url };
+                td_ class => 'tc_title',    sub { txt_ 'Title';       sortable_ 'title',    $opt, \&url; debug_ $lst };
+                td_ class => 'tc_labels',   sub { txt_ 'Labels';      sortable_ 'label',    $opt, \&url };
+                td_ class => 'tc_vote',     sub { txt_ 'Vote';        sortable_ 'vote',     $opt, \&url } if in vote     => $opt->{c};
+                td_ class => 'tc_voted',    sub { txt_ 'Vote date';   sortable_ 'voted',    $opt, \&url } if in voted    => $opt->{c};
+                td_ class => 'tc_added',    sub { txt_ 'Added';       sortable_ 'added',    $opt, \&url } if in added    => $opt->{c};
+                td_ class => 'tc_modified', sub { txt_ 'Modified';    sortable_ 'modified', $opt, \&url } if in modified => $opt->{c};
+                td_ class => 'tc_started',  sub { txt_ 'Start date';  sortable_ 'started',  $opt, \&url } if in started  => $opt->{c};
+                td_ class => 'tc_finished', sub { txt_ 'Finish date'; sortable_ 'finished', $opt, \&url } if in finished => $opt->{c};
+                td_ class => 'tc_rel',      sub { txt_ 'Release date';sortable_ 'rel',      $opt, \&url } if in rel      => $opt->{c};
+                td_ class => 'tc_rating',   sub { txt_ 'Rating';      sortable_ 'rating',   $opt, \&url } if in rating   => $opt->{c};
             }};
-            vn_ $uid, $own, $_, $lst->[$_], $labels for (0..$#$lst);
+            vn_ $uid, $own, $opt, $_, $lst->[$_], $labels for (0..$#$lst);
         };
     };
     paginate_ \&url, $opt->{p}, [ $count, 50 ], 'b';
@@ -475,11 +509,11 @@ TUWF::get qr{/$RE{uid}/ulist}, sub {
             p_ class => 'center', sub { b_ class => 'standout', style => 'font-size: 30px', '!BETA BETA BETA BETA!'; };
             p_ class => 'center', sub {
                 txt_ 'Menu links: ';
-                a_ href => '?l=1&l=2&l=3&l=4&l=7&l=-1&l=0', 'My Visual Novel list';
+                a_ href => '?l=1&l=2&l=3&l=4&l=7&l=-1&l=0&c=vote&c=added&c=started&c=finished', 'My Visual Novel list';
                 txt_ ' - ';
-                a_ href => '?l=7', 'My Votes'; # TODO: Show and sort by date cast, hide start/end date columns
+                a_ href => '?l=7&c=vote&c=voted&s=voted&o=d', 'My Votes';
                 txt_ ' - ';
-                a_ href => '?l=5', 'My Wishlist'; # Hide start/end date columns
+                a_ href => '?l=5&c=added', 'My Wishlist';
             };
         };
 

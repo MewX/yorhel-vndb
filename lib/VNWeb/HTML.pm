@@ -667,10 +667,11 @@ sub revision_ {
 #   current page number (1..n),
 #   nextpage (0/1 or, if the full count is known: [$total, $perpage]),
 #   alignment (t/b)
+#   func
 sub paginate_ {
-    my($url, $p, $np, $al) = @_;
+    my($url, $p, $np, $al, $fun) = @_;
     my($cnt, $pp) = ref($np) ? @$np : ($p+$np, 1);
-    return if $p == 1 && $cnt <= $pp;
+    return if !$fun && $p == 1 && $cnt <= $pp;
 
     my sub tab_ {
         my($page, $label) = @_;
@@ -693,6 +694,8 @@ sub paginate_ {
             $p > $_    and ref $np and tab_ $p-$_, $p-$_ for (reverse 2..($nc>$p-2?$p-2:$nc-1));
             $p > 1                 and tab_ $p-1, '‹ previous';
         };
+
+        $fun->() if $fun;
 
         ul_ sub {
             my $l = ceil($cnt/$pp)-$p+1;

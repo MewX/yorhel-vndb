@@ -69,6 +69,7 @@ sub import {
     no strict 'refs';
     *{$c.'::RE'} = *RE;
     *{$c.'::json_api'} = \&json_api;
+    *{$c.'::in'} = \&in;
 }
 
 
@@ -127,6 +128,19 @@ sub json_api {
         $sub->($data->data);
         warn "Non-JSON response to a json_api request, is this intended?\n" if tuwf->resHeader('Content-Type') !~ /^application\/json/;
     };
+}
+
+
+# Simple "is this element in the array?" function, using 'eq' to test equality.
+# Supports both an @array and \@array.
+# Usage:
+#
+#   my $contains_hi = in 'hi', qw/ a b hi c /; # true
+#
+sub in {
+    my($q, @a) = @_;
+    $_ eq $q && return 1 for map ref $_ eq 'ARRAY' ? @$_ : ($_), @a;
+    0
 }
 
 1;

@@ -263,18 +263,18 @@ div.maintabs          { display: flex; justify-content: space-between; position:
 #maincontent div:nth-child(1).maintabs { margin-top: 0 }
 div.maintabs.right    { justify-content: flex-end }
 div.maintabs.left     { justify-content: flex-start }
-div.maintabs ul       { margin: 0; padding: 0; list-style-type: none }
-div.maintabs li       { display: inline-block; margin: 0 0 0 10px }
-div.maintabs ul li:nth-child(1) { margin-left: 0!important }
-div.maintabs li a     { display: inline-block; box-sizing: border-box; height: 21px; padding: 1px 7px 0 7px; border: 1px solid $border$; border-bottom: none; background-color: $tabbg$; color: $grayedout$; }
-div.maintabs li.tabselected a,
-div.maintabs li a:hover        { background: $_blendbg$; color: $maintext$; height: 22px }
-div.maintabs.browsetabs li a   { color: $maintext$ }
-div.maintabs.browsetabs li     { margin-left: 5px }
+div.maintabs > ul       { margin: 0; padding: 0; list-style-type: none }
+div.maintabs > ul li       { display: inline-block; margin: 0 0 0 10px }
+div.maintabs > ul li:nth-child(1) { margin-left: 0!important }
+div.maintabs > ul li a     { display: inline-block; box-sizing: border-box; height: 21px; padding: 1px 7px 0 7px; border: 1px solid $border$; border-bottom: none; background-color: $tabbg$; color: $grayedout$; }
+div.maintabs > ul li.tabselected a,
+div.maintabs > ul li a:hover        { background: $_blendbg$; color: $maintext$; height: 22px }
+div.maintabs.browsetabs > ul li a   { color: $maintext$ }
+div.maintabs.browsetabs > ul li     { margin-left: 5px }
 div.maintabs.bottom            { margin-top: 10px; /* WHY!? */ margin-bottom: -10px }
-div.maintabs.bottom li a       { padding: 4px 7px 2px 7px; border-bottom: 1px solid $border$; border-top: none }
-div.maintabs.bottom li.tabselected a,
-div.maintabs.bottom li a:hover { padding-top: 5px; height: 22px; margin-top: -1px }
+div.maintabs.bottom > ul li a       { padding: 4px 7px 2px 7px; border-bottom: 1px solid $border$; border-top: none }
+div.maintabs.bottom > ul li.tabselected a,
+div.maintabs.bottom > ul li a:hover { padding-top: 5px; height: 22px; margin-top: -1px }
 
 
 
@@ -795,17 +795,22 @@ div.votelist td.tc2 { width: 50px; text-align: right; padding-right: 10px }
 .ulist .tc1 input { display: none }
 .ulist .tc1 label:before { content: '▸ ' }
 .ulist .tc1 input:checked + label:before { content: '▾ ' }
-.ulist .tc1 span.blurred { opacity: 0.5 }
-.ulist .tc2 b { margin-left: 10px }
-.ulist .tc4 { white-space: nowrap; width: 60px; text-align: right; padding-right: 10px }
-.ulist .tc4 input { width: 55px; text-align: right }
-.ulist .tc5, .ulist .tc6, .ulist .tc7 { white-space: nowrap; width: 100px }
+.ulist .tc_title b { margin-left: 10px }
+.ulist .tc_vote { white-space: nowrap; width: 60px; text-align: right; padding-right: 10px }
+.ulist .tc_vote input { width: 55px; text-align: right }
+.ulist .tc_voted,
+.ulist .tc_added,
+.ulist .tc_modified,
+.ulist .tc_started,
+.ulist .tc_finished,
+.ulist .tc_rdate  { white-space: nowrap; width: 100px }
+.ulist .tc_rating { white-space: nowrap; width: 80px }
 
-.ulist .tc6   div,      .ulist .tc7 div      { height: 1em; padding-bottom: 4px }
-.ulist .tc6   div span, .ulist .tc7 div span { position: absolute; z-index: 0 }
-.ulist .tc6   div       input,       .ulist .tc7 div       input       { position: absolute; z-index: 900; width: 110px; visibility: hidden }
-.ulist .tc6   div:hover input,       .ulist .tc7 div:hover input,
-.ulist .tc6   div       input:focus, .ulist .tc7 div       input:focus { visibility: visible }
+.ulist .tc_started div,                   .ulist .tc_finished div                   { height: 1em; padding-bottom: 4px }
+.ulist .tc_started div span,              .ulist .tc_finished div span              { position: absolute; z-index: 0 }
+.ulist .tc_started div       input,       .ulist .tc_finished div       input       { position: absolute; z-index: 900; width: 110px; visibility: hidden }
+.ulist .tc_started div:hover input,       .ulist .tc_finished div:hover input,
+.ulist .tc_started div       input:focus, .ulist .tc_finished div       input:focus { visibility: visible }
 
 .ulist .tc_opt { padding: 0 0 5px 70px }
 .ulist .tc_opt textarea { width: 500px; height: 18px; border: none }
