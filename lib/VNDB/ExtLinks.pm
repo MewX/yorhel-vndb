@@ -230,7 +230,7 @@ sub revision_extlinks {
     my($type) = @_;
     map {
         my($f, $p) = ($_, $LINKS{$type}{$_});
-        [ $f, $p->{label}, fmt => sub { TUWF::XML::a_ href => sprintf($p->{fmt}, $_), $_; }, empty => 0 ]
+        [ $f, $p->{label}, fmt => sub { TUWF::XML::a_(href => sprintf($p->{fmt}, $_), $_); }, empty => 0 ]
     } sort keys $LINKS{$type}->%*
 }
 
