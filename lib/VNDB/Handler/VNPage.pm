@@ -505,15 +505,19 @@ sub page {
   my $chars = $self->dbCharGet(vid => $v->{id}, what => "seiyuu vns($v->{id})".($char ? ' extended traits' : ''), results => 500);
   if(@$chars || $self->authCan('edit')) {
     clearfloat; # fix tabs placement when tags are hidden
-    ul class => 'maintabs notfirst';
-     if(@$chars) {
-       li class => 'left '.(!$char ? ' tabselected' : ''); a href => "/v$v->{id}#main", name => 'main', 'main'; end;
-       li class => 'left '.($char  ? ' tabselected' : ''); a href => "/v$v->{id}/chars#chars", name => 'chars', 'characters'; end;
-     }
-     if($self->authCan('edit')) {
-       li; a href => "/c/new?vid=$v->{id}", 'add character'; end;
-       li; a href => "/v$v->{id}/add", 'add release'; end;
-     }
+    div class => 'maintabs';
+     ul;
+      if(@$chars) {
+        li class => (!$char ? ' tabselected' : ''); a href => "/v$v->{id}#main", name => 'main', 'main'; end;
+        li class => ($char  ? ' tabselected' : ''); a href => "/v$v->{id}/chars#chars", name => 'chars', 'characters'; end;
+      }
+     end;
+     ul;
+      if($self->authCan('edit')) {
+        li; a href => "/v$v->{id}/add", 'add release'; end;
+        li; a href => "/c/new?vid=$v->{id}", 'add character'; end;
+      }
+     end;
     end;
   }
 

@@ -209,16 +209,18 @@ sub htmlForm {
 
   # tabs
   if(@subs > 2) {
-    ul class => 'maintabs notfirst', id => 'jt_select';
-     for (0..$#subs/2) {
-       li class => 'left';
-        a href => "#$subs[$_*2]", id => "jt_sel_$subs[$_*2]", $subs[$_*2+1][0];
-       end;
-     }
-     li class => 'left';
-      a href => '#all', id => 'jt_sel_all', 'All items';
-     end;
-    end 'ul';
+    div class => 'maintabs left';
+     ul id => 'jt_select';
+      for (0..$#subs/2) {
+        li class => 'left';
+         a href => "#$subs[$_*2]", id => "jt_sel_$subs[$_*2]", $subs[$_*2+1][0];
+        end;
+      }
+      li class => 'left';
+       a href => '#all', id => 'jt_sel_all', 'All items';
+      end;
+     end 'ul';
+    end 'div';
   }
 
   # form subs

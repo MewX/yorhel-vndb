@@ -94,31 +94,35 @@ sub htmlBrowseNavigate {
   $url .= $url =~ /\?/ ? ';p=' : '?p=' unless $na;
 
   my $tab = sub {
-    my($left, $page, $label) = @_;
-    li $left ? (class => 'left') : ();
+    my($page, $label) = @_;
+    li;
      a href => $url.$page; lit $label; end;
     end;
   };
   my $ell = sub {
     use utf8;
-    li class => 'ellipsis'.(shift() ? ' left' : '');
+    li class => 'ellipsis';
      b '⋯';
     end;
   };
   my $nc = 5; # max. number of buttons on each side
 
-  ul class => 'maintabs browsetabs ' . ($al eq 't' ? 'notfirst' : 'bottom');
-   $p > 2     and ref $np and $tab->(1, 1, '&laquo; first');
-   $p > $nc+1 and ref $np and $ell->(1);
-   $p > $_    and ref $np and $tab->(1, $p-$_, $p-$_) for (reverse 2..($nc>$p-2?$p-2:$nc-1));
-   $p > 1                 and $tab->(1, $p-1, '&lsaquo; previous');
+  div class => 'maintabs browsetabs '.($al eq 't' ? '' : 'bottom');
+   ul;
+    $p > 2     and ref $np and $tab->(1, '&laquo; first');
+    $p > $nc+1 and ref $np and $ell->();
+    $p > $_    and ref $np and $tab->($p-$_, $p-$_) for (reverse 2..($nc>$p-2?$p-2:$nc-1));
+    $p > 1                 and $tab->($p-1, '&lsaquo; previous');
+   end;
 
-   my $l = ceil($cnt/$pp)-$p+1;
-   $l > 2     and $tab->(0, $l+$p-1, 'last &raquo;');
-   $l > $nc+1 and $ell->(0);
-   $l > $_    and $tab->(0, $p+$_, $p+$_) for (reverse 2..($nc>$l-2?$l-2:$nc-1));
-   $l > 1     and $tab->(0, $p+1, 'next &rsaquo;');
-  end 'ul';
+   ul;
+    my $l = ceil($cnt/$pp)-$p+1;
+    $l > 1     and $tab->($p+1, 'next &rsaquo;');
+    $l > $_    and $tab->($p+$_, $p+$_) for (2..($nc>$l-2?$l-2:$nc-1));
+    $l > $nc+1 and $ell->();
+    $l > 2     and $tab->($l+$p-1, 'last &raquo;');
+   end;
+  end 'div';
 }
 
 

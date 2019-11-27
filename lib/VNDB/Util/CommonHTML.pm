@@ -21,83 +21,9 @@ our @EXPORT = qw|
 # Arguments: u/v/r/p/g/i/c/d, object, currently selected item (empty=main)
 sub htmlMainTabs {
   my($self, $type, $obj, $sel) = @_;
-  $sel ||= '';
-  my $id = $type.$obj->{id};
-
-  return if $type eq 'g' && !$self->authCan('tagmod');
-
-  ul class => 'maintabs';
-   if($type =~ /[uvrpcsd]/) {
-     li $sel eq 'hist' ? (class => 'tabselected') : ();
-      a href => "/$id/hist", 'history';
-     end;
-   }
-
-   if($type =~ /[uvp]/) {
-     my $cnt = $self->dbThreadCount($type, $obj->{id});
-     li $sel eq 'disc' ? (class => 'tabselected') : ();
-      a href => "/t/$id", "discussions ($cnt)";
-     end;
-   }
-
-   if($type eq 'u') {
-     li $sel eq 'posts' ? (class => 'tabselected') : ();
-      a href => "/$id/posts", 'posts';
-     end;
-   }
-
-   if($type eq 'u' && (!$obj->{hide_list} || ($self->authInfo->{id} && $self->authInfo->{id} == $obj->{id}) || $self->authCan('usermod'))) {
-     li $sel eq 'wish' ? (class => 'tabselected') : ();
-      a href => "/$id/wish", 'wishlist';
-     end;
-
-     li $sel eq 'votes' ? (class => 'tabselected') : ();
-      a href => "/$id/votes", 'votes';
-     end;
-
-     li $sel eq 'list' ? (class => 'tabselected') : ();
-      a href => "/$id/list", 'list';
-     end;
-   }
-
-   if($type eq 'v' && $self->authCan('tag') && !$obj->{hidden}) {
-     li $sel eq 'tagmod' ? (class => 'tabselected') : ();
-      a href => "/$id/tagmod", 'modify tags';
-     end;
-   }
-
-   if($type =~ /[rc]/ && $self->authCan('edit')) {
-     li $sel eq 'copy' ? (class => 'tabselected') : ();
-      a href => "/$id/copy", 'copy';
-     end;
-   }
-
-   if(   $type eq 'u'      && ($self->authInfo->{id} && $obj->{id} == $self->authInfo->{id} || $self->authCan('usermod'))
-      || $type =~ /[vrpcs]/ && $self->authCan('edit') && ((!$obj->{locked} && !$obj->{hidden}) || $self->authCan('dbmod'))
-      || $type =~ /[gi]/   && $self->authCan('tagmod')
-      || $type eq 'd'      && $self->authCan('dbmod')
-   ) {
-     li $sel eq 'edit' ? (class => 'tabselected') : ();
-      a href => "/$id/edit", 'edit';
-     end;
-   }
-
-   if($type eq 'v') {
-    li $sel eq 'releases' ? (class => 'tabselected') : ();
-    a href => "/$id/releases", 'releases';
-    end;
-   }
-
-   if($type =~ /[vp]/ && $obj->{rgraph}) {
-     li $sel eq 'rg' ? (class => 'tabselected') : ();
-      a href => "/$id/rg", 'relations';
-     end;
-   }
-
-   li !$sel ? (class => 'tabselected') : ();
-    a href => "/$id", $id;
-   end;
-  end 'ul';
+  $obj->{entry_hidden} = $obj->{hidden};
+  $obj->{entry_locked} = $obj->{locked};
+  VNWeb::HTML::_maintabs_({ type => $type, dbobj => $obj, tab => $sel||''});
 }
 
 

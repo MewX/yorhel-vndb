@@ -325,38 +325,41 @@ sub _maintabs_ {
         };
     };
 
-    ul_ class => 'maintabs', sub {
-        t hist => "/$id/hist", 'history' if $t =~ /[uvrpcsd]/;
+    div_ class => 'maintabs right', sub {
+        ul_ sub {
+            t '' => "/$id", $id;
 
-        if($t =~ /[uvp]/) {
-            my $cnt = tuwf->dbVali(q{
-                SELECT COUNT(*)
-                  FROM threads_boards tb
-                  JOIN threads t ON t.id = tb.tid
-                 WHERE tb.type =}, \$t, 'AND tb.iid =', \$o->{id}, 'AND', VNWeb::Discussions::Lib::sql_visible_threads());
-            t disc => "/t/$id", "discussions ($cnt)";
-        };
-        t posts => "/$id/posts", 'posts' if $t eq 'u';
+            t rg => "/$id/rg", 'relations'
+                if $t =~ /[vp]/ && (exists $o->{rgraph} ? $o->{rgraph}
+                    : tuwf->dbVali('SELECT rgraph FROM', $t eq 'v' ? 'vn' : 'producers', 'WHERE id =', \$o->{id}));
 
-        do {
-            t wish  => "/$id/wish", 'wishlist';
-            t votes => "/$id/votes", 'votes';
-            t list  => "/$id/list", 'list';
-        } if $t eq 'u' && (
-            auth->permUsermod || (auth && auth->uid == $o->{id})
-            || !($o->{hide_list} // tuwf->dbVali('SELECT hide_list FROM users WHERE id =', \$o->{id}))
-        );
+            t releases => "/$id/releases", 'releases' if $t eq 'v';
+            t edit => "/$id/edit", 'edit' if can_edit $t, $o;
+            t copy => "/$id/copy", 'copy' if $t =~ /[rc]/ && can_edit $t, $o;
+            t tagmod => "/$id/tagmod", 'modify tags' if $t eq 'v' && auth->permTag && !$o->{entry_hidden};
 
-        t tagmod => "/$id/tagmod", 'modify tags' if $t eq 'v' && auth->permTag && !$o->{entry_hidden};
-        t copy => "/$id/copy", 'copy' if $t =~ /[rc]/ && can_edit $t, $o;
-        t edit => "/$id/edit", 'edit' if can_edit $t, $o;
-        t releases => "/$id/releases", 'releases' if $t eq 'v';
+            do {
+                t list  => "/$id/list", 'list';
+                t votes => "/$id/votes", 'votes';
+                t wish  => "/$id/wish", 'wishlist';
+            } if $t eq 'u' && (
+                auth->permUsermod || (auth && auth->uid == $o->{id})
+                || !($o->{hide_list} // tuwf->dbVali('SELECT hide_list FROM users WHERE id =', \$o->{id}))
+            );
 
-        t rgraph => "/$id/rg", 'relations'
-            if $t =~ /[vp]/ && (exists $o->{rgraph} ? $o->{rgraph}
-                : tuwf->dbVali('SELECT rgraph FROM', $t eq 'v' ? 'vn' : 'producers', 'WHERE id =', \$o->{id}));
+            t posts => "/$id/posts", 'posts' if $t eq 'u';
 
-        t '' => "/$id", $id;
+            if($t =~ /[uvp]/) {
+                my $cnt = tuwf->dbVali(q{
+                    SELECT COUNT(*)
+                    FROM threads_boards tb
+                    JOIN threads t ON t.id = tb.tid
+                    WHERE tb.type =}, \$t, 'AND tb.iid =', \$o->{id}, 'AND', VNWeb::Discussions::Lib::sql_visible_threads());
+                t disc => "/t/$id", "discussions ($cnt)";
+            };
+
+            t hist => "/$id/hist", 'history' if $t =~ /[uvrpcsd]/;
+        }
     }
 }
 
@@ -670,8 +673,8 @@ sub paginate_ {
     return if $p == 1 && $cnt <= $pp;
 
     my sub tab_ {
-        my($left, $page, $label) = @_;
-        li_ mkclass(left => $left), sub {
+        my($page, $label) = @_;
+        li_ sub {
             local $_ = $page;
             my $u = $url->(p => $page);
             a_ href => $u, $label;
@@ -683,17 +686,21 @@ sub paginate_ {
     }
     my $nc = 5; # max. number of buttons on each side
 
-    ul_ class => 'maintabs browsetabs ' . ($al eq 't' ? 'notfirst' : 'bottom'), sub {
-        $p > 2     and ref $np and tab_ 1, 1, '« first';
-        $p > $nc+1 and ref $np and ell_ 1;
-        $p > $_    and ref $np and tab_ 1, $p-$_, $p-$_ for (reverse 2..($nc>$p-2?$p-2:$nc-1));
-        $p > 1                 and tab_ 1, $p-1, '‹ previous';
+    div_ class => 'maintabs browsetabs '.($al eq 't' ? '' : 'bottom'), sub {
+        ul_ sub {
+            $p > 2     and ref $np and tab_ 1, '« first';
+            $p > $nc+1 and ref $np and ell_;
+            $p > $_    and ref $np and tab_ $p-$_, $p-$_ for (reverse 2..($nc>$p-2?$p-2:$nc-1));
+            $p > 1                 and tab_ $p-1, '‹ previous';
+        };
 
-        my $l = ceil($cnt/$pp)-$p+1;
-        $l > 2     and tab_ 0, $l+$p-1, 'last »';
-        $l > $nc+1 and ell_ 0;
-        $l > $_    and tab_ 0, $p+$_, $p+$_ for (reverse 2..($nc>$l-2?$l-2:$nc-1));
-        $l > 1     and tab_ 0, $p+1, 'next ›';
+        ul_ sub {
+            my $l = ceil($cnt/$pp)-$p+1;
+            $l > 1     and tab_ $p+1, 'next ›';
+            $l > $_    and tab_ $p+$_, $p+$_ for (2..($nc>$l-2?$l-2:$nc-1));
+            $l > $nc+1 and ell_;
+            $l > 2     and tab_ $l+$p-1, 'last »';
+        };
     }
 }
 
