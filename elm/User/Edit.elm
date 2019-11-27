@@ -174,7 +174,7 @@ view model =
         else formField "uniname::Display name" [ inputText "uniname" (if data.uniname == "" then data.username else data.uniname) (Set << Uniname) GUE.valUniname ]
       ]
 
-  in Html.form [ onSubmit Submit ]
+  in form_ Submit (model.state == Api.Loading)
     [ div [ class "mainbox" ]
       [ h1 [] [ text <| if data.authmod then "Edit " ++ data.username else "My preferences" ]
       , table [ class "formtable" ] <|

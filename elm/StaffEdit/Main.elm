@@ -200,7 +200,7 @@ view model =
       ]
 
   in
-    Html.form [ onSubmit Submit ]
+    form_ Submit (model.state == Api.Loading)
     [ div [ class "mainbox staffedit" ]
       [ h1 [] [ text "General info" ]
       , table [ class "formtable" ]

@@ -31,6 +31,14 @@ br_ : Int -> Html m
 br_ n = if n == 1 then br [] [] else span [] <| List.repeat n <| br [] []
 
 
+-- Quick short-hand way of creating a form that can be disabled.
+-- Usage:
+--   form_ Submit_msg (state == Disabled) [contents]
+form_ : msg -> Bool -> List (Html msg) -> Html msg
+form_ sub dis cont = Html.form [ onSubmit sub ]
+  [ fieldset [disabled dis] cont ]
+
+
 inputButton : String -> m -> List (Attribute m) -> Html m
 inputButton val onch attrs =
   input ([ type_ "button", class "submit", tabindex 10, value val, onClick onch] ++ attrs) []
