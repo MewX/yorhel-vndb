@@ -237,8 +237,11 @@ fieldset.submit .textpreview { margin: 0 auto }
 #menulist .logout            { border: 0; background: none; color: $maintext$; cursor: pointer }
 #menulist .logout:hover      { text-decoration: underline }
 
-#patreon { opacity: 0.6; border-bottom: none!important }
-#patreon:hover { opacity: 1 }
+#support { line-height: 0; height: 41px }
+#support img { height: 19px; object-fit: none }
+#support a { opacity: 0.7; border-bottom: none!important; display: inline-block }
+#support a:hover { opacity: 1 }
+#support a:hover img { position: absolute; left: 0; top: 0; height: 38px; z-index: 99 }
 
 
 
