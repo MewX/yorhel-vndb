@@ -343,7 +343,7 @@ sub vn_ {
             elm_ 'UList.VoteEdit' => $VNVOTE, { uid => $uid, vid => $v->{id}, vote => fmtvote($v->{vote}) }, fmtvote $v->{vote} if $own;
         } if in vote => $opt->{c};
 
-        td_ class => 'tc_voted',    fmtdate $v->{vote_date}, 'compact' if in voted    => $opt->{c};
+        td_ class => 'tc_voted',    $v->{vote_date} ? fmtdate $v->{vote_date}, 'compact' : '-' if in voted => $opt->{c};
         td_ class => 'tc_added',    fmtdate $v->{added},     'compact' if in added    => $opt->{c};
         td_ class => 'tc_modified', fmtdate $v->{lastmod},   'compact' if in modified => $opt->{c};
 
