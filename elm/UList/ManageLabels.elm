@@ -69,14 +69,13 @@ view : Model -> Html Msg
 view model =
   let
     item n l =
-      let strid = "form_pr" ++ String.fromInt n
-      in tr [ class "compact" ]
+      tr [ class "compact" ]
       [ td [] [ text <| if l.count == 0 then "" else String.fromInt l.count ]
       , td [ class "stealth" ]
         [ if l.id > 0 && l.id < 10 then text l.label
           else inputText ("label_txt_"++String.fromInt n) l.label (Label n) GML.valLabelsLabel
         ]
-      , td [ class "linkradio" ] [ inputCheck strid l.private (Private n), label [ for strid ] [ text "private" ] ]
+      , td [ ] [ linkRadio l.private (Private n) [ text "private" ] ]
       , td [ class "stealth" ]
         [      if l.id == 7             then b [ class "grayedout" ] [ text "applied when you vote" ]
           else if l.id > 0 && l.id < 10 then b [ class "grayedout" ] [ text "built-in" ]

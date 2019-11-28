@@ -68,14 +68,7 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-  let
-    item (cid, cname) =
-      let selid = "colselect_" ++ cid
-      in
-        li [ class "linkradio" ]
-        [ inputCheck selid (Set.member cid model.sel) (Toggle cid)
-        , label [ for selid ] [ text cname ]
-        ]
+  let item (cid, cname) = li [ ] [ linkRadio (Set.member cid model.sel) (Toggle cid) [ text cname ] ]
   in
     DD.view model.dd Api.Normal
       (text "Select columns")

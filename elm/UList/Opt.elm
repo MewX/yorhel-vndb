@@ -203,25 +203,20 @@ view model =
         Just nfo -> relnfo r nfo
 
     relnfo r nfo =
-      let name = "ulist_relstatus" ++ String.fromInt model.flags.vid ++ "_" ++ String.fromInt nfo.id ++ "_"
-      in
-        tr []
-        [ td [ class "tco1" ]
-          [ DD.view r.dd r.state (text <| Maybe.withDefault "removing" <| lookup r.status T.rlistStatus)
-            <| \_ ->
-              [ ul [] <| List.map (\(n, status) ->
-                  li [ class "linkradio" ]
-                  [ inputCheck (name ++ String.fromInt n) (n == r.status) (RelSet r.id n)
-                  , label [ for <| name ++ String.fromInt n ] [ text status ]
-                  ]
-                ) T.rlistStatus
-                ++ [ li [] [ a [ href "#", onClickD (RelSet r.id -1 True) ] [ text "remove" ] ] ]
-              ]
-          ]
-        , td [ class "tco2" ] [ RDate.display model.today nfo.released ]
-        , td [ class "tco3" ] <| List.map langIcon nfo.lang ++ [ releaseTypeIcon nfo.rtype ]
-        , td [ class "tco4" ] [ a [ href ("/r"++String.fromInt nfo.id), title nfo.original ] [ text nfo.title ] ]
+      tr []
+      [ td [ class "tco1" ]
+        [ DD.view r.dd r.state (text <| Maybe.withDefault "removing" <| lookup r.status T.rlistStatus)
+          <| \_ ->
+            [ ul [] <| List.map (\(n, status) ->
+                li [ ] [ linkRadio (n == r.status) (RelSet r.id n) [ text status ] ]
+              ) T.rlistStatus
+              ++ [ li [] [ a [ href "#", onClickD (RelSet r.id -1 True) ] [ text "remove" ] ] ]
+            ]
         ]
+      , td [ class "tco2" ] [ RDate.display model.today nfo.released ]
+      , td [ class "tco3" ] <| List.map langIcon nfo.lang ++ [ releaseTypeIcon nfo.rtype ]
+      , td [ class "tco4" ] [ a [ href ("/r"++String.fromInt nfo.id), title nfo.original ] [ text nfo.title ] ]
+      ]
 
     confirm =
       div []

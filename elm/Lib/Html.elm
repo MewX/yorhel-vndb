@@ -150,6 +150,12 @@ inputWikidata nam val onch =
             [ pattern "^Q?[1-9][0-9]{0,8}$" ]
 
 
+-- Similar to inputCheck and inputRadio with a label, except this is just a link.
+linkRadio : Bool -> (Bool -> m) -> List (Html m) -> Html m
+linkRadio val onch content =
+  a [ href "#", onClickD (onch (not val)), class "linkradio", classList [("checked", val)] ] content
+
+
 -- Generate a form field (table row) with a label. The `label` string can be:
 --
 --   "none"            -> To generate a full-width field (colspan=2)

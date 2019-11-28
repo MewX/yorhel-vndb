@@ -76,19 +76,16 @@ view model =
     str = String.join ", " <| List.filterMap (\l -> if Set.member l.id model.sel then Just l.label else Nothing) model.labels
 
     item l =
-      let lid = "label_edit_" ++ String.fromInt model.vid ++ "_" ++ String.fromInt l.id
-      in
-        li [ class "linkradio" ]
-        [ inputCheck lid (Set.member l.id model.tsel) (Toggle l.id)
-        , label [ for lid ]
-          [ text l.label
-          , text " "
-          , span [ class "spinner", classList [("invisible", Dict.get l.id model.state /= Just Api.Loading)] ] []
-          , case Dict.get l.id model.state of
-              Just (Api.Error _) -> b [ class "standout" ] [ text "error" ] -- Need something better
-              _ -> text ""
-          ]
+      li [ ]
+      [ linkRadio (Set.member l.id model.tsel) (Toggle l.id)
+        [ text l.label
+        , text " "
+        , span [ class "spinner", classList [("invisible", Dict.get l.id model.state /= Just Api.Loading)] ] []
+        , case Dict.get l.id model.state of
+            Just (Api.Error _) -> b [ class "standout" ] [ text "error" ] -- Need something better
+            _ -> text ""
         ]
+      ]
   in
     DD.view model.dd
       (if List.any (\s -> s == Api.Loading) <| Dict.values model.state then Api.Loading else Api.Normal)

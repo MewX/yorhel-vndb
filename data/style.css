@@ -42,6 +42,7 @@ table.stripe tbody tr:nth-child(odd):not(.nostripe),
 #debug h2 { color: #f00!important; font-size: 20px; }
 #debug, #debug a { color: #fff!important; }
 
+/* https://snook.ca/archives/html_and_css/hiding-content-for-accessibility */
 .visuallyhidden, .linkradio input {
   position: absolute !important;
   left: 0;
@@ -167,13 +168,35 @@ table.formtable td       { padding: 0; }
 table.formtable tr.newfield td { padding-top: 5px; }
 table.formtable tr.newpart td { padding-top: 20px; font-weight: bold; }
 
+/* Format checkboxes and radio buttons as if they were normal links with unicode icons.
+ * Usage:
+ *
+ *   <container class="linkradio">
+ *     <input type="checkbox|radio" id="xyz">
+ *     <label for="xyz">Text</label>
+ *     <em>(optional option separator)</em>
+ *   </container>
+ */
 p.linkradio { padding: 2px }
 .linkradio label { color: $link$; cursor: pointer }
 .linkradio label:before { content: '✗' }
 .linkradio input:checked + label { color: $maintext$ }
 .linkradio input:checked + label:before { content: '✓' }
+.linkradio input:focus + label { outline: 1px dotted $link$ }
+.linkradio input:focus:checked + label { outline: 1px dotted $maintext$ }
 .linkradio em { font-weight: normal; font-style: normal; color: $grayedout$ }
 
+/* Same styling, but for regular links.
+ * Usage:
+ *
+ *   <a href="#" class="linkradio">Unchecked option</a>
+ *   <a href="#" class="linkradio checked">Checked option</a>
+ */
+a.linkradio:before { content: '✗' }
+a.linkradio.checked { color: $maintext$ }
+a.linkradio.checked:before { content: '✓' }
+
+/* Spinner, <div class="spinner"></div> for a large one, <span> for a smaller inline-text version */
 .spinner { content: ''; box-sizing: border-box; border: 3px solid #9eaebd; border-bottom-color: transparent; border-radius: 100%; animation: spin 1s infinite linear; width: 16px; height: 16px; display: inline-block; margin: auto }
 span.spinner { width: 1em; height: 1em }
 @keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
@@ -184,6 +207,8 @@ span.spinner { width: 1em; height: 1em }
 .textpreview .preview { width: 100%; box-sizing: border-box; border: 1px solid $secborder$; margin: 1px; padding: 5px }
 fieldset.submit .textpreview { margin: -15px auto 0 auto }
 
+/* .compact input elements are smaller and can be embedded in tables/inline text
+ * .stealth input elements pretend to be just regular text, but turn into visibile input elements on mouse-over */
 .compact input.text, .compact select { margin: -2px -1px; padding: 1px 0 }
 .stealth input, .stealth select { font: inherit; background: none; border: 1px solid transparent; -moz-appearance: none; -webkit-appearance: none; appearance: none }
 .stealth input:hover, .stealth input:focus,
