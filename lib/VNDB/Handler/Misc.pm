@@ -122,7 +122,7 @@ sub homepage {
         my $boards = join ', ', map $BOARD_TYPE{$_->{type}}{txt}.($_->{iid}?' > '.$_->{title}:''), @{$_->{boards}};
         li;
          txt fmtage($_->{lastpost_date}).' ';
-         a href => "/t$_->{id}.$_->{count}", title => "Posted in $boards", shorten $_->{title}, 25;
+         a href => VNWeb::Discussions::Lib::post_url($_->{id}, $_->{count}, 'last'), title => "Posted in $boards", shorten $_->{title}, 25;
          lit ' by ';
          VNWeb::HTML::user_($_, 'lastpost_');
         end;

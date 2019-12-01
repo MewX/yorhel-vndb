@@ -159,7 +159,7 @@ sub edit {
       $self->dbPostEdit($tid, $num, %post)   if $num;
       $nnum = $self->dbPostAdd($ntid, %post) if !$num;
 
-      return $self->resRedirect("/t$ntid".($nnum > 25 ? '/'.ceil($nnum/25) : '').'#'.$nnum, 'post');
+      return $self->resRedirect(VNWeb::Discussions::Lib::post_url($ntid, $nnum, 'last'), 'post');
     }
   }
 

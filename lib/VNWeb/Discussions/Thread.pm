@@ -63,7 +63,7 @@ sub posts_ {
     div_ class => 'mainbox thread', sub {
         table_ class => 'stripe', sub {
             tr_ mkclass(deleted => $_->{hidden}), id => $_->{num}, sub {
-                td_ class => 'tc1', sub {
+                td_ class => 'tc1', $t->{count} == $_->{num} ? (id => 'last') : (), sub {
                     a_ href => "/t$t->{id}.$_->{num}", "#$_->{num}";
                     if(!$_->{hidden}) {
                         txt_ ' by ';
@@ -175,7 +175,7 @@ TUWF::get qr{/$RE{tid}(?:/$RE{num})?}, sub {
 
 TUWF::get qr{/$RE{postid}}, sub {
     my($id, $num) = (tuwf->capture('id'), tuwf->capture('num'));
-    tuwf->resRedirect("/t$id".($num > 25 ? '/'.ceil($num/25) : '').'#'.$num, 'perm')
+    tuwf->resRedirect(post_url($id, $num, $num), 'perm')
 };
 
 
