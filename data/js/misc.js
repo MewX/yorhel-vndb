@@ -90,17 +90,6 @@ if(byId('listsel'))
 })();
 
 
-// vndb.org domain check
-if(location.hostname != 'vndb.org') {
-  addBody(tag('div', {id:'debug'},
-    tag('h2', 'This is not VNDB!'),
-    'The real VNDB is ',
-    tag('a', {href:'http://vndb.org/'}, 'here'),
-    '.'
-  ));
-}
-
-
 // 'more' / 'less' summarization of some boxes on VN pages
 (function(){
   function set(o, h) {
