@@ -363,10 +363,11 @@ div.history td.tc4 b { margin-left: 10px }
 /* threads page */
 #maincontent div.thread  { padding: 0; }
 div.thread table         { width: 100%; table-layout: fixed }
-div.thread td            { border-bottom: 1px solid $border$; }
+div.thread tr:not(:last-child) td { border-bottom: 1px solid $border$; }
 div.thread td.tc1        { width: 170px; padding: 5px 10px; border-right: 1px solid $border$; }
 div.thread td.tc2        { padding: 10px 20px 10px 10px; }
 div.thread tr.deleted td { padding: 1px 10px; }
+div.thread tr:target     { outline: 1px dotted $standout$ }
 div.thread i.deleted     { font-style: normal; color: $grayedout$; }
 div.thread i.lastmod     { float: right; font-size: 11px; color: $grayedout$; margin: 0 -10px -5px 0; }
 div.thread i.edit        { float: right; color: $grayedout$; font-style: normal; margin: -10px -10px 0 0; }

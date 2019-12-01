@@ -111,7 +111,7 @@ view model =
         , td [ colspan 3 ]
           [ a [ onClick Add ] [ text "New label" ]
           --, inputButton "Save changes" Noop []
-          , submitButton "Save changes" model.state True False
+          , submitButton "Save changes" model.state True
           ]
         ] ]
       , tbody [] <| List.indexedMap item model.labels

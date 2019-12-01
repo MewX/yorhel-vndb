@@ -100,6 +100,6 @@ view model =
         ]
       ]
     , div [ class "mainbox" ]
-      [ fieldset [ class "submit" ] [ submitButton "Submit" model.state True False ]
+      [ fieldset [ class "submit" ] [ submitButton "Submit" model.state True ]
       ]
     ]

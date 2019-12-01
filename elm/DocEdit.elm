@@ -101,7 +101,7 @@ view model =
     , div [ class "mainbox" ]
       [ fieldset [ class "submit" ]
         [ Html.map Editsum (Editsum.view model.editsum)
-        , submitButton "Submit" model.state True False
+        , submitButton "Submit" model.state True
         ]
       ]
     ]

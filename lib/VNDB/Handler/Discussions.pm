@@ -7,13 +7,9 @@ use TUWF ':html', 'xml_escape';
 use POSIX 'ceil';
 use VNDB::Func;
 use VNDB::Types;
-use List::Util qw(first max);
 
 
 TUWF::register(
-  qr{t([1-9]\d*)(?:/([1-9]\d*))?}    => \&thread,
-  qr{t([1-9]\d*)(/[1-9]\d*)?/vote}   => \&vote,
-  qr{t([1-9]\d*)\.([1-9]\d*)}        => \&redirect,
   qr{t([1-9]\d*)/reply}              => \&edit,
   qr{t([1-9]\d*)\.([1-9]\d*)/edit}   => \&edit,
   qr{t/(db|an|ge|[vpu])([1-9]\d*)?/new} => \&edit,
@@ -24,116 +20,6 @@ sub caneditpost {
   my($self, $post) = @_;
   return $self->authCan('boardmod') ||
     ($self->authInfo->{id} && $post->{user_id} == $self->authInfo->{id} && !$post->{hidden} && time()-$post->{date} < $self->{board_edit_time})
-}
-
-
-sub thread {
-  my($self, $tid, $page) = @_;
-  $page ||= 1;
-
-  my $t = $self->dbThreadGet(id => $tid, what => 'boardtitles poll')->[0];
-  return $self->resNotFound if !$t->{id} || $t->{hidden} && !$self->authCan('boardmod');
-
-  my $onuserboard = grep $_->{type} eq 'u' && $_->{iid} == ($self->authInfo->{id}||-1), @{$t->{boards}};
-  return $self->resNotFound if $t->{private} && !($self->authCan('boardmod') || $onuserboard);
-
-  my $p = $self->dbPostGet(tid => $tid, results => 25, page => $page, what => 'user');
-  return $self->resNotFound if !$p->[0];
-
-  $self->htmlHeader(title => $t->{title}, noindex => 1);
-  div class => 'mainbox';
-   h1 $t->{title};
-   h2 'Hidden' if $t->{hidden};
-   h2 'Private' if $t->{private};
-   h2 'Posted in';
-   ul;
-    for (sort { $a->{type}.$a->{iid} cmp $b->{type}.$b->{iid} } @{$t->{boards}}) {
-      li;
-       a href => "/t/$_->{type}", $BOARD_TYPE{$_->{type}}{txt};
-       if($_->{iid}) {
-         txt ' > ';
-         a style => 'font-weight: bold', href => "/t/$_->{type}$_->{iid}", "$_->{type}$_->{iid}";
-         txt ':';
-         a href => "/$_->{type}$_->{iid}", title => $_->{original}, $_->{title};
-       }
-      end;
-    }
-   end;
-  end 'div';
-
-  _poll($self, $t, "/t$tid".($page > 1 ? "/$page" : '')) if $t->{haspoll};
-
-  $self->htmlBrowseNavigate("/t$tid/", $page, [ $t->{count}, 25 ], 't', 1);
-  div class => 'mainbox thread';
-   table class => 'stripe';
-    for my $i (0..$#$p) {
-      local $_ = $p->[$i];
-      Tr $_->{deleted} ? (class => 'deleted') : ();
-       td class => 'tc1';
-        a href => "/t$tid.$_->{num}", name => $_->{num}, "#$_->{num}";
-        if(!$_->{hidden}) {
-          lit ' by ';
-          VNWeb::HTML::user_($_);
-          br;
-          txt fmtdate $_->{date}, 'full';
-        }
-       end;
-       td class => 'tc2';
-        if(caneditpost($self, $_)) {
-          i class => 'edit';
-           txt '< ';
-           a href => "/t$tid.$_->{num}/edit", 'edit';
-           txt ' >';
-          end;
-        }
-        if($_->{hidden}) {
-          i class => 'deleted', 'Post deleted.';
-        } else {
-          lit bb2html $_->{msg};
-          i class => 'lastmod', 'Last modified on '.fmtdate($_->{edited}, 'full') if $_->{edited};
-        }
-       end;
-      end;
-    }
-   end;
-  end 'div';
-  $self->htmlBrowseNavigate("/t$tid/", $page, [ $t->{count}, 25 ], 'b', 1);
-
-  if($t->{locked}) {
-    div class => 'mainbox';
-     h1 'Reply';
-     p class => 'center', 'This thread has been locked, you can\'t reply to it anymore';
-    end;
-  } elsif($t->{count} <= $page*25 && $self->authCan('board')) {
-    form action => "/t$tid/reply", method => 'post', 'accept-charset' => 'UTF-8';
-     div class => 'mainbox';
-      fieldset class => 'submit';
-       input type => 'hidden', class => 'hidden', name => 'formcode', value => $self->authGetCode("/t$tid/reply");
-       h2;
-        txt 'Quick reply';
-        b class => 'standout', ' (English please!)';
-       end;
-       textarea name => 'msg', id => 'msg', rows => 4, cols => 50, '';
-       br;
-       input type => 'submit', value => 'Reply', class => 'submit';
-       input type => 'submit', value => 'Go advanced...', class => 'submit', name => 'fullreply';
-      end;
-     end;
-    end 'form';
-  } elsif(!$self->authCan('board')) {
-    div class => 'mainbox';
-     h1 'Reply';
-     p class => 'center', 'You must be logged in to reply to this thread.';
-    end;
-  }
-
-  $self->htmlFooter;
-}
-
-
-sub redirect {
-  my($self, $tid, $num) = @_;
-  $self->resRedirect("/t$tid".($num > 25 ? '/'.ceil($num/25) : '').'#'.$num, 'perm');
 }
 
 
@@ -341,107 +227,11 @@ sub edit {
       [ input => short => 'poll_question', name => 'Poll question', width => 250 ],
       [ text  => short => 'poll_options', name => "Poll options<br /><i>one per line,<br />$self->{poll_options} max</i>", rows => 8, cols => 35 ],
       [ input => short => 'poll_max_options',width => 16, post => ' Number of options voter is allowed to choose' ],
-      [ check => short => 'poll_preview', name => 'Allow users to view poll results before voting' ],
-      [ check => short => 'poll_recast',  name => 'Allow users to change their vote' ],
+      [ hidden => short => 'poll_preview' ],
+      [ hidden => short => 'poll_recast' ],
     ) : (),
   ]);
   $self->htmlFooter;
-}
-
-
-sub vote {
-  my($self, $tid, $page) = @_;
-  return $self->htmlDenied if !$self->authCan('board');
-  return if !$self->authCheckCode;
-
-  my $url = '/t'.$tid.($page ? "/$page" : '');
-  my $t = $self->dbThreadGet(id => $tid, what => 'poll')->[0];
-  return $self->resNotFound if !$t;
-
-  # user has already voted and poll doesn't allow to change a vote.
-  my $voted = ($self->dbPollStats($tid))[2][0];
-  return $self->resRedirect($url, 'post') if $voted && !$t->{poll_recast};
-
-  my $f = $self->formValidate(
-    { post => 'option', multi => 1, mincount => 1, maxcount => $t->{poll_max_options}, enum => [ map $_->[0], @{$t->{poll_options}} ] }
-  );
-  if($f->{_err}) {
-    $self->htmlHeader(title => 'Poll error');
-    $self->htmlFormError($f, 1);
-    $self->htmlFooter;
-    return;
-  }
-
-  $self->dbPollVote($t->{id}, $self->authInfo->{id}, @{$f->{option}});
-  $self->resRedirect($url, 'post');
-}
-
-
-sub _poll {
-  my($self, $t, $url) = @_;
-  my($num_votes, $stats, $own_votes) = $self->dbPollStats($t->{id});
-  my %own_votes = map +($_ => 1), @$own_votes;
-  my $preview = !@$own_votes && $self->reqGet('pollview') && $t->{poll_preview};
-  my $allow_vote = $self->authCan('board') && (!@$own_votes || $t->{poll_recast});
-
-  div class => 'mainbox poll';
-   form action => $url.'/vote', method => 'post';
-    h1 class => 'question', $t->{poll_question};
-    input type => 'hidden', name => 'formcode', value => $self->authGetCode($url.'/vote') if $allow_vote;
-    table class => 'votebooth';
-     if($allow_vote && $t->{poll_max_options} > 1) {
-       thead; Tr; td colspan => 3;
-        i "You may choose up to $t->{poll_max_options} options";
-       end; end; end;
-     }
-     tfoot; Tr;
-      td class => 'tc1';
-       input type => 'submit', class => 'submit', value => 'Vote' if $allow_vote;
-       if(!$self->authCan('board')) {
-         b class => 'standout', 'You must be logged in to be able to vote.';
-       }
-      end;
-      td class => 'tc2', colspan => 2;
-       if($t->{poll_preview} || @$own_votes) {
-         if(!$num_votes) {
-           i 'Nobody voted yet.';
-         } elsif(!$preview && !@$own_votes) {
-           a href => $url.'?pollview=1', id => 'pollpreview', 'View results';
-         } else {
-           txt sprintf '%d vote%s total', $num_votes, $num_votes == 1 ? '' : 's';
-         }
-       }
-      end;
-     end; end;
-     tbody;
-      my $max = max values %$stats;
-      my $show_graph = $max && (@$own_votes || $preview);
-      my $graph_width = 200;
-      for my $opt (@{$t->{poll_options}}) {
-        my $votes = $stats->{$opt->[0]};
-        my $own = exists $own_votes{$opt->[0]} ? ' own' : '';
-        Tr $own ? (class => 'odd') : ();
-         td class => 'tc1';
-          label;
-           input type => $t->{poll_max_options} > 1 ? 'checkbox' : 'radio', name => 'option', class => 'option', value => $opt->[0], $own ? (checked => '') : () if $allow_vote;
-           span class => 'option'.$own, $opt->[1];
-          end;
-         end;
-         if($show_graph) {
-           td class => 'tc2';
-            div class => 'graph', style => sprintf('width: %dpx', ($votes||0)/$max*$graph_width), ' ';
-            div class => 'number', $votes;
-           end;
-           td class => 'tc3', sprintf('%.3g%%', $votes ? $votes/$num_votes*100 : 0);
-         } else {
-           td class => 'tc2', colspan => 2, '';
-         }
-        end;
-      }
-     end;
-    end 'table';
-   end 'form';
-  end 'div';
 }
 
 

@@ -28,7 +28,7 @@ TUWF::get qr{/t/(all|$board_regex)}, sub {
             boardsearch_ $type if !$id;
             p_ class => 'center', sub {
                 a_ href => $createurl, 'Start a new thread';
-            } if auth->permBoard;
+            } if can_edit t => {};
         };
 
         threadlist_

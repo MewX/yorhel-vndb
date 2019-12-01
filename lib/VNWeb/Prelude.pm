@@ -8,6 +8,7 @@
 #  use Exporter 'import';
 #  use Time::HiRes 'time';
 #  use List::Util 'min', 'max', 'sum';
+#  use POSIX 'ceil';
 #
 #  use VNDBUtil;
 #  use VNDB::BBCode;
@@ -51,6 +52,7 @@ sub import {
     use Exporter 'import';
     use Time::HiRes 'time';
     use List::Util 'min', 'max', 'sum';
+    use POSIX 'ceil';
 
     use VNDBUtil;
     use VNDB::BBCode;
@@ -87,12 +89,14 @@ our %RE = (
     pid  => qr{p$id},
     iid  => qr{i$id},
     did  => qr{d$id},
+    tid  => qr{t$id},
     vrev => qr{v$id$rev?},
     rrev => qr{r$id$rev?},
     prev => qr{p$id$rev?},
     srev => qr{s$id$rev?},
     crev => qr{c$id$rev?},
     drev => qr{d$id$rev?},
+    postid => qr{t$id\.(?<num>$num)},
 );
 
 

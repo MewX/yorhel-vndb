@@ -217,7 +217,7 @@ view model =
 
       ]
     , div [ class "mainbox" ]
-      [ fieldset [ class "submit" ] [ submitButton "Submit" model.state (not model.passNeq) False ]
+      [ fieldset [ class "submit" ] [ submitButton "Submit" model.state (not model.passNeq) ]
       , if not model.mailConfirm then text "" else
           div [ class "notice" ]
           [ text "A confirmation email has been sent to your new address. Your address will be updated after following the instructions in that mail." ]

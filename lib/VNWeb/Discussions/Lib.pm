@@ -3,7 +3,7 @@ package VNWeb::Discussions::Lib;
 use VNWeb::Prelude;
 use Exporter 'import';
 
-our @EXPORT = qw/threadlist_ boardsearch_ boardtypes_/;
+our @EXPORT = qw/sql_visible_threads enrich_boards threadlist_ boardsearch_ boardtypes_/;
 
 
 # Returns a WHERE condition to filter threads that the current user is allowed to see.
@@ -11,6 +11,21 @@ sub sql_visible_threads {
     sql_and
         auth->permBoardmod ? () : ('NOT t.hidden'),
         sql('NOT t.private OR EXISTS(SELECT 1 FROM threads_boards WHERE tid = t.id AND type = \'u\' AND iid =', \auth->uid, ')');
+}
+
+
+# Adds a 'boards' array to threads.
+sub enrich_boards {
+    my($filt, @lst) = @_;
+    enrich boards => id => tid => sub { sql q{
+        SELECT tb.tid, tb.type, tb.iid, COALESCE(u.username, v.title, p.name) AS title, COALESCE(u.username, v.original, p.original) AS original
+          FROM threads_boards tb
+          LEFT JOIN vn v ON tb.type = 'v' AND v.id = tb.iid
+          LEFT JOIN producers p ON tb.type = 'p' AND p.id = tb.iid
+          LEFT JOIN users u ON tb.type = 'u' AND u.id = tb.iid
+         WHERE }, sql_and(sql('tb.tid IN', $_[0]), $filt||()), q{
+         ORDER BY tb.type, tb.iid
+    }}, @lst;
 }
 
 
@@ -45,16 +60,7 @@ sub threadlist_ {
     );
     return 0 if !@$lst;
 
-    enrich boards => id => tid => sub { sql q{
-        SELECT tb.tid, tb.type, tb.iid, COALESCE(u.username, v.title, p.name) AS title, COALESCE(u.username, v.original, p.original) AS original
-          FROM threads_boards tb
-          LEFT JOIN vn v ON tb.type = 'v' AND v.id = tb.iid
-          LEFT JOIN producers p ON tb.type = 'p' AND p.id = tb.iid
-          LEFT JOIN users u ON tb.type = 'u' AND u.id = tb.iid
-         WHERE }, sql_and(sql('tb.tid IN', $_[0]), $opt{boards}||()), q{
-         ORDER BY tb.type, tb.iid
-    }}, $lst;
-
+    enrich_boards $opt{boards}, $lst;
 
     paginate_ $opt{paginate}, $opt{page}, [ $count, $opt{results} ], 't' if $opt{paginate};
     div_ class => 'mainbox browse discussions', sub {

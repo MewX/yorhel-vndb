@@ -45,15 +45,15 @@ inputButton val onch attrs =
 
 
 -- Submit button with loading indicator and error message display
-submitButton : String -> Api.State -> Bool -> Bool -> Html m
-submitButton val state valid load = div []
-   [ input [ type_ "submit", class "submit", tabindex 10, value val, disabled (state == Api.Loading || not valid || load) ] []
+submitButton : String -> Api.State -> Bool -> Html m
+submitButton val state valid = div []
+   [ input [ type_ "submit", class "submit", tabindex 10, value val, disabled (state == Api.Loading || not valid) ] []
    , case state of
        Api.Error r -> p [] [ b [class "standout" ] [ text <| Api.showResponse r ] ]
        _ -> if valid
             then text ""
             else p [] [ b [class "standout" ] [ text "The form contains errors, please fix these before submitting. " ] ]
-   , if state == Api.Loading || load
+   , if state == Api.Loading
      then div [ class "spinner" ] []
      else text ""
    ]

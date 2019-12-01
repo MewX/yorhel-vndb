@@ -628,8 +628,8 @@ CREATE TABLE threads (
   count smallint NOT NULL DEFAULT 0,
   poll_question varchar(100),
   poll_max_options smallint NOT NULL DEFAULT 1,
-  poll_preview boolean NOT NULL DEFAULT FALSE,
-  poll_recast boolean NOT NULL DEFAULT FALSE,
+  poll_preview boolean NOT NULL DEFAULT FALSE, -- deprecated
+  poll_recast boolean NOT NULL DEFAULT FALSE, -- deprecated
   private boolean NOT NULL DEFAULT FALSE
 );
 

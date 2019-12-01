@@ -127,11 +127,46 @@ sub validate_dbid {
 
 
 # Returns whether the current user can edit the given database entry.
+#
+# Supported types:
+#
+#   u:
+#     Requires 'id' field, can only test for editing.
+#
+#   t:
+#     If no 'id' field, checks if the user can create a new thread
+#       (permission to post in specific boards is not handled here).
+#     If no 'num' field, checks if the user can reply to the existing thread.
+#       Requires the 'locked' field.
+#       Assumes the user is permitted to see the thread in the first place, i.e. neither hidden nor private.
+#     Otherwise, checks if the user can edit the post.
+#       Requires the 'user_id', 'date' and 'hidden' fields.
+#
+#   'dbentry_type's:
+#     If no 'id' field, checks whether the user can create a new entry.
+#     Otherwise, requires 'entry_hidden' and 'entry_locked' fields.
+#
 sub can_edit {
     my($type, $entry) = @_;
 
     return auth->permUsermod || (auth && $entry->{id} == auth->uid) if $type eq 'u';
     return auth->permDbmod if $type eq 'd';
+
+    if($type eq 't') {
+        return 0 if !auth->permBoard;
+        return 1 if auth->permBoardmod;
+        if(!$entry->{id}) {
+            # Allow at most 5 new threads per day per user.
+            return auth && tuwf->dbVali('SELECT count(*) < 5 FROM threads_posts WHERE num = 1 AND date > NOW()-\'1 day\'::interval AND uid =', \auth->uid);
+        } elsif(!$entry->{num}) {
+            die "Can't do authorization test when 'locked' field isn't present" if !exists $entry->{locked};
+            return !$entry->{locked};
+        } else {
+            die "Can't do authorization test when hidden/date/user_id fields aren't present"
+                if !exists $entry->{hidden} || !exists $entry->{date} || !exists $entry->{user_id};
+            return auth && $entry->{user_id} == auth->uid && !$entry->{hidden} && $entry->{date} > time-config->{board_edit_time};
+        }
+    }
 
     die "Can't do authorization test when entry_hidden/entry_locked fields aren't present"
         if $entry->{id} && (!exists $entry->{entry_hidden} || !exists $entry->{entry_locked});

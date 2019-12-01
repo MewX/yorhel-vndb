@@ -144,6 +144,6 @@ view model =
   in form_ Submit (model.state == Api.Loading)
       [ if model.insecure then changeBox else loginBox
       , div [ class "mainbox" ]
-        [ fieldset [ class "submit" ] [ submitButton "Submit" model.state True False ]
+        [ fieldset [ class "submit" ] [ submitButton "Submit" model.state True ]
         ]
       ]
