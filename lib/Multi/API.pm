@@ -1399,6 +1399,7 @@ sub set {
     votelist => \&set_votelist,
     vnlist   => \&set_vnlist,
     wishlist => \&set_wishlist,
+    ulist    => \&set_ulist,
   );
 
   return cerr $c, parse => 'Invalid arguments to set command' if @arg < 2 || @arg > 3 || ref($arg[0])
@@ -1477,6 +1478,49 @@ sub set_wishlist {
   setpg $obj, 'WITH upsert AS (UPDATE wlists SET wstat = $1 WHERE uid = $2 AND vid = $3 RETURNING vid)
       INSERT INTO wlists (wstat, uid, vid) SELECT $1, $2, $3 WHERE EXISTS(SELECT 1 FROM vn v WHERE v.id = $3) AND NOT EXISTS(SELECT 1 FROM upsert)',
     [ $vp, $c->{uid}, $obj->{id} ];
+}
+
+
+sub set_ulist {
+  my($c, $obj) = @_;
+
+  return setpg $obj, 'DELETE FROM ulist_vns WHERE uid = $1 AND vid = $2',
+    [ $c->{uid}, $obj->{id} ] if !$obj->{opt};
+
+  my $opt = $obj->{opt};
+  my @set;
+  my @bind = ($c->{uid}, $obj->{id});
+
+  if(exists $opt->{vote}) {
+    return cerr $c, badarg => 'Invalid vote', field => 'vote' if defined($opt->{vote}) && (ref $opt->{vote} || $opt->{vote} !~ /^[0-9]+$/ || $opt->{vote} < 10 || $opt->{vote} > 100);
+    if($opt->{vote}) {
+      push @bind, $opt->{vote};
+      push @set, 'vote_date = NOW()', 'vote = $'.@bind;
+    } else {
+      push @set, 'vote_date = NULL', 'vote = NULL';
+    }
+  }
+
+  if(exists $opt->{notes}) {
+    return cerr $c, badarg => 'Invalid notes', field => 'notes' if ref $opt->{notes};
+    push @bind, $opt->{notes} // '';
+    push @set, 'notes = $'.@bind;
+  }
+
+  for my $f ('started', 'finished') {
+    if(exists $opt->{$f}) {
+      return cerr $c, badarg => "Invalid $f date", field => $f if defined $opt->{$f} && (ref $opt->{$f} || $opt->{$f} !~ /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/);
+      push @bind, $opt->{$f};
+      push @set, "$f = \$".@bind;
+    }
+  }
+
+  return cerr $c, missing => 'No fields to change' if !@set;
+
+  push @set, 'lastmod = NOW()';
+  cpg $c, 'INSERT INTO ulist_vns (uid, vid) VALUES ($1, $2) ON CONFLICT (uid, vid) DO NOTHING', [ $c->{uid}, $obj->{id} ], sub {
+    setpg $obj, 'UPDATE ulist_vns SET '.join(',', @set).' WHERE uid = $1 AND vid = $2', \@bind;
+  };
 }
 
 1;
