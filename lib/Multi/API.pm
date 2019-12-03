@@ -1515,9 +1515,23 @@ sub set_ulist {
     }
   }
 
+  if(exists $opt->{labels}) {
+    return cerr $c, badarg => "Labels field expects an array", field => 'labels' if ref $opt->{labels} ne 'ARRAY';
+    return cerr $c, badarg => "Invalid label: '$_'", field => 'labels' for grep !defined($_) || ref($_) || !/^[0-9]+$/, $opt->{labels}->@*;
+    my %l = map +($_,1), grep $_ != 7, $opt->{labels}->@*;
+    # XXX: This is ugly. Errors (especially: unknown labels) are ignored and
+    # the entire set operation ought to run in a single transaction.
+    pg_cmd 'SELECT lbl FROM ulist_vns_labels WHERE uid = $1 AND vid = $2', [ $c->{uid}, $obj->{id} ], sub {
+      return if pg_expect $_[0];
+      my %ids = map +($_->{lbl}, 1), $_[0]->rowsAsHashes;
+      pg_cmd 'INSERT INTO ulist_vns_labels (uid, vid, lbl) VALUES ($1,$2,$3)', [ $c->{uid}, $obj->{id}, $_ ] for grep !$ids{$_}, keys %l;
+      pg_cmd 'DELETE FROM ulist_vns_labels WHERE uid = $1 AND vid = $2 AND lbl = $3', [ $c->{uid}, $obj->{id}, $_ ] for grep !$l{$_}, keys %ids;
+    };
+  }
+
+  push @set, 'lastmod = NOW()' if @set || $opt->{labels};
   return cerr $c, missing => 'No fields to change' if !@set;
 
-  push @set, 'lastmod = NOW()';
   cpg $c, 'INSERT INTO ulist_vns (uid, vid) VALUES ($1, $2) ON CONFLICT (uid, vid) DO NOTHING', [ $c->{uid}, $obj->{id} ], sub {
     setpg $obj, 'UPDATE ulist_vns SET '.join(',', @set).' WHERE uid = $1 AND vid = $2', \@bind;
   };
