@@ -150,3 +150,7 @@ CREATE TRIGGER ulist_voted_label AFTER INSERT OR UPDATE ON ulist_vns FOR EACH RO
 GRANT SELECT, INSERT, UPDATE, DELETE ON ulist_vns                TO vndb_site;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ulist_labels             TO vndb_site;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ulist_vns_labels         TO vndb_site;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON ulist_vns                TO vndb_multi;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ulist_labels             TO vndb_multi;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ulist_vns_labels         TO vndb_multi;

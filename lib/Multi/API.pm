@@ -1097,6 +1097,75 @@ my %GET_WISHLIST = (
   filters => { uid => [ $UID_FILTER ], vn => $VN_FILTER }
 );
 
+my %GET_ULIST_LABELS = (
+  islist  => 1,
+  sql     => 'SELECT %s FROM ulist_labels ul WHERE (%s) AND NOT ul.private %s',
+  sqluser => 'SELECT %1$s FROM ulist_labels ul WHERE (%2$s) AND (ul.uid = %4$d OR NOT ul.private) %3$s',
+  select  => 'uid, id, label, private',
+  proc    => sub {
+    $_[0]{uid}*=1;
+    $_[0]{id}*=1;
+    $_[0]{private} = $_[0]{private} =~ /^t/ ? TRUE : FALSE;
+  },
+  sortdef => 'id',
+  sorts   => { id => 'id %s', label => 'label %s' },
+  flags   => { basic => {} },
+  filters => { uid => [ $UID_FILTER ] },
+);
+
+my $ULIST_PUBLIC = 'EXISTS(SELECT 1 FROM ulist_vns_labels uvl JOIN ulist_labels ul ON ul.uid = uvl.uid AND ul.id = uvl.lbl WHERE uvl.uid = uv.uid AND uvl.vid = uv.vid AND NOT ul.private)';
+my %GET_ULIST = (
+  islist  => 1,
+  sql     => "SELECT %s FROM ulist_vns uv WHERE (%s) AND ($ULIST_PUBLIC) %s",
+  sqluser => "SELECT %1\$s FROM ulist_vns uv WHERE (%2\$s) AND (uv.uid = %4\$d OR $ULIST_PUBLIC) %3\$s",
+  select  => "uid, vid as vn, extract('epoch' from added) AS added, extract('epoch' from lastmod) AS lastmod, extract('epoch' from vote_date) AS voted, vote, started, finished, notes",
+  proc    => sub {
+    $_[0]{uid}*=1;
+    $_[0]{vn}*=1;
+    $_[0]{added} = int $_[0]{added};
+    $_[0]{lastmod} = int $_[0]{lastmod};
+    $_[0]{voted} = int $_[0]{voted} if $_[0]{voted};
+    $_[0]{vote}*=1 if $_[0]{vote};
+    $_[0]{notes} ||= '';
+  },
+  sortdef => 'vn',
+  sorts   => {
+    uid     => 'uid %s',
+    vn      => 'vid %s',
+    added   => 'added %s',
+    lastmod => 'lastmod %s',
+    voted   => 'vote_date %s',
+    vote    => 'vote %s',
+  },
+  flags   => {
+    basic  => {},
+    labels => {
+      fetch => [[ ['uid','vid'], 'SELECT uvl.uid, uvl.vid, ul.id, ul.label
+               FROM ulist_vns_labels uvl JOIN ulist_labels ul ON ul.uid = uvl.uid AND ul.id = uvl.lbl
+              WHERE (uvl.uid,uvl.vid) IN(%s) AND (NOT ul.private OR uvl.uid = %s)',
+        sub { my($n, $r) = @_;
+          for my $i (@$n) {
+            $i->{labels} = [ grep $i->{uid} == $_->{uid} && $i->{vid} == $_->{vid}, @$r ];
+          }
+          for (@$r) {
+            $_->{id}*=1;
+            delete $_->{uid};
+            delete $_->{vid};
+          }
+        },
+      ]]
+    }
+  },
+  filters => {
+    uid   => [ $UID_FILTER ],
+    vn    => $VN_FILTER,
+    label => [
+      [ 'int' => 'EXISTS(SELECT 1 FROM ulist_vns_labels uvl JOIN ulist_labels ul ON ul.uid = uvl.uid AND ul.id = uvl.lbl
+                          WHERE uvl.uid = uv.uid AND uvl.vid = uv.vid AND uvl.lbl = :value: AND NOT ul.private)', {'=',1}, range => [1,1e6] ],
+    ],
+  },
+);
+
 
 my %GET = (
   vn        => \%GET_VN,
@@ -1108,6 +1177,8 @@ my %GET = (
   votelist  => \%GET_VOTELIST,
   vnlist    => \%GET_VNLIST,
   wishlist  => \%GET_WISHLIST,
+  'ulist-labels' => \%GET_ULIST_LABELS,
+  ulist     => \%GET_ULIST,
 );
 
 
@@ -1284,9 +1355,12 @@ sub get_fetch {
   my %need = map +($_, $need[$_]), 0..$#need;
 
   for my $n (keys %need) {
-    my @ids = map $_->{ $need{$n}[0] }, @{$get->{list}};
-    my $ids = join ',', map '$'.$_, 1..@ids;
-    cpg $c, sprintf($need{$n}[1], $ids), \@ids, sub {
+    my $field = $need{$n}[0];
+    my $ref = 1;
+    my @ids = map { my $d=$_; ref $field ? @{$d}{@$field} : ($d->{$field}) } @{$get->{list}};
+    my $ids = join ',', map { ref $field ? '('.join(',', map '$'.$ref++, @$field).')' : '$'.$ref++ } 1..@{$get->{list}};
+    no warnings 'redundant';
+    cpg $c, sprintf($need{$n}[1], $ids, $c->{uid}||'NULL'), \@ids, sub {
       $get->{fetched}{$n} = [ $need{$n}[2], [$_[0]->rowsAsHashes] ];
       delete $need{$n};
       get_final($c, $type, $get) if !keys %need;
