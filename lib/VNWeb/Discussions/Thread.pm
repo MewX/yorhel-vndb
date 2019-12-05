@@ -29,6 +29,23 @@ my $POLL_IN = form_compile any => {
 elm_form 'DiscussionsPoll' => $POLL_OUT, $POLL_IN;
 
 
+
+my $REPLY_OUT = form_compile any => {
+    tid    => { id => 1 },
+    newurl => { },
+};
+
+
+my $REPLY_IN = form_compile any => {
+    tid => { id => 1 },
+    msg => { maxlength => 32768 }
+};
+
+
+elm_form 'DiscussionsReply' => $REPLY_OUT, $REPLY_IN;
+
+
+
 sub metabox_ {
     my($t) = @_;
     div_ class => 'mainbox', sub {
@@ -96,22 +113,7 @@ sub reply_ {
     my($t, $page) = @_;
     return if $t->{count} > $page*25;
     if(can_edit t => $t) {
-        # TODO: Elmify
-        form_ action => "/t$t->{id}/reply", method => 'post', 'accept-charset' => 'UTF-8', sub {
-            div_ class => 'mainbox', sub {
-                fieldset_ class => 'submit', sub {
-                    input_ type => 'hidden', class => 'hidden', name => 'formcode', value => auth->csrftoken;
-                    h2_ sub {
-                        txt_ 'Quick reply';
-                        b_ class => 'standout', ' (English please!)';
-                    };
-                    textarea_ name => 'msg', id => 'msg', rows => 4, cols => 50, '';
-                    br_;
-                    input_ type => 'submit', value => 'Reply', class => 'submit';
-                    input_ type => 'submit', value => 'Go advanced...', class => 'submit', name => 'fullreply';
-                }
-            }
-        }
+        elm_ 'Discussions.Reply' => $REPLY_OUT, { tid => $t->{id}, newurl => post_url($t->{id}, $t->{count}+1) };
     } else {
         div_ class => 'mainbox', sub {
             h1_ 'Reply';
@@ -183,7 +185,7 @@ json_api qr{/t/pollvote.json}, $POLL_IN, sub {
     my($data) = @_;
     return elm_Unauth if !auth;
 
-    my $t = tuwf->dbRowi('SELECT poll_question, poll_max_options FROM threads WHERE id =', \$data->{tid});
+    my $t = tuwf->dbRowi('SELECT poll_question, poll_max_options FROM threads t WHERE id =', \$data->{tid}, 'AND', sql_visible_threads());
     return tuwf->resNotFound if !$t->{poll_question};
 
     die 'Too many options' if $data->{options}->@* > $t->{poll_max_options};
@@ -191,6 +193,20 @@ json_api qr{/t/pollvote.json}, $POLL_IN, sub {
 
     tuwf->dbExeci('DELETE FROM threads_poll_votes WHERE tid =', \$data->{tid}, 'AND uid =', \auth->uid);
     tuwf->dbExeci('INSERT INTO threads_poll_votes (tid, uid, optid) VALUES(', \$data->{tid}, ',', \auth->uid, ',', \$_, ')') for $data->{options}->@*;
+    elm_Success
+};
+
+
+json_api qr{/t/reply.json}, $REPLY_IN, sub {
+    my($data) = @_;
+    my $t = tuwf->dbRowi('SELECT id, locked, count FROM threads t WHERE id =', \$data->{tid}, 'AND', sql_visible_threads());
+    return tuwf->resNotFound if !$t->{id};
+    return elm_Unauth if !can_edit t => $t;
+
+    my $num = $t->{count}+1;
+    my $msg = bb_subst_links $data->{msg};
+    tuwf->dbExeci('INSERT INTO threads_posts (tid, num, uid, msg) VALUES (', sql_comma(\$t->{id}, \$num, \auth->uid, \$msg), ')');
+    tuwf->dbExeci('UPDATE threads SET count =', \$num, 'WHERE id =', \$t->{id});
     elm_Success
 };
 

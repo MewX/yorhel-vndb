@@ -204,7 +204,7 @@ span.spinner { width: 1em; height: 1em }
 .textpreview .head { width: 100%; text-align: right }
 .textpreview .head > * { margin-left: 10px; font-style: normal }
 .textpreview textarea { width: 100%; box-sizing: border-box }
-.textpreview .preview { width: 100%; box-sizing: border-box; border: 1px solid $secborder$; margin: 1px; padding: 5px }
+.textpreview .preview { width: 100%; box-sizing: border-box; border: 1px solid $secborder$; margin: 1px; padding: 5px; text-align: left }
 fieldset.submit .textpreview { margin: -15px auto 0 auto }
 
 /* .compact input elements are smaller and can be embedded in tables/inline text

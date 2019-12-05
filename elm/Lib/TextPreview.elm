@@ -74,7 +74,7 @@ view name model cmdmap width attr =
     div [ class "textpreview", style "width" (String.fromInt width ++ "px") ]
     [ p (class "head" :: (if model.data == "" then [class "invisible"] else []))
       [ case model.state of
-          Api.Loading -> div [ class "spinner" ] []
+          Api.Loading -> span [ class "spinner" ] []
           Api.Error _ -> b [ class "grayedout" ] [ text "Error loading preview. " ]
           Api.Normal  -> text ""
       , if display
