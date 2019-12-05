@@ -255,6 +255,7 @@ sub filters_ {
         s => { required => 0, default => 'title', enum => [qw[ title label vote voted added modified started finished rel rating ]] },
         o => { required => 0, default => 'a', enum => ['a', 'd'] },
         c => { type => 'array', scalar => 1, required => 0, default => [], values => { enum => [qw[ vote voted added modified started finished rel rating ]] } },
+        q => { required => 0 },
     )->data } || { p => 1, l => [], s => 'title', o => 'a', c => [] };
 
     # $labels only includes labels we are allowed to see, getting rid of any labels in 'l' that aren't in $labels ensures we only filter on visible labels
@@ -265,7 +266,7 @@ sub filters_ {
 
 
     my sub lblfilt_ {
-        input_ type => 'checkbox', name => 'l', value => $_->{id}, id => "form_l$_->{id}", $opt_l{$_->{id}} ? (checked => 'checked') : ();
+        input_ type => 'checkbox', name => 'l', value => $_->{id}, id => "form_l$_->{id}", tabindex => 10, $opt_l{$_->{id}} ? (checked => 'checked') : ();
         label_ for => "form_l$_->{id}", "$_->{label} ";
         txt_ " ($_->{count})";
     }
@@ -275,11 +276,13 @@ sub filters_ {
         input_ type => 'hidden', name => 'o', value => $opt->{o};
         input_ type => 'hidden', name => 'c', value => $_ for $opt->{c}->@*;
         p_ class => 'labelfilters', sub {
+            input_ type => 'text', class => 'text', name => 'q', value => $opt->{q}||'', style => 'width: 500px', placeholder => 'Search', tabindex => 10;
+            br_;
             span_ class => 'linkradio', sub {
                 join_ sub { em_ ' / ' }, \&lblfilt_, grep $_->{id} < 10, @filtlabels;
 
                 em_ ' | ';
-                input_ type => 'checkbox', name => 'l', class => 'checkall', value => 0, id => 'form_l_all', $opt->{l}->@* == 0 ? (checked => 'checked') : ();
+                input_ type => 'checkbox', name => 'l', class => 'checkall', value => 0, id => 'form_l_all', tabindex => 10, $opt->{l}->@* == 0 ? (checked => 'checked') : ();
                 label_ for => 'form_l_all', 'Select all';
                 debug_ $labels;
             };
@@ -291,8 +294,8 @@ sub filters_ {
                 }
             }
             br_;
-            input_ type => 'submit', class => 'submit', value => 'Update filters';
-            input_ type => 'button', class => 'submit', id => 'managelabels', value => 'Manage labels' if $own;
+            input_ type => 'submit', class => 'submit', tabindex => 10, value => 'Update filters';
+            input_ type => 'button', class => 'submit', tabindex => 10, id => 'managelabels', value => 'Manage labels' if $own;
         };
     };
     $opt;
@@ -388,9 +391,10 @@ sub listing_ {
 
     my $where = sql_and
         sql('uv.uid =', \$uid),
-        @where_vns ? sql_or(@where_vns) : ();
+        @where_vns ? sql_or(@where_vns) : (),
+        $opt->{q} ? map sql('v.c_search like', \"%$_%"), normalize_query $opt->{q} : ();
 
-    my $count = tuwf->dbVali('SELECT count(*) FROM ulist_vns uv WHERE', $where);
+    my $count = tuwf->dbVali('SELECT count(*) FROM ulist_vns uv JOIN vn v ON v.id = uv.vid WHERE', $where);
 
     my $lst = tuwf->dbPagei({ page => $opt->{p}, results => 50 },
         'SELECT v.id, v.title, v.original, uv.vote, uv.notes, uv.started, uv.finished, v.c_rating, v.c_votecount, v.c_released
