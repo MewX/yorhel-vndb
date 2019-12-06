@@ -205,7 +205,7 @@ view model =
       [ h1 [] [ text "General info" ]
       , table [ class "formtable" ]
         [ formField "Names" [ names, br_ 1 ]
-        , formField "desc::Biography#eng" [ TP.view "desc" model.desc Desc 500 GSE.valDesc ]
+        , formField "desc::Biography" [ TP.view "desc" model.desc Desc 500 GSE.valDesc [ b [ class "standout" ] [ text "English please!" ] ] ]
         , formField "gender::Gender" [ inputSelect "gender" model.gender Gender []
           [ ("unknown", "Unknown or N/A")
           , ("f",       "Female")

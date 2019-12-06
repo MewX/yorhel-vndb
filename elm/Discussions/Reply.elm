@@ -60,8 +60,11 @@ view model =
   form_ Submit (model.state == Api.Loading)
   [ div [ class "mainbox" ]
     [ fieldset [ class "submit" ]
-      [ h2 [] [ text "Quick reply", b [ class "standout" ] [ text " (English please!)" ] ]
-      , TP.view "msg" model.msg Content 600 ([rows 4, cols 50] ++ GDR.valMsg)
+      [ TP.view "msg" model.msg Content 600 ([rows 4, cols 50] ++ GDR.valMsg)
+        [ b [] [ text "Quick reply" ]
+        , b [ class "standout" ] [ text " (English please!) " ]
+        , a [ href "/d9#3" ] [ text "Formatting" ]
+        ]
       , submitButton "Submit" model.state True
       ]
     ]

@@ -66,23 +66,26 @@ update msg model =
     HandlePreview r -> ({ model | state = Api.Error r }, Cmd.none)
 
 
-view : String -> Model -> (Msg -> m) -> Int -> List (Attribute m) -> Html m
-view name model cmdmap width attr =
+view : String -> Model -> (Msg -> m) -> Int -> List (Attribute m) -> List (Html m) -> Html m
+view name model cmdmap width attr header =
   let
     display = model.display && model.preview /= ""
   in
     div [ class "textpreview", style "width" (String.fromInt width ++ "px") ]
-    [ p (class "head" :: (if model.data == "" then [class "invisible"] else []))
-      [ case model.state of
-          Api.Loading -> span [ class "spinner" ] []
-          Api.Error _ -> b [ class "grayedout" ] [ text "Error loading preview. " ]
-          Api.Normal  -> text ""
-      , if display
-        then a [ onClickN (cmdmap TextArea) ] [ text "Edit" ]
-        else i [] [text "Edit"]
-      , if display
-        then i [] [text "Preview"]
-        else a [ onClickN (cmdmap Preview) ] [ text "Preview" ]
+    [ span []
+      [ p [] header
+      , p [ class "right", classList [("invisible", model.data == "")] ]
+        [ case model.state of
+            Api.Loading -> span [ class "spinner" ] []
+            Api.Error _ -> b [ class "grayedout" ] [ text "Error loading preview. " ]
+            Api.Normal  -> text ""
+        , if display
+          then a [ onClickN (cmdmap TextArea) ] [ text "Edit" ]
+          else i [] [text "Edit"]
+        , if display
+          then i [] [text "Preview"]
+          else a [ onClickN (cmdmap Preview) ] [ text "Preview" ]
+        ]
       ]
     , inputTextArea name model.data (cmdmap << Edit) (class (if display then "hidden" else "") :: attr)
     , if not display then text ""

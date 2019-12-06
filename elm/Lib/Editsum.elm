@@ -57,9 +57,6 @@ view model =
   in fieldset [] <|
     (if model.authmod then lockhid else [])
     ++
-    [ h2 []
-      [ text "Edit summary"
-      , b [class "standout"] [text " (English please!)"]
-      ]
-    , TP.view "" model.editsum Editsum 600 [rows 4, cols 50, minlength 2, maxlength 5000, required True]
+    [ TP.view "" model.editsum Editsum 600 [rows 4, cols 50, minlength 2, maxlength 5000, required True]
+      [ b [class "title"] [ text "Edit summary", b [class "standout"] [text " (English please!)"] ] ]
     ]

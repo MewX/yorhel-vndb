@@ -201,11 +201,12 @@ a.linkradio.checked:before { content: '✓' }
 span.spinner { width: 1em; height: 1em }
 @keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
 
-.textpreview .head { width: 100%; text-align: right }
-.textpreview .head > * { margin-left: 10px; font-style: normal }
+.textpreview > span { display: flex; justify-content: space-between; width: 100% }
+.textpreview > span > p { align-self: flex-end }
+.textpreview > span > p.right > * { margin-left: 10px; font-style: normal }
 .textpreview textarea { width: 100%; box-sizing: border-box }
 .textpreview .preview { width: 100%; box-sizing: border-box; border: 1px solid $secborder$; margin: 1px; padding: 5px; text-align: left }
-fieldset.submit .textpreview { margin: -15px auto 0 auto }
+fieldset.submit .textpreview { margin: 0 auto }
 
 /* .compact input elements are smaller and can be embedded in tables/inline text
  * .stealth input elements pretend to be just regular text, but turn into visibile input elements on mouse-over */

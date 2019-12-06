@@ -88,13 +88,13 @@ view model =
         , formField "none"
           [ br_ 1
           , b [] [ text "Contents" ]
-          , br_ 1
-          , text "HTML and MultiMarkdown supported, which is "
-          , a [ href "https://daringfireball.net/projects/markdown/basics", target "_blank" ] [ text "Markdown" ]
-          , text " with some "
-          , a [ href "http://fletcher.github.io/MultiMarkdown-5/syntax.html", target "_blank" ][ text "extensions" ]
-          , text "."
           , TP.view "content" model.content Content 850 ([rows 50, cols 90] ++ GD.valContent)
+            [ text "HTML and MultiMarkdown supported, which is "
+            , a [ href "https://daringfireball.net/projects/markdown/basics", target "_blank" ] [ text "Markdown" ]
+            , text " with some "
+            , a [ href "http://fletcher.github.io/MultiMarkdown-5/syntax.html", target "_blank" ][ text "extensions" ]
+            , text "."
+            ]
           ]
         ]
       ]
