@@ -116,9 +116,9 @@ a.standout    { font-weight: normal; color: $standout$; }
 .hidden       { display: none!important }
 .invisible    { visibility: hidden }
 .linethrough  { text-decoration: line-through }
-b.spoiler, b.spoiler a { color: #000!important; background-color: #000; font-weight: normal; }
-b.spoiler_shown { font-weight: normal }
-b.spoiler_shown a { color: $link$!important }
+b.spoiler,         b.spoiler       a { color: #000!important;       background-color: #000;       font-weight: normal; }
+b.spoiler:hover,   b.spoiler:focus   { color: $maintext$!important; background-color: transparent }
+b.spoiler:hover a, b.spoiler:focus a { color: $link$!important;     background-color: transparent }
 
 #maincontent div.quote {
   padding: 1px 5px;

@@ -80,16 +80,6 @@ if(byId('listsel'))
   };
 
 
-// BBCode spoiler tags
-(function(){
-  var l = byClass('b', 'spoiler');
-  for(var i=0; i<l.length; i++) {
-    l[i].onmouseover = function() { setClass(this, 'spoiler', false); setClass(this, 'spoiler_shown', true)  };
-    l[i].onmouseout = function()  { setClass(this, 'spoiler', true);  setClass(this, 'spoiler_shown', false) };
-  }
-})();
-
-
 // 'more' / 'less' summarization of some boxes on VN pages
 (function(){
   function set(o, h) {
