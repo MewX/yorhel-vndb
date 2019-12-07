@@ -102,8 +102,9 @@ my $schema = VNDB::Schema::schema;
 my $types = VNDB::Schema::types;
 my $references = VNDB::Schema::references;
 
-my $db = DBI->connect('dbi:Pg:dbname=vndb', 'vndb', undef, { RaiseError => 1 });
+my $db = DBI->connect('dbi:Pg:dbname=vndb', 'vndb', undef, { RaiseError => 1, AutoCommit => 0 });
 $db->do('SET TIME ZONE +0');
+$db->do('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');
 
 
 sub export_timestamp {
