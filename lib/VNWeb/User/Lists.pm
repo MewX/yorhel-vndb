@@ -435,7 +435,6 @@ sub listing_ {
     my sub url { '?'.query_encode %$opt, @_ }
 
     # TODO: Thumbnail view?
-    # TODO: Add/remove columns (start/finish date; VN rating, etc?)
     paginate_ \&url, $opt->{p}, [ $count, 50 ], 't', sub {
         elm_ ColSelect => undef, [
             [ vote     => 'Vote'         ],
@@ -473,7 +472,6 @@ sub listing_ {
 }
 
 
-# TODO: Display something useful when all labels are private?
 # TODO: Ability to add VNs from this page
 TUWF::get qr{/$RE{uid}/ulist}, sub {
     my $u = tuwf->dbRowi('SELECT id,', sql_user(), 'FROM users u WHERE id =', \tuwf->capture('id'));
@@ -521,13 +519,20 @@ TUWF::get qr{/$RE{uid}/ulist}, sub {
             };
         };
 
+        my $empty = !grep $_->{count}, @$labels;
         my $opt;
         div_ class => 'mainbox', sub {
             h1_ $title;
-            $opt = filters_ $u->{id}, $own, $labels;
-            elm_ 'UList.ManageLabels' if $own;
+            if($empty) {
+                p_ $own
+                    ? 'Your list is empty! You can add visual novels to your list from the visual novel pages.'
+                    : user_displayname($u).' does not have any visible visual novels in their list.';
+            } else {
+                $opt = filters_ $u->{id}, $own, $labels;
+                elm_ 'UList.ManageLabels' if $own;
+            }
         };
-        listing_ $u->{id}, $own, $opt, $labels;
+        listing_ $u->{id}, $own, $opt, $labels if !$empty;
     };
 };
 
