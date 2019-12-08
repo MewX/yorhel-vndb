@@ -4,6 +4,7 @@ use VNWeb::Prelude;
 
 
 my $FORM = {
+    id          => { required => 0, id => 1 },
     aid         => { int => 1, range => [ -1000, 1<<40 ] }, # X
     alias       => { maxlength => 100, sort_keys => 'aid', aoh => {
         aid       => { int => 1, range => [ -1000, 1<<40 ] }, # X, negative IDs are for new aliases
@@ -22,7 +23,6 @@ my $FORM = {
     hidden     => { anybool => 1 },
     locked     => { anybool => 1 },
 
-    id         => { _when => 'out', id => 1 },
     authmod    => { _when => 'out', anybool => 1 },
     editsum    => { _when => 'in out', editsum => 1 },
 };
@@ -65,10 +65,10 @@ TUWF::get qr{/s/new}, sub {
 };
 
 
-json_api qr{/(?:$RE{sid}/edit|s/add)}, $FORM_IN, sub {
+json_api qr{/s/edit\.json}, $FORM_IN, sub {
     my $data = shift;
-    my $new = !tuwf->capture('id');
-    my $e = $new ? { id => 0 } : db_entry s => tuwf->capture('id') or return tuwf->resNotFound;
+    my $new = !$data->{id};
+    my $e = $new ? { id => 0 } : db_entry s => $data->{id} or return tuwf->resNotFound;
     return elm_Unauth if !can_edit s => $e;
 
     if(!auth->permDbmod) {

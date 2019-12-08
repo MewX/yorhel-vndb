@@ -80,11 +80,11 @@ update msg model =
     Submit ->
       if not model.insecure
       then ( { model | state = Api.Loading }
-           , Api.post "/u/login" (encodeLogin model) Submitted )
+           , Api.post "/u/login.json" (encodeLogin model) Submitted )
       else if model.newpass1 /= model.newpass2
       then ( { model | noteq = True }, Cmd.none )
       else ( { model | state = Api.Loading }
-           , Api.post "/u/changepass" (encodeChangePass model) Submitted )
+           , Api.post "/u/changepass.json" (encodeChangePass model) Submitted )
 
     Submitted GApi.Success      -> (model, load model.ref)
     Submitted GApi.InsecurePass -> ({ model | insecure = True, state = if model.insecure then Api.Error GApi.InsecurePass else Api.Normal }, Cmd.none)

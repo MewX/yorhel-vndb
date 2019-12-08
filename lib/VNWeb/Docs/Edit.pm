@@ -5,13 +5,13 @@ use VNWeb::Docs::Lib;
 
 
 my $FORM = {
+    id      => { id => 1 },
     title   => { maxlength => 200 },
     content => { required => 0, default => '' },
     hidden  => { anybool => 1 },
     locked  => { anybool => 1 },
 
     editsum => { _when => 'in out', editsum => 1 },
-    id      => { _when => 'out', id => 1 },
 };
 
 my $FORM_OUT = form_compile out => $FORM;
@@ -34,9 +34,9 @@ TUWF::get qr{/$RE{drev}/edit} => sub {
 };
 
 
-json_api qr{/$RE{drev}/edit}, $FORM_IN, sub {
+json_api qr{/d/edit\.json}, $FORM_IN, sub {
     my $data = shift;
-    my $doc = db_entry d => tuwf->capture('id') or return tuwf->resNotFound;
+    my $doc = db_entry d => $data->{id} or return tuwf->resNotFound;
 
     return elm_Unauth if !can_edit d => $doc;
     return elm_Unchanged if !form_changed $FORM_CMP, $data, $doc;
@@ -46,7 +46,7 @@ json_api qr{/$RE{drev}/edit}, $FORM_IN, sub {
 };
 
 
-json_api '/js/markdown.json', {
+json_api qr{/js/markdown\.json}, {
     content => { required => 0, default => '' }
 }, sub {
     return elm_Unauth if !auth->permDbmod;

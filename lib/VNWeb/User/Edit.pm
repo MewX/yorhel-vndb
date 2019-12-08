@@ -78,7 +78,7 @@ TUWF::get qr{/$RE{uid}/edit}, sub {
 };
 
 
-json_api qr{/u/edit}, $FORM, sub {
+json_api qr{/u/edit\.json}, $FORM, sub {
     my $data = shift;
 
     my $username = tuwf->dbVali('SELECT username FROM users WHERE id =', \$data->{id});

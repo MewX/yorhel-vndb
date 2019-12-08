@@ -181,7 +181,7 @@ TUWF::get qr{/$RE{postid}}, sub {
 };
 
 
-json_api qr{/t/pollvote.json}, $POLL_IN, sub {
+json_api qr{/t/pollvote\.json}, $POLL_IN, sub {
     my($data) = @_;
     return elm_Unauth if !auth;
 
@@ -197,7 +197,7 @@ json_api qr{/t/pollvote.json}, $POLL_IN, sub {
 };
 
 
-json_api qr{/t/reply.json}, $REPLY_IN, sub {
+json_api qr{/t/reply\.json}, $REPLY_IN, sub {
     my($data) = @_;
     my $t = tuwf->dbRowi('SELECT id, locked, count FROM threads t WHERE id =', \$data->{tid}, 'AND', sql_visible_threads());
     return tuwf->resNotFound if !$t->{id};

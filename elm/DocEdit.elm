@@ -45,7 +45,8 @@ init d =
 
 encode : Model -> GD.Send
 encode model =
-  { editsum     = model.editsum.editsum.data
+  { id          = model.id
+  , editsum     = model.editsum.editsum.data
   , hidden      = model.editsum.hidden
   , locked      = model.editsum.locked
   , title       = model.title
@@ -69,10 +70,8 @@ update msg model =
     Content m -> let (nm,nc) = TP.update m model.content in ({ model | content = nm }, Cmd.map Content nc)
 
     Submit ->
-      let
-        path = "/d" ++ String.fromInt model.id ++ "/edit"
-        body = GD.encode (encode model)
-      in ({ model | state = Api.Loading }, Api.post path body Submitted)
+      let body = GD.encode (encode model)
+      in ({ model | state = Api.Loading }, Api.post "/d/edit.json" body Submitted)
 
     Submitted (GApi.Changed id rev) -> (model, load <| "/d" ++ String.fromInt id ++ "." ++ String.fromInt rev)
     Submitted r -> ({ model | state = Api.Error r }, Cmd.none)

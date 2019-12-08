@@ -17,7 +17,7 @@ my $LABELS = form_compile any => {
 
 elm_form 'UListManageLabels', undef, $LABELS;
 
-json_api qr{/u/ulist/labels.json}, $LABELS, sub {
+json_api qr{/u/ulist/labels\.json}, $LABELS, sub {
     my($uid, $labels) = ($_[0]{uid}, $_[0]{labels});
     return elm_Unauth if !auth || auth->uid != $uid;
 
@@ -80,7 +80,7 @@ my $VNVOTE = form_compile any => {
 
 elm_form 'UListVoteEdit', undef, $VNVOTE;
 
-json_api qr{/u/ulist/setvote.json}, $VNVOTE, sub {
+json_api qr{/u/ulist/setvote\.json}, $VNVOTE, sub {
     my($data) = @_;
     return elm_Unauth if !auth || auth->uid != $data->{uid};
     tuwf->dbExeci(
@@ -110,7 +110,7 @@ my $VNLABELS_IN  = form_compile in  => $VNLABELS;
 
 elm_form 'UListLabelEdit', $VNLABELS_OUT, $VNLABELS_IN;
 
-json_api qr{/u/ulist/setlabel.json}, $VNLABELS_IN, sub {
+json_api qr{/u/ulist/setlabel\.json}, $VNLABELS_IN, sub {
     my($data) = @_;
     return elm_Unauth if !auth || auth->uid != $data->{uid};
     die "Attempt to set vote label" if $data->{label} == 7;
@@ -141,7 +141,7 @@ my $VNDATE = form_compile any => {
 
 elm_form 'UListDateEdit', undef, $VNDATE;
 
-json_api qr{/u/ulist/setdate.json}, $VNDATE, sub {
+json_api qr{/u/ulist/setdate\.json}, $VNDATE, sub {
     my($data) = @_;
     return elm_Unauth if !auth || auth->uid != $data->{uid};
     tuwf->dbExeci(
@@ -183,7 +183,7 @@ my $VNNOTES = form_compile any => {
 
 elm_form 'UListVNNotes', undef, $VNNOTES;
 
-json_api qr{/u/ulist/setnote.json}, $VNNOTES, sub {
+json_api qr{/u/ulist/setnote\.json}, $VNNOTES, sub {
     my($data) = @_;
     return elm_Unauth if !auth || auth->uid != $data->{uid};
     tuwf->dbExeci(
@@ -203,7 +203,7 @@ my $VNDEL = form_compile any => {
 
 elm_form 'UListDel', undef, $VNDEL;
 
-json_api qr{/u/ulist/del.json}, $VNDEL, sub {
+json_api qr{/u/ulist/del\.json}, $VNDEL, sub {
     my($data) = @_;
     return elm_Unauth if !auth || auth->uid != $data->{uid};
     tuwf->dbExeci('DELETE FROM ulist_vns WHERE uid =', \$data->{uid}, 'AND vid =', \$data->{vid});
@@ -221,7 +221,7 @@ my $RSTATUS = form_compile any => {
 elm_form 'UListRStatus', undef, $RSTATUS;
 
 # Adds the release when not in the list.
-json_api qr{/u/ulist/rstatus.json}, $RSTATUS, sub {
+json_api qr{/u/ulist/rstatus\.json}, $RSTATUS, sub {
     my($data) = @_;
     return elm_Unauth if !auth || auth->uid != $data->{uid};
     if($data->{status} == -1) {

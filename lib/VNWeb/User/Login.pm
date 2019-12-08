@@ -15,7 +15,7 @@ TUWF::get '/u/login' => sub {
 };
 
 
-json_api '/u/login', {
+json_api qr{/u/login\.json}, {
     username => { username => 1 },
     password => { password => 1 }
 }, sub {
@@ -41,7 +41,7 @@ json_api '/u/login', {
 };
 
 
-json_api '/u/changepass', {
+json_api qr{/u/changepass\.json}, {
     username => { username => 1 },
     oldpass  => { password => 1 },
     newpass  => { password => 1 },

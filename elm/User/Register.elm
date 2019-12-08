@@ -62,7 +62,7 @@ update msg model =
     VNs      n -> ({ model | vns      = Maybe.withDefault model.vns (String.toInt n) }, Cmd.none)
 
     Submit -> ( { model | state = Api.Loading }
-              , Api.post "/u/register" (encodeForm model) Submitted )
+              , Api.post "/u/register.json" (encodeForm model) Submitted )
 
     Submitted GApi.Success      -> ({ model | success = True }, Cmd.none)
     Submitted e                 -> ({ model | state = Api.Error e }, Cmd.none)

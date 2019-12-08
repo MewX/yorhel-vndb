@@ -124,7 +124,7 @@ update msg model =
     Submit ->
       if model.cpass && model.pass1 /= model.pass2
       then ({ model | passNeq = True }, Cmd.none )
-      else ({ model | state = Api.Loading }, Api.post "/u/edit" (GUE.encode model.data) Submitted)
+      else ({ model | state = Api.Loading }, Api.post "/u/edit.json" (GUE.encode model.data) Submitted)
 
     -- TODO: This reload is only necessary for the skin and customcss options to apply, but it's nicer to do that directly from JS.
     Submitted GApi.Success    -> (model, load <| "/u" ++ String.fromInt model.data.id ++ "/edit")

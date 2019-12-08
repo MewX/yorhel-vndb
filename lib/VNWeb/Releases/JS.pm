@@ -4,7 +4,7 @@ use VNWeb::Prelude;
 
 
 # Used by UList.Opt to fetch releases from a VN id.
-json_api qr{/r/get.json}, { vid => { id => 1 } }, sub {
+json_api qr{/r/get\.json}, { vid => { id => 1 } }, sub {
     my($data) = @_;
     my $l = tuwf->dbAlli(
         'SELECT r.id, r.title, r.original, r.type AS rtype, r.released

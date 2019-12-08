@@ -11,7 +11,7 @@ TUWF::get '/u/register', sub {
 };
 
 
-json_api '/u/register', {
+json_api qr{/u/register\.json}, {
     username => { username => 1 },
     email    => { email => 1 },
     vns      => { int => 1 },

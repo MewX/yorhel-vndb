@@ -57,7 +57,7 @@ init d =
   , l_twitter   = d.l_twitter
   , l_anidb     = d.l_anidb
   , l_pixiv     = d.l_pixiv
-  , id          = Just d.id
+  , id          = d.id
   }
 
 
@@ -82,7 +82,8 @@ new =
 
 encode : Model -> GSE.Send
 encode model =
-  { editsum     = model.editsum.editsum.data
+  { id          = model.id
+  , editsum     = model.editsum.editsum.data
   , hidden      = model.editsum.hidden
   , locked      = model.editsum.locked
   , aid         = model.aid
@@ -147,13 +148,8 @@ update msg model =
     AliasAdd      -> ({ model | alias = model.alias ++ [{ aid = newAid model, name = "", original = "", inuse = False }] }, Cmd.none)
 
     Submit ->
-      let
-        path =
-          case model.id of
-            Just id -> "/s" ++ String.fromInt id ++ "/edit"
-            Nothing -> "/s/add"
-        body = GSE.encode (encode model)
-      in ({ model | state = Api.Loading }, Api.post path body Submitted)
+      let body = GSE.encode (encode model)
+      in ({ model | state = Api.Loading }, Api.post "/s/edit.json" body Submitted)
 
     Submitted (GApi.Changed id rev) -> (model, load <| "/s" ++ String.fromInt id ++ "." ++ String.fromInt rev)
     Submitted r -> ({ model | state = Api.Error r }, Cmd.none)
