@@ -244,6 +244,7 @@ sub export_img {
     $dir{sf}{$_->[0]} = 1 for $db->selectall_array("SELECT id FROM screenshots WHERE $tables{screenshots}{where} ORDER BY id");
     $dir{cv}{$_->[0]} = 1 for $db->selectall_array("SELECT image FROM vn WHERE image <> 0 AND $tables{vn}{where} ORDER BY image");
     $dir{ch}{$_->[0]} = 1 for $db->selectall_array("SELECT image FROM chars WHERE image <> 0 AND $tables{chars}{where} ORDER BY image");
+    $db->rollback;
     undef $db;
 
     find {
