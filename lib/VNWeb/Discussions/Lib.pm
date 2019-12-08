@@ -15,6 +15,7 @@ sub post_url {
 
 # Returns a WHERE condition to filter threads that the current user is allowed to see.
 sub sql_visible_threads {
+    return '1=1' if auth && auth->uid == 2; # Yorhel sees everything
     sql_and
         auth->permBoardmod ? () : ('NOT t.hidden'),
         sql('NOT t.private OR EXISTS(SELECT 1 FROM threads_boards WHERE tid = t.id AND type = \'u\' AND iid =', \auth->uid, ')');
