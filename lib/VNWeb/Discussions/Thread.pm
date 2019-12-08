@@ -82,7 +82,7 @@ sub posts_ {
             tr_ mkclass(deleted => $_->{hidden}), id => $_->{num}, sub {
                 td_ class => 'tc1', $t->{count} == $_->{num} ? (id => 'last') : (), sub {
                     a_ href => "/t$t->{id}.$_->{num}", "#$_->{num}";
-                    if(!$_->{hidden}) {
+                    if(!$_->{hidden} || auth->permBoard) {
                         txt_ ' by ';
                         user_ $_;
                         br_;
