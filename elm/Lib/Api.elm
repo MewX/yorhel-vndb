@@ -43,6 +43,7 @@ showResponse res =
     BadCurPass                      -> "Current password is invalid."
     MailChange                      -> unexp
     Releases _                      -> unexp
+    BoardResult _                   -> unexp
 
 
 expectResponse : (Response -> msg) -> Http.Expect msg

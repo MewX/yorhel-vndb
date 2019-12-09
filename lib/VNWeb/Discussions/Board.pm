@@ -3,9 +3,8 @@ package VNWeb::Discussions::Board;
 use VNWeb::Prelude;
 use VNWeb::Discussions::Lib;
 
-my $board_regex = join '|', map $_.($BOARD_TYPE{$_}{dbitem}?'(?:[1-9][0-9]{0,5})?':''), keys %BOARD_TYPE;
 
-TUWF::get qr{/t/(all|$board_regex)}, sub {
+TUWF::get qr{/t/(all|$BOARD_RE)}, sub {
     my($type, $id) = tuwf->capture(1) =~ /^([^0-9]+)([0-9]*)$/;
 
     my $page = eval { tuwf->validate(get => p => { upage => 1 })->data } || 1;

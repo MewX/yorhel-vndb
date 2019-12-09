@@ -79,6 +79,20 @@ inputSelect nam sel onch attrs lst =
       ) <| List.indexedMap opt lst
 
 
+inputNumber : String -> Int -> (Int -> m) -> List (Attribute m) -> Html m
+inputNumber nam val onch attrs = input (
+    [ type_ "number"
+    , class "text"
+    , tabindex 10
+    , style "width" "40px"
+    , value <| String.fromInt val
+    , onInput (\s -> onch <| Maybe.withDefault 0 <| String.toInt s)
+    ]
+    ++ attrs
+    ++ (if nam == "" then [] else [ id nam, name nam ])
+  ) []
+
+
 inputText : String -> String -> (String -> m) -> List (Attribute m) -> Html m
 inputText nam val onch attrs = input (
     [ type_ "text"

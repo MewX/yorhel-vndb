@@ -157,7 +157,7 @@ sub can_edit {
         return 1 if auth->permBoardmod;
         if(!$entry->{id}) {
             # Allow at most 5 new threads per day per user.
-            return auth && tuwf->dbVali('SELECT count(*) < 5 FROM threads_posts WHERE num = 1 AND date > NOW()-\'1 day\'::interval AND uid =', \auth->uid);
+            return auth && tuwf->dbVali('SELECT count(*) < ', \5, 'FROM threads_posts WHERE num = 1 AND date > NOW()-\'1 day\'::interval AND uid =', \auth->uid);
         } elsif(!$entry->{num}) {
             die "Can't do authorization test when 'locked' field isn't present" if !exists $entry->{locked};
             return !$entry->{locked};

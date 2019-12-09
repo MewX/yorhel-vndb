@@ -88,12 +88,13 @@ div.warning h2, div.notice h2 { font-size: 13px; font-weight: bold; margin: 0; }
 .elm_dd > a:hover > span > i,
 .elm_dd > a:focus > span > i { visibility: visible }
 .elm_dd > div { position: relative; float: right; width: 0; height: 0 }
-.elm_dd > div > ul { position: absolute; right: -10px; top: 0; border: 1px solid $border$; background-color: $secbg$; z-index: 1000; list-style-type: none; margin: 0; padding: 0 }
+.elm_dd > div > ul { position: absolute; right: -10px; top: 0; border: 1px solid $border$; background-color: $secbg$; z-index: 1000; list-style-type: none; margin: 0; padding: 0; max-width: 400px; overflow: hidden }
+.elm_dd.search > div { float: left }
+.elm_dd.search > div > ul { right: auto; left: 0; top: 23px }
 .elm_dd > div > ul li { white-space: nowrap }
-.elm_dd > div > ul li label,
-.elm_dd > div > ul li     a { display: block; padding-left: 10px; border: 0; padding: 3px 5px 3px 3px }
-.elm_dd > div > ul li label:hover,
-.elm_dd > div > ul li     a:hover { background: $boxbg$ }
+.elm_dd > div > ul li a { display: block; padding-left: 10px; border: 0; padding: 3px 5px 3px 3px }
+.elm_dd > div > ul li a.active,
+.elm_dd > div > ul li a:hover  { background: $boxbg$ }
 
 
 

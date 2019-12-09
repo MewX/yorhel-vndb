@@ -48,13 +48,13 @@ sub metabox_ {
         h2_ 'Posted in';
         ul_ sub {
             li_ sub {
-                a_ href => "/t/$_->{type}", $BOARD_TYPE{$_->{type}}{txt};
+                a_ href => "/t/$_->{btype}", $BOARD_TYPE{$_->{btype}}{txt};
                 if($_->{iid}) {
                     txt_ ' > ';
-                    a_ style => 'font-weight: bold', href => "/t/$_->{type}$_->{iid}", "$_->{type}$_->{iid}";
+                    a_ style => 'font-weight: bold', href => "/t/$_->{btype}$_->{iid}", "$_->{btype}$_->{iid}";
                     txt_ ':';
                     if($_->{title}) {
-                        a_ href => "/$_->{type}$_->{iid}", title => $_->{original}, $_->{title};
+                        a_ href => "/$_->{btype}$_->{iid}", title => $_->{original}||$_->{title}, $_->{title};
                     } else {
                         b_ '[deleted]';
                     }

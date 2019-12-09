@@ -54,6 +54,11 @@ my %apis = (
         rtype    => {},
         lang     => { type => 'array', values => {} },
     } } ],
+    BoardResult    => [ { aoh => { # Response to /t/boards.json
+        btype    => {},
+        iid      => { required => 0, default => 0, id => 1 },
+        title    => { required => 0 },
+    } } ],
 );
 
 
@@ -95,7 +100,13 @@ sub def_type {
     $data .= def_type($name . to_camel($_), $obj->{keys}{$_}{values} || $obj->{keys}{$_}) for @keys;
 
     $data .= sprintf "\ntype alias %s = %s\n\n", $name, $obj->elm_type(
-        keys => +{ map +($_, ($obj->{keys}{$_}{values} ? 'List ' : '') . $name . to_camel($_)), @keys }
+        keys => +{ map {
+            my $t = $obj->{keys}{$_};
+            my $n = $name . to_camel($_);
+            $n = "List $n" if $t->{values};
+            $n = "Maybe ($n)" if $t->{values} && !$t->{required} && !defined $t->{default};
+            ($_, $n)
+        } @keys }
     );
     $data
 }
@@ -247,6 +258,7 @@ sub write_types {
                 sort { $LANGUAGE{$a} cmp $LANGUAGE{$b} } keys %LANGUAGE;
     $data .= def releaseTypes => 'List (String, String)' => list map tuple(string $_, string $RELEASE_TYPE{$_}), keys %RELEASE_TYPE;
     $data .= def rlistStatus => 'List (Int, String)' => list map tuple($_, string $RLIST_STATUS{$_}), keys %RLIST_STATUS;
+    $data .= def boardTypes => 'List (String, String)' => list map tuple(string $_, string $BOARD_TYPE{$_}{txt}), keys %BOARD_TYPE;
 
     write_module Types => $data;
 }

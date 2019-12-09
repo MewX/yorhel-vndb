@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Exporter 'import';
 
-our @EXPORT = qw|dbThreadGet dbThreadEdit dbThreadAdd dbPostGet dbPostEdit dbPostAdd dbThreadCount dbPollStats dbPollVote|;
+our @EXPORT = qw|dbThreadGet dbPostGet|;
 
 
 # Options: id, type, iid, results, page, what, asuser, notusers, search, sort, reverse
@@ -120,93 +120,6 @@ sub dbThreadGet {
 }
 
 
-# id, %options->( title locked hidden private boards poll_question poll_max_options poll_preview poll_recast poll_options }
-# The poll_{question,options,max_options} fields should not be set when there
-# are no changes to the poll info. Either all or none of these fields should be
-# set.
-sub dbThreadEdit {
-  my($self, $id, %o) = @_;
-
-  my %set = (
-    'title = ?' => $o{title},
-    'locked = ?' => $o{locked}?1:0,
-    'hidden = ?' => $o{hidden}?1:0,
-    'private = ?' => $o{private}?1:0,
-    'poll_preview = ?' => $o{poll_preview}?1:0,
-    'poll_recast = ?' => $o{poll_recast}?1:0,
-    exists $o{poll_question} ? (
-      'poll_question = ?' => $o{poll_question}||undef,
-      'poll_max_options = ?' => $o{poll_max_options}||1,
-    ) : (),
-  );
-
-  $self->dbExec(q|
-    UPDATE threads
-      !H
-      WHERE id = ?|,
-    \%set, $id);
-
-  if($o{boards}) {
-    $self->dbExec('DELETE FROM threads_boards WHERE tid = ?', $id);
-    $self->dbExec(q|
-      INSERT INTO threads_boards (tid, type, iid)
-        VALUES (?, ?, ?)|,
-      $id, $_->[0], $_->[1]||0
-    ) for (@{$o{boards}});
-  }
-
-  if(exists $o{poll_question}) {
-    $self->dbExec('DELETE FROM threads_poll_options WHERE tid = ?', $id);
-    $self->dbExec(q|
-      INSERT INTO threads_poll_options (tid, option)
-        VALUES (?, ?)|,
-      $id, $_
-    ) for (@{$o{poll_options}});
-  }
-}
-
-
-# %options->{ title hidden locked private boards poll_stuff }
-sub dbThreadAdd {
-  my($self, %o) = @_;
-
-  my $id = $self->dbRow(q|
-    INSERT INTO threads (title, hidden, locked, private, poll_question, poll_max_options, poll_preview, poll_recast)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      RETURNING id|,
-    $o{title}, $o{hidden}?1:0, $o{locked}?1:0, $o{private}?1:0, $o{poll_question}||undef, $o{poll_max_options}||1, $o{poll_preview}?1:0, $o{poll_recast}?1:0
-  )->{id};
-
-  $self->dbExec(q|
-    INSERT INTO threads_boards (tid, type, iid)
-      VALUES (?, ?, ?)|,
-    $id, $_->[0], $_->[1]||0
-  ) for (@{$o{boards}});
-
-  $self->dbExec(q|
-    INSERT INTO threads_poll_options (tid, option)
-      VALUES (?, ?)|,
-    $id, $_
-  ) for ($o{poll_question} ? @{$o{poll_options}} : ());
-
-  return $id;
-}
-
-
-# Returns thread count of a specific item board
-# Arguments: type, iid
-sub dbThreadCount {
-  my($self, $type, $iid) = @_;
-  return $self->dbRow(q|
-    SELECT COUNT(*) AS cnt
-      FROM threads_boards tb
-      JOIN threads t ON t.id = tb.tid
-      WHERE tb.type = ? AND tb.iid = ?
-        AND t.hidden = FALSE AND t.private = FALSE|,
-    $type, $iid)->{cnt};
-}
-
-
 # Options: tid, num, what, uid, mindate, hide, search, type, page, results, sort, reverse
 # what: user thread
 sub dbPostGet {
@@ -258,78 +171,6 @@ sub dbPostGet {
   );
 
   return wantarray ? ($r, $np) : $r;
-}
-
-
-# tid, num, %options->{ num msg hidden lastmod }
-sub dbPostEdit {
-  my($self, $tid, $num, %o) = @_;
-
-  my %set = (
-    'msg = ?' => $o{msg},
-    'edited = to_timestamp(?)' => $o{lastmod},
-    'hidden = ?' => $o{hidden}?1:0,
-  );
-
-  $self->dbExec(q|
-    UPDATE threads_posts
-      !H
-      WHERE tid = ?
-      AND num = ?|,
-    \%set, $tid, $num
-  );
-}
-
-
-# tid, %options->{ uid msg }
-sub dbPostAdd {
-  my($self, $tid, %o) = @_;
-
-  my $num = $self->dbRow('SELECT num FROM threads_posts WHERE tid = ? ORDER BY num DESC LIMIT 1', $tid)->{num};
-  $num = $num ? $num+1 : 1;
-  $o{uid} ||= $self->authInfo->{id};
-
-  $self->dbExec(q|
-    INSERT INTO threads_posts (tid, num, uid, msg)
-      VALUES(?, ?, ?, ?)|,
-    $tid, $num, @o{qw| uid msg |}
-  );
-  $self->dbExec(q|
-    UPDATE threads
-      SET count = count+1
-      WHERE id = ?|,
-    $tid);
-
-  return $num;
-}
-
-
-# Args: tid
-# Returns: num_users, poll_stats, user_voted_options
-sub dbPollStats {
-  my($self, $tid) = @_;
-  my $uid = $self->authInfo->{id};
-
-  my $num_users = $self->dbRow('SELECT COUNT(DISTINCT uid) AS votes FROM threads_poll_votes WHERE tid = ?', $tid)->{votes} || 0;
-
-  my $stats = !$num_users ? {} : { map +($_->{optid}, $_->{votes}), @{$self->dbAll(
-    'SELECT optid, COUNT(optid) AS votes FROM threads_poll_votes WHERE tid = ? GROUP BY optid', $tid
-  )} };
-
-  my $user = !$num_users || !$uid ? [] : [
-    map $_->{optid}, @{$self->dbAll('SELECT optid FROM threads_poll_votes WHERE tid = ? AND uid = ?', $tid, $uid)}
-  ];
-
-  return $num_users, $stats, $user;
-}
-
-
-sub dbPollVote {
-  my($self, $tid, $uid, @opts) = @_;
-
-  $self->dbExec('DELETE FROM threads_poll_votes WHERE tid = ? AND uid = ?', $tid, $uid);
-  $self->dbExec('INSERT INTO threads_poll_votes (tid, uid, optid) VALUES (?, ?, ?)',
-    $tid, $uid, $_) for @opts;
 }
 
 1;
