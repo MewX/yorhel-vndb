@@ -26,11 +26,11 @@ showResponse res =
     HTTPError (Http.BadBody r)      -> "Invalid response from the server, please report a bug (debug info: " ++ r ++")."
     HTTPError (Http.BadUrl _)       -> unexp
     Success                         -> unexp
+    Redirect _                      -> unexp
     CSRF                            -> "Invalid CSRF token, please refresh the page and try again."
     Invalid                         -> "Invalid form data, please report a bug."
     Unauth                          -> "You do not have the permission to perform this action."
     Unchanged                       -> "No changes"
-    Changed _ _                     -> unexp
     Content _                       -> unexp
     BadLogin                        -> "Invalid username or password."
     LoginThrottle                   -> "Action throttled, too many failed login attempts."

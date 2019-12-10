@@ -73,7 +73,7 @@ update msg model =
       let body = GD.encode (encode model)
       in ({ model | state = Api.Loading }, Api.post "/d/edit.json" body Submitted)
 
-    Submitted (GApi.Changed id rev) -> (model, load <| "/d" ++ String.fromInt id ++ "." ++ String.fromInt rev)
+    Submitted (GApi.Redirect s) -> (model, load s)
     Submitted r -> ({ model | state = Api.Error r }, Cmd.none)
 
 

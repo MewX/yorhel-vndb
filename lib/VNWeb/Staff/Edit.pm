@@ -97,7 +97,7 @@ json_api qr{/s/edit\.json}, $FORM_IN, sub {
 
     return elm_Unchanged if !$new && !form_changed $FORM_CMP, $data, $e;
     my($id,undef,$rev) = db_edit s => $e->{id}, $data;
-    elm_Changed $id, $rev;
+    elm_Redirect "/s$id.$rev";
 };
 
 1;

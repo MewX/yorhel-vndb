@@ -31,8 +31,8 @@ our @EXPORT = qw/
 my %apis = (
     Unauth         => [], # Not authorized
     Unchanged      => [], # No changes
-    Changed        => [ { id => 1 }, { uint => 1 } ], # [ id, chrev]; DB entry has been successfully changed
     Success        => [],
+    Redirect       => [{}], # Redirect to the given URL
     CSRF           => [], # Invalid CSRF token
     Invalid        => [], # POST data did not validate the schema
     Content        => [{}], # Rendered HTML content (for markdown/bbcode APIs)

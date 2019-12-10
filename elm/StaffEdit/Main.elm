@@ -151,7 +151,7 @@ update msg model =
       let body = GSE.encode (encode model)
       in ({ model | state = Api.Loading }, Api.post "/s/edit.json" body Submitted)
 
-    Submitted (GApi.Changed id rev) -> (model, load <| "/s" ++ String.fromInt id ++ "." ++ String.fromInt rev)
+    Submitted (GApi.Redirect s) -> (model, load s)
     Submitted r -> ({ model | state = Api.Error r }, Cmd.none)
 
 

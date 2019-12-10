@@ -3,7 +3,7 @@ module Discussions.Reply exposing (main)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Browser
-import Browser.Navigation exposing (load)
+import Browser.Navigation exposing (load,reload)
 import Lib.Html exposing (..)
 import Lib.TextPreview as TP
 import Lib.Api as Api
@@ -11,7 +11,7 @@ import Gen.Api as GApi
 import Gen.DiscussionsReply as GDR
 
 
-main : Program GDR.Recv Model Msg
+main : Program Int Model Msg
 main = Browser.element
   { init   = \e -> (init e, Cmd.none)
   , view   = view
@@ -22,17 +22,15 @@ main = Browser.element
 
 type alias Model =
   { state  : Api.State
-  , newurl : String
   , tid    : Int
   , msg    : TP.Model
   }
 
 
-init : GDR.Recv -> Model
-init d =
+init : Int -> Model
+init tid =
   { state  = Api.Normal
-  , newurl = d.newurl
-  , tid    = d.tid
+  , tid    = tid
   , msg    = TP.bbcode ""
   }
 
@@ -51,7 +49,8 @@ update msg model =
     Submit ->
       let body = GDR.encode { msg = model.msg.data, tid = model.tid }
       in ({ model | state = Api.Loading }, Api.post "/t/reply.json" body Submitted)
-    Submitted GApi.Success -> (model, load model.newurl)
+    -- Reload is necessary because s may be the same as the current URL (with a location.hash)
+    Submitted (GApi.Redirect s) -> (model, Cmd.batch [ load s, reload ])
     Submitted r -> ({ model | state = Api.Error r }, Cmd.none)
 
 

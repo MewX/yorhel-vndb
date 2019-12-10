@@ -30,19 +30,12 @@ elm_form 'DiscussionsPoll' => $POLL_OUT, $POLL_IN;
 
 
 
-my $REPLY_OUT = form_compile any => {
-    tid    => { id => 1 },
-    newurl => { },
-};
-
-
 my $REPLY_IN = form_compile any => {
     tid => { id => 1 },
     msg => { maxlength => 32768 }
 };
 
-
-elm_form 'DiscussionsReply' => $REPLY_OUT, $REPLY_IN;
+elm_form 'DiscussionsReply' => undef, $REPLY_IN;
 
 
 
@@ -113,7 +106,7 @@ sub reply_ {
     my($t, $page) = @_;
     return if $t->{count} > $page*25;
     if(can_edit t => $t) {
-        elm_ 'Discussions.Reply' => $REPLY_OUT, { tid => $t->{id}, newurl => post_url($t->{id}, $t->{count}+1) };
+        elm_ 'Discussions.Reply' => undef, $t->{id}*1;
     } else {
         div_ class => 'mainbox', sub {
             h1_ 'Reply';
@@ -207,7 +200,7 @@ json_api qr{/t/reply\.json}, $REPLY_IN, sub {
     my $msg = bb_subst_links $data->{msg};
     tuwf->dbExeci('INSERT INTO threads_posts (tid, num, uid, msg) VALUES (', sql_comma(\$t->{id}, \$num, \auth->uid, \$msg), ')');
     tuwf->dbExeci('UPDATE threads SET count =', \$num, 'WHERE id =', \$t->{id});
-    elm_Success
+    elm_Redirect post_url $t->{id}, $num, 'last';
 };
 
 1;
