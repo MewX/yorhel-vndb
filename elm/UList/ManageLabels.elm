@@ -106,14 +106,22 @@ view model =
         , td [] [ text "Private" ]
         , td [] [ ]
         ] ]
-      , tfoot [] [ tr []
-        [ td [] []
-        , td [ colspan 3 ]
-          [ a [ onClick Add ] [ text "New label" ]
-          --, inputButton "Save changes" Noop []
-          , submitButton "Save changes" model.state True
+      , tfoot []
+        [ if List.any (\l -> l.id == 7 && l.private) model.labels && List.any (\l -> not l.private) model.labels
+          then tr [] [ td [ colspan 4 ]
+            [ b [ class "standout" ] [ text "WARNING: " ]
+            , text "Your vote is still public if you assign a non-private label to the visual novel."
+            ] ]
+          else text ""
+        , tr []
+          [ td [] []
+          , td [ colspan 3 ]
+            [ a [ onClick Add ] [ text "New label" ]
+            --, inputButton "Save changes" Noop []
+            , submitButton "Save changes" model.state True
+            ]
           ]
-        ] ]
+        ]
       , tbody [] <| List.indexedMap item model.labels
       ]
     ]
