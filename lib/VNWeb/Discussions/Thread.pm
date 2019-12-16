@@ -185,7 +185,7 @@ json_api qr{/t/pollvote\.json}, $POLL_IN, sub {
     validate_dbid sql('SELECT id FROM threads_poll_options WHERE tid =', \$data->{tid}, 'AND id IN'), $data->{options}->@*;
 
     tuwf->dbExeci('DELETE FROM threads_poll_votes WHERE tid =', \$data->{tid}, 'AND uid =', \auth->uid);
-    tuwf->dbExeci('INSERT INTO threads_poll_votes (tid, uid, optid) VALUES(', \$data->{tid}, ',', \auth->uid, ',', \$_, ')') for $data->{options}->@*;
+    tuwf->dbExeci('INSERT INTO threads_poll_votes', { tid => $data->{tid}, uid => auth->uid, optid => $_ }) for $data->{options}->@*;
     elm_Success
 };
 
@@ -198,7 +198,7 @@ json_api qr{/t/reply\.json}, $REPLY_IN, sub {
 
     my $num = $t->{count}+1;
     my $msg = bb_subst_links $data->{msg};
-    tuwf->dbExeci('INSERT INTO threads_posts (tid, num, uid, msg) VALUES (', sql_comma(\$t->{id}, \$num, \auth->uid, \$msg), ')');
+    tuwf->dbExeci('INSERT INTO threads_posts', { tid => $t->{id}, num => $num, uid => auth->uid, msg => $msg });
     tuwf->dbExeci('UPDATE threads SET count =', \$num, 'WHERE id =', \$t->{id});
     elm_Redirect post_url $t->{id}, $num, 'last';
 };

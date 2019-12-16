@@ -31,10 +31,7 @@ json_api qr{/u/ulist/labels\.json}, $LABELS, sub {
               ) x(n)
         WHERE NOT EXISTS(SELECT 1 FROM ulist_labels ul WHERE ul.uid =', \$uid, 'AND ul.id = x.n)
     )';
-    tuwf->dbExeci(
-        'INSERT INTO ulist_labels (id, uid, label, private)
-         VALUES (', sql_comma($newid, \$uid, \$_->{label}, \$_->{private}), ')'
-    ) for @new;
+    tuwf->dbExeci('INSERT INTO ulist_labels', { id => $newid, uid => $uid, label => $_->{label}, private => $_->{private} }) for @new;
 
     # Update private flag
     tuwf->dbExeci(
@@ -120,9 +117,8 @@ json_api qr{/u/ulist/setlabel\.json}, $VNLABELS_IN, sub {
           WHERE uid =', \$data->{uid}, 'AND vid =', \$data->{vid}, 'AND lbl =', \$data->{label}
     ) if !$data->{applied};
     tuwf->dbExeci(
-        'INSERT INTO ulist_vns_labels (uid, vid, lbl)
-         VALUES (', sql_comma(\$data->{uid}, \$data->{vid}, \$data->{label}), ')
-             ON CONFLICT (uid, vid, lbl) DO NOTHING'
+        'INSERT INTO ulist_vns_labels', { uid => $data->{uid}, vid => $data->{vid}, lbl => $data->{label} },
+        'ON CONFLICT (uid, vid, lbl) DO NOTHING'
     ) if $data->{applied};
     tuwf->dbExeci('UPDATE ulist_vns SET lastmod = NOW() WHERE uid =', \$data->{uid}, 'AND vid =', \$data->{vid});
 

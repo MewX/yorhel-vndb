@@ -120,38 +120,42 @@ json_api qr{/t/edit\.json}, $FORM_IN, sub {
         )
     }
 
-    $tid = tuwf->dbVali('INSERT INTO threads (count) VALUES (1) RETURNING id') if !$tid;
-    tuwf->dbExeci('UPDATE threads SET', {
-            title            => $data->{title},
-            poll_question    => $data->{poll} ? $data->{poll}{question} : undef,
-            poll_max_options => $data->{poll} ? $data->{poll}{max_options} : 1,
-            auth->permBoardmod ? (
-                hidden => $data->{hidden},
-                locked => $data->{locked},
-            ) : (),
-            auth->permBoardmod || auth->permDbmod || auth->permUsermod ? (
-                private => $data->{private}
-            ) : (),
-        }, 'WHERE id =', \$tid
-    ) if $num == 1;
+    my $thread = {
+        title            => $data->{title},
+        poll_question    => $data->{poll} ? $data->{poll}{question} : undef,
+        poll_max_options => $data->{poll} ? $data->{poll}{max_options} : 1,
+        $tid ? () : (count => 1),
+        auth->permBoardmod ? (
+            hidden => $data->{hidden},
+            locked => $data->{locked},
+        ) : (),
+        auth->permBoardmod || auth->permDbmod || auth->permUsermod ? (
+            private => $data->{private}
+        ) : (),
+    };
+    tuwf->dbExeci('UPDATE threads SET', $thread, 'WHERE id =', \$tid) if $tid && $num == 1;
+    $tid = tuwf->dbVali('INSERT INTO threads', $thread, 'RETURNING id') if !$tid;
 
     if($num == 1) {
         tuwf->dbExeci('DELETE FROM threads_boards WHERE tid =', \$tid);
-        tuwf->dbExeci('INSERT INTO threads_boards (tid, type, iid) VALUES (', sql_comma(\$tid, \$_->{btype}, \($_->{iid}//0)), ')') for $data->{boards}->@*;
+        tuwf->dbExeci('INSERT INTO threads_boards', { tid => $tid, type => $_->{btype}, iid => $_->{iid}//0 }) for $data->{boards}->@*;
     }
 
     if($pollchanged) {
         tuwf->dbExeci('DELETE FROM threads_poll_options WHERE tid =', \$tid);
-        tuwf->dbExeci('INSERT INTO threads_poll_options (tid, option) VALUES (', sql_comma(\$tid, \"$_"), ')') for $data->{poll}{options}->@*;
+        tuwf->dbExeci('INSERT INTO threads_poll_options', { tid => $tid, option => $_ }) for $data->{poll}{options}->@*;
     }
 
-    tuwf->dbExeci('INSERT INTO threads_posts (tid, num, uid) VALUES (', sql_comma(\$tid, 1, \auth->uid), ')') if !$data->{tid};
-    tuwf->dbExeci('UPDATE threads_posts SET', sql_comma(
-            sql('msg =', \bb_subst_links $data->{msg}),
-            auth->permBoardmod ? sql('hidden =', \$data->{hidden}) : (),
-            auth->permBoardmod && $data->{nolastmod} ? () : 'edited = NOW()',
-        ), 'WHERE tid =', \$tid, 'AND num =', \$num
-    );
+    my $post = {
+        tid => $tid,
+        num => $num,
+        msg => bb_subst_links($data->{msg}),
+        $data->{tid} ? () : (uid => auth->uid),
+        auth->permBoardmod && $num != 1 ? (hidden => $data->{hidden}) : (),
+        auth->permBoardmod && $data->{nolastmod} ? () : (edited => sql 'NOW()')
+    };
+    tuwf->dbExeci('INSERT INTO threads_posts', $post) if !$data->{tid};
+    tuwf->dbExeci('UPDATE threads_posts SET', $post, 'WHERE', { tid => $tid, num => $num }) if $data->{tid};
 
     elm_Redirect post_url $tid, $num, $num;
 };
