@@ -11,6 +11,9 @@ TUWF::get qr{/t}, sub {
                 h1_ 'Discussion board index';
                 boardtypes_ 'index';
                 boardsearch_;
+                p_ class => 'center', sub {
+                    a_ href => '/t/ge/new', 'Start a new thread';
+                } if can_edit t => {};
             }
         };
 
