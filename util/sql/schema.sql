@@ -703,6 +703,37 @@ CREATE TABLE traits_parents (
   PRIMARY KEY(trait, parent)
 );
 
+-- ulist_labels
+CREATE TABLE ulist_labels (
+  uid      integer NOT NULL, -- user.id
+  id       integer NOT NULL, -- 0 < builtin < 10 <= custom, ids are reused
+  label    text NOT NULL,
+  private  boolean NOT NULL,
+  PRIMARY KEY(uid, id)
+);
+
+-- ulist_vns
+CREATE TABLE ulist_vns (
+  uid       integer NOT NULL, -- users.id
+  vid       integer NOT NULL, -- vn.id
+  added     timestamptz NOT NULL DEFAULT NOW(),
+  lastmod   timestamptz NOT NULL DEFAULT NOW(), -- updated when anything in this row has changed?
+  vote_date timestamptz, -- Used for "recent votes" - also updated when vote has changed?
+  vote      smallint CHECK(vote IS NULL OR vote BETWEEN 10 AND 100),
+  started   date,
+  finished  date,
+  notes     text NOT NULL DEFAULT '',
+  PRIMARY KEY(uid, vid)
+);
+
+-- ulist_vns_labels
+CREATE TABLE ulist_vns_labels (
+  uid integer NOT NULL, -- user.id
+  lbl integer NOT NULL,
+  vid integer NOT NULL, -- vn.id
+  PRIMARY KEY(uid, lbl, vid)
+);
+
 -- users
 CREATE TABLE users (
   id         SERIAL NOT NULL PRIMARY KEY, -- [pub]

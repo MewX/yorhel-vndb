@@ -113,36 +113,9 @@ COMMIT;
 
 \timing
 
-
-CREATE OR REPLACE FUNCTION ulist_labels_create() RETURNS trigger AS $$
-BEGIN
-    INSERT INTO ulist_labels (uid, id, label, private)
-         VALUES (NEW.id, 1, 'Playing',   false),
-                (NEW.id, 2, 'Finished',  false),
-                (NEW.id, 3, 'Stalled',   false),
-                (NEW.id, 4, 'Dropped',   false),
-                (NEW.id, 5, 'Wishlist',  false),
-                (NEW.id, 6, 'Blacklist', false),
-                (NEW.id, 7, 'Voted',     false);
-    RETURN NULL;
-END
-$$ LANGUAGE plpgsql;
+\i util/sql/func.sql
 
 CREATE TRIGGER ulist_labels_create AFTER INSERT ON users FOR EACH ROW EXECUTE PROCEDURE ulist_labels_create();
-
-
-
-CREATE OR REPLACE FUNCTION ulist_voted_label() RETURNS trigger AS $$
-BEGIN
-    IF NEW.vote IS NULL THEN
-        DELETE FROM ulist_vns_labels WHERE uid = NEW.uid AND vid = NEW.vid AND lbl = 7;
-    ELSE
-        INSERT INTO ulist_vns_labels (uid, vid, lbl) VALUES (NEW.uid, NEW.vid, 7) ON CONFLICT (uid, vid, lbl) DO NOTHING;
-    END IF;
-    RETURN NULL;
-END
-$$ LANGUAGE plpgsql;
-
 CREATE TRIGGER ulist_voted_label AFTER INSERT OR UPDATE ON ulist_vns FOR EACH ROW EXECUTE PROCEDURE ulist_voted_label();
 
 

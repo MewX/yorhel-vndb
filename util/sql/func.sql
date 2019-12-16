@@ -562,6 +562,37 @@ $$ LANGUAGE plpgsql;
 
 
 
+-- Create ulist labels for new users.
+CREATE OR REPLACE FUNCTION ulist_labels_create() RETURNS trigger AS $$
+BEGIN
+    INSERT INTO ulist_labels (uid, id, label, private)
+         VALUES (NEW.id, 1, 'Playing',   false),
+                (NEW.id, 2, 'Finished',  false),
+                (NEW.id, 3, 'Stalled',   false),
+                (NEW.id, 4, 'Dropped',   false),
+                (NEW.id, 5, 'Wishlist',  false),
+                (NEW.id, 6, 'Blacklist', false),
+                (NEW.id, 7, 'Voted',     false);
+    RETURN NULL;
+END
+$$ LANGUAGE plpgsql;
+
+
+
+-- Set/unset the 'Voted' label when voting.
+CREATE OR REPLACE FUNCTION ulist_voted_label() RETURNS trigger AS $$
+BEGIN
+    IF NEW.vote IS NULL THEN
+        DELETE FROM ulist_vns_labels WHERE uid = NEW.uid AND vid = NEW.vid AND lbl = 7;
+    ELSE
+        INSERT INTO ulist_vns_labels (uid, vid, lbl) VALUES (NEW.uid, NEW.vid, 7) ON CONFLICT (uid, vid, lbl) DO NOTHING;
+    END IF;
+    RETURN NULL;
+END
+$$ LANGUAGE plpgsql;
+
+
+
 -- Send a notify whenever anime info should be fetched
 CREATE OR REPLACE FUNCTION anime_fetch_notify() RETURNS trigger AS $$
   BEGIN NOTIFY anime; RETURN NULL; END;
@@ -707,10 +738,8 @@ CREATE OR REPLACE FUNCTION notify_listdel(xtype dbentry_type, xedit edit_rettype
     SELECT DISTINCT 'listdel'::notification_ntype, xtype::text::notification_ltype, u.uid, xedit.itemid, xedit.rev, x.title, c.requester
       -- look for users who should get this notify
       FROM (
-              SELECT uid FROM votes   WHERE xtype = 'v' AND vid = xedit.itemid
-        UNION SELECT uid FROM vnlists WHERE xtype = 'v' AND vid = xedit.itemid
-        UNION SELECT uid FROM wlists  WHERE xtype = 'v' AND vid = xedit.itemid
-        UNION SELECT uid FROM rlists  WHERE xtype = 'r' AND rid = xedit.itemid
+        UNION SELECT uid FROM ulist_vns WHERE xtype = 'v' AND vid = xedit.itemid
+        UNION SELECT uid FROM rlists    WHERE xtype = 'r' AND rid = xedit.itemid
       ) u
       -- fetch info about this edit
       JOIN changes c ON c.id = xedit.chid
