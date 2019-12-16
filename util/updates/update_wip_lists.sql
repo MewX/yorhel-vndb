@@ -113,6 +113,8 @@ COMMIT;
 
 \timing
 
+DROP FUNCTION update_vnpopularity();
+
 \i util/sql/func.sql
 
 CREATE TRIGGER ulist_labels_create AFTER INSERT ON users FOR EACH ROW EXECUTE PROCEDURE ulist_labels_create();

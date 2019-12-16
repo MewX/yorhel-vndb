@@ -71,18 +71,8 @@ my %dailies = (
   # takes about 25 seconds, OK
   traitcache => 'SELECT traits_chars_calc(NULL)',
 
-  # takes about 140 seconds, not really OK
-  vnpopularity => 'SELECT update_vnpopularity()',
-
-  # takes about 3 seconds, can be performed in ranges as well when necessary
-  vnrating => q|
-    UPDATE vn SET
-      c_rating = (SELECT (
-          ((SELECT COUNT(vote)::real/COUNT(DISTINCT vid)::real FROM votes)*(SELECT AVG(a)::real FROM (SELECT AVG(vote) FROM votes GROUP BY vid) AS v(a)) + SUM(vote)::real) /
-          ((SELECT COUNT(vote)::real/COUNT(DISTINCT vid)::real FROM votes) + COUNT(uid)::real)
-        ) FROM votes WHERE vid = id AND uid NOT IN(SELECT id FROM users WHERE ign_votes)
-      ),
-      c_votecount = COALESCE((SELECT count(*) FROM votes WHERE vid = id AND uid NOT IN(SELECT id FROM users WHERE ign_votes)), 0)|,
+  # takes about 4 seconds, OK
+  vnstats => 'SELECT update_vnvotestats()',
 
   # should be pretty fast
   cleangraphs => q|

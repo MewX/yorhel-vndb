@@ -102,22 +102,38 @@ CREATE OR REPLACE FUNCTION update_vncache(integer) RETURNS void AS $$
 $$ LANGUAGE sql;
 
 
-
--- recalculate vn.c_popularity
-CREATE OR REPLACE FUNCTION update_vnpopularity() RETURNS void AS $$
-  -- the following querie only update VNs which have valid votes, so make sure to reset all rows first.
-  UPDATE vn SET c_popularity = NULL;
-  WITH t2(vid, win) AS (
+-- Update vn.c_popularity, c_rating and c_votecount
+CREATE OR REPLACE FUNCTION update_vnvotestats() RETURNS void AS $$
+  WITH votes(vid, uid, vote) AS ( -- List of all non-ignored VN votes
+    SELECT vid, uid, vote FROM ulist_vns WHERE vote IS NOT NULL AND uid NOT IN(SELECT id FROM users WHERE ign_votes)
+  ), avgcount(avgcount) AS ( -- Average number of votes per VN
+    SELECT COUNT(vote)::real/COUNT(DISTINCT vid)::real FROM votes
+  ), avgavg(avgavg) AS ( -- Average vote average
+    SELECT AVG(a)::real FROM (SELECT AVG(vote) FROM votes GROUP BY vid) x(a)
+  ), ratings(vid, count, rating) AS ( -- Ratings and vote counts
+    SELECT vid, COALESCE(COUNT(uid), 0),
+           COALESCE(
+              ((SELECT avgcount FROM avgcount) * (SELECT avgavg FROM avgavg) + SUM(vote)::real) /
+              ((SELECT avgcount FROM avgcount) + COUNT(uid)::real),
+           0)
+      FROM votes
+     GROUP BY vid
+  ), popularities(vid, win) AS ( -- Popularity scores (before normalization)
     SELECT vid, SUM(rank)
       FROM (
-          SELECT v.uid, v.vid, ((rank() OVER (PARTITION BY uid ORDER BY vote))::real - 1) ^ 0.36788
-            FROM votes v
-            JOIN users u ON u.id = v.uid AND NOT ign_votes
-      ) t1(uid, vid, rank)
-      GROUP BY vid
+        SELECT uid, vid, ((rank() OVER (PARTITION BY uid ORDER BY vote))::real - 1) ^ 0.36788 FROM votes
+      ) x(uid, vid, rank)
+     GROUP BY vid
+  ), stats(vid, rating, count, popularity) AS ( -- Combined stats
+    SELECT v.id, COALESCE(r.rating, 0), COALESCE(r.count, 0)
+         , p.win/(SELECT MAX(win) FROM popularities)
+      FROM vn v
+      LEFT JOIN ratings r ON r.vid = v.id
+      LEFT JOIN popularities p ON p.vid = v.id AND p.win > 0
   )
-  UPDATE vn SET c_popularity = s1.win/(SELECT MAX(win) FROM t2) FROM t2 s1 WHERE s1.vid = vn.id AND s1.win > 0;
+  UPDATE vn SET c_rating = rating, c_votecount = count, c_popularity = popularity FROM stats WHERE id = vid;
 $$ LANGUAGE SQL;
+
 
 
 -- Recalculate tags_vn_inherit.
@@ -738,7 +754,7 @@ CREATE OR REPLACE FUNCTION notify_listdel(xtype dbentry_type, xedit edit_rettype
     SELECT DISTINCT 'listdel'::notification_ntype, xtype::text::notification_ltype, u.uid, xedit.itemid, xedit.rev, x.title, c.requester
       -- look for users who should get this notify
       FROM (
-        UNION SELECT uid FROM ulist_vns WHERE xtype = 'v' AND vid = xedit.itemid
+              SELECT uid FROM ulist_vns WHERE xtype = 'v' AND vid = xedit.itemid
         UNION SELECT uid FROM rlists    WHERE xtype = 'r' AND rid = xedit.itemid
       ) u
       -- fetch info about this edit
