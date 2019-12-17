@@ -3,13 +3,13 @@
 --
 --   ?c=column_id&c=modified&...
 --
--- Accepts a list of columns from Perl, e.g.:
+-- Accepts a [ $current_url, [ list of columns ] ] from Perl, e.g.:
 --
---   [
+--   [ '?c=column_id', [
 --     [ 'column_id', 'Column Label' ],
 --     [ 'modified',  'Date modified' ],
 --     ...
---   ]
+--   ] ]
 module ColSelect exposing (main)
 
 import Html exposing (..)

@@ -226,9 +226,9 @@ sub _menu_ {
         h2_ sub { user_ auth->user, 'user_', 1 };
         div_ sub {
             a_ href => "$uid/edit", 'My Profile'; txt_ '⭐' if $support_opt && !auth->pref('nodistract_nofancy'); br_;
-            a_ href => "$uid/list", 'My Visual Novel List'; br_;
-            a_ href => "$uid/votes",'My Votes'; br_;
-            a_ href => "$uid/wish", 'My Wishlist'; br_;
+            a_ href => "$uid/ulist?vnlist=1", 'My Visual Novel List'; br_;
+            a_ href => "$uid/ulist?votes=1",'My Votes'; br_;
+            a_ href => "$uid/ulist?wishlist=1", 'My Wishlist'; br_;
             a_ href => "$uid/notifies", $nc ? (class => 'notifyget') : (), 'My Notifications'.($nc?" ($nc)":''); br_;
             a_ href => "$uid/hist", 'My Recent Changes'; br_;
             a_ href => '/g/links?u='.auth->uid, 'My Tags'; br_;
@@ -344,9 +344,9 @@ sub _maintabs_ {
             t tagmod => "/$id/tagmod", 'modify tags' if $t eq 'v' && auth->permTag && !$o->{entry_hidden};
 
             do {
-                t list  => "/$id/list", 'list';
-                t votes => "/$id/votes", 'votes';
-                t wish  => "/$id/wish", 'wishlist';
+                t list  => "/$id/ulist?vnlist=1", 'list';
+                t votes => "/$id/ulist?votes=1", 'votes';
+                t wish  => "/$id/ulist?wishlist=1", 'wishlist';
             } if $t eq 'u' && (
                 auth->permUsermod || (auth && auth->uid == $o->{id})
                 || !($o->{hide_list} // tuwf->dbVali('SELECT hide_list FROM users WHERE id =', \$o->{id}))

@@ -230,39 +230,39 @@ json_api qr{/u/ulist/rstatus\.json}, $RSTATUS, sub {
 
 
 
-sub filters_ {
-    my($uid, $own, $labels) = @_;
+sub opt {
+    my($filtlabels) = @_;
 
-    my @filtlabels = (
-        @$labels,
-        $own ? {
-            id => -1, label => 'No label', count => tuwf->dbVali(
-                'SELECT count(*)
-                   FROM ulist_vns uv
-                  WHERE NOT EXISTS(SELECT 1 FROM ulist_vns_labels uvl WHERE uvl.uid = uv.uid AND uvl.vid = uv.vid AND uvl.lbl <>', \7, ')
-                    AND uid =', \$uid
-            )
-        } : (),
-    );
-
-    my $opt = eval { tuwf->validate(get =>
-        p => { upage => 1 },
-        l => { type => 'array', scalar => 1, required => 0, default => [], values => { int => 1 } },
-        s => { required => 0, default => 'title', enum => [qw[ title label vote voted added modified started finished rel rating ]] },
-        o => { required => 0, default => 'a', enum => ['a', 'd'] },
-        c => { type => 'array', scalar => 1, required => 0, default => [], values => { enum => [qw[ vote voted added modified started finished rel rating ]] } },
-        q => { required => 0 },
-    )->data } || { p => 1, l => [], s => 'title', o => 'a', c => [] };
+    my $opt =
+        # Presets
+        tuwf->reqGet('vnlist')   ? { p => 1, l => [1,2,3,4,7,-1,0], s => 'title', o => 'a', c => [qw/vote added started finished/] } :
+        tuwf->reqGet('votes')    ? { p => 1, l => [7],              s => 'voted', o => 'd', c => [qw/vote voted/] } :
+        tuwf->reqGet('wishlist') ? { p => 1, l => [5],              s => 'title', o => 'a', c => [qw/added/] } :
+        # Full options
+        eval { tuwf->validate(get =>
+            p => { upage => 1 },
+            l => { type => 'array', scalar => 1, required => 0, default => [], values => { int => 1 } },
+            s => { required => 0, default => 'title', enum => [qw[ title label vote voted added modified started finished rel rating ]] },
+            o => { required => 0, default => 'a', enum => ['a', 'd'] },
+            c => { type => 'array', scalar => 1, required => 0, default => [], values => { enum => [qw[ vote voted added modified started finished rel rating ]] } },
+            q => { required => 0 },
+        )->data } || { p => 1, l => [], s => 'title', o => 'a', c => [] };
 
     # $labels only includes labels we are allowed to see, getting rid of any labels in 'l' that aren't in $labels ensures we only filter on visible labels
-    my %accessible_labels = map +($_->{id}, 1), @filtlabels;
+    my %accessible_labels = map +($_->{id}, 1), @$filtlabels;
     my %opt_l = map +($_, 1), grep $accessible_labels{$_}, $opt->{l}->@*;
     %opt_l = %accessible_labels if !keys %opt_l;
     $opt->{l} = keys %opt_l == keys %accessible_labels ? [] : [ sort keys %opt_l ];
 
+    ($opt, \%opt_l)
+}
+
+
+sub filters_ {
+    my($own, $filtlabels, $opt, $opt_labels) = @_;
 
     my sub lblfilt_ {
-        input_ type => 'checkbox', name => 'l', value => $_->{id}, id => "form_l$_->{id}", tabindex => 10, $opt_l{$_->{id}} ? (checked => 'checked') : ();
+        input_ type => 'checkbox', name => 'l', value => $_->{id}, id => "form_l$_->{id}", tabindex => 10, $opt_labels->{$_->{id}} ? (checked => 'checked') : ();
         label_ for => "form_l$_->{id}", "$_->{label} ";
         txt_ " ($_->{count})";
     }
@@ -275,14 +275,14 @@ sub filters_ {
             input_ type => 'text', class => 'text', name => 'q', value => $opt->{q}||'', style => 'width: 500px', placeholder => 'Search', tabindex => 10;
             br_;
             span_ class => 'linkradio', sub {
-                join_ sub { em_ ' / ' }, \&lblfilt_, grep $_->{id} < 10, @filtlabels;
+                join_ sub { em_ ' / ' }, \&lblfilt_, grep $_->{id} < 10, @$filtlabels;
 
                 em_ ' | ';
                 input_ type => 'checkbox', name => 'l', class => 'checkall', value => 0, id => 'form_l_all', tabindex => 10, $opt->{l}->@* == 0 ? (checked => 'checked') : ();
                 label_ for => 'form_l_all', 'Select all';
-                debug_ $labels;
+                debug_ $filtlabels;
             };
-            my @cust = grep $_->{id} >= 10, @$labels;
+            my @cust = grep $_->{id} >= 10, @$filtlabels;
             if(@cust) {
                 br_;
                 span_ class => 'linkradio', sub {
@@ -294,7 +294,6 @@ sub filters_ {
             input_ type => 'button', class => 'submit', tabindex => 10, id => 'managelabels', value => 'Manage labels' if $own;
         };
     };
-    $opt;
 }
 
 
@@ -432,7 +431,7 @@ sub listing_ {
 
     # TODO: Thumbnail view?
     paginate_ \&url, $opt->{p}, [ $count, 50 ], 't', sub {
-        elm_ ColSelect => undef, [
+        elm_ ColSelect => undef, [ url(), [
             [ vote     => 'Vote'         ],
             [ voted    => 'Vote date'    ],
             [ added    => 'Added'        ],
@@ -441,7 +440,7 @@ sub listing_ {
             [ finished => 'Finish date'  ],
             [ rel      => 'Release date' ],
             [ rating   => 'Rating'       ],
-        ];
+        ] ];
     };
     div_ class => 'mainbox browse ulist', sub {
         table_ sub {
@@ -475,8 +474,7 @@ TUWF::get qr{/$RE{uid}/ulist}, sub {
 
     my $own = auth && $u->{id} == auth->uid;
 
-    return tuwf->resNotFound if !$own; # TEMPORARY while in beta.
-
+    # Visible and selectable labels
     my $labels = tuwf->dbAlli(
         'SELECT l.id, l.label, l.private, count(vl.vid) as count, null as delete
            FROM ulist_labels l LEFT JOIN ulist_vns_labels vl ON vl.uid = l.uid AND vl.lbl = l.id
@@ -485,38 +483,35 @@ TUWF::get qr{/$RE{uid}/ulist}, sub {
           ORDER BY CASE WHEN l.id < 10 THEN l.id ELSE 10 END, l.label'
     );
 
+    # All visible labels that can be filtered on, including "virtual" labels like 'No label'
+    my $filtlabels = [
+        @$labels,
+        $own ? {
+            id => -1, label => 'No label', count => tuwf->dbVali(
+                'SELECT count(*)
+                   FROM ulist_vns uv
+                  WHERE NOT EXISTS(SELECT 1 FROM ulist_vns_labels uvl WHERE uvl.uid = uv.uid AND uvl.vid = uv.vid AND uvl.lbl <>', \7, ')
+                    AND uid =', \$u->{id}
+            )
+        } : (),
+    ];
+
+    my($opt, $opt_labels) = opt $filtlabels;
+
+    # This page has 3 user tabs: list, wish and votes; Select the appropriate active tab based on label filters.
+    my $num_core_labels = grep $_ < 10, keys %$opt_labels;
+    my $tab = $num_core_labels == 1 && $opt_labels->{7} ? 'votes'
+            : $num_core_labels == 1 && $opt_labels->{5} ? 'wish' : 'list';
+
     my $title = $own ? 'My list' : user_displayname($u)."'s list";
-    framework_ title => $title, type => 'u', dbobj => $u, tab => 'list',
+    framework_ title => $title, type => 'u', dbobj => $u, tab => $tab,
         $own ? ( pagevars => {
             uid         => $u->{id}*1,
             labels      => $LABELS->analyze->{keys}{labels}->coerce_for_json($labels),
             voteprivate => (map \($_->{private}?1:0), grep $_->{id} == 7, @$labels),
         } ) : (),
     sub {
-        div_ class => 'mainbox', sub {
-            p_ class => 'center', sub { b_ class => 'standout', style => 'font-size: 30px', '!BETA BETA BETA BETA!'; };
-            div_ class => 'warning', sub {
-                p_ 'This is a prototype for the new lists feature. It should eventually replace your visual novel list, votes and wishlist. Feel free to play around, but keep the following in mind:';
-                ul_ sub {
-                    li_ "Changes made on this page will be lost when the feature goes live, and possibly a few times before that as well. The old visual novel list, votes and wishlist are still your primary lists.";
-                    li_ "Exception to the above rule: The releases are synchronized with your visual novel list, so adding/removing/changing release status here will also affect your regular visual novel list and the other way around.";
-                    li_ "You can not share your list or browse other people's list while this is in beta.";
-                    li_ sub { txt_ "More info and feedback go to "; a_ href => '/t13136', 't13136' };
-                };
-            };
-            p_ class => 'center', sub { b_ class => 'standout', style => 'font-size: 30px', '!BETA BETA BETA BETA!'; };
-            p_ class => 'center', sub {
-                txt_ 'Menu links: ';
-                a_ href => '?l=1&l=2&l=3&l=4&l=7&l=-1&l=0&c=vote&c=added&c=started&c=finished', 'My Visual Novel list';
-                txt_ ' - ';
-                a_ href => '?l=7&c=vote&c=voted&s=voted&o=d', 'My Votes';
-                txt_ ' - ';
-                a_ href => '?l=5&c=added', 'My Wishlist';
-            };
-        };
-
         my $empty = !grep $_->{count}, @$labels;
-        my $opt;
         div_ class => 'mainbox', sub {
             h1_ $title;
             if($empty) {
@@ -524,7 +519,7 @@ TUWF::get qr{/$RE{uid}/ulist}, sub {
                     ? 'Your list is empty! You can add visual novels to your list from the visual novel pages.'
                     : user_displayname($u).' does not have any visible visual novels in their list.';
             } else {
-                $opt = filters_ $u->{id}, $own, $labels;
+                filters_ $own, $filtlabels, $opt, $opt_labels;
                 elm_ 'UList.ManageLabels' if $own;
             }
         };
