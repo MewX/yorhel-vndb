@@ -424,6 +424,16 @@ BEGIN
   THEN
     PERFORM notify_dbedit(xtype, xedit);
   END IF;
+
+  -- Make sure all visual novels linked to a release have a corresponding entry
+  -- in ulist_vns for users who have the release in rlists. This is action (3) in
+  -- update_vnlist_rlist().
+  IF xtype = 'r' AND xoldchid IS NOT NULL
+  THEN
+    INSERT INTO ulist_vns (uid, vid)
+      SELECT rl.uid, rv.vid FROM rlists rl JOIN releases_vn rv ON rv.id = rl.rid WHERE rl.rid = xedit.itemid
+    ON CONFLICT (uid, vid) DO NOTHING;
+  END IF;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -535,42 +545,28 @@ $$ LANGUAGE plpgsql;
 
 
 -- For each row in rlists, there should be at least one corresponding row in
--- vnlists for at least one of the VNs linked to that release.
--- 1. When a row is deleted from vnlists, also remove all rows from rlists that
---    would otherwise not have a corresponding row in vnlists
+-- ulist_vns for each VN linked to that release.
+-- 1. When a row is deleted from ulist_vns, also remove all rows from rlists
+--    with that VN linked.
 -- 2. When a row is inserted to rlists and there is not yet a corresponding row
---    in vnlists, add a row in vnlists (with status=unknown) for each vn linked
---    to the release.
+--    in ulist_vns, add a row to ulist_vns for each vn linked to the release.
+-- 3. When a release is edited to add another VN, add those VNs to ulist_vns
+--    for everyone who has the release in rlists.
+--    This is done in edit_committed().
+-- #. When a release is edited to remove a VN, that VN kinda should also be
+--    removed from ulist_vns, but only if that ulist_vns entry was
+--    automatically added as part of the rlists entry and the user has not
+--    changed anything in the ulist_vns row. This isn't currently done.
 CREATE OR REPLACE FUNCTION update_vnlist_rlist() RETURNS trigger AS $$
 BEGIN
   -- 1.
-  IF TG_TABLE_NAME = 'vnlists' THEN
-    DELETE FROM rlists WHERE uid = OLD.uid AND rid IN(SELECT rv.id
-      -- fetch all related rows in rlists
-      FROM releases_vn rv
-      JOIN rlists rl ON rl.rid = rv.id
-     WHERE rv.vid = OLD.vid AND rl.uid = OLD.uid
-       -- and test for a corresponding row in vnlists
-       AND NOT EXISTS(
-        SELECT 1
-          FROM releases_vn rvi
-          JOIN vnlists vl ON vl.vid = rvi.vid AND uid = OLD.uid
-         WHERE rvi.id = rv.id
-       ));
-
+  IF TG_TABLE_NAME = 'ulist_vns' THEN
+    DELETE FROM rlists WHERE uid = OLD.uid AND rid IN(SELECT id FROM releases_vn WHERE vid = OLD.vid);
   -- 2.
   ELSE
-   INSERT INTO vnlists (uid, vid) SELECT NEW.uid, rv.vid
-     -- all VNs linked to the release
-      FROM releases_vn rv
-     WHERE rv.id = NEW.rid
-       -- but only if there are no corresponding rows in vnlists yet
-       AND NOT EXISTS(
-        SELECT 1
-          FROM releases_vn rvi
-          JOIN vnlists vl ON vl.vid = rvi.vid
-         WHERE rvi.id = NEW.rid AND vl.uid = NEW.uid
-       );
+   INSERT INTO ulist_vns (uid, vid)
+     SELECT NEW.uid, rv.vid FROM releases_vn rv WHERE rv.id = NEW.rid
+     ON CONFLICT (uid, vid) DO NOTHING;
   END IF;
   RETURN NULL;
 END;
