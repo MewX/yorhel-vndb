@@ -116,17 +116,16 @@ COMMIT;
 DROP FUNCTION update_vnpopularity();
 
 \i util/sql/func.sql
+\i util/sql/perms.sql
+
+DROP TRIGGER users_votes_update ON votes;
 
 CREATE TRIGGER ulist_labels_create AFTER INSERT ON users FOR EACH ROW EXECUTE PROCEDURE ulist_labels_create();
 CREATE TRIGGER ulist_voted_label AFTER INSERT OR UPDATE ON ulist_vns FOR EACH ROW EXECUTE PROCEDURE ulist_voted_label();
 CREATE CONSTRAINT TRIGGER update_vnlist_rlist AFTER DELETE ON ulist_vns DEFERRABLE FOR EACH ROW EXECUTE PROCEDURE update_vnlist_rlist();
 
+ALTER TABLE users ADD COLUMN c_vns  integer NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN c_wish integer NOT NULL DEFAULT 0;
 
-
-GRANT SELECT, INSERT, UPDATE, DELETE ON ulist_vns                TO vndb_site;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ulist_labels             TO vndb_site;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ulist_vns_labels         TO vndb_site;
-
-GRANT SELECT, INSERT, UPDATE, DELETE ON ulist_vns                TO vndb_multi;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ulist_labels             TO vndb_multi;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ulist_vns_labels         TO vndb_multi;
+\timing
+SELECT update_users_ulist_stats(NULL);

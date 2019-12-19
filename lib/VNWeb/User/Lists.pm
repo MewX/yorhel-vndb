@@ -3,6 +3,12 @@ package VNWeb::User::Lists;
 use VNWeb::Prelude;
 
 
+# Should be called after any change to the ulist_* tables.
+# (Normally I'd do this with triggers, but that seemed like a more complex and less efficient solution in this case)
+sub updcache {
+    tuwf->dbExeci(SELECT => sql_func update_users_ulist_stats => \shift);
+}
+
 
 my $LABELS = form_compile any => {
     uid => { id => 1 },
@@ -63,6 +69,7 @@ json_api qr{/u/ulist/labels\.json}, $LABELS, sub {
     # (This will also delete all relevant vn<->label rows from ulist_vns_labels)
     tuwf->dbExeci('DELETE FROM ulist_labels WHERE uid =', \$uid, 'AND id IN', [ map $_->{id}, @delete ]) if @delete;
 
+    updcache $uid;
     elm_Success
 };
 
@@ -87,6 +94,8 @@ json_api qr{/u/ulist/setvote\.json}, $VNVOTE, sub {
              ', lastmod = NOW()
           WHERE uid =', \$data->{uid}, 'AND vid =', \$data->{vid}
     );
+
+    updcache $data->{uid};
     elm_Success
 };
 
@@ -122,6 +131,7 @@ json_api qr{/u/ulist/setlabel\.json}, $VNLABELS_IN, sub {
     ) if $data->{applied};
     tuwf->dbExeci('UPDATE ulist_vns SET lastmod = NOW() WHERE uid =', \$data->{uid}, 'AND vid =', \$data->{vid});
 
+    updcache $data->{uid};
     elm_Success
 };
 
@@ -144,6 +154,7 @@ json_api qr{/u/ulist/setdate\.json}, $VNDATE, sub {
         'UPDATE ulist_vns SET lastmod = NOW(), ', $data->{start} ? 'started' : 'finished', '=', \($data->{date}||undef),
          'WHERE uid =', \$data->{uid}, 'AND vid =', \$data->{vid}
     );
+    updcache $data->{uid};
     elm_Success
 };
 
@@ -186,6 +197,7 @@ json_api qr{/u/ulist/setnote\.json}, $VNNOTES, sub {
         'UPDATE ulist_vns SET lastmod = NOW(), notes = ', \$data->{notes},
          'WHERE uid =', \$data->{uid}, 'AND vid =', \$data->{vid}
     );
+    # Doesn't need `updcache()`
     elm_Success
 };
 
@@ -203,6 +215,7 @@ json_api qr{/u/ulist/del\.json}, $VNDEL, sub {
     my($data) = @_;
     return elm_Unauth if !auth || auth->uid != $data->{uid};
     tuwf->dbExeci('DELETE FROM ulist_vns WHERE uid =', \$data->{uid}, 'AND vid =', \$data->{vid});
+    updcache $data->{uid};
     elm_Success
 };
 
@@ -225,6 +238,7 @@ json_api qr{/u/ulist/rstatus\.json}, $RSTATUS, sub {
     } else {
         tuwf->dbExeci('INSERT INTO rlists', $data, 'ON CONFLICT (uid, rid) DO UPDATE SET status =', \$data->{status})
     }
+    # Doesn't need `updcache()`
     elm_Success
 };
 

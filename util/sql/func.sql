@@ -136,6 +136,25 @@ $$ LANGUAGE SQL;
 
 
 
+-- Update users.c_vns, c_votes and c_wish for one user (when given an id) or all users (when given NULL)
+CREATE OR REPLACE FUNCTION update_users_ulist_stats(integer) RETURNS void AS $$
+BEGIN
+  WITH cnt(uid, votes, vns, wish) AS (
+      SELECT u.id
+         , COUNT(*) FILTER (WHERE ul.id = 7) -- Voted
+         , COUNT(DISTINCT uvl.vid) FILTER (WHERE ul.id NOT IN(5,6)) -- Labelled, but not wishlish/blacklist
+         , COUNT(DISTINCT uvl.vid) FILTER (WHERE ul.id = 5) -- Wishlist
+      FROM users u
+      LEFT JOIN ulist_vns_labels uvl ON uvl.uid = u.id
+      LEFT JOIN ulist_labels ul ON ul.id = uvl.lbl AND ul.uid = u.id AND NOT ul.private
+     WHERE $1 IS NULL OR u.id = $1
+     GROUP BY u.id
+  ) UPDATE users SET c_votes = votes, c_vns = vns, c_wish = wish FROM cnt WHERE id = uid;
+END;
+$$ LANGUAGE plpgsql; -- Don't use "LANGUAGE SQL" here; Make sure to generate a new query plan at invocation time.
+
+
+
 -- Recalculate tags_vn_inherit.
 -- When a vid is given, only the tags for that vid will be updated. These
 -- incremental updates do not affect tags.c_items, so that may still get
@@ -444,16 +463,10 @@ $$ LANGUAGE plpgsql;
 ----------------------------------------------------------
 
 
--- keep the c_* columns in the users table up to date
+-- keep the c_tags and c_changes columns in the users table up to date
 CREATE OR REPLACE FUNCTION update_users_cache() RETURNS TRIGGER AS $$
 BEGIN
-  IF TG_TABLE_NAME = 'votes' THEN
-    IF TG_OP = 'INSERT' THEN
-      UPDATE users SET c_votes = c_votes + 1 WHERE id = NEW.uid;
-    ELSE
-      UPDATE users SET c_votes = c_votes - 1 WHERE id = OLD.uid;
-    END IF;
-  ELSIF TG_TABLE_NAME = 'changes' THEN
+  IF TG_TABLE_NAME = 'changes' THEN
     IF TG_OP = 'INSERT' THEN
       UPDATE users SET c_changes = c_changes + 1 WHERE id = NEW.requester;
     ELSE
@@ -571,7 +584,6 @@ BEGIN
   RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
-
 
 
 -- Create ulist labels for new users.

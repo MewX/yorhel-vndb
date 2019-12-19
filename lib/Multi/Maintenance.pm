@@ -204,30 +204,3 @@ sub vnsearch_update { # id, res, time
 
 
 1;
-
-__END__
-
-# Shouldn't really be necessary, except c_changes could be slightly off when
-# hiding/unhiding DB items.
-# This query takes almost two hours to complete and tends to bring the entire
-# site down with it, so it's been disabled for now. Can be performed in
-# ranges though.
-UPDATE users SET
-  c_votes = COALESCE(
-    (SELECT COUNT(vid)
-    FROM votes
-    WHERE uid = users.id
-    GROUP BY uid
-  ), 0),
-  c_changes = COALESCE(
-    (SELECT COUNT(id)
-    FROM changes
-    WHERE requester = users.id
-    GROUP BY requester
-  ), 0),
-  c_tags = COALESCE(
-    (SELECT COUNT(tag)
-    FROM tags_vn
-    WHERE uid = users.id
-    GROUP BY uid
-  ), 0)

@@ -67,9 +67,9 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON ulist_vns_labels         TO vndb_site;
 
 -- users table is special; The 'perm', 'passwd' and 'mail' columns are
 -- protected and can only be accessed through the user_* functions.
-GRANT SELECT (id, username,       registered, perm, c_votes, c_changes, ip, c_tags, ign_votes, email_confirmed, skin, customcss, filter_vn, filter_release, show_nsfw, hide_list, notify_dbedit, notify_announce, vn_list_own, vn_list_wish, tags_all, tags_cont, tags_ero, tags_tech, spoilers, traits_sexual, nodistract_can, nodistract_noads, nodistract_nofancy, support_can, support_enabled, uniname_can, uniname, pubskin_can, pubskin_enabled),
-      INSERT (id, username, mail, registered,       c_votes, c_changes, ip, c_tags, ign_votes, email_confirmed, skin, customcss, filter_vn, filter_release, show_nsfw, hide_list, notify_dbedit, notify_announce, vn_list_own, vn_list_wish, tags_all, tags_cont, tags_ero, tags_tech, spoilers, traits_sexual, nodistract_can, nodistract_noads, nodistract_nofancy, support_can, support_enabled, uniname_can, uniname, pubskin_can, pubskin_enabled),
-      UPDATE (    username,       registered,       c_votes, c_changes, ip, c_tags, ign_votes, email_confirmed, skin, customcss, filter_vn, filter_release, show_nsfw, hide_list, notify_dbedit, notify_announce, vn_list_own, vn_list_wish, tags_all, tags_cont, tags_ero, tags_tech, spoilers, traits_sexual, nodistract_can, nodistract_noads, nodistract_nofancy, support_can, support_enabled, uniname_can, uniname, pubskin_can, pubskin_enabled) ON users TO vndb_site;
+GRANT SELECT (id, username,       registered, perm, c_votes, c_changes, ip, c_tags, ign_votes, email_confirmed, skin, customcss, filter_vn, filter_release, show_nsfw, hide_list, notify_dbedit, notify_announce, vn_list_own, vn_list_wish, tags_all, tags_cont, tags_ero, tags_tech, spoilers, traits_sexual, nodistract_can, nodistract_noads, nodistract_nofancy, support_can, support_enabled, uniname_can, uniname, pubskin_can, pubskin_enabled, c_vns, c_wish),
+      INSERT (id, username, mail, registered,       c_votes, c_changes, ip, c_tags, ign_votes, email_confirmed, skin, customcss, filter_vn, filter_release, show_nsfw, hide_list, notify_dbedit, notify_announce, vn_list_own, vn_list_wish, tags_all, tags_cont, tags_ero, tags_tech, spoilers, traits_sexual, nodistract_can, nodistract_noads, nodistract_nofancy, support_can, support_enabled, uniname_can, uniname, pubskin_can, pubskin_enabled, c_vns, c_wish),
+      UPDATE (    username,       registered,       c_votes, c_changes, ip, c_tags, ign_votes, email_confirmed, skin, customcss, filter_vn, filter_release, show_nsfw, hide_list, notify_dbedit, notify_announce, vn_list_own, vn_list_wish, tags_all, tags_cont, tags_ero, tags_tech, spoilers, traits_sexual, nodistract_can, nodistract_noads, nodistract_nofancy, support_can, support_enabled, uniname_can, uniname, pubskin_can, pubskin_enabled, c_vns, c_wish) ON users TO vndb_site;
 
 GRANT SELECT, INSERT, UPDATE         ON vn                       TO vndb_site;
 GRANT SELECT, INSERT,         DELETE ON vn_anime                 TO vndb_site;
@@ -151,8 +151,8 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON ulist_labels             TO vndb_multi;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ulist_vns                TO vndb_multi;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ulist_vns_labels         TO vndb_multi;
 
-GRANT SELECT (id, username, registered, c_votes, c_changes, c_tags, ign_votes, email_confirmed, hide_list, notify_dbedit, notify_announce),
-      UPDATE (                          c_votes, c_changes, c_tags) ON users TO vndb_multi;
+GRANT SELECT (id, username, registered, c_votes, c_changes, c_tags, c_vns, c_wish, ign_votes, email_confirmed, hide_list, notify_dbedit, notify_announce),
+      UPDATE (                          c_votes, c_changes, c_tags, c_vns, c_wish) ON users TO vndb_multi;
 GRANT                         DELETE ON users                    TO vndb_multi;
 
 GRANT SELECT,         UPDATE         ON vn                       TO vndb_multi;

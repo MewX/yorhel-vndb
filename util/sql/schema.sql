@@ -779,7 +779,9 @@ CREATE TABLE users (
   uniname_can     boolean NOT NULL DEFAULT FALSE,
   uniname         text NOT NULL DEFAULT '',
   pubskin_can     boolean NOT NULL DEFAULT FALSE,
-  pubskin_enabled boolean NOT NULL DEFAULT FALSE
+  pubskin_enabled boolean NOT NULL DEFAULT FALSE,
+  c_vns           integer NOT NULL DEFAULT 0,
+  c_wish          integer NOT NULL DEFAULT 0
 );
 
 -- vn

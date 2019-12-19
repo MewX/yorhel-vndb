@@ -1481,11 +1481,17 @@ sub set_wishlist {
 }
 
 
+sub set_ulist_ret {
+  my($c, $obj) = @_;
+  setpg $obj, 'SELECT update_users_ulist_stats($1)', [ $c->{uid} ]; # XXX: This can be deferred, to speed up batch updates over the same connection
+}
+
 sub set_ulist {
   my($c, $obj) = @_;
 
-  return setpg $obj, 'DELETE FROM ulist_vns WHERE uid = $1 AND vid = $2',
-    [ $c->{uid}, $obj->{id} ] if !$obj->{opt};
+  return cpg $c, 'DELETE FROM ulist_vns WHERE uid = $1 AND vid = $2', [ $c->{uid}, $obj->{id} ], sub {
+    set_ulist_ret $c, $obj;
+  } if !$obj->{opt};
 
   my $opt = $obj->{opt};
   my @set;
@@ -1533,7 +1539,9 @@ sub set_ulist {
   return cerr $c, missing => 'No fields to change' if !@set;
 
   cpg $c, 'INSERT INTO ulist_vns (uid, vid) VALUES ($1, $2) ON CONFLICT (uid, vid) DO NOTHING', [ $c->{uid}, $obj->{id} ], sub {
-    setpg $obj, 'UPDATE ulist_vns SET '.join(',', @set).' WHERE uid = $1 AND vid = $2', \@bind;
+    cpg $c, 'UPDATE ulist_vns SET '.join(',', @set).' WHERE uid = $1 AND vid = $2', \@bind, sub {
+      set_ulist_ret $c, $obj;
+    }
   };
 }
 
