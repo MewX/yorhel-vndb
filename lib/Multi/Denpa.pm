@@ -7,13 +7,15 @@ use AnyEvent::HTTP;
 use JSON::XS 'decode_json';
 use MIME::Base64 'encode_base64';
 use VNDB::Config;
+use TUWF::Misc 'uri_escape';
 
 
 my %C = (
   api  => '',
   user => '',
   pass => '',
-  check_timeout => 24*3600,
+  clean_timeout => 48*3600,
+  check_timeout => 15*60,
 );
 
 
@@ -22,67 +24,61 @@ sub run {
   $C{ua} = sprintf 'VNDB.org Affiliate Crawler (Multi v%s; contact@vndb.org)', config->{version};
   %C = (%C, @_);
 
+  push_watcher schedule 0, $C{clean_timeout}, sub {
+    pg_cmd 'DELETE FROM shop_denpa WHERE id NOT IN(SELECT l_denpa FROM releases WHERE NOT hidden)';
+  };
   push_watcher schedule 0, $C{check_timeout}, sub {
-    pg_cmd 'DELETE FROM shop_denpa WHERE id NOT IN(SELECT l_denpa FROM releases WHERE NOT hidden)', [], sub {
-      pg_cmd q{
-        INSERT INTO shop_denpa (id)
-        SELECT DISTINCT l_denpa
-          FROM releases
-         WHERE NOT hidden AND l_denpa <> ''
-           AND NOT EXISTS(SELECT 1 FROM shop_denpa WHERE id = l_denpa)
-      }, [], \&sync
-    }
+    pg_cmd q{
+      INSERT INTO shop_denpa (id)
+      SELECT DISTINCT l_denpa
+        FROM releases
+       WHERE NOT hidden AND l_denpa <> ''
+         AND NOT EXISTS(SELECT 1 FROM shop_denpa WHERE id = l_denpa)
+    }, [], \&sync
+  }
+}
+
+
+sub data {
+  my($time, $id, $body, $hdr) = @_;
+  my $prefix = sprintf '[%.1fs] %s', $time, $id;
+  return AE::log warn => "$prefix ERROR: $hdr->{Status} $hdr->{Reason}" if $hdr->{Status} !~ /^2/;
+
+  my $data = eval { decode_json $body };
+  if(!$data) {
+    AE::log warn => "$prefix Error decoding JSON: $@";
+    return;
+  }
+
+  my($prod) = $data->{products}->@*;
+
+  if(!$prod || !$prod->{published_at}) {
+    pg_cmd q{UPDATE shop_denpa SET deadsince = COALESCE(deadsince, NOW()), lastfetch = NOW() WHERE id = $1}, [ $id ];
+    AE::log info => "$prefix not found.";
+
+  } else {
+    my $price = 'US$ '.$prod->{variants}[0]{price};
+    $price = 'free' if $price eq 'US$ 0.00';
+    pg_cmd 'UPDATE shop_denpa SET deadsince = NULL, lastfetch = NOW(), sku = $2, price = $3 WHERE id = $1',
+      [ $prod->{handle}, $prod->{variants}[0]{sku}, $price ];
+    AE::log debug => "$prefix for $price at $prod->{variants}[0]{sku}";
   }
 }
 
 
 sub sync {
-  pg_cmd 'SELECT id FROM shop_denpa', [],
-  sub {
+  pg_cmd 'SELECT id FROM shop_denpa ORDER BY lastfetch ASC NULLS FIRST LIMIT 1', [], sub {
     my($res, $time) = @_;
     return if pg_expect $res, 1 or !$res->nRows;
 
-    my %handles = map +($res->value($_,0), 1), 0..($res->nRows-1);
-
+    my $id = $res->value(0,0);
+    my $ts = AE::now;
     my $code = encode_base64("$C{user}:$C{pass}", '');
-    http_get $C{api},
+    http_get $C{api}.'?handle='.uri_escape($id),
       headers => {'User-Agent' => $C{ua}, Authorization => "Basic $code"},
       timeout => 60,
-      sub { data(\%handles, @_) };
+      sub { data(AE::now-$ts, $id, @_) };
   };
 }
 
-
-sub data {
-  my($handles, $body, $hdr) = @_;
-
-  return AE::log warn => "ERROR: $hdr->{Status} $hdr->{Reason}" if $hdr->{Status} !~ /^2/;
-  my $data = eval { decode_json $body };
-  if(!$data) {
-    AE::log warn => "Error decoding JSON: $@";
-    return;
-  }
-  AE::log warn => 'Close to result limit, may need to add pagination support' if @{$data->{products}} >= 240;
-
-  my $db_count = keys %$handles;
-
-  for my $prod (@{$data->{products}}) {
-    next if !$prod->{published_at};
-
-    if(!$handles->{$prod->{handle}}) {
-      AE::log info => 'Handle not in vndb: https://denpasoft.com/products/%s', $prod->{handle};
-      next;
-    }
-    my $price = 'US$ '.$prod->{variants}[0]{price};
-    $price = 'free' if $price eq 'US$ 0.00';
-    pg_cmd 'UPDATE shop_denpa SET deadsince = NULL, lastfetch = NOW(), sku = $2, price = $3 WHERE id = $1',
-      [ $prod->{handle}, $prod->{variants}[0]{sku}, $price ];
-
-    delete $handles->{$prod->{handle}};
-  }
-
-  pg_cmd 'UPDATE shop_denpa SET deadsince = COALESCE(deadsince, NOW()), lastfetch = NOW() WHERE id = $1', [$_]
-    for (keys %$handles);
-
-  AE::log info => "%d in shop, %d online, %d offline", scalar @{$data->{products}}, $db_count-scalar keys %$handles, scalar keys %$handles;
-}
+1;
