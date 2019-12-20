@@ -5,7 +5,7 @@ use VNWeb::Misc::History;
 
 
 sub _info_table_ {
-    my($u, $vis) = @_;
+    my($u, $own) = @_;
 
     my sub sup {
         b_ ' ⭐supporter⭐' if $u->{user_support_can} && $u->{user_support_enabled};
@@ -39,22 +39,30 @@ sub _info_table_ {
         };
     };
     tr_ sub {
+        my $num = sum map $_->{votes}, $u->{votes}->@*;
+        my $sum = sum map $_->{total}, $u->{votes}->@*;
         td_ 'Votes';
-        td_ !$vis ? 'hidden' : !$u->{c_votes} ? '-' : sub {
-            my $sum   = sum map $_->{total}, $u->{votes}->@*;
-            txt_ sprintf '%d vote%s, %.2f average. ', $u->{c_votes}, $u->{c_votes} == 1 ? '' : 's', $sum/$u->{c_votes}/10;
-            a_ href => "/u$u->{id}/votes", 'Browse votes »';
+        td_ !$num ? '-' : sub {
+            txt_ sprintf '%d vote%s, %.2f average. ', $num, $num == 1 ? '' : 's', $sum/$num/10;
+            a_ href => "/u$u->{id}/ulist?votes=1", 'Browse votes »';
         }
     };
     tr_ sub {
-        my $vns = tuwf->dbVali('SELECT COUNT(*) FROM vnlists WHERE uid =', \$u->{id})||0;
-        my $rel = tuwf->dbVali('SELECT COUNT(*) FROM rlists  WHERE uid =', \$u->{id})||0;
+        my $vns = tuwf->dbVali(
+            'SELECT COUNT(DISTINCT uvl.vid) FROM ulist_vns_labels uvl',
+            $own ? () : ('JOIN ulist_labels ul ON ul.uid = uvl.uid AND ul.id = uvl.lbl AND NOT ul.private'),
+            'WHERE uvl.lbl NOT IN(', \5, ',', \6, ') AND uvl.uid =', \$u->{id}
+        )||0;
+        my $privrel = $own ? '1=1' : 'EXISTS(
+            SELECT 1 FROM releases_vn rv JOIN ulist_vns_labels uvl ON uvl.vid = rv.vid JOIN ulist_labels ul ON ul.id = uvl.lbl AND ul.uid = uvl.uid WHERE rv.id = r.rid AND uvl.uid = r.uid AND NOT ul.private
+        )';
+        my $rel = tuwf->dbVali('SELECT COUNT(*) FROM rlists r WHERE', $privrel, 'AND r.uid =', \$u->{id})||0;
         td_ 'List stats';
-        td_ !$vis ? 'hidden' : !$vns && !$rel ? '-' : sub {
+        td_ !$vns && !$rel ? '-' : sub {
             txt_ sprintf '%d release%s of %d visual novel%s. ',
                 $rel, $rel == 1 ? '' : 's',
                 $vns, $vns == 1 ? '' : 's';
-            a_ href => "/u$u->{id}/list", 'Browse list »';
+            a_ href => "/u$u->{id}/ulist?vnlist=1", 'Browse list »';
         };
     };
     tr_ sub {
@@ -82,14 +90,15 @@ sub _info_table_ {
 
 
 sub _votestats_ {
-    my($u) = @_;
+    my($u, $own) = @_;
 
     my $sum = sum map $_->{total}, $u->{votes}->@*;
     my $max = max map $_->{votes}, $u->{votes}->@*;
+    my $num = sum map $_->{votes}, $u->{votes}->@*;
 
     table_ class => 'votegraph', sub {
         thead_ sub { tr_ sub { td_ colspan => 2, 'Vote stats' } };
-        tfoot_ sub { tr_ sub { td_ colspan => 2, sprintf '%d vote%s total, average %.2f', $u->{c_votes}, $u->{c_votes} == 1 ? '' : 's', $sum/$u->{c_votes}/10 } };
+        tfoot_ sub { tr_ sub { td_ colspan => 2, sprintf '%d vote%s total, average %.2f', $num, $num == 1 ? '' : 's', $sum/$num/10 } };
         tr_ sub {
             my $num = $_;
             my $votes = [grep $num == $_->{idx}, $u->{votes}->@*]->[0]{votes} || 0;
@@ -101,15 +110,21 @@ sub _votestats_ {
         } for (reverse 1..10);
     };
 
-    my $recent = tuwf->dbAlli(q{
-        SELECT vn.id, vn.title, vn.original, v.vote,}, sql_totime('v.date'), q{AS date
-         FROM votes v JOIN vn ON vn.id = v.vid WHERE v.uid =}, \$u->{id}, 'ORDER BY v.date DESC LIMIT', \8
+    my $recent = tuwf->dbAlli('
+        SELECT vn.id, vn.title, vn.original, uv.vote,', sql_totime('uv.vote_date'), 'AS date
+          FROM ulist_vns uv',
+          $own ? () : (
+              'JOIN ulist_labels ul ON ul.uid = uv.uid AND ul.id =', \7, 'AND NOT ul.private'
+          ), '
+          JOIN vn ON vn.id = uv.vid
+         WHERE uv.vote IS NOT NULL AND uv.uid =', \$u->{id}, '
+         ORDER BY uv.vote_date DESC LIMIT', \8
     );
 
     table_ class => 'recentvotes stripe', sub {
         thead_ sub { tr_ sub { td_ colspan => 3, sub {
             txt_ 'Recent votes';
-            b_ sub { txt_ ' ('; a_ href => "/u$u->{id}/votes", 'show all'; txt_ ')' };
+            b_ sub { txt_ ' ('; a_ href => "/u$u->{id}/ulist?votes=1", 'show all'; txt_ ')' };
         } } };
         tr_ sub {
             my $v = $_;
@@ -125,7 +140,7 @@ sub _votestats_ {
 
 TUWF::get qr{/$RE{uid}}, sub {
     my $u = tuwf->dbRowi(q{
-        SELECT id, hide_list, c_changes, c_votes, c_tags
+        SELECT id, c_changes, c_votes, c_tags
              ,}, sql_totime('registered'), q{ AS registered
              ,}, sql_user(), q{
           FROM users u
@@ -133,27 +148,30 @@ TUWF::get qr{/$RE{uid}}, sub {
     );
     return tuwf->resNotFound if !$u->{id};
 
-    my $vis = !$u->{hide_list} || (auth && auth->uid == $u->{id}) || auth->permUsermod;
+    my $own = (auth && auth->uid == $u->{id}) || auth->permUsermod;
 
-    $u->{votes} = $vis && $u->{c_votes} && tuwf->dbAlli(q{
-        SELECT (vote::numeric/10)::int AS idx, COUNT(vote) as votes, SUM(vote) AS total
-          FROM votes
-         WHERE uid =}, \$u->{id}, q{
-         GROUP BY (vote::numeric/10)::int
-    });
+    $u->{votes} = tuwf->dbAlli('
+        SELECT (uv.vote::numeric/10)::int AS idx, COUNT(uv.vote) as votes, SUM(uv.vote) AS total
+          FROM ulist_vns uv',
+          $own ? () : (
+              'JOIN ulist_labels ul ON ul.uid = uv.uid AND ul.id =', \7, 'AND NOT ul.private'
+          ), '
+         WHERE uv.vote IS NOT NULL AND uv.uid =', \$u->{id}, '
+         GROUP BY (uv.vote::numeric/10)::int
+    ');
 
     my $title = user_displayname($u)."'s profile";
     framework_ title => $title, type => 'u', dbobj => $u,
     sub {
         div_ class => 'mainbox userpage', sub {
             h1_ $title;
-            table_ class => 'stripe', sub { _info_table_ $u, $vis };
+            table_ class => 'stripe', sub { _info_table_ $u, $own };
         };
 
         div_ class => 'mainbox', sub {
             h1_ 'Vote statistics';
-            div_ class => 'votestats', sub { _votestats_ $u };
-        } if $vis && $u->{c_votes};
+            div_ class => 'votestats', sub { _votestats_ $u, $own };
+        } if grep $_->{votes} > 0, $u->{votes}->@*;
 
         if($u->{c_changes}) {
             h1_ class => 'boxtitle', sub { a_ href => "/u$u->{id}/hist", 'Recent changes' };
