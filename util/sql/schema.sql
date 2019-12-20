@@ -760,7 +760,7 @@ CREATE TABLE users (
   filter_vn       text NOT NULL DEFAULT '',
   filter_release  text NOT NULL DEFAULT '',
   show_nsfw       boolean NOT NULL DEFAULT FALSE,
-  hide_list       boolean NOT NULL DEFAULT FALSE,
+  hide_list       boolean NOT NULL DEFAULT FALSE, -- deprecated, replaced with ulist_labels.private
   notify_dbedit   boolean NOT NULL DEFAULT TRUE,
   notify_announce boolean NOT NULL DEFAULT FALSE,
   vn_list_own     boolean NOT NULL DEFAULT FALSE,

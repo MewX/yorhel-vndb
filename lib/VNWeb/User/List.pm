@@ -70,7 +70,7 @@ TUWF::get qr{/u/(?<char>[0a-z]|all)}, sub {
     );
 
     my $list = tuwf->dbPagei({ results => 50, page => $opt->{p} },
-        'SELECT', sql_user(), ',', sql_totime('registered'), 'as registered, c_vns, c_votes, c_wish, c_changes, c_tags, hide_list
+        'SELECT', sql_user(), ',', sql_totime('registered'), 'as registered, c_vns, c_votes, c_wish, c_changes, c_tags
            FROM users u
           WHERE', sql_and('id > 0', @where),
          'ORDER BY', {

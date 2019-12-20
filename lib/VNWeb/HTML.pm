@@ -347,10 +347,7 @@ sub _maintabs_ {
                 t list  => "/$id/ulist?vnlist=1", 'list';
                 t votes => "/$id/ulist?votes=1", 'votes';
                 t wish  => "/$id/ulist?wishlist=1", 'wishlist';
-            } if $t eq 'u' && (
-                auth->permUsermod || (auth && auth->uid == $o->{id})
-                || !($o->{hide_list} // tuwf->dbVali('SELECT hide_list FROM users WHERE id =', \$o->{id}))
-            );
+            } if $t eq 'u';
 
             t posts => "/$id/posts", 'posts' if $t eq 'u';
 
