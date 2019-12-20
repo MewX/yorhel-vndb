@@ -531,7 +531,7 @@ TUWF::get qr{/$RE{uid}/ulist}, sub {
             voteprivate => (map \($_->{private}?1:0), grep $_->{id} == 7, @$labels),
         } ) : (),
     sub {
-        my $empty = !grep $_->{count}, @$labels;
+        my $empty = !grep $_->{count}, @$filtlabels;
         div_ class => 'mainbox', sub {
             h1_ $title;
             if($empty) {
