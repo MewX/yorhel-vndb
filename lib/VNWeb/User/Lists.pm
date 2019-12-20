@@ -3,6 +3,12 @@ package VNWeb::User::Lists;
 use VNWeb::Prelude;
 
 
+# Do we have "ownership" access to this users' list (i.e. can we edit and see private stuff)?
+sub own {
+    auth->permUsermod || (auth && auth->uid == shift)
+}
+
+
 # Should be called after any change to the ulist_* tables.
 # (Normally I'd do this with triggers, but that seemed like a more complex and less efficient solution in this case)
 sub updcache {
@@ -25,7 +31,7 @@ elm_form 'UListManageLabels', undef, $LABELS;
 
 json_api qr{/u/ulist/labels\.json}, $LABELS, sub {
     my($uid, $labels) = ($_[0]{uid}, $_[0]{labels});
-    return elm_Unauth if !auth || auth->uid != $uid;
+    return elm_Unauth if !own $uid;
 
     # Insert new labels
     my @new = grep $_->{id} < 0 && !$_->{delete}, @$labels;
@@ -86,7 +92,7 @@ elm_form 'UListVoteEdit', undef, $VNVOTE;
 
 json_api qr{/u/ulist/setvote\.json}, $VNVOTE, sub {
     my($data) = @_;
-    return elm_Unauth if !auth || auth->uid != $data->{uid};
+    return elm_Unauth if !own $data->{uid};
     tuwf->dbExeci(
         'UPDATE ulist_vns
             SET vote =', \$data->{vote},
@@ -118,7 +124,7 @@ elm_form 'UListLabelEdit', $VNLABELS_OUT, $VNLABELS_IN;
 
 json_api qr{/u/ulist/setlabel\.json}, $VNLABELS_IN, sub {
     my($data) = @_;
-    return elm_Unauth if !auth || auth->uid != $data->{uid};
+    return elm_Unauth if !own $data->{uid};
     die "Attempt to set vote label" if $data->{label} == 7;
 
     tuwf->dbExeci(
@@ -149,7 +155,7 @@ elm_form 'UListDateEdit', undef, $VNDATE;
 
 json_api qr{/u/ulist/setdate\.json}, $VNDATE, sub {
     my($data) = @_;
-    return elm_Unauth if !auth || auth->uid != $data->{uid};
+    return elm_Unauth if !own $data->{uid};
     tuwf->dbExeci(
         'UPDATE ulist_vns SET lastmod = NOW(), ', $data->{start} ? 'started' : 'finished', '=', \($data->{date}||undef),
          'WHERE uid =', \$data->{uid}, 'AND vid =', \$data->{vid}
@@ -192,7 +198,7 @@ elm_form 'UListVNNotes', undef, $VNNOTES;
 
 json_api qr{/u/ulist/setnote\.json}, $VNNOTES, sub {
     my($data) = @_;
-    return elm_Unauth if !auth || auth->uid != $data->{uid};
+    return elm_Unauth if !own $data->{uid};
     tuwf->dbExeci(
         'UPDATE ulist_vns SET lastmod = NOW(), notes = ', \$data->{notes},
          'WHERE uid =', \$data->{uid}, 'AND vid =', \$data->{vid}
@@ -213,7 +219,7 @@ elm_form 'UListDel', undef, $VNDEL;
 
 json_api qr{/u/ulist/del\.json}, $VNDEL, sub {
     my($data) = @_;
-    return elm_Unauth if !auth || auth->uid != $data->{uid};
+    return elm_Unauth if !own $data->{uid};
     tuwf->dbExeci('DELETE FROM ulist_vns WHERE uid =', \$data->{uid}, 'AND vid =', \$data->{vid});
     updcache $data->{uid};
     elm_Success
@@ -232,7 +238,7 @@ elm_form 'UListRStatus', undef, $RSTATUS;
 # Adds the release when not in the list.
 json_api qr{/u/ulist/rstatus\.json}, $RSTATUS, sub {
     my($data) = @_;
-    return elm_Unauth if !auth || auth->uid != $data->{uid};
+    return elm_Unauth if !own $data->{uid};
     if($data->{status} == -1) {
         tuwf->dbExeci('DELETE FROM rlists WHERE uid =', \$data->{uid}, 'AND rid =', \$data->{rid})
     } else {
@@ -486,7 +492,7 @@ TUWF::get qr{/$RE{uid}/ulist}, sub {
     my $u = tuwf->dbRowi('SELECT id,', sql_user(), 'FROM users u WHERE id =', \tuwf->capture('id'));
     return tuwf->resNotFound if !$u->{id};
 
-    my $own = auth && $u->{id} == auth->uid;
+    my $own = own $u->{id};
 
     # Visible and selectable labels
     my $labels = tuwf->dbAlli(
