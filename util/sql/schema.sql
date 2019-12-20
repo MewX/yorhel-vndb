@@ -645,6 +645,7 @@ CREATE TABLE threads_poll_votes (
   tid   integer NOT NULL,
   uid   integer NOT NULL,
   optid integer NOT NULL,
+  date  timestamptz DEFAULT NOW(),
   PRIMARY KEY (tid, uid, optid)
 );
 
