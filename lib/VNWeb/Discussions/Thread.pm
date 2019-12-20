@@ -143,9 +143,10 @@ TUWF::get qr{/$RE{tid}(?:/$RE{num})?}, sub {
     );
 
     my $poll_options = $t->{poll_question} && tuwf->dbAlli(
-        'SELECT tpo.id, tpo.option, count(tpv.uid) as votes, tpm.optid IS NOT NULL as my
+        'SELECT tpo.id, tpo.option, count(u.id) as votes, tpm.optid IS NOT NULL as my
            FROM threads_poll_options tpo
            LEFT JOIN threads_poll_votes tpv ON tpv.optid = tpo.id
+           LEFT JOIN users u ON tpv.uid = u.id AND NOT u.ign_votes
            LEFT JOIN threads_poll_votes tpm ON tpm.optid = tpo.id AND tpm.uid =', \auth->uid, '
           WHERE tpo.tid =', \$id, '
           GROUP BY tpo.id, tpo.option, tpm.optid'
@@ -156,7 +157,7 @@ TUWF::get qr{/$RE{tid}(?:/$RE{num})?}, sub {
         elm_ 'Discussions.Poll' => $POLL_OUT, {
             question    => $t->{poll_question},
             max_options => $t->{poll_max_options},
-            num_votes   => tuwf->dbVali('SELECT COUNT(DISTINCT uid) FROM threads_poll_votes WHERE tid =', \$id),
+            num_votes   => tuwf->dbVali('SELECT COUNT(DISTINCT tpv.uid) FROM threads_poll_votes tpv JOIN users u ON tpv.uid = u.id WHERE NOT u.ign_votes AND tid =', \$id),
             preview     => !!tuwf->reqGet('pollview'), # Old non-Elm way to preview poll results
             can_vote    => !!auth,
             tid         => $id,
