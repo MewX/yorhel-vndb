@@ -764,7 +764,7 @@ CREATE TABLE users (
   notify_dbedit   boolean NOT NULL DEFAULT TRUE,
   notify_announce boolean NOT NULL DEFAULT FALSE,
   vn_list_own     boolean NOT NULL DEFAULT FALSE,
-  vn_list_wish    boolean NOT NULL DEFAULT FALSE,
+  vn_list_wish    boolean NOT NULL DEFAULT FALSE, -- Not used anymore, wishlist column in the VN list view has been removed
   tags_all        boolean NOT NULL DEFAULT FALSE,
   tags_cont       boolean NOT NULL DEFAULT TRUE,
   tags_ero        boolean NOT NULL DEFAULT FALSE,
