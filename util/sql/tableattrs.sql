@@ -134,6 +134,8 @@ CREATE        INDEX votes_uid              ON votes (uid);
 CREATE UNIQUE INDEX changes_itemrev        ON changes (type, itemid, rev);
 CREATE UNIQUE INDEX chars_vns_pkey         ON chars_vns (id, vid, COALESCE(rid, 0));
 CREATE UNIQUE INDEX chars_vns_hist_pkey    ON chars_vns_hist (chid, vid, COALESCE(rid, 0));
+CREATE        INDEX ulist_vns_voted        ON ulist_vns (vid, vote_date) WHERE vote IS NOT NULL; -- For VN recent votes & vote graph. INCLUDE(vote) speeds up vote graph even more
+CREATE        INDEX users_ign_votes        ON users (id) WHERE ign_votes;
 
 
 

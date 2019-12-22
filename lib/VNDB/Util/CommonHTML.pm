@@ -215,6 +215,7 @@ sub htmlItemMessage {
 
 
 # generates two tables, one with a vote graph, other with recent votes
+# Only supports $type eq 'v' now.
 sub htmlVoteStats {
   my($self, $type, $obj, $stats) = @_;
 
@@ -244,12 +245,17 @@ sub htmlVoteStats {
     }
    end 'table';
 
-   my $recent = $self->dbVoteGet(
-     $type.'id' => $obj->{id},
-     results => 8,
-     what => $type eq 'v' ? 'user hide_list' : 'vn',
-     hide_ign => $type eq 'v',
+   my $recent = $self->dbAlli('
+     SELECT uv.vote,', VNWeb::DB::sql_totime('uv.vote_date '), 'as date, ', VNWeb::DB::sql_user(), '
+          , NOT EXISTS(SELECT 1 FROM ulist_vns_labels uvl JOIN ulist_labels ul ON ul.uid = uvl.uid AND ul.id = uvl.lbl WHERE uvl.uid = uv.uid AND uvl.vid = uv.vid AND NOT ul.private) AS hide_list
+       FROM ulist_vns uv
+       JOIN users u ON u.id = uv.uid
+      WHERE uv.vid =', \$obj->{id}, 'AND uv.vote IS NOT NULL
+        AND NOT EXISTS(SELECT 1 FROM users u WHERE u.id = uv.uid AND u.ign_votes)
+      ORDER BY uv.vote_date DESC
+      LIMIT', \8
    );
+
    if(@$recent) {
      table class => 'recentvotes stripe';
       thead; Tr;
@@ -265,9 +271,7 @@ sub htmlVoteStats {
       for (@$recent) {
         Tr;
          td;
-          if($type eq 'u') {
-            a href => "/v$_->{vid}", title => $_->{original}||$_->{title}, shorten $_->{title}, 40;
-          } elsif($_->{hide_list}) {
+          if($_->{hide_list}) {
             b class => 'grayedout', 'hidden';
           } else {
             VNWeb::HTML::user_($_);

@@ -14,7 +14,7 @@ TUWF::register(
   qr{v([1-9]\d*)/list},  \&vnlist_e,
   qr{r([1-9]\d*)/list},  \&rlist_e,
   qr{xml/rlist.xml},     \&rlist_e,
-  qr{([uv])([1-9]\d*)/votes}, \&votelist,
+  qr{(u)([1-9]\d*)/votes}, \&votelist,
   qr{u([1-9]\d*)/wish},  \&wishlist,
   qr{u([1-9]\d*)/list},  \&vnlist,
 );
@@ -114,6 +114,7 @@ sub rlist_e {
 }
 
 
+# XXX: $type eq 'v' is not used anymore.
 sub votelist {
   my($self, $type, $id) = @_;
 

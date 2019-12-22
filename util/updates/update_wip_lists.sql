@@ -129,3 +129,5 @@ ALTER TABLE users ADD COLUMN c_wish integer NOT NULL DEFAULT 0;
 
 \timing
 SELECT update_users_ulist_stats(NULL);
+CREATE        INDEX ulist_vns_voted        ON ulist_vns (vid, vote_date) WHERE vote IS NOT NULL;
+CREATE        INDEX users_ign_votes        ON users (id) WHERE ign_votes;
