@@ -705,32 +705,32 @@ CREATE TABLE traits_parents (
 
 -- ulist_labels
 CREATE TABLE ulist_labels (
-  uid      integer NOT NULL, -- user.id
-  id       integer NOT NULL, -- 0 < builtin < 10 <= custom, ids are reused
-  label    text NOT NULL,
+  uid      integer NOT NULL, -- [pub] user.id
+  id       integer NOT NULL, -- [pub] 0 < builtin < 10 <= custom, ids are reused
+  label    text NOT NULL, -- [pub]
   private  boolean NOT NULL,
   PRIMARY KEY(uid, id)
 );
 
 -- ulist_vns
 CREATE TABLE ulist_vns (
-  uid       integer NOT NULL, -- users.id
-  vid       integer NOT NULL, -- vn.id
-  added     timestamptz NOT NULL DEFAULT NOW(),
-  lastmod   timestamptz NOT NULL DEFAULT NOW(), -- updated when anything in this row has changed?
-  vote_date timestamptz, -- Used for "recent votes" - also updated when vote has changed?
-  vote      smallint CHECK(vote IS NULL OR vote BETWEEN 10 AND 100),
-  started   date,
-  finished  date,
-  notes     text NOT NULL DEFAULT '',
+  uid       integer NOT NULL, -- [pub] users.id
+  vid       integer NOT NULL, -- [pub] vn.id
+  added     timestamptz NOT NULL DEFAULT NOW(), -- [pub]
+  lastmod   timestamptz NOT NULL DEFAULT NOW(), -- [pub] updated when anything in this row has changed?
+  vote_date timestamptz, -- [pub] Used for "recent votes" - also updated when vote has changed?
+  vote      smallint CHECK(vote IS NULL OR vote BETWEEN 10 AND 100), -- [pub]
+  started   date, -- [pub]
+  finished  date, -- [pub]
+  notes     text NOT NULL DEFAULT '', -- [pub]
   PRIMARY KEY(uid, vid)
 );
 
 -- ulist_vns_labels
 CREATE TABLE ulist_vns_labels (
-  uid integer NOT NULL, -- user.id
-  lbl integer NOT NULL,
-  vid integer NOT NULL, -- vn.id
+  uid integer NOT NULL, -- [pub] user.id
+  lbl integer NOT NULL, -- [pub]
+  vid integer NOT NULL, -- [pub] vn.id
   PRIMARY KEY(uid, lbl, vid)
 );
 
@@ -753,7 +753,7 @@ CREATE TABLE users (
   c_changes       integer NOT NULL DEFAULT 0,
   ip              inet NOT NULL DEFAULT '0.0.0.0',
   c_tags          integer NOT NULL DEFAULT 0,
-  ign_votes       boolean NOT NULL DEFAULT FALSE,
+  ign_votes       boolean NOT NULL DEFAULT FALSE, -- [pub]
   email_confirmed boolean NOT NULL DEFAULT FALSE,
   skin            text NOT NULL DEFAULT '',
   customcss       text NOT NULL DEFAULT '',
