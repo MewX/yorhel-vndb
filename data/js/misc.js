@@ -248,21 +248,6 @@ if(byId('not') && byId('vns'))
 })();
 
 
-// "check all" checkbox
-(function(){
-  function set() {
-    var l = byName('input');
-    for(var i=0; i<l.length; i++)
-      if(l[i].type == this.type && l[i].name == this.name && !hasClass(l[i], 'hidden'))
-        l[i].checked = this.checked;
-  }
-  var l = byClass('input', 'checkall');
-  for(var i=0; i<l.length; i++)
-    if(l[i].type == 'checkbox')
-      l[i].onclick = set;
-})();
-
-
 // search tabs
 (function(){
   function click() {

@@ -1,4 +1,4 @@
-port module UList.LabelEdit exposing (main)
+port module UList.LabelEdit exposing (main, init, update, view, isPublic, Model, Msg)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -50,6 +50,9 @@ type Msg
   | Saved Int Bool GApi.Response
 
 
+isPublic : Model -> Bool
+isPublic model = List.any (\lb -> lb.id /= 7 && not lb.private && Set.member lb.id model.sel) model.labels
+
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
@@ -65,8 +68,7 @@ update msg model =
 
     Saved l b (GApi.Success) ->
       let nmodel = { model | sel = if b then Set.insert l model.sel else Set.remove l model.sel, state = Dict.remove l model.state }
-          public = List.any (\lb -> lb.id /= 7 && not lb.private && Set.member lb.id nmodel.sel) nmodel.labels
-       in (nmodel, ulistLabelChanged public)
+       in (nmodel, ulistLabelChanged (isPublic nmodel))
     Saved l b e -> ({ model | state = Dict.insert l (Api.Error e) model.state }, Cmd.none)
 
 

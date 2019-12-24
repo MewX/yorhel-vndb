@@ -531,7 +531,7 @@ sub page {
     _screenshots($self, $v, $r) if @{$v->{screenshots}};
   }
 
-  $self->htmlFooter;
+  $self->htmlFooter(v2rwjs => $self->authInfo->{id});
 }
 
 
@@ -715,45 +715,28 @@ sub _useroptions {
 
   # Voting option is hidden if nothing has been released yet
   my $minreleased = min grep $_, map $_->{released}, @$r;
-  my $canvote = $minreleased && $minreleased < strftime '%Y%m%d', gmtime;
 
-  my $vote = $self->dbVoteGet(uid => $self->authInfo->{id}, vid => $v->{id})->[0];
-  my $list = $self->dbVNListGet(uid => $self->authInfo->{id}, vid => $v->{id})->[0];
-  my $wish = $self->dbWishListGet(uid => $self->authInfo->{id}, vid => $v->{id})->[0];
+  my $labels = tuwf->dbAlli(
+    'SELECT l.id, l.label, l.private, uvl.vid IS NOT NULL as assigned
+       FROM ulist_labels l
+       LEFT JOIN ulist_vns_labels uvl ON uvl.uid = l.uid AND uvl.lbl = l.id AND uvl.vid =', \$v->{id}, '
+      WHERE l.uid =', \$self->authInfo->{id},  '
+      ORDER BY CASE WHEN l.id < 10 THEN l.id ELSE 10 END, l.label'
+  );
+  my $lst = tuwf->dbRowi('SELECT vid, vote FROM ulist_vns WHERE uid =', \$self->authInfo->{id}, 'AND vid =', \$v->{id});
 
   Tr;
    td 'User options';
    td;
-    if($vote || ($canvote && !$wish)) {
-      Select id => 'votesel', name => $self->authGetCode("/v$v->{id}/vote");
-       option value => -3, $vote ? 'your vote: '.fmtvote($vote->{vote}) : 'not voted yet';
-       optgroup label => $vote ? 'Change vote' : 'Vote';
-        option value => $_, "$_ (".fmtrating($_).')' for (reverse 1..10);
-        option value => -2, 'Other';
-       end;
-       option value => -1, 'revoke' if $vote;
-      end;
-      br;
-    }
-
-    Select id => 'listsel', name => $self->authGetCode("/v$v->{id}/list");
-     option $list ? "VN list: $VNLIST_STATUS{$list->{status}}" : 'not on your VN list';
-     optgroup label => $list ? 'Change status' : 'Add to VN list';
-      option value => $_, $VNLIST_STATUS{$_} for (keys %VNLIST_STATUS);
-     end;
-     option value => -1, 'remove from VN list' if $list;
-    end;
-    br;
-
-    if(!$vote || $wish) {
-      Select id => 'wishsel', name => $self->authGetCode("/v$v->{id}/wish");
-       option $wish ? "wishlist: $WISHLIST_STATUS{$wish->{wstat}}" : 'not on your wishlist';
-       optgroup label => $wish ? 'Change status' : 'Add to wishlist';
-        option value => $_, $WISHLIST_STATUS{$_} for (keys %WISHLIST_STATUS);
-       end;
-       option value => -1, 'remove from wishlist' if $wish;
-      end;
-    }
+    VNWeb::HTML::elm_('UList.VNPage', undef, {
+      uid      => 1*$self->authInfo->{id},
+      vid      => 1*$v->{id},
+      onlist   => $lst->{vid}?\1:\0,
+      canvote  => $minreleased && $minreleased < strftime('%Y%m%d', gmtime) ? \1 : \0,
+      vote     => fmtvote($lst->{vote}).'',
+      labels   => [ map +{ id => 1*$_->{id}, label => $_->{label}, private => $_->{private}?\1:\0 }, @$labels ],
+      selected => [ map $_->{id}, grep $_->{assigned}, @$labels ],
+    });
    end;
   end 'tr';
 }

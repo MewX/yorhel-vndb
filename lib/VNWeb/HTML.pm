@@ -36,7 +36,7 @@ our @EXPORT = qw/
 
 
 # Encoded as JSON and appended to the end of the page, to be read by pagevars.js.
-my %pagevars;
+our %pagevars;
 
 
 # Ugly hack to move rendering down below the float object.
@@ -406,6 +406,15 @@ sub _hidden_msg_ {
 }
 
 
+sub v2rwjs_ { # Also used by VNDB::Util::LayoutHTML.
+    script_ type => 'application/json', id => 'pagevars', sub {
+        # Escaping rules for a JSON <script> context are kinda weird, but more efficient than regular xml_escape().
+        lit_(JSON::XS->new->canonical->encode(\%pagevars) =~ s{</}{<\\/}rg =~ s/<!--/<\\u0021--/rg);
+    } if keys %pagevars;
+    script_ type => 'application/javascript', src => config->{url_static}.'/f/v2rw.js?'.config->{version}, '';
+}
+
+
 # Options:
 #   title      => $title
 #   index      => 1/0, default 0
@@ -435,11 +444,7 @@ sub framework_ {
                 $cont->() unless $o{hiddenmsg} && _hidden_msg_ \%o;
                 div_ id => 'footer', \&_footer_;
             };
-            script_ type => 'application/json', id => 'pagevars', sub {
-                # Escaping rules for a JSON <script> context are kinda weird, but more efficient than regular xml_escape().
-                lit_(JSON::XS->new->canonical->encode(\%pagevars) =~ s{</}{<\\/}rg =~ s/<!--/<\\u0021--/rg);
-            } if keys %pagevars;
-            script_ type => 'application/javascript', src => config->{url_static}.'/f/v2rw.js?'.config->{version}, '';
+            v2rwjs_;
         }
     }
 }

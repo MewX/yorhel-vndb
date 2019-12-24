@@ -227,6 +227,25 @@ json_api qr{/u/ulist/del\.json}, $VNDEL, sub {
 
 
 
+
+my $VNADD = form_compile any => {
+    uid => { id => 1 },
+    vid => { id => 1 },
+};
+
+elm_form 'UListAdd', undef, $VNADD;
+
+json_api qr{/u/ulist/add\.json}, $VNDEL, sub {
+    my($data) = @_;
+    return elm_Unauth if !own $data->{uid};
+    tuwf->dbExeci('INSERT INTO ulist_vns', $data, 'ON CONFLICT (uid, vid) DO NOTHING');
+    updcache $data->{uid};
+    elm_Success
+};
+
+
+
+
 my $RSTATUS = form_compile any => {
     uid => { id => 1 },
     rid => { id => 1 },
