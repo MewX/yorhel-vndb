@@ -566,4 +566,12 @@ TUWF::get qr{/$RE{uid}/ulist}, sub {
     };
 };
 
+
+
+# Redirects for old URLs
+TUWF::get qr{/$RE{uid}/votes}, sub { tuwf->resRedirect("/u".tuwf->capture('id').'/ulist?votes=1', 'perm') };
+TUWF::get qr{/$RE{uid}/list},  sub { tuwf->resRedirect("/u".tuwf->capture('id').'/ulist?vnlist=1', 'perm') };
+TUWF::get qr{/$RE{uid}/wish},  sub { tuwf->resRedirect("/u".tuwf->capture('id').'/ulist?wishlist=1', 'perm') };
+
+
 1;
