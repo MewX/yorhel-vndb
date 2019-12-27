@@ -587,19 +587,19 @@ $$ LANGUAGE plpgsql;
 
 
 -- Create ulist labels for new users.
-CREATE OR REPLACE FUNCTION ulist_labels_create() RETURNS trigger AS $$
-BEGIN
-    INSERT INTO ulist_labels (uid, id, label, private)
-         VALUES (NEW.id, 1, 'Playing',   false),
-                (NEW.id, 2, 'Finished',  false),
-                (NEW.id, 3, 'Stalled',   false),
-                (NEW.id, 4, 'Dropped',   false),
-                (NEW.id, 5, 'Wishlist',  false),
-                (NEW.id, 6, 'Blacklist', false),
-                (NEW.id, 7, 'Voted',     false);
-    RETURN NULL;
-END
-$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION ulist_labels_create(integer) RETURNS void AS $$
+  INSERT INTO ulist_labels (uid, id, label, private)
+       VALUES ($1, 1, 'Playing',   false),
+              ($1, 2, 'Finished',  false),
+              ($1, 3, 'Stalled',   false),
+              ($1, 4, 'Dropped',   false),
+              ($1, 5, 'Wishlist',  false),
+              ($1, 6, 'Blacklist', false),
+              ($1, 7, 'Voted',     false)
+  ON CONFLICT (uid, id) DO NOTHING;
+$$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION ulist_labels_create() RETURNS trigger AS 'BEGIN PERFORM ulist_labels_create(NEW.id); RETURN NULL; END' LANGUAGE plpgsql;
 
 
 
