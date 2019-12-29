@@ -255,6 +255,14 @@ sub _enrich {
     }
   }
 
+  VNWeb::DB::enrich_flatten(vnlist_labels => id => vid => sub { VNWeb::DB::sql('
+    SELECT uvl.vid, ul.label
+      FROM ulist_vns_labels uvl
+      JOIN ulist_labels ul ON ul.uid = uvl.uid AND ul.id = uvl.lbl
+     WHERE uvl.uid =', \$self->authInfo->{id}, 'AND uvl.vid IN', $_[0], '
+    ORDER BY CASE WHEN ul.id < 10 THEN ul.id ELSE 10 END, ul.label'
+  )}, $r) if $what =~ /vnlist/ && $self->authInfo->{id};
+
   return wantarray ? ($r, $np) : $r;
 }
 
