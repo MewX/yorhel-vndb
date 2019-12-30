@@ -30,12 +30,16 @@ elm_form 'DiscussionsPoll' => $POLL_OUT, $POLL_IN;
 
 
 
-my $REPLY_IN = form_compile any => {
+my $REPLY = {
     tid => { id => 1 },
-    msg => { maxlength => 32768 }
+    old => { _when => 'out', anybool => 1 },
+    msg => { _when => 'in', maxlength => 32768 }
 };
 
-elm_form 'DiscussionsReply' => undef, $REPLY_IN;
+my $REPLY_IN  = form_compile in  => $REPLY;
+my $REPLY_OUT = form_compile out => $REPLY;
+
+elm_form 'DiscussionsReply' => $REPLY_OUT, $REPLY_IN;
 
 
 
@@ -103,10 +107,10 @@ sub posts_ {
 
 
 sub reply_ {
-    my($t, $page) = @_;
+    my($t, $posts, $page) = @_;
     return if $t->{count} > $page*25;
     if(can_edit t => $t) {
-        elm_ 'Discussions.Reply' => undef, $t->{id}*1;
+        elm_ 'Discussions.Reply' => $REPLY_OUT, { tid => $t->{id}, old => $posts->[$#$posts]{date} < time-182*24*3600 };
     } else {
         div_ class => 'mainbox', sub {
             h1_ 'Reply';
@@ -164,7 +168,7 @@ TUWF::get qr{/$RE{tid}(?:/$RE{num})?}, sub {
             options     => $poll_options
         } if $t->{poll_question};
         posts_ $t, $posts, $page;
-        reply_ $t, $page;
+        reply_ $t, $posts, $page;
     }
 };
 

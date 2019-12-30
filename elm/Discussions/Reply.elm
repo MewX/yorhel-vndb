@@ -11,7 +11,7 @@ import Gen.Api as GApi
 import Gen.DiscussionsReply as GDR
 
 
-main : Program Int Model Msg
+main : Program GDR.Recv Model Msg
 main = Browser.element
   { init   = \e -> (init e, Cmd.none)
   , view   = view
@@ -23,20 +23,23 @@ main = Browser.element
 type alias Model =
   { state  : Api.State
   , tid    : Int
+  , old    : Bool
   , msg    : TP.Model
   }
 
 
-init : Int -> Model
-init tid =
+init : GDR.Recv -> Model
+init e =
   { state  = Api.Normal
-  , tid    = tid
+  , tid    = e.tid
+  , old    = e.old
   , msg    = TP.bbcode ""
   }
 
 
 type Msg
-  = Content TP.Msg
+  = NotOldAnymore
+  | Content TP.Msg
   | Submit
   | Submitted GApi.Response
 
@@ -44,6 +47,7 @@ type Msg
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
+    NotOldAnymore -> ({ model | old = False }, Cmd.none)
     Content m -> let (nm,nc) = TP.update m model.msg in ({ model | msg = nm }, Cmd.map Content nc)
 
     Submit ->
@@ -57,8 +61,19 @@ update msg model =
 view : Model -> Html Msg
 view model =
   form_ Submit (model.state == Api.Loading)
-  [ div [ class "mainbox" ]
-    [ fieldset [ class "submit" ]
+  [ div [ class "mainbox" ] <| [
+    if model.old
+    then
+      p [ class "center" ]
+      [ text "This thread has not seen any activity for more than 6 months, but you may still "
+      , a [ href "#", onClickD NotOldAnymore ] [ text "reply" ]
+      , text " if you have something relevant to add."
+      , text " If your message is not directly relevant to this thread, perhaps it's better to "
+      , a [ href "/t/ge/new" ] [ text "create a new thread" ]
+      , text " instead."
+      ]
+    else
+      fieldset [ class "submit" ]
       [ TP.view "msg" model.msg Content 600 ([rows 4, cols 50] ++ GDR.valMsg)
         [ b [] [ text "Quick reply" ]
         , b [ class "standout" ] [ text " (English please!) " ]
@@ -66,5 +81,4 @@ view model =
         ]
       , submitButton "Submit" model.state True
       ]
-    ]
-  ]
+  ] ]
