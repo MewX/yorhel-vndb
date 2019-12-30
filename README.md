@@ -147,26 +147,10 @@ to Elm and JSON APIs.
 
 **Version 3**
 
-This is (or was) an attempt at a full rewrite of the entire website, both
-backend and frontend. It lives in `lib/VN3/` and uses `util/vndb3.pl` as entry
-point. Its frontend assets live inside `css3/`, `elm3/` and `static/v3/`. Most
-of the ideas from version 3 will be gradually backported into version 2-rw.
-Version 3 also comes with a completely different and much better layout, which
-I hope will also be integrated in version 2-rw at some point. Version 3 is not
-actively maintained at this point and is more of a playground for the new
-layout.
-
-Version 3 has bitrotted by now and won't actually run. But if you still want to
-try:
-
-```
-  # When not using Docker
-  make v3
-  util/vndb-dev-server.pl 3
-  
-  # Or when using Docker, start the container as follows:
-  docker run -ti --name vndb -p 3000:3000 -v "`pwd`":/var/www --rm vndb /var/www/util/docker-init.sh 3
-```
+There also used to be a "version 3" rewrite with a completely new user
+interface. All of the improvements developed in version 3 are slowly being
+backported and improved upon in version 2-rw and version 3 does not exist
+anymore (though it can still be found in the version history).
 
 **Non-rewrites**
 

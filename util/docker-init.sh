@@ -89,7 +89,7 @@ pg_start() {
 # Should run as devuser
 devshell() {
     cd /var/www
-    util/vndb-dev-server.pl $1
+    util/vndb-dev-server.pl
     bash
 }
 
@@ -100,15 +100,10 @@ case "$1" in
         su devuser -c '/var/www/util/docker-init.sh pg_start'
         exec su devuser -c '/var/www/util/docker-init.sh devshell'
         ;;
-    3)
-        mkdevuser
-        su devuser -c '/var/www/util/docker-init.sh pg_start'
-        exec su devuser -c '/var/www/util/docker-init.sh devshell 3'
-        ;;
     pg_start)
         pg_start
         ;;
     devshell)
-        devshell $2
+        devshell
         ;;
 esac
