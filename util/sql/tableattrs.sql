@@ -67,6 +67,13 @@ ALTER TABLE traits                   ADD CONSTRAINT traits_addedby_fkey         
 ALTER TABLE traits                   ADD CONSTRAINT traits_group_fkey                  FOREIGN KEY ("group")   REFERENCES traits        (id);
 ALTER TABLE traits_parents           ADD CONSTRAINT traits_parents_trait_fkey          FOREIGN KEY (trait)     REFERENCES traits        (id);
 ALTER TABLE traits_parents           ADD CONSTRAINT traits_parents_parent_fkey         FOREIGN KEY (parent)    REFERENCES traits        (id);
+ALTER TABLE ulist_labels             ADD CONSTRAINT ulist_labels_uid_fkey              FOREIGN KEY (uid)       REFERENCES users         (id) ON DELETE CASCADE;
+ALTER TABLE ulist_vns                ADD CONSTRAINT ulist_vns_uid_fkey                 FOREIGN KEY (uid)       REFERENCES users         (id) ON DELETE CASCADE;
+ALTER TABLE ulist_vns                ADD CONSTRAINT ulist_vns_vid_fkey                 FOREIGN KEY (vid)       REFERENCES vn            (id);
+ALTER TABLE ulist_vns_labels         ADD CONSTRAINT ulist_vns_labels_uid_fkey          FOREIGN KEY (uid)       REFERENCES users         (id) ON DELETE CASCADE;
+ALTER TABLE ulist_vns_labels         ADD CONSTRAINT ulist_vns_labels_vid_fkey          FOREIGN KEY (vid)       REFERENCES vn            (id);
+ALTER TABLE ulist_vns_labels         ADD CONSTRAINT ulist_vns_labels_uid_lbl_fkey      FOREIGN KEY (uid,lbl)   REFERENCES ulist_labels  (uid,id) ON DELETE CASCADE;
+ALTER TABLE ulist_vns_labels         ADD CONSTRAINT ulist_vns_labels_uid_vid_fkey      FOREIGN KEY (uid,vid)   REFERENCES ulist_vns     (uid,vid) ON DELETE CASCADE;
 ALTER TABLE vn                       ADD CONSTRAINT vn_rgraph_fkey                     FOREIGN KEY (rgraph)    REFERENCES relgraphs     (id);
 ALTER TABLE vn                       ADD CONSTRAINT vn_l_wikidata_fkey                 FOREIGN KEY (l_wikidata)REFERENCES wikidata      (id);
 ALTER TABLE vn_hist                  ADD CONSTRAINT vn_hist_chid_fkey                  FOREIGN KEY (chid)      REFERENCES changes       (id) ON DELETE CASCADE;
@@ -93,12 +100,6 @@ ALTER TABLE vn_seiyuu_hist           ADD CONSTRAINT vn_seiyuu_hist_cid_fkey     
 ALTER TABLE vn_staff                 ADD CONSTRAINT vn_staff_id_fkey                   FOREIGN KEY (id)        REFERENCES vn            (id);
 ALTER TABLE vn_staff                 ADD CONSTRAINT vn_staff_aid_fkey                  FOREIGN KEY (aid)       REFERENCES staff_alias   (aid) DEFERRABLE INITIALLY DEFERRED;
 ALTER TABLE vn_staff_hist            ADD CONSTRAINT vn_staff_hist_chid_fkey            FOREIGN KEY (chid)      REFERENCES changes       (id) ON DELETE CASCADE;
-ALTER TABLE vnlists                  ADD CONSTRAINT vnlists_uid_fkey                   FOREIGN KEY (uid)       REFERENCES users         (id) ON DELETE CASCADE;
-ALTER TABLE vnlists                  ADD CONSTRAINT vnlists_vid_fkey                   FOREIGN KEY (vid)       REFERENCES vn            (id);
-ALTER TABLE votes                    ADD CONSTRAINT votes_uid_fkey                     FOREIGN KEY (uid)       REFERENCES users         (id) ON DELETE CASCADE;
-ALTER TABLE votes                    ADD CONSTRAINT votes_vid_fkey                     FOREIGN KEY (vid)       REFERENCES vn            (id);
-ALTER TABLE wlists                   ADD CONSTRAINT wlists_uid_fkey                    FOREIGN KEY (uid)       REFERENCES users         (id) ON DELETE CASCADE;
-ALTER TABLE wlists                   ADD CONSTRAINT wlists_vid_fkey                    FOREIGN KEY (vid)       REFERENCES vn            (id);
 
 
 
@@ -122,18 +123,17 @@ CREATE        INDEX traits_chars_tid       ON traits_chars (tid);
 CREATE        INDEX vn_seiyuu_aid          ON vn_seiyuu (aid); -- Only used on /s+?
 CREATE        INDEX vn_seiyuu_cid          ON vn_seiyuu (cid); -- Only used on /c+?
 CREATE        INDEX vn_staff_aid           ON vn_staff (aid);
-CREATE        INDEX votes_date             ON votes (date desc); -- Mainly used on /v+ pages, other pages don't really need it
-CREATE        INDEX votes_uid              ON votes (uid);
 CREATE UNIQUE INDEX changes_itemrev        ON changes (type, itemid, rev);
 CREATE UNIQUE INDEX chars_vns_pkey         ON chars_vns (id, vid, COALESCE(rid, 0));
 CREATE UNIQUE INDEX chars_vns_hist_pkey    ON chars_vns_hist (chid, vid, COALESCE(rid, 0));
+CREATE        INDEX ulist_vns_voted        ON ulist_vns (vid, vote_date) WHERE vote IS NOT NULL; -- For VN recent votes & vote graph. INCLUDE(vote) speeds up vote graph even more
+CREATE        INDEX users_ign_votes        ON users (id) WHERE ign_votes;
 
 
 
 -- Triggers
 
 CREATE TRIGGER users_changes_update       AFTER  INSERT OR DELETE ON changes       FOR EACH ROW EXECUTE PROCEDURE update_users_cache();
-CREATE TRIGGER users_votes_update         AFTER  INSERT OR DELETE ON votes         FOR EACH ROW EXECUTE PROCEDURE update_users_cache();
 CREATE TRIGGER users_tags_update          AFTER  INSERT OR DELETE ON tags_vn       FOR EACH ROW EXECUTE PROCEDURE update_users_cache();
 
 CREATE TRIGGER stats_cache_new            AFTER  INSERT           ON vn            FOR EACH ROW WHEN (NEW.hidden = FALSE) EXECUTE PROCEDURE update_stats_cache();
@@ -189,7 +189,10 @@ CREATE TRIGGER insert_notify              AFTER  INSERT           ON traits     
 CREATE TRIGGER notify_pm                  AFTER  INSERT           ON threads_posts FOR EACH ROW EXECUTE PROCEDURE notify_pm();
 CREATE TRIGGER notify_announce            AFTER  INSERT           ON threads_posts FOR EACH ROW WHEN (NEW.num = 1) EXECUTE PROCEDURE notify_announce();
 
+CREATE TRIGGER ulist_labels_create        AFTER  INSERT           ON users         FOR EACH ROW EXECUTE PROCEDURE ulist_labels_create();
+CREATE TRIGGER ulist_voted_label          AFTER  INSERT OR UPDATE ON ulist_vns     FOR EACH ROW EXECUTE PROCEDURE ulist_voted_label();
+
 CREATE TRIGGER vn_vnsearch_notify AFTER UPDATE ON vn FOR EACH ROW WHEN (OLD.c_search IS NOT NULL AND NEW.c_search IS NULL) EXECUTE PROCEDURE vn_vnsearch_notify();
 
-CREATE CONSTRAINT TRIGGER update_vnlist_rlist AFTER DELETE ON vnlists DEFERRABLE FOR EACH ROW EXECUTE PROCEDURE update_vnlist_rlist();
-CREATE CONSTRAINT TRIGGER update_vnlist_rlist AFTER INSERT ON rlists  DEFERRABLE FOR EACH ROW EXECUTE PROCEDURE update_vnlist_rlist();
+CREATE CONSTRAINT TRIGGER update_vnlist_rlist AFTER DELETE ON ulist_vns DEFERRABLE FOR EACH ROW EXECUTE PROCEDURE update_vnlist_rlist();
+CREATE CONSTRAINT TRIGGER update_vnlist_rlist AFTER INSERT ON rlists    DEFERRABLE FOR EACH ROW EXECUTE PROCEDURE update_vnlist_rlist();

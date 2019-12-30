@@ -28,6 +28,7 @@ use DBI;
 use DBD::Pg;
 use File::Copy 'cp';
 use File::Find 'find';
+use Time::HiRes 'time';
 
 use Cwd 'abs_path';
 our $ROOT;
@@ -42,6 +43,10 @@ use VNDB::Schema;
 # Tables are exported with an explicit ORDER BY to make them more deterministic
 # and avoid potentially leaking information about internal state (such as when
 # a user last updated their account).
+#
+# Hidden DB entries, private user lists and various other rows with no
+# interesting references are excluded from the dumps. Keeping all references
+# consistent with those omissions complicates the WHERE clauses somewhat.
 my %tables = (
     anime               => { where => 'id IN(SELECT va.aid FROM vn_anime va JOIN vn v ON v.id = va.id WHERE NOT v.hidden)' },
     chars               => { where => 'NOT hidden' },
@@ -59,7 +64,12 @@ my %tables = (
     releases_platforms  => { where => 'id IN(SELECT id FROM releases WHERE NOT hidden)' },
     releases_producers  => { where => 'id IN(SELECT id FROM releases WHERE NOT hidden) AND pid IN(SELECT id FROM producers WHERE NOT hidden)' },
     releases_vn         => { where => 'id IN(SELECT id FROM releases WHERE NOT hidden) AND vid IN(SELECT id FROM vn WHERE NOT hidden)' },
-    rlists              => { where => 'uid NOT IN(SELECT id FROM users WHERE hide_list) AND rid IN(SELECT id FROM releases WHERE NOT hidden)' },
+    rlists              => { where => 'EXISTS(SELECT 1 FROM releases r'
+                                                    .' JOIN releases_vn rv ON rv.id = r.id'
+                                                    .' JOIN vn v ON v.id = rv.vid'
+                                                    .' JOIN ulist_vns_labels uvl ON uvl.vid = rv.vid'
+                                                    .' JOIN ulist_labels ul ON ul.uid = uvl.uid AND ul.id = uvl.lbl'
+                                                   .' WHERE r.id = rlists.rid AND uvl.uid = rlists.uid AND NOT r.hidden AND NOT v.hidden AND NOT ul.private)' },
     screenshots         => { where => 'id IN(SELECT scr FROM vn_screenshots vs JOIN vn v ON v.id = vs.id WHERE NOT v.hidden)' },
     staff               => { where => 'NOT hidden' },
     staff_alias         => { where => 'id IN(SELECT id FROM staff WHERE NOT hidden)' },
@@ -69,17 +79,15 @@ my %tables = (
     tags_vn             => { where => 'tag IN(SELECT id FROM tags WHERE state = 2) AND vid IN(SELECT id FROM vn WHERE NOT hidden)' },
     traits              => { where => 'state = 2' },
     traits_parents      => { where => 'trait IN(SELECT id FROM traits WHERE state = 2)' },
-                           # Only include users that are relevant for this dump.
-                           # (The 'DISTINCT' isn't necessary, but does make the query faster)
-                           # (Users with their votes ignored are still included. W/e)
-    users               => { where => q{
-                                (     id NOT IN(SELECT DISTINCT id FROM users WHERE hide_list)
-                                  AND id IN(SELECT DISTINCT uid FROM rlists
-                                      UNION SELECT DISTINCT uid FROM wlists
-                                      UNION SELECT DISTINCT uid FROM vnlists
-                                      UNION SELECT DISTINCT uid FROM votes)
-                                ) OR id IN(SELECT DISTINCT uid FROM tags_vn)
-                           } },
+    ulist_labels        => { where => 'NOT private AND EXISTS(SELECT 1 FROM ulist_vns_labels uvl WHERE uvl.lbl = id AND ulist_labels.uid = uvl.uid)' },
+    ulist_vns           => { where => 'vid IN(SELECT id FROM vn WHERE NOT hidden)'
+                                .' AND EXISTS(SELECT 1 FROM ulist_vns_labels uvl'
+                                                    .' JOIN ulist_labels ul ON ul.uid = uvl.uid AND ul.id = uvl.lbl'
+                                                   .' WHERE ulist_vns.uid = uvl.uid AND ulist_vns.vid = uvl.vid AND NOT ul.private)' },
+    ulist_vns_labels    => { where => 'vid IN(SELECT id FROM vn WHERE NOT hidden)'
+                                .' AND EXISTS(SELECT 1 FROM ulist_labels ul WHERE ul.uid = ulist_vns_labels.uid AND id = lbl AND NOT ul.private)' },
+    users               => { where => 'id IN(SELECT DISTINCT uvl.uid FROM ulist_vns_labels uvl JOIN ulist_labels ul ON ul.uid = uvl.uid AND ul.id = uvl.lbl WHERE NOT ul.private)'
+                                 .' OR id IN(SELECT DISTINCT uid FROM tags_vn)' },
     vn                  => { where => 'NOT hidden' },
     vn_anime            => { where => 'id IN(SELECT id FROM vn WHERE NOT hidden)' },
     vn_relations        => { where => 'id IN(SELECT id FROM vn WHERE NOT hidden)' },
@@ -88,13 +96,9 @@ my %tables = (
                                 .' AND aid IN(SELECT sa.aid FROM staff_alias sa JOIN staff s ON s.id = sa.id WHERE NOT s.hidden)'
                                 .' AND cid IN(SELECT id FROM chars WHERE NOT hidden)' },
     vn_staff            => { where => 'id IN(SELECT id FROM vn WHERE NOT hidden) AND aid IN(SELECT sa.aid FROM staff_alias sa JOIN staff s ON s.id = sa.id WHERE NOT s.hidden)' },
-    vnlists             => { where => 'uid NOT IN(SELECT id FROM users WHERE hide_list) AND vid IN(SELECT id FROM vn WHERE NOT hidden)' },
-    votes               => { where => 'uid NOT IN(SELECT id FROM users WHERE hide_list OR ign_votes)'
-                                .' AND vid IN(SELECT id FROM vn WHERE NOT hidden)' },
     wikidata            => { where => q{id IN(SELECT l_wikidata FROM producers WHERE NOT hidden
                                         UNION SELECT l_wikidata FROM staff WHERE NOT hidden
                                         UNION SELECT l_wikidata FROM vn WHERE NOT hidden)} },
-    wlists              => { where => 'uid NOT IN(SELECT id FROM users WHERE hide_list) AND vid IN(SELECT id FROM vn WHERE NOT hidden)' },
 );
 
 my @tables = map +{ name => $_, %{$tables{$_}} }, sort keys %tables;
@@ -121,7 +125,6 @@ sub export_table {
     my @cols = grep $_->{pub}, @{$schema->{cols}};
     die "No columns to export for table '$table->{name}'\n" if !@cols;;
 
-    #print "# Dumping $table->{name}\n";
     my $fn = "$dest/$table->{name}";
 
     # Truncate all timestamptz columns to a day, to avoid leaking privacy-sensitive info.
@@ -130,11 +133,14 @@ sub export_table {
     my $order = $schema->{primary} ? join ', ', map "\"$_\"", @{$schema->{primary}} : $table->{order};
     die "Table '$table->{name}' is missing an ORDER BY clause\n" if !$order;
 
+    my $start = time;
     $db->do(qq{COPY (SELECT $cols FROM "$table->{name}" $where ORDER BY $order) TO STDOUT});
     open my $F, '>:utf8', $fn;
     my $v;
     print $F $v while($db->pg_getcopydata($v) >= 0);
     close $F;
+
+    #printf "# Dumped %s in %.3fs\n", $table->{name}, time-$start;
 
     open $F, '>', "$fn.header";
     print $F join "\t", map $_->{name}, @cols;
@@ -269,14 +275,15 @@ sub export_votes {
 
     open my $F, '>:gzip:utf8', $dest;
     $db->do(q{COPY (
-        SELECT vv.vid||' '||vv.uid||' '||vv.vote||' '||to_char(vv.date, 'YYYY-MM-DD')
-          FROM votes vv
-          JOIN users u ON u.id = vv.uid
-          JOIN vn v ON v.id = vv.vid
+        SELECT uv.vid||' '||uv.uid||' '||uv.vote||' '||to_char(uv.vote_date, 'YYYY-MM-DD')
+          FROM ulist_vns uv
+          JOIN users u ON u.id = uv.uid
+          JOIN vn v ON v.id = uv.vid
          WHERE NOT v.hidden
            AND NOT u.ign_votes
-           AND NOT u.hide_list
-         ORDER BY vv.vid, vv.uid
+           AND uv.vote IS NOT NULL
+           AND EXISTS(SELECT 1 FROM ulist_vns_labels uvl JOIN ulist_labels ul ON ul.id = uvl.lbl AND ul.uid = uvl.uid WHERE uv.uid = uvl.uid AND uv.vid = uvl.vid AND NOT ul.private)
+         ORDER BY uv.vid, uv.uid
        ) TO STDOUT
     });
     my $v;

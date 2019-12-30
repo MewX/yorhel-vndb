@@ -11,6 +11,7 @@ our @EXPORT = qw|htmlHeader htmlFooter|;
 
 sub htmlHeader { # %options->{ title, noindex, search, feeds, metadata }
   my($self, %o) = @_;
+  %VNWeb::HTML::pagevars = ();
 
   $o{og} = $o{metadata} ? +{ map +(s/og://r, $o{metadata}{$_}), keys $o{metadata}->%* } : undef;
   $o{index} = !$o{noindex};
@@ -34,6 +35,7 @@ sub htmlFooter { # %options => { pref_code => 1 }
     noscript id => 'pref_code', title => $self->authGetCode('/xml/prefs.xml'), ''
       if $o{pref_code} && $self->authInfo->{id};
     script type => 'text/javascript', src => $self->{url_static}.'/f/vndb.js?'.$self->{version}, '';
+    VNWeb::HTML::v2rwjs_() if $o{v2rwjs};
    end 'body';
   end 'html';
 }

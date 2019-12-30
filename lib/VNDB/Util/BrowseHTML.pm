@@ -160,9 +160,10 @@ sub htmlBrowseVN {
        if($f->{vnlist}) {
          td class => 'tc7';
           lit sprintf '<b class="%s">%d/%d</b>', $l->{userlist_obtained} == $l->{userlist_all} ? 'done' : 'todo', $l->{userlist_obtained}, $l->{userlist_all} if $l->{userlist_all};
+          abbr title => join(', ', $l->{vnlist_labels}->@*), scalar $l->{vnlist_labels}->@* if $l->{vnlist_labels} && $l->{vnlist_labels}->@*;
+          abbr title => 'No labels', ' ' if $l->{vnlist_labels} && !$l->{vnlist_labels}->@*;
          end 'td';
        }
-       td class => 'tc8', defined($l->{wstat}) ? $WISHLIST_STATUS{$l->{wstat}} : '' if $f->{wish};
        td class => 'tc2';
         $_ ne 'oth' && cssicon $_, $PLATFORM{$_}
           for (sort @{$l->{c_platforms}});

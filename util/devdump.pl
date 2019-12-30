@@ -87,6 +87,8 @@ sub copy_entry {
     print "\\set ON_ERROR_STOP 1\n";
     print "\\i util/sql/schema.sql\n";
     print "\\i util/sql/data.sql\n";
+    print "\\i util/sql/func.sql\n";
+    print "\\i util/sql/editfunc.sql\n";
 
     # Copy over all sequence values
     my @seq = sort @{ $db->selectcol_arrayref(
@@ -107,6 +109,7 @@ sub copy_entry {
         [ 8, 'user6', 'user6@vndb.org', 21 ],
         [ 9, 'user7', 'user7@vndb.org', 21 ],
     );
+    print "SELECT ulist_labels_create(id) FROM users;\n";
 
     # Tags & traits
     copy tags => undef, {addedby => 'user'};
@@ -146,13 +149,13 @@ sub copy_entry {
     # VN-related niceties
     copy tags_vn     => "SELECT DISTINCT ON (tag,vid,uid%10) * FROM tags_vn WHERE vid IN($vids)", {uid => 'user'};
     copy quotes      => "SELECT * FROM quotes WHERE vid IN($vids)";
-    copy votes       => "SELECT vid, uid%8+2 AS uid, (percentile_cont((uid%8+1)::float/9) WITHIN GROUP (ORDER BY vote))::smallint AS vote, MIN(date) AS date FROM votes WHERE vid IN($vids) GROUP BY vid, uid%8", {uid => 'user'};
+    my $votes = "SELECT vid, uid%8+2 AS uid, (percentile_cont((uid%8+1)::float/9) WITHIN GROUP (ORDER BY vote))::smallint AS vote, MIN(date) AS vote_date FROM votes WHERE vid IN($vids) GROUP BY vid, uid%8";
+    copy ulist_vns   => $votes, {uid => 'user'};
+    copy ulist_vns_labels => "SELECT vid, uid, 7 AS lbl FROM ($votes) x", {uid => 'user'};
 
     # Releases
     copy_entry r => [qw/releases releases_lang releases_media releases_platforms releases_producers releases_vn/], $releases;
 
-    print "\\i util/sql/func.sql\n";
-    print "\\i util/sql/editfunc.sql\n";
     print "\\i util/sql/tableattrs.sql\n";
 
     # Update some caches
@@ -160,11 +163,10 @@ sub copy_entry {
     print "SELECT traits_chars_calc(NULL);\n";
     print "SELECT update_vncache(id) FROM vn;\n";
     print "SELECT update_stats_cache_full();\n";
-    print "SELECT update_vnpopularity();\n";
-    print "UPDATE users u SET c_votes = (SELECT COUNT(*) FROM votes v WHERE v.uid = u.id);\n";
+    print "SELECT update_vnvotestats();\n";
+    print "SELECT update_users_ulist_stats(NULL);\n";
     print "UPDATE users u SET c_tags = (SELECT COUNT(*) FROM tags_vn v WHERE v.uid = u.id);\n";
     print "UPDATE users u SET c_changes = (SELECT COUNT(*) FROM changes c WHERE c.requester = u.id);\n";
-    # TODO: The vn.c_rating and vn.c_votecount stats are still inconsistent
 
     print "\\set ON_ERROR_STOP 0\n";
     print "\\i util/sql/perms.sql\n";

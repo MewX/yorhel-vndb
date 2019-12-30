@@ -26,7 +26,6 @@ sub list {
     { get => 'rfil', required => 0, default => '' },
     { get => 'cfil', required => 0, default => '' },
     { get => 'vnlist', required => 0, default => 2, enum => [ '0', '1' ] }, # 2: use pref
-    { get => 'wish',   required => 0, default => 2, enum => [ '0', '1' ] }, # 2: use pref
   );
   return $self->resNotFound if $f->{_err};
   $f->{q} ||= $f->{sq};
@@ -45,7 +44,6 @@ sub list {
   };
 
   $f->{vnlist} = $read_write_pref->('vnlist', 'vn_list_own');
-  $f->{wish}   = $read_write_pref->('wish',   'vn_list_wish');
 
   return $self->resRedirect('/'.$1.$2.(!$3 ? '' : $1 eq 'd' ? '#'.$3 : '.'.$3), 'temp')
     if $f->{q} && $f->{q} =~ /^([gvrptudcis])([0-9]+)(?:\.([0-9]+))?$/;
@@ -64,9 +62,7 @@ sub list {
     %compat,
     tagspoil => $self->authPref('spoilers')||0,
   }, {
-    what =>               ' rating' .
-         ($f->{vnlist}  ? ' vnlist'   : '').
-         ($f->{wish}    ? ' wishlist' : ''),
+    what => ' rating'.($f->{vnlist} ? ' vnlist' : ''),
     $char ne 'all' ? ( char    => $char   ) : (),
     $f->{q}        ? ( search  => $f->{q} ) : (),
     keys %$rfil    ? ( release => $rfil   ) : (),
@@ -103,7 +99,6 @@ sub list {
    if($uid) {
      p class => 'browseopts';
       a href => $url->($char, 'vnlist'), $f->{vnlist} ? (class => 'optselected') : (), 'User VN list';
-      a href => $url->($char, 'wish'  ), $f->{wish}   ? (class => 'optselected') : (), 'Wishlist';
      end 'p';
    }
 

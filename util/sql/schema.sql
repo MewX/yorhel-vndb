@@ -704,6 +704,37 @@ CREATE TABLE traits_parents (
   PRIMARY KEY(trait, parent)
 );
 
+-- ulist_labels
+CREATE TABLE ulist_labels (
+  uid      integer NOT NULL, -- [pub] user.id
+  id       integer NOT NULL, -- [pub] 0 < builtin < 10 <= custom, ids are reused
+  label    text NOT NULL, -- [pub]
+  private  boolean NOT NULL,
+  PRIMARY KEY(uid, id)
+);
+
+-- ulist_vns
+CREATE TABLE ulist_vns (
+  uid       integer NOT NULL, -- [pub] users.id
+  vid       integer NOT NULL, -- [pub] vn.id
+  added     timestamptz NOT NULL DEFAULT NOW(), -- [pub]
+  lastmod   timestamptz NOT NULL DEFAULT NOW(), -- [pub] updated when anything in this row has changed?
+  vote_date timestamptz, -- [pub] Used for "recent votes" - also updated when vote has changed?
+  vote      smallint CHECK(vote IS NULL OR vote BETWEEN 10 AND 100), -- [pub]
+  started   date, -- [pub]
+  finished  date, -- [pub]
+  notes     text NOT NULL DEFAULT '', -- [pub]
+  PRIMARY KEY(uid, vid)
+);
+
+-- ulist_vns_labels
+CREATE TABLE ulist_vns_labels (
+  uid integer NOT NULL, -- [pub] user.id
+  lbl integer NOT NULL, -- [pub]
+  vid integer NOT NULL, -- [pub] vn.id
+  PRIMARY KEY(uid, lbl, vid)
+);
+
 -- users
 CREATE TABLE users (
   id         SERIAL NOT NULL PRIMARY KEY, -- [pub]
@@ -723,18 +754,18 @@ CREATE TABLE users (
   c_changes       integer NOT NULL DEFAULT 0,
   ip              inet NOT NULL DEFAULT '0.0.0.0',
   c_tags          integer NOT NULL DEFAULT 0,
-  ign_votes       boolean NOT NULL DEFAULT FALSE,
+  ign_votes       boolean NOT NULL DEFAULT FALSE, -- [pub]
   email_confirmed boolean NOT NULL DEFAULT FALSE,
   skin            text NOT NULL DEFAULT '',
   customcss       text NOT NULL DEFAULT '',
   filter_vn       text NOT NULL DEFAULT '',
   filter_release  text NOT NULL DEFAULT '',
   show_nsfw       boolean NOT NULL DEFAULT FALSE,
-  hide_list       boolean NOT NULL DEFAULT FALSE,
+  hide_list       boolean NOT NULL DEFAULT FALSE, -- deprecated, replaced with ulist_labels.private
   notify_dbedit   boolean NOT NULL DEFAULT TRUE,
   notify_announce boolean NOT NULL DEFAULT FALSE,
   vn_list_own     boolean NOT NULL DEFAULT FALSE,
-  vn_list_wish    boolean NOT NULL DEFAULT FALSE,
+  vn_list_wish    boolean NOT NULL DEFAULT FALSE, -- Not used anymore, wishlist column in the VN list view has been removed
   tags_all        boolean NOT NULL DEFAULT FALSE,
   tags_cont       boolean NOT NULL DEFAULT TRUE,
   tags_ero        boolean NOT NULL DEFAULT FALSE,
@@ -749,7 +780,9 @@ CREATE TABLE users (
   uniname_can     boolean NOT NULL DEFAULT FALSE,
   uniname         text NOT NULL DEFAULT '',
   pubskin_can     boolean NOT NULL DEFAULT FALSE,
-  pubskin_enabled boolean NOT NULL DEFAULT FALSE
+  pubskin_enabled boolean NOT NULL DEFAULT FALSE,
+  c_vns           integer NOT NULL DEFAULT 0,
+  c_wish          integer NOT NULL DEFAULT 0
 );
 
 -- vn
@@ -881,25 +914,6 @@ CREATE TABLE vn_staff_hist (
   PRIMARY KEY (chid, aid, role)
 );
 
--- vnlists
-CREATE TABLE vnlists (
-  uid integer NOT NULL, -- [pub]
-  vid integer NOT NULL, -- [pub]
-  status smallint NOT NULL DEFAULT 0, -- [pub]
-  added TIMESTAMPTZ NOT NULL DEFAULT NOW(), -- [pub]
-  notes varchar NOT NULL DEFAULT '', -- [pub]
-  PRIMARY KEY(uid, vid)
-);
-
--- votes
-CREATE TABLE votes (
-  vid integer NOT NULL DEFAULT 0, -- [pub]
-  uid integer NOT NULL DEFAULT 0, -- [pub]
-  vote integer NOT NULL DEFAULT 0, -- [pub]
-  date timestamptz NOT NULL DEFAULT NOW(), -- [pub]
-  PRIMARY KEY(vid, uid)
-);
-
 -- wikidata
 CREATE TABLE wikidata (
   id                 integer NOT NULL PRIMARY KEY, -- [pub]
@@ -933,13 +947,4 @@ CREATE TABLE wikidata (
   gog                text[],    -- [pub] P2725
   pixiv_user         integer[], -- [pub] P5435
   doujinshi_author   integer[]  -- [pub] P7511
-);
-
--- wlists
-CREATE TABLE wlists (
-  uid integer NOT NULL DEFAULT 0, -- [pub]
-  vid integer NOT NULL DEFAULT 0, -- [pub]
-  wstat smallint NOT NULL DEFAULT 0, -- [pub]
-  added timestamptz NOT NULL DEFAULT NOW(), -- [pub]
-  PRIMARY KEY(uid, vid)
 );

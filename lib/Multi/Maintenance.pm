@@ -71,18 +71,8 @@ my %dailies = (
   # takes about 25 seconds, OK
   traitcache => 'SELECT traits_chars_calc(NULL)',
 
-  # takes about 140 seconds, not really OK
-  vnpopularity => 'SELECT update_vnpopularity()',
-
-  # takes about 3 seconds, can be performed in ranges as well when necessary
-  vnrating => q|
-    UPDATE vn SET
-      c_rating = (SELECT (
-          ((SELECT COUNT(vote)::real/COUNT(DISTINCT vid)::real FROM votes)*(SELECT AVG(a)::real FROM (SELECT AVG(vote) FROM votes GROUP BY vid) AS v(a)) + SUM(vote)::real) /
-          ((SELECT COUNT(vote)::real/COUNT(DISTINCT vid)::real FROM votes) + COUNT(uid)::real)
-        ) FROM votes WHERE vid = id AND uid NOT IN(SELECT id FROM users WHERE ign_votes)
-      ),
-      c_votecount = COALESCE((SELECT count(*) FROM votes WHERE vid = id AND uid NOT IN(SELECT id FROM users WHERE ign_votes)), 0)|,
+  # takes about 4 seconds, OK
+  vnstats => 'SELECT update_vnvotestats()',
 
   # should be pretty fast
   cleangraphs => q|
@@ -214,30 +204,3 @@ sub vnsearch_update { # id, res, time
 
 
 1;
-
-__END__
-
-# Shouldn't really be necessary, except c_changes could be slightly off when
-# hiding/unhiding DB items.
-# This query takes almost two hours to complete and tends to bring the entire
-# site down with it, so it's been disabled for now. Can be performed in
-# ranges though.
-UPDATE users SET
-  c_votes = COALESCE(
-    (SELECT COUNT(vid)
-    FROM votes
-    WHERE uid = users.id
-    GROUP BY uid
-  ), 0),
-  c_changes = COALESCE(
-    (SELECT COUNT(id)
-    FROM changes
-    WHERE requester = users.id
-    GROUP BY requester
-  ), 0),
-  c_tags = COALESCE(
-    (SELECT COUNT(tag)
-    FROM tags_vn
-    WHERE uid = users.id
-    GROUP BY uid
-  ), 0)

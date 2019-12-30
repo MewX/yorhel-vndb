@@ -1,4 +1,4 @@
-port module UList.VoteEdit exposing (main)
+port module UList.VoteEdit exposing (main, init, update, view, Model, Msg)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -85,6 +85,7 @@ view model =
         , onBlur Save
         , onFocus Focus
         , placeholder "7.5"
+        , style "width" "55px"
         , custom "keydown" -- Grab enter key
           <| JD.andThen (\c -> if c == "Enter" then JD.succeed { preventDefault = True, stopPropagation = True, message = Save } else JD.fail "")
           <| JD.field "key" JD.string

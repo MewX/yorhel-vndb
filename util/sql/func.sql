@@ -102,22 +102,57 @@ CREATE OR REPLACE FUNCTION update_vncache(integer) RETURNS void AS $$
 $$ LANGUAGE sql;
 
 
-
--- recalculate vn.c_popularity
-CREATE OR REPLACE FUNCTION update_vnpopularity() RETURNS void AS $$
-  -- the following querie only update VNs which have valid votes, so make sure to reset all rows first.
-  UPDATE vn SET c_popularity = NULL;
-  WITH t2(vid, win) AS (
+-- Update vn.c_popularity, c_rating and c_votecount
+CREATE OR REPLACE FUNCTION update_vnvotestats() RETURNS void AS $$
+  WITH votes(vid, uid, vote) AS ( -- List of all non-ignored VN votes
+    SELECT vid, uid, vote FROM ulist_vns WHERE vote IS NOT NULL AND uid NOT IN(SELECT id FROM users WHERE ign_votes)
+  ), avgcount(avgcount) AS ( -- Average number of votes per VN
+    SELECT COUNT(vote)::real/COUNT(DISTINCT vid)::real FROM votes
+  ), avgavg(avgavg) AS ( -- Average vote average
+    SELECT AVG(a)::real FROM (SELECT AVG(vote) FROM votes GROUP BY vid) x(a)
+  ), ratings(vid, count, rating) AS ( -- Ratings and vote counts
+    SELECT vid, COALESCE(COUNT(uid), 0),
+           COALESCE(
+              ((SELECT avgcount FROM avgcount) * (SELECT avgavg FROM avgavg) + SUM(vote)::real) /
+              ((SELECT avgcount FROM avgcount) + COUNT(uid)::real),
+           0)
+      FROM votes
+     GROUP BY vid
+  ), popularities(vid, win) AS ( -- Popularity scores (before normalization)
     SELECT vid, SUM(rank)
       FROM (
-          SELECT v.uid, v.vid, ((rank() OVER (PARTITION BY uid ORDER BY vote))::real - 1) ^ 0.36788
-            FROM votes v
-            JOIN users u ON u.id = v.uid AND NOT ign_votes
-      ) t1(uid, vid, rank)
-      GROUP BY vid
+        SELECT uid, vid, ((rank() OVER (PARTITION BY uid ORDER BY vote))::real - 1) ^ 0.36788 FROM votes
+      ) x(uid, vid, rank)
+     GROUP BY vid
+  ), stats(vid, rating, count, popularity) AS ( -- Combined stats
+    SELECT v.id, COALESCE(r.rating, 0), COALESCE(r.count, 0)
+         , p.win/(SELECT MAX(win) FROM popularities)
+      FROM vn v
+      LEFT JOIN ratings r ON r.vid = v.id
+      LEFT JOIN popularities p ON p.vid = v.id AND p.win > 0
   )
-  UPDATE vn SET c_popularity = s1.win/(SELECT MAX(win) FROM t2) FROM t2 s1 WHERE s1.vid = vn.id AND s1.win > 0;
+  UPDATE vn SET c_rating = rating, c_votecount = count, c_popularity = popularity FROM stats WHERE id = vid;
 $$ LANGUAGE SQL;
+
+
+
+-- Update users.c_vns, c_votes and c_wish for one user (when given an id) or all users (when given NULL)
+CREATE OR REPLACE FUNCTION update_users_ulist_stats(integer) RETURNS void AS $$
+BEGIN
+  WITH cnt(uid, votes, vns, wish) AS (
+      SELECT u.id
+         , COUNT(*) FILTER (WHERE ul.id = 7) -- Voted
+         , COUNT(DISTINCT uvl.vid) FILTER (WHERE ul.id NOT IN(5,6)) -- Labelled, but not wishlish/blacklist
+         , COUNT(DISTINCT uvl.vid) FILTER (WHERE ul.id = 5) -- Wishlist
+      FROM users u
+      LEFT JOIN ulist_vns_labels uvl ON uvl.uid = u.id
+      LEFT JOIN ulist_labels ul ON ul.id = uvl.lbl AND ul.uid = u.id AND NOT ul.private
+     WHERE $1 IS NULL OR u.id = $1
+     GROUP BY u.id
+  ) UPDATE users SET c_votes = votes, c_vns = vns, c_wish = wish FROM cnt WHERE id = uid;
+END;
+$$ LANGUAGE plpgsql; -- Don't use "LANGUAGE SQL" here; Make sure to generate a new query plan at invocation time.
+
 
 
 -- Recalculate tags_vn_inherit.
@@ -408,6 +443,16 @@ BEGIN
   THEN
     PERFORM notify_dbedit(xtype, xedit);
   END IF;
+
+  -- Make sure all visual novels linked to a release have a corresponding entry
+  -- in ulist_vns for users who have the release in rlists. This is action (3) in
+  -- update_vnlist_rlist().
+  IF xtype = 'r' AND xoldchid IS NOT NULL
+  THEN
+    INSERT INTO ulist_vns (uid, vid)
+      SELECT rl.uid, rv.vid FROM rlists rl JOIN releases_vn rv ON rv.id = rl.rid WHERE rl.rid = xedit.itemid
+    ON CONFLICT (uid, vid) DO NOTHING;
+  END IF;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -418,16 +463,10 @@ $$ LANGUAGE plpgsql;
 ----------------------------------------------------------
 
 
--- keep the c_* columns in the users table up to date
+-- keep the c_tags and c_changes columns in the users table up to date
 CREATE OR REPLACE FUNCTION update_users_cache() RETURNS TRIGGER AS $$
 BEGIN
-  IF TG_TABLE_NAME = 'votes' THEN
-    IF TG_OP = 'INSERT' THEN
-      UPDATE users SET c_votes = c_votes + 1 WHERE id = NEW.uid;
-    ELSE
-      UPDATE users SET c_votes = c_votes - 1 WHERE id = OLD.uid;
-    END IF;
-  ELSIF TG_TABLE_NAME = 'changes' THEN
+  IF TG_TABLE_NAME = 'changes' THEN
     IF TG_OP = 'INSERT' THEN
       UPDATE users SET c_changes = c_changes + 1 WHERE id = NEW.requester;
     ELSE
@@ -519,45 +558,61 @@ $$ LANGUAGE plpgsql;
 
 
 -- For each row in rlists, there should be at least one corresponding row in
--- vnlists for at least one of the VNs linked to that release.
--- 1. When a row is deleted from vnlists, also remove all rows from rlists that
---    would otherwise not have a corresponding row in vnlists
+-- ulist_vns for each VN linked to that release.
+-- 1. When a row is deleted from ulist_vns, also remove all rows from rlists
+--    with that VN linked.
 -- 2. When a row is inserted to rlists and there is not yet a corresponding row
---    in vnlists, add a row in vnlists (with status=unknown) for each vn linked
---    to the release.
+--    in ulist_vns, add a row to ulist_vns for each vn linked to the release.
+-- 3. When a release is edited to add another VN, add those VNs to ulist_vns
+--    for everyone who has the release in rlists.
+--    This is done in edit_committed().
+-- #. When a release is edited to remove a VN, that VN kinda should also be
+--    removed from ulist_vns, but only if that ulist_vns entry was
+--    automatically added as part of the rlists entry and the user has not
+--    changed anything in the ulist_vns row. This isn't currently done.
 CREATE OR REPLACE FUNCTION update_vnlist_rlist() RETURNS trigger AS $$
 BEGIN
   -- 1.
-  IF TG_TABLE_NAME = 'vnlists' THEN
-    DELETE FROM rlists WHERE uid = OLD.uid AND rid IN(SELECT rv.id
-      -- fetch all related rows in rlists
-      FROM releases_vn rv
-      JOIN rlists rl ON rl.rid = rv.id
-     WHERE rv.vid = OLD.vid AND rl.uid = OLD.uid
-       -- and test for a corresponding row in vnlists
-       AND NOT EXISTS(
-        SELECT 1
-          FROM releases_vn rvi
-          JOIN vnlists vl ON vl.vid = rvi.vid AND uid = OLD.uid
-         WHERE rvi.id = rv.id
-       ));
-
+  IF TG_TABLE_NAME = 'ulist_vns' THEN
+    DELETE FROM rlists WHERE uid = OLD.uid AND rid IN(SELECT id FROM releases_vn WHERE vid = OLD.vid);
   -- 2.
   ELSE
-   INSERT INTO vnlists (uid, vid) SELECT NEW.uid, rv.vid
-     -- all VNs linked to the release
-      FROM releases_vn rv
-     WHERE rv.id = NEW.rid
-       -- but only if there are no corresponding rows in vnlists yet
-       AND NOT EXISTS(
-        SELECT 1
-          FROM releases_vn rvi
-          JOIN vnlists vl ON vl.vid = rvi.vid
-         WHERE rvi.id = NEW.rid AND vl.uid = NEW.uid
-       );
+   INSERT INTO ulist_vns (uid, vid)
+     SELECT NEW.uid, rv.vid FROM releases_vn rv WHERE rv.id = NEW.rid
+     ON CONFLICT (uid, vid) DO NOTHING;
   END IF;
   RETURN NULL;
 END;
+$$ LANGUAGE plpgsql;
+
+
+-- Create ulist labels for new users.
+CREATE OR REPLACE FUNCTION ulist_labels_create(integer) RETURNS void AS $$
+  INSERT INTO ulist_labels (uid, id, label, private)
+       VALUES ($1, 1, 'Playing',   false),
+              ($1, 2, 'Finished',  false),
+              ($1, 3, 'Stalled',   false),
+              ($1, 4, 'Dropped',   false),
+              ($1, 5, 'Wishlist',  false),
+              ($1, 6, 'Blacklist', false),
+              ($1, 7, 'Voted',     false)
+  ON CONFLICT (uid, id) DO NOTHING;
+$$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION ulist_labels_create() RETURNS trigger AS 'BEGIN PERFORM ulist_labels_create(NEW.id); RETURN NULL; END' LANGUAGE plpgsql;
+
+
+
+-- Set/unset the 'Voted' label when voting.
+CREATE OR REPLACE FUNCTION ulist_voted_label() RETURNS trigger AS $$
+BEGIN
+    IF NEW.vote IS NULL THEN
+        DELETE FROM ulist_vns_labels WHERE uid = NEW.uid AND vid = NEW.vid AND lbl = 7;
+    ELSE
+        INSERT INTO ulist_vns_labels (uid, vid, lbl) VALUES (NEW.uid, NEW.vid, 7) ON CONFLICT (uid, vid, lbl) DO NOTHING;
+    END IF;
+    RETURN NULL;
+END
 $$ LANGUAGE plpgsql;
 
 
@@ -707,10 +762,8 @@ CREATE OR REPLACE FUNCTION notify_listdel(xtype dbentry_type, xedit edit_rettype
     SELECT DISTINCT 'listdel'::notification_ntype, xtype::text::notification_ltype, u.uid, xedit.itemid, xedit.rev, x.title, c.requester
       -- look for users who should get this notify
       FROM (
-              SELECT uid FROM votes   WHERE xtype = 'v' AND vid = xedit.itemid
-        UNION SELECT uid FROM vnlists WHERE xtype = 'v' AND vid = xedit.itemid
-        UNION SELECT uid FROM wlists  WHERE xtype = 'v' AND vid = xedit.itemid
-        UNION SELECT uid FROM rlists  WHERE xtype = 'r' AND rid = xedit.itemid
+              SELECT uid FROM ulist_vns WHERE xtype = 'v' AND vid = xedit.itemid
+        UNION SELECT uid FROM rlists    WHERE xtype = 'r' AND rid = xedit.itemid
       ) u
       -- fetch info about this edit
       JOIN changes c ON c.id = xedit.chid

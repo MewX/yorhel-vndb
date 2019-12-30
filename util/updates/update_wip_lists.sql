@@ -113,44 +113,25 @@ COMMIT;
 
 \timing
 
+DROP FUNCTION update_vnpopularity();
 
-CREATE OR REPLACE FUNCTION ulist_labels_create() RETURNS trigger AS $$
-BEGIN
-    INSERT INTO ulist_labels (uid, id, label, private)
-         VALUES (NEW.id, 1, 'Playing',   false),
-                (NEW.id, 2, 'Finished',  false),
-                (NEW.id, 3, 'Stalled',   false),
-                (NEW.id, 4, 'Dropped',   false),
-                (NEW.id, 5, 'Wishlist',  false),
-                (NEW.id, 6, 'Blacklist', false),
-                (NEW.id, 7, 'Voted',     false);
-    RETURN NULL;
-END
-$$ LANGUAGE plpgsql;
+ALTER TABLE users ADD COLUMN c_vns  integer NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN c_wish integer NOT NULL DEFAULT 0;
+
+\i util/sql/func.sql
+\i util/sql/perms.sql
+
+DROP TRIGGER users_votes_update ON votes;
 
 CREATE TRIGGER ulist_labels_create AFTER INSERT ON users FOR EACH ROW EXECUTE PROCEDURE ulist_labels_create();
-
-
-
-CREATE OR REPLACE FUNCTION ulist_voted_label() RETURNS trigger AS $$
-BEGIN
-    IF NEW.vote IS NULL THEN
-        DELETE FROM ulist_vns_labels WHERE uid = NEW.uid AND vid = NEW.vid AND lbl = 7;
-    ELSE
-        INSERT INTO ulist_vns_labels (uid, vid, lbl) VALUES (NEW.uid, NEW.vid, 7) ON CONFLICT (uid, vid, lbl) DO NOTHING;
-    END IF;
-    RETURN NULL;
-END
-$$ LANGUAGE plpgsql;
-
 CREATE TRIGGER ulist_voted_label AFTER INSERT OR UPDATE ON ulist_vns FOR EACH ROW EXECUTE PROCEDURE ulist_voted_label();
+CREATE CONSTRAINT TRIGGER update_vnlist_rlist AFTER DELETE ON ulist_vns DEFERRABLE FOR EACH ROW EXECUTE PROCEDURE update_vnlist_rlist();
+
+\timing
+SELECT update_users_ulist_stats(NULL);
+CREATE        INDEX ulist_vns_voted        ON ulist_vns (vid, vote_date) WHERE vote IS NOT NULL;
+CREATE        INDEX users_ign_votes        ON users (id) WHERE ign_votes;
 
 
-
-GRANT SELECT, INSERT, UPDATE, DELETE ON ulist_vns                TO vndb_site;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ulist_labels             TO vndb_site;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ulist_vns_labels         TO vndb_site;
-
-GRANT SELECT, INSERT, UPDATE, DELETE ON ulist_vns                TO vndb_multi;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ulist_labels             TO vndb_multi;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ulist_vns_labels         TO vndb_multi;
+-- Can be done later:
+-- DROP TABLE wlists, vnlists, votes;

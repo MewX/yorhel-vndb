@@ -52,7 +52,6 @@ type Data
   | EMail String
   | Perm Int Bool
   | IgnVotes Bool
-  | HideList Bool
   | ShowNsfw Bool
   | TraitsSexual Bool
   | Spoilers Int
@@ -76,7 +75,6 @@ updateData msg model =
     EMail n    -> { model | email = n }
     Perm n b   -> { model | perm = if b then or model.perm n else and model.perm (complement n) }
     IgnVotes n -> { model | ign_votes = n }
-    HideList b -> { model | hide_list = b }
     ShowNsfw b -> { model | show_nsfw = b }
     TraitsSexual b -> { model | traits_sexual = b }
     Spoilers n -> { model | spoilers  = n }
@@ -189,12 +187,6 @@ view model =
         ] ++ (if model.cpass then passform else [])
         ++
         [ tr [ class "newpart" ] [ td [ colspan 2 ] [ text "Preferences" ] ]
-        , formField "Privacy"
-          [ label []
-            [ inputCheck "" data.hide_list (Set << HideList)
-            , text " Don't allow others to see my visual novel list, vote list and wishlist and exclude these lists from the database dumps and API."
-            ]
-          ]
         , formField "NSFW" [ label [] [ inputCheck "" data.show_nsfw     (Set << ShowNsfw),     text " Show NSFW images by default" ] ]
         , formField ""     [ label [] [ inputCheck "" data.traits_sexual (Set << TraitsSexual), text " Show sexual traits by default on character pages" ] ]
         , formField "Tags" [ label [] [ inputCheck "" data.tags_all      (Set << TagsAll),      text " Show all tags by default on visual novel pages (don't summarize)" ] ]

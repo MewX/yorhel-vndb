@@ -24,7 +24,7 @@
 
 ALL_KEEP=\
 	static/ch static/cv static/sf static/st \
-	data/log static/f static/v3 www www/feeds www/api \
+	data/log static/f www www/feeds www/api \
 	data/conf.pl \
 	www/robots.txt static/robots.txt
 
@@ -32,15 +32,10 @@ ALL_CLEAN=\
 	static/f/vndb.js \
 	static/f/v2rw.js \
 	data/icons/icons.css \
-	static/v3/elm.js \
-	static/v3/style.css \
 	util/sql/editfunc.sql \
 	$(shell ls static/s | sed -e 's/\(.\+\)/static\/s\/\1\/style.css/g')
 
 PROD=\
-	static/v3/elm-opt.js \
-	static/v3/min.js static/v3/min.js.gz \
-	static/v3/min.css static/v3/min.css.gz \
 	static/f/vndb.min.js static/f/vndb.min.js.gz \
 	static/f/v2rw.min.js static/f/v2rw.min.js.gz \
 	static/f/icons.opt.png \
@@ -54,13 +49,10 @@ clean:
 	rm -f ${ALL_CLEAN} ${PROD}
 	rm -f static/f/icons.png
 	rm -rf elm/Gen/
-	rm -f elm3/Lib/Gen.elm
 	rm -rf elm/elm-stuff/build-artifacts
-	rm -rf elm3/elm-stuff/build-artifacts
 
 cleaner: clean
 	rm -rf elm/elm-stuff
-	rm -rf elm3/elm-stuff
 
 util/sql/editfunc.sql: util/sqleditfunc.pl util/sql/schema.sql
 	util/sqleditfunc.pl
@@ -69,7 +61,7 @@ static/ch static/cv static/sf static/st:
 	mkdir -p $@;
 	for i in $$(seq -w 0 1 99); do mkdir -p "$@/$$i"; done
 
-data/log www www/feeds www/api static/f static/v3:
+data/log www www/feeds www/api static/f:
 	mkdir -p $@
 
 data/conf.pl:
@@ -161,43 +153,6 @@ static/f/v2rw.min.js: ${ELM_FILES} ${JS_FILES} elm/Gen/.generated | static/f
 		'pure_funcs="F2,F3,F4,F5,F6,F7,F8,F9,A2,A3,A4,A5,A6,A7,A8,A9",pure_getters,keep_fargs=false,unsafe_comps,unsafe'\
 		| uglifyjs --mangle --comments all -o $@~
 	mv $@~ $@
-
-
-
-# v3
-
-ELM3_FILES=elm3/*.elm elm3/*/*.elm elm3/Lib/Gen.elm
-ELM3_MODULES=$(shell grep -l '^main =' ${ELM3_FILES} | sed 's/^elm3\///')
-
-elm3/Lib/Gen.elm: lib/VN3/*.pm lib/VN3/*/*.pm data/conf.pl
-	util/vndb3.pl elmgen >$@
-
-static/v3/elm.js: ${ELM3_FILES}
-	cd elm3 && ELM_HOME=elm-stuff elm make ${ELM3_MODULES} --output ../$@
-	sed -i 's/var \$$author\$$project\$$Lib\$$Ffi\$$/var __unused__/g' $@
-	sed -Ei 's/\$$author\$$project\$$Lib\$$Ffi\$$([a-zA-Z0-9_]+)/window.elmFfi_\1(_Json_wrap)/g' $@
-
-static/v3/elm-opt.js: ${ELM3_FILES}
-	cd elm3 && ELM_HOME=elm-stuff elm make --optimize ${ELM3_MODULES} --output ../$@
-	sed -i 's/var \$$author\$$project\$$Lib\$$Ffi\$$/var __unused__/g' $@
-	sed -Ei 's/\$$author\$$project\$$Lib\$$Ffi\$$([a-zA-Z0-9_]+)/window.elmFfi_\1(_Json_wrap)/g' $@
-
-static/v3/min.js: static/v3/elm-opt.js static/v3/vndb.js
-	uglifyjs $^ --compress 'pure_funcs="F2,F3,F4,F5,F6,F7,F8,F9,A2,A3,A4,A5,A6,A7,A8,A9",pure_getters,keep_fargs=false,unsafe_comps,unsafe' | uglifyjs --mangle -o $@
-
-
-CSS=\
-	css3/framework/base.css\
-	css3/framework/helpers.css\
-	css3/framework/grid.css\
-	css3/framework/elements.css\
-	css3/vndb.css
-
-static/v3/style.css: ${CSS} | static/f
-	cat $^ >$@
-
-static/v3/min.css: static/v3/style.css
-	perl -MCSS::Minifier::XS -e 'undef $$/; print CSS::Minifier::XS::minify(scalar <>)' <$< >$@
 
 
 

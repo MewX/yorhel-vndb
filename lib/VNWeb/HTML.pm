@@ -36,7 +36,7 @@ our @EXPORT = qw/
 
 
 # Encoded as JSON and appended to the end of the page, to be read by pagevars.js.
-my %pagevars;
+our %pagevars;
 
 
 # Ugly hack to move rendering down below the float object.
@@ -226,9 +226,9 @@ sub _menu_ {
         h2_ sub { user_ auth->user, 'user_', 1 };
         div_ sub {
             a_ href => "$uid/edit", 'My Profile'; txt_ '⭐' if $support_opt && !auth->pref('nodistract_nofancy'); br_;
-            a_ href => "$uid/list", 'My Visual Novel List'; br_;
-            a_ href => "$uid/votes",'My Votes'; br_;
-            a_ href => "$uid/wish", 'My Wishlist'; br_;
+            a_ href => "$uid/ulist?vnlist=1", 'My Visual Novel List'; br_;
+            a_ href => "$uid/ulist?votes=1",'My Votes'; br_;
+            a_ href => "$uid/ulist?wishlist=1", 'My Wishlist'; br_;
             a_ href => "$uid/notifies", $nc ? (class => 'notifyget') : (), 'My Notifications'.($nc?" ($nc)":''); br_;
             a_ href => "$uid/hist", 'My Recent Changes'; br_;
             a_ href => '/g/links?u='.auth->uid, 'My Tags'; br_;
@@ -344,13 +344,10 @@ sub _maintabs_ {
             t tagmod => "/$id/tagmod", 'modify tags' if $t eq 'v' && auth->permTag && !$o->{entry_hidden};
 
             do {
-                t list  => "/$id/list", 'list';
-                t votes => "/$id/votes", 'votes';
-                t wish  => "/$id/wish", 'wishlist';
-            } if $t eq 'u' && (
-                auth->permUsermod || (auth && auth->uid == $o->{id})
-                || !($o->{hide_list} // tuwf->dbVali('SELECT hide_list FROM users WHERE id =', \$o->{id}))
-            );
+                t list  => "/$id/ulist?vnlist=1", 'list';
+                t votes => "/$id/ulist?votes=1", 'votes';
+                t wish  => "/$id/ulist?wishlist=1", 'wishlist';
+            } if $t eq 'u';
 
             t posts => "/$id/posts", 'posts' if $t eq 'u';
 
@@ -409,6 +406,15 @@ sub _hidden_msg_ {
 }
 
 
+sub v2rwjs_ { # Also used by VNDB::Util::LayoutHTML.
+    script_ type => 'application/json', id => 'pagevars', sub {
+        # Escaping rules for a JSON <script> context are kinda weird, but more efficient than regular xml_escape().
+        lit_(JSON::XS->new->canonical->encode(\%pagevars) =~ s{</}{<\\/}rg =~ s/<!--/<\\u0021--/rg);
+    } if keys %pagevars;
+    script_ type => 'application/javascript', src => config->{url_static}.'/f/v2rw.js?'.config->{version}, '';
+}
+
+
 # Options:
 #   title      => $title
 #   index      => 1/0, default 0
@@ -438,11 +444,7 @@ sub framework_ {
                 $cont->() unless $o{hiddenmsg} && _hidden_msg_ \%o;
                 div_ id => 'footer', \&_footer_;
             };
-            script_ type => 'application/json', id => 'pagevars', sub {
-                # Escaping rules for a JSON <script> context are kinda weird, but more efficient than regular xml_escape().
-                lit_(JSON::XS->new->canonical->encode(\%pagevars) =~ s{</}{<\\/}rg =~ s/<!--/<\\u0021--/rg);
-            } if keys %pagevars;
-            script_ type => 'application/javascript', src => config->{url_static}.'/f/v2rw.js?'.config->{version}, '';
+            v2rwjs_;
         }
     }
 }

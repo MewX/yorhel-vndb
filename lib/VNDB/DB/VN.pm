@@ -14,8 +14,8 @@ our @EXPORT = qw|dbVNGet dbVNGetRev dbVNRevisionInsert dbVNImageId dbScreenshotA
 # Options: id, char, search, gtin, length, lang, olang, plat, tag_inc, tag_exc, tagspoil,
 #   hasani, hasshot, ul_notblack, ul_onwish, results, page, what, sort,
 #   reverse, inc_hidden, date_before, date_after, released, release, character
-# What: extended anime staff seiyuu relations screenshots relgraph rating ranking wishlist vnlist
-#  Note: wishlist and vnlist are ignored (no db search) unless a user is logged in
+# What: extended anime staff seiyuu relations screenshots relgraph rating ranking vnlist
+#  Note: vnlist is ignored (no db search) unless a user is logged in
 # Sort: id rel pop rating title tagscore rand
 sub dbVNGet {
   my($self, %o) = @_;
@@ -65,13 +65,13 @@ sub dbVNGet {
     $o{staff_inc} ? ( 'v.id IN(SELECT ivs.id FROM vn_staff ivs JOIN staff_alias isa ON isa.aid = ivs.aid WHERE isa.id IN(!l))' => [ ref $o{staff_inc} ? $o{staff_inc} : [$o{staff_inc}] ] ) : (),
     $o{staff_exc} ? ( 'v.id NOT IN(SELECT ivs.id FROM vn_staff ivs JOIN staff_alias isa ON isa.aid = ivs.aid WHERE isa.id IN(!l))' => [ ref $o{staff_exc} ? $o{staff_exc} : [$o{staff_exc}] ] ) : (),
     $uid && $o{ul_notblack} ? (
-      'v.id NOT IN(SELECT vid FROM wlists WHERE uid = ? AND wstat = 3)' => $uid ) : (),
+      'v.id NOT IN(SELECT vid FROM ulist_vns_labels WHERE uid = ? AND lbl = 6)' => $uid ) : (),
     $uid && defined $o{ul_onwish} ? (
-      'v.id !s IN(SELECT vid FROM wlists WHERE uid = ?)' => [ $o{ul_onwish} ? '' : 'NOT', $uid ] ) : (),
+      'v.id !s IN(SELECT vid FROM ulist_vns_labels WHERE uid = ? AND lbl = 5)' => [ $o{ul_onwish} ? '' : 'NOT', $uid ] ) : (),
     $uid && defined $o{ul_voted} ? (
-      'v.id !s IN(SELECT vid FROM votes WHERE uid = ?)' => [ $o{ul_voted} ? '' : 'NOT', $uid ] ) : (),
+      'v.id !s IN(SELECT vid FROM ulist_vns_labels WHERE uid = ? AND lbl = 7)' => [ $o{ul_voted} ? '' : 'NOT', $uid ] ) : (),
     $uid && defined $o{ul_onlist} ? (
-      'v.id !s IN(SELECT vid FROM vnlists WHERE uid = ?)' => [ $o{ul_onlist} ? '' : 'NOT', $uid ] ) : (),
+      'v.id !s IN(SELECT vid FROM ulist_vns WHERE uid = ?)' => [ $o{ul_onlist} ? '' : 'NOT', $uid ] ) : (),
     !$o{id} && !$o{inc_hidden} ? (
       'v.hidden = FALSE' => 0 ) : (),
     # optimize fetching random entries (only when there are no other filters present, otherwise this won't work well)
@@ -97,8 +97,6 @@ sub dbVNGet {
 
   my @join = (
     $o{what} =~ /relgraph/ ? 'JOIN relgraphs vg ON vg.id = v.rgraph' : (),
-    $uid && $o{what} =~ /wishlist/ ?
-      'LEFT JOIN wlists wl ON wl.vid = v.id AND wl.uid = ' . $uid : (),
     $uid && $o{what} =~ /vnlist/ ? ("LEFT JOIN (
        SELECT irv.vid, COUNT(*) AS userlist_all,
               SUM(CASE WHEN irl.status = 2 THEN 1 ELSE 0 END) AS userlist_obtained
@@ -120,7 +118,6 @@ sub dbVNGet {
       '(SELECT COUNT(*)+1 FROM vn iv WHERE iv.hidden = false AND iv.c_popularity > COALESCE(v.c_popularity, 0.0)) AS p_ranking',
       '(SELECT COUNT(*)+1 FROM vn iv WHERE iv.hidden = false AND iv.c_rating > COALESCE(v.c_rating, 0.0)) AS r_ranking',
     ) : (),
-    $uid && $o{what} =~ /wishlist/ ? 'wl.wstat' : (),
     $uid && $o{what} =~ /vnlist/ ? (qw|vnlist.userlist_all vnlist.userlist_obtained|) : (),
     # TODO: optimize this, as it will be very slow when the selected tags match a lot of VNs (>1000)
     $tag_ids ?
@@ -257,6 +254,14 @@ sub _enrich {
       )});
     }
   }
+
+  VNWeb::DB::enrich_flatten(vnlist_labels => id => vid => sub { VNWeb::DB::sql('
+    SELECT uvl.vid, ul.label
+      FROM ulist_vns_labels uvl
+      JOIN ulist_labels ul ON ul.uid = uvl.uid AND ul.id = uvl.lbl
+     WHERE uvl.uid =', \$self->authInfo->{id}, 'AND uvl.vid IN', $_[0], '
+    ORDER BY CASE WHEN ul.id < 10 THEN ul.id ELSE 10 END, ul.label'
+  )}, $r) if $what =~ /vnlist/ && $self->authInfo->{id};
 
   return wantarray ? ($r, $np) : $r;
 }

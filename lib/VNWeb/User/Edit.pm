@@ -8,7 +8,6 @@ my $FORM = form_compile in => {
     email     => { email => 1 },
     perm      => { uint => 1, func => sub { ($_[0] & ~auth->allPerms) == 0 } },
     ign_votes => { anybool => 1 },
-    hide_list => { anybool => 1 },
     show_nsfw => { anybool => 1 },
     traits_sexual => { anybool => 1 },
     tags_all  => { anybool => 1 },
@@ -51,7 +50,7 @@ sub _getmail {
 
 TUWF::get qr{/$RE{uid}/edit}, sub {
     my $u = tuwf->dbRowi(q{
-        SELECT id, username, perm, ign_votes, hide_list, show_nsfw, traits_sexual
+        SELECT id, username, perm, ign_votes, show_nsfw, traits_sexual
              , tags_all, tags_cont, tags_ero, tags_tech, spoilers, skin, customcss
              , nodistract_can, nodistract_noads, nodistract_nofancy, support_can, support_enabled, uniname_can, uniname, pubskin_can, pubskin_enabled
           FROM users WHERE id =}, \tuwf->capture('id')
@@ -140,7 +139,7 @@ json_api qr{/u/edit\.json}, $FORM, sub {
     $data->{skin} = '' if $data->{skin} eq config->{skin_default};
     $data->{uniname} = '' if $data->{uniname} eq $data->{username};
     tuwf->dbExeci('UPDATE users SET', { %{$data}{qw/
-            hide_list show_nsfw traits_sexual tags_all tags_cont tags_ero tags_tech spoilers skin customcss
+            show_nsfw traits_sexual tags_all tags_cont tags_ero tags_tech spoilers skin customcss
             nodistract_noads nodistract_nofancy support_enabled uniname pubskin_enabled
         /} },
         'WHERE id =', \$data->{id}
