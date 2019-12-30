@@ -1097,7 +1097,7 @@ my %GET_WISHLIST = (
   proc    => sub {
     $_[0]{uid}*=1;
     $_[0]{vn}*=1;
-    $_[0]{priority} = {'Wishlist-High' => 0, 'Wishlist-Medium' => 1, 'Wishlist-Low' => 2, 'Blacklist' => 3}->{$_[0]{priority}}||1;
+    $_[0]{priority} = {'Wishlist-High' => 0, 'Wishlist-Medium' => 1, 'Wishlist-Low' => 2, 'Blacklist' => 3}->{$_[0]{priority}}//1;
     $_[0]{added} = int $_[0]{added};
   },
   sortdef => 'vn',
