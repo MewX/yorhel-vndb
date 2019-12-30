@@ -157,6 +157,7 @@ sub copy_entry {
     copy_entry r => [qw/releases releases_lang releases_media releases_platforms releases_producers releases_vn/], $releases;
 
     print "\\i util/sql/tableattrs.sql\n";
+    print "\\i util/sql/triggers.sql\n";
 
     # Update some caches
     print "SELECT tag_vn_calc(NULL);\n";

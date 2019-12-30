@@ -266,6 +266,20 @@ END;
 $$ LANGUAGE plpgsql;
 
 
+-- Create ulist labels for new users.
+CREATE OR REPLACE FUNCTION ulist_labels_create(integer) RETURNS void AS $$
+  INSERT INTO ulist_labels (uid, id, label, private)
+       VALUES ($1, 1, 'Playing',   false),
+              ($1, 2, 'Finished',  false),
+              ($1, 3, 'Stalled',   false),
+              ($1, 4, 'Dropped',   false),
+              ($1, 5, 'Wishlist',  false),
+              ($1, 6, 'Blacklist', false),
+              ($1, 7, 'Voted',     false)
+  ON CONFLICT (uid, id) DO NOTHING;
+$$ LANGUAGE SQL;
+
+
 
 
 ----------------------------------------------------------
@@ -458,255 +472,10 @@ $$ LANGUAGE plpgsql;
 
 
 
-----------------------------------------------------------
---                  trigger functions                   --
-----------------------------------------------------------
-
-
--- keep the c_tags and c_changes columns in the users table up to date
-CREATE OR REPLACE FUNCTION update_users_cache() RETURNS TRIGGER AS $$
-BEGIN
-  IF TG_TABLE_NAME = 'changes' THEN
-    IF TG_OP = 'INSERT' THEN
-      UPDATE users SET c_changes = c_changes + 1 WHERE id = NEW.requester;
-    ELSE
-      UPDATE users SET c_changes = c_changes - 1 WHERE id = OLD.requester;
-    END IF;
-  ELSIF TG_TABLE_NAME = 'tags_vn' THEN
-    IF TG_OP = 'INSERT' THEN
-      UPDATE users SET c_tags = c_tags + 1 WHERE id = NEW.uid;
-    ELSE
-      UPDATE users SET c_tags = c_tags - 1 WHERE id = OLD.uid;
-    END IF;
-  END IF;
-  RETURN NULL;
-END;
-$$ LANGUAGE 'plpgsql';
-
-
-
--- the stats_cache table
-CREATE OR REPLACE FUNCTION update_stats_cache() RETURNS TRIGGER AS $$
-DECLARE
-  unhidden boolean;
-  hidden boolean;
-BEGIN
-  IF TG_OP = 'INSERT' THEN
-    IF TG_TABLE_NAME = 'users' THEN
-      UPDATE stats_cache SET count = count+1 WHERE section = TG_TABLE_NAME;
-    ELSE
-      IF TG_TABLE_NAME = 'threads_posts' THEN
-        IF EXISTS(SELECT 1 FROM threads WHERE id = NEW.tid AND threads.hidden = FALSE) THEN
-          UPDATE stats_cache SET count = count+1 WHERE section = TG_TABLE_NAME;
-        END IF;
-      ELSE
-        UPDATE stats_cache SET count = count+1 WHERE section = TG_TABLE_NAME;
-      END IF;
-    END IF;
-
-  ELSIF TG_OP = 'UPDATE' THEN
-    IF TG_TABLE_NAME IN('tags', 'traits') THEN
-      unhidden := OLD.state <> 2 AND NEW.state = 2;
-      hidden := OLD.state = 2 AND NEW.state <> 2;
-    ELSE
-      unhidden := OLD.hidden AND NOT NEW.hidden;
-      hidden := NOT unhidden;
-    END IF;
-    IF unhidden THEN
-      IF TG_TABLE_NAME = 'threads' THEN
-        UPDATE stats_cache SET count = count+NEW.count WHERE section = 'threads_posts';
-      END IF;
-      UPDATE stats_cache SET count = count+1 WHERE section = TG_TABLE_NAME;
-    ELSIF hidden THEN
-      IF TG_TABLE_NAME = 'threads' THEN
-        UPDATE stats_cache SET count = count-NEW.count WHERE section = 'threads_posts';
-      END IF;
-      UPDATE stats_cache SET count = count-1 WHERE section = TG_TABLE_NAME;
-    END IF;
-
-  ELSIF TG_OP = 'DELETE' AND TG_TABLE_NAME = 'users' THEN
-    UPDATE stats_cache SET count = count-1 WHERE section = TG_TABLE_NAME;
-  END IF;
-  RETURN NULL;
-END;
-$$ LANGUAGE 'plpgsql';
-
-
-
--- insert rows into anime for new vn_anime.aid items
--- (this is a BEFORE trigger)
-CREATE OR REPLACE FUNCTION vn_anime_aid() RETURNS trigger AS $$
-BEGIN
-  IF NOT EXISTS(SELECT 1 FROM anime WHERE id = NEW.aid) THEN
-    INSERT INTO anime (id) VALUES (NEW.aid);
-  END IF;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-
-
--- insert rows into wikidata for new l_wikidata items
--- (this is a BEFORE trigger)
-CREATE OR REPLACE FUNCTION wikidata_insert() RETURNS trigger AS $$
-BEGIN
-  INSERT INTO wikidata (id) VALUES (NEW.l_wikidata) ON CONFLICT (id) DO NOTHING;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-
-
--- For each row in rlists, there should be at least one corresponding row in
--- ulist_vns for each VN linked to that release.
--- 1. When a row is deleted from ulist_vns, also remove all rows from rlists
---    with that VN linked.
--- 2. When a row is inserted to rlists and there is not yet a corresponding row
---    in ulist_vns, add a row to ulist_vns for each vn linked to the release.
--- 3. When a release is edited to add another VN, add those VNs to ulist_vns
---    for everyone who has the release in rlists.
---    This is done in edit_committed().
--- #. When a release is edited to remove a VN, that VN kinda should also be
---    removed from ulist_vns, but only if that ulist_vns entry was
---    automatically added as part of the rlists entry and the user has not
---    changed anything in the ulist_vns row. This isn't currently done.
-CREATE OR REPLACE FUNCTION update_vnlist_rlist() RETURNS trigger AS $$
-BEGIN
-  -- 1.
-  IF TG_TABLE_NAME = 'ulist_vns' THEN
-    DELETE FROM rlists WHERE uid = OLD.uid AND rid IN(SELECT id FROM releases_vn WHERE vid = OLD.vid);
-  -- 2.
-  ELSE
-   INSERT INTO ulist_vns (uid, vid)
-     SELECT NEW.uid, rv.vid FROM releases_vn rv WHERE rv.id = NEW.rid
-     ON CONFLICT (uid, vid) DO NOTHING;
-  END IF;
-  RETURN NULL;
-END;
-$$ LANGUAGE plpgsql;
-
-
--- Create ulist labels for new users.
-CREATE OR REPLACE FUNCTION ulist_labels_create(integer) RETURNS void AS $$
-  INSERT INTO ulist_labels (uid, id, label, private)
-       VALUES ($1, 1, 'Playing',   false),
-              ($1, 2, 'Finished',  false),
-              ($1, 3, 'Stalled',   false),
-              ($1, 4, 'Dropped',   false),
-              ($1, 5, 'Wishlist',  false),
-              ($1, 6, 'Blacklist', false),
-              ($1, 7, 'Voted',     false)
-  ON CONFLICT (uid, id) DO NOTHING;
-$$ LANGUAGE SQL;
-
-CREATE OR REPLACE FUNCTION ulist_labels_create() RETURNS trigger AS 'BEGIN PERFORM ulist_labels_create(NEW.id); RETURN NULL; END' LANGUAGE plpgsql;
-
-
-
--- Set/unset the 'Voted' label when voting.
-CREATE OR REPLACE FUNCTION ulist_voted_label() RETURNS trigger AS $$
-BEGIN
-    IF NEW.vote IS NULL THEN
-        DELETE FROM ulist_vns_labels WHERE uid = NEW.uid AND vid = NEW.vid AND lbl = 7;
-    ELSE
-        INSERT INTO ulist_vns_labels (uid, vid, lbl) VALUES (NEW.uid, NEW.vid, 7) ON CONFLICT (uid, vid, lbl) DO NOTHING;
-    END IF;
-    RETURN NULL;
-END
-$$ LANGUAGE plpgsql;
-
-
-
--- Send a notify whenever anime info should be fetched
-CREATE OR REPLACE FUNCTION anime_fetch_notify() RETURNS trigger AS $$
-  BEGIN NOTIFY anime; RETURN NULL; END;
-$$ LANGUAGE plpgsql;
-
-
-
--- 1. Send a notify when vn.rgraph is set to NULL, and there are related entries in vn_relations
--- 2. Set rgraph to NULL when c_languages or c_released has changed
-CREATE OR REPLACE FUNCTION vn_relgraph_notify() RETURNS trigger AS $$
-BEGIN
-  IF EXISTS(SELECT 1 FROM vn_relations WHERE id = NEW.id) THEN
-    -- 1.
-    IF NEW.rgraph IS NULL THEN
-      NOTIFY relgraph;
-    -- 2.
-    ELSE
-      UPDATE vn SET rgraph = NULL WHERE id = NEW.id;
-    END IF;
-  END IF;
-  RETURN NULL;
-END;
-$$ LANGUAGE plpgsql;
-
-
--- Send a notify when producers.rgraph is set to NULL, and there are related entries in producers_relations
-CREATE OR REPLACE FUNCTION producer_relgraph_notify() RETURNS trigger AS $$
-BEGIN
-  IF EXISTS(SELECT 1 FROM producers_relations WHERE id = NEW.id) THEN
-    NOTIFY relgraph;
-  END IF;
-  RETURN NULL;
-END;
-$$ LANGUAGE plpgsql;
-
-
-
--- NOTIFY on insert into changes/posts/tags/trait
-CREATE OR REPLACE FUNCTION insert_notify() RETURNS trigger AS $$
-BEGIN
-  IF TG_TABLE_NAME = 'changes' THEN
-    NOTIFY newrevision;
-  ELSIF TG_TABLE_NAME = 'threads_posts' THEN
-    NOTIFY newpost;
-  ELSIF TG_TABLE_NAME = 'tags' THEN
-    NOTIFY newtag;
-  ELSIF TG_TABLE_NAME = 'traits' THEN
-    NOTIFY newtrait;
-  END IF;
-  RETURN NULL;
-END;
-$$ LANGUAGE plpgsql;
-
-
-
--- Send a vnsearch notification when the c_search column is set to NULL.
-CREATE OR REPLACE FUNCTION vn_vnsearch_notify() RETURNS trigger AS $$
-  BEGIN NOTIFY vnsearch; RETURN NULL; END;
-$$ LANGUAGE plpgsql;
-
-
-
 
 ----------------------------------------------------------
 --                notification functions                --
 ----------------------------------------------------------
-
-
--- called on INSERT INTO threads_posts
-CREATE OR REPLACE FUNCTION notify_pm() RETURNS trigger AS $$
-BEGIN
-  INSERT INTO notifications (ntype, ltype, uid, iid, subid, c_title, c_byuser)
-    SELECT 'pm', 't', tb.iid, t.id, NEW.num, t.title, NEw.uid
-      FROM threads t
-      JOIN threads_boards tb ON tb.tid = t.id
-     WHERE t.id = NEW.tid
-       AND tb.type = 'u'
-       AND tb.iid <> NEW.uid -- don't notify when posting in your own board
-       AND NOT EXISTS( -- don't notify when you haven't read an earlier post in the thread yet
-         SELECT 1
-           FROM notifications n
-          WHERE n.uid = tb.iid
-            AND n.ntype = 'pm'
-            AND n.iid = t.id
-            AND n.read IS NULL
-       );
-  RETURN NULL;
-END;
-$$ LANGUAGE plpgsql;
-
 
 
 -- called when an entry has been deleted
@@ -773,23 +542,6 @@ CREATE OR REPLACE FUNCTION notify_listdel(xtype dbentry_type, xedit edit_rettype
       ) x ON true
      WHERE c.requester <> u.uid;
 $$ LANGUAGE sql;
-
-
--- called on INSERT INTO threads_posts when (NEW.num = 1)
-CREATE OR REPLACE FUNCTION notify_announce() RETURNS trigger AS $$
-BEGIN
-  INSERT INTO notifications (ntype, ltype, uid, iid, subid, c_title, c_byuser)
-    SELECT 'announce', 't', u.id, t.id, 1, t.title, NEW.uid
-      FROM threads t
-      JOIN threads_boards tb ON tb.tid = t.id
-      -- get the users who want this announcement
-      JOIN users u ON u.notify_announce
-     WHERE t.id = NEW.tid
-       AND tb.type = 'an' -- announcement board
-       AND NOT t.hidden;
-  RETURN NULL;
-END;
-$$ LANGUAGE plpgsql;
 
 
 
