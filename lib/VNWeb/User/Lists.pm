@@ -278,14 +278,14 @@ sub opt {
         tuwf->reqGet('votes')    ? { p => 1, l => [7],              s => 'voted', o => 'd', c => [qw/vote voted/] } :
         tuwf->reqGet('wishlist') ? { p => 1, l => [5],              s => 'title', o => 'a', c => [qw/added/] } :
         # Full options
-        eval { tuwf->validate(get =>
+        tuwf->validate(get =>
             p => { upage => 1 },
-            l => { type => 'array', scalar => 1, required => 0, default => [], values => { int => 1 } },
-            s => { required => 0, default => 'title', enum => [qw[ title label vote voted added modified started finished rel rating ]] },
-            o => { required => 0, default => 'a', enum => ['a', 'd'] },
-            c => { type => 'array', scalar => 1, required => 0, default => [], values => { enum => [qw[ vote voted added modified started finished rel rating ]] } },
+            l => { onerror => [], type => 'array', scalar => 1, values => { int => 1 } },
+            s => { onerror => 'title', enum => [qw[ title label vote voted added modified started finished rel rating ]] },
+            o => { onerror => 'a', enum => ['a', 'd'] },
+            c => { onerror => [], type => 'array', scalar => 1, values => { enum => [qw[ vote voted added modified started finished rel rating ]] } },
             q => { required => 0 },
-        )->data } || { p => 1, l => [], s => 'title', o => 'a', c => [] };
+        )->data;
 
     # $labels only includes labels we are allowed to see, getting rid of any labels in 'l' that aren't in $labels ensures we only filter on visible labels
     my %accessible_labels = map +($_->{id}, 1), @$filtlabels;

@@ -54,12 +54,12 @@ sub listing_ {
 TUWF::get qr{/u/(?<char>[0a-z]|all)}, sub {
     my $char = tuwf->capture('char');
 
-    my $opt = eval { tuwf->validate(get =>
+    my $opt = tuwf->validate(get =>
         p => { upage => 1 },
-        s => { required => 0, default => 'registered', enum => [qw[username registered vns votes wish changes tags]] },
-        o => { required => 0, default => 'd',          enum => [qw[a d]] },
-        q => { required => 0, default => '' },
-    )->data } || return tuwf->resNotFound;
+        s => { onerror => 'registered', enum => [qw[username registered vns votes wish changes tags]] },
+        o => { onerror => 'd',          enum => [qw[a d]] },
+        q => { onerror => '' },
+    )->data;
 
     my @where = (
         $char eq 'all' ? () : $char eq '0' ? "ascii(username) not between ascii('a') and ascii('z')" : "username like '$char%'",

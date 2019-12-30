@@ -103,14 +103,14 @@ sub filters_ {
 
     state $schema = tuwf->compile({ type => 'hash', keys => {
         # Types
-        t => { type => 'array', scalar => 1, required => 0, default => [map $_->[0], @types], values => { enum => [(map $_->[0], @types), 'a'] } },
-        m => { required => 0, enum => [ 0, 1 ] },  # Automated edits
-        h => { required => 0, default => 0, enum => [ -1..1 ] }, # Hidden items
-        e => { required => 0, default => 0, enum => [ -1..1 ] }, # Existing/new items
-        r => { required => 0, default => 0, enum => [ 0, 1 ] },  # Include releases
+        t => { type => 'array', scalar => 1, onerror => [map $_->[0], @types], values => { enum => [(map $_->[0], @types), 'a'] } },
+        m => { onerror => undef, enum => [ 0, 1 ] }, # Automated edits
+        h => { onerror => 0, enum => [ -1..1 ] }, # Hidden items
+        e => { onerror => 0, enum => [ -1..1 ] }, # Existing/new items
+        r => { onerror => 0, enum => [ 0, 1 ] },  # Include releases
         p => { page => 1 },
     }});
-    my $filt = eval { tuwf->validate(get => $schema)->data } || tuwf->pass;
+    my $filt = tuwf->validate(get => $schema)->data;
 
     $filt->{m} //= $type ? 0 : 1; # Exclude automated edits by default on the main 'recent changes' view.
 

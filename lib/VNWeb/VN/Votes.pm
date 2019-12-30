@@ -34,11 +34,11 @@ TUWF::get qr{/$RE{vid}/votes}, sub {
     my $v = tuwf->dbRowi('SELECT id, title, hidden AS entry_hidden, locked AS entry_locked FROM vn WHERE id =', \$id);
     return tuwf->resNotFound if !$v->{id} || $v->{hidden};
 
-    my $opt = eval { tuwf->validate(get =>
+    my $opt = tuwf->validate(get =>
         p => { page => 1 },
-        o => { required => 0, default => 'd', enum => ['a','d'] },
-        s => { required => 0, default => 'date', enum => ['date', 'title', 'vote' ] }
-    )->data } || { p => 1, o => 'd', s => 'date' };
+        o => { onerror => 'd', enum => ['a','d'] },
+        s => { onerror => 'date', enum => ['date', 'title', 'vote' ] }
+    )->data;
 
     my $fromwhere = sql
         'FROM ulist_vns uv

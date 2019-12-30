@@ -90,10 +90,10 @@ TUWF::get qr{/$RE{uid}/notifies}, sub {
     my $id = tuwf->capture('id');
     return tuwf->resNotFound if !auth || $id != auth->uid;
 
-    my $opt = eval { tuwf->validate(get =>
+    my $opt = tuwf->validate(get =>
         p => { page => 1 },
         r => { anybool => 1 },
-    )->data } || { p => 1, r => 0 };
+    )->data;
 
     my $where = sql_and(
         sql('uid =', \$id),

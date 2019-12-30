@@ -7,11 +7,11 @@ use VNWeb::Discussions::Lib;
 sub filters_ {
     state $schema = tuwf->compile({ type => 'hash', keys => {
         bq => { required => 0, default => '' },
-        b  => { type => 'array', scalar => 1, required => 0, default => [keys %BOARD_TYPE], values => { enum => \%BOARD_TYPE } },
+        b  => { type => 'array', scalar => 1, onerror => [keys %BOARD_TYPE], values => { enum => \%BOARD_TYPE } },
         t  => { anybool => 1 },
         p  => { page => 1 },
     }});
-    my $filt = eval { tuwf->validate(get => $schema)->data } || tuwf->pass;
+    my $filt = tuwf->validate(get => $schema)->data;
     my %boards = map +($_,1), $filt->{b}->@*;
 
     form_ method => 'get', action => tuwf->reqPath(), sub {

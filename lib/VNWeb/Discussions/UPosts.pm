@@ -38,7 +38,7 @@ TUWF::get qr{/$RE{uid}/posts}, sub {
     my $u = tuwf->dbRowi('SELECT id, ', sql_user(), 'FROM users u WHERE id =', \tuwf->capture('id'));
     return tuwf->resNotFound if !$u->{id};
 
-    my $page = eval { tuwf->validate(get => p => { upage => 1 })->data } || 1;
+    my $page = tuwf->validate(get => p => { upage => 1 })->data;
 
     my $from_and_where = sql
         'FROM threads_posts tp

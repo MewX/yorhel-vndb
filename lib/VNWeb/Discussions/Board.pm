@@ -7,7 +7,7 @@ use VNWeb::Discussions::Lib;
 TUWF::get qr{/t/(all|$BOARD_RE)}, sub {
     my($type, $id) = tuwf->capture(1) =~ /^([^0-9]+)([0-9]*)$/;
 
-    my $page = eval { tuwf->validate(get => p => { upage => 1 })->data } || 1;
+    my $page = tuwf->validate(get => p => { upage => 1 })->data;
 
     my $obj =   !$id ? undef :
         $type eq 'v' ? tuwf->dbRowi('SELECT id, title, original, hidden AS entry_hidden, locked AS entry_locked FROM vn        WHERE id =', \$id) :
