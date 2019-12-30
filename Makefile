@@ -32,26 +32,30 @@ ALL_CLEAN=\
 	static/f/vndb.js \
 	static/f/v2rw.js \
 	data/icons/icons.css \
-	static/v3/elm.js \
-	static/v3/style.css \
 	util/sql/editfunc.sql \
 	$(shell ls static/s | sed -e 's/\(.\+\)/static\/s\/\1\/style.css/g')
 
+V3=static/v3/elm.js static/v3/style.css
+
 PROD=\
-	static/v3/elm-opt.js \
-	static/v3/min.js static/v3/min.js.gz \
-	static/v3/min.css static/v3/min.css.gz \
 	static/f/vndb.min.js static/f/vndb.min.js.gz \
 	static/f/v2rw.min.js static/f/v2rw.min.js.gz \
 	static/f/icons.opt.png \
 	$(shell ls static/s | sed -e 's/\(.\+\)/static\/s\/\1\/style.min.css/g') \
 	$(shell ls static/s | sed -e 's/\(.\+\)/static\/s\/\1\/style.min.css.gz/g')
 
+V3_PROD=\
+	static/v3/elm-opt.js \
+	static/v3/min.js static/v3/min.js.gz \
+	static/v3/min.css static/v3/min.css.gz
+
 all: ${ALL_KEEP} ${ALL_CLEAN}
 prod: all ${PROD}
+v3: ${V3}
+v3-prod: ${V3_PROD}
 
 clean:
-	rm -f ${ALL_CLEAN} ${PROD}
+	rm -f ${ALL_CLEAN} ${PROD} ${V3} ${V3_PROD}
 	rm -f static/f/icons.png
 	rm -rf elm/Gen/
 	rm -f elm3/Lib/Gen.elm

@@ -115,6 +115,9 @@ COMMIT;
 
 DROP FUNCTION update_vnpopularity();
 
+ALTER TABLE users ADD COLUMN c_vns  integer NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN c_wish integer NOT NULL DEFAULT 0;
+
 \i util/sql/func.sql
 \i util/sql/perms.sql
 
@@ -124,10 +127,11 @@ CREATE TRIGGER ulist_labels_create AFTER INSERT ON users FOR EACH ROW EXECUTE PR
 CREATE TRIGGER ulist_voted_label AFTER INSERT OR UPDATE ON ulist_vns FOR EACH ROW EXECUTE PROCEDURE ulist_voted_label();
 CREATE CONSTRAINT TRIGGER update_vnlist_rlist AFTER DELETE ON ulist_vns DEFERRABLE FOR EACH ROW EXECUTE PROCEDURE update_vnlist_rlist();
 
-ALTER TABLE users ADD COLUMN c_vns  integer NOT NULL DEFAULT 0;
-ALTER TABLE users ADD COLUMN c_wish integer NOT NULL DEFAULT 0;
-
 \timing
 SELECT update_users_ulist_stats(NULL);
 CREATE        INDEX ulist_vns_voted        ON ulist_vns (vid, vote_date) WHERE vote IS NOT NULL;
 CREATE        INDEX users_ign_votes        ON users (id) WHERE ign_votes;
+
+
+-- Can be done later:
+-- DROP TABLE wlists, vnlists, votes;

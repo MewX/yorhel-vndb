@@ -156,10 +156,12 @@ I hope will also be integrated in version 2-rw at some point. Version 3 is not
 actively maintained at this point and is more of a playground for the new
 layout.
 
-To run version 3 instead of 2:
+Version 3 has bitrotted by now and won't actually run. But if you still want to
+try:
 
 ```
   # When not using Docker
+  make v3
   util/vndb-dev-server.pl 3
   
   # Or when using Docker, start the container as follows:

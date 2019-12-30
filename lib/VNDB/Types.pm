@@ -267,14 +267,6 @@ hash RELEASE_TYPE =>
 
 
 
-hash WISHLIST_STATUS =>
-    0 => 'High',
-    1 => 'Medium',
-    2 => 'Low',
-    3 => 'Blacklist';
-
-
-
 # 0 = hardcoded "unknown", 2 = hardcoded 'OK'
 hash RLIST_STATUS =>
     0 => 'Unknown',
@@ -282,15 +274,6 @@ hash RLIST_STATUS =>
     2 => 'Obtained',
     3 => 'On loan',
     4 => 'Deleted';
-
-
-
-hash VNLIST_STATUS =>
-    0 => 'Unknown',
-    1 => 'Playing',
-    2 => 'Finished',
-    3 => 'Stalled',
-    4 => 'Dropped';
 
 
 

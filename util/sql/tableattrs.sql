@@ -100,12 +100,6 @@ ALTER TABLE vn_seiyuu_hist           ADD CONSTRAINT vn_seiyuu_hist_cid_fkey     
 ALTER TABLE vn_staff                 ADD CONSTRAINT vn_staff_id_fkey                   FOREIGN KEY (id)        REFERENCES vn            (id);
 ALTER TABLE vn_staff                 ADD CONSTRAINT vn_staff_aid_fkey                  FOREIGN KEY (aid)       REFERENCES staff_alias   (aid) DEFERRABLE INITIALLY DEFERRED;
 ALTER TABLE vn_staff_hist            ADD CONSTRAINT vn_staff_hist_chid_fkey            FOREIGN KEY (chid)      REFERENCES changes       (id) ON DELETE CASCADE;
-ALTER TABLE vnlists                  ADD CONSTRAINT vnlists_uid_fkey                   FOREIGN KEY (uid)       REFERENCES users         (id) ON DELETE CASCADE;
-ALTER TABLE vnlists                  ADD CONSTRAINT vnlists_vid_fkey                   FOREIGN KEY (vid)       REFERENCES vn            (id);
-ALTER TABLE votes                    ADD CONSTRAINT votes_uid_fkey                     FOREIGN KEY (uid)       REFERENCES users         (id) ON DELETE CASCADE;
-ALTER TABLE votes                    ADD CONSTRAINT votes_vid_fkey                     FOREIGN KEY (vid)       REFERENCES vn            (id);
-ALTER TABLE wlists                   ADD CONSTRAINT wlists_uid_fkey                    FOREIGN KEY (uid)       REFERENCES users         (id) ON DELETE CASCADE;
-ALTER TABLE wlists                   ADD CONSTRAINT wlists_vid_fkey                    FOREIGN KEY (vid)       REFERENCES vn            (id);
 
 
 
@@ -129,8 +123,6 @@ CREATE        INDEX traits_chars_tid       ON traits_chars (tid);
 CREATE        INDEX vn_seiyuu_aid          ON vn_seiyuu (aid); -- Only used on /s+?
 CREATE        INDEX vn_seiyuu_cid          ON vn_seiyuu (cid); -- Only used on /c+?
 CREATE        INDEX vn_staff_aid           ON vn_staff (aid);
-CREATE        INDEX votes_date             ON votes (date desc); -- Mainly used on /v+ pages, other pages don't really need it
-CREATE        INDEX votes_uid              ON votes (uid);
 CREATE UNIQUE INDEX changes_itemrev        ON changes (type, itemid, rev);
 CREATE UNIQUE INDEX chars_vns_pkey         ON chars_vns (id, vid, COALESCE(rid, 0));
 CREATE UNIQUE INDEX chars_vns_hist_pkey    ON chars_vns_hist (chid, vid, COALESCE(rid, 0));

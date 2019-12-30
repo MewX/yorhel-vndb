@@ -913,25 +913,6 @@ CREATE TABLE vn_staff_hist (
   PRIMARY KEY (chid, aid, role)
 );
 
--- vnlists
-CREATE TABLE vnlists (
-  uid integer NOT NULL, -- [pub]
-  vid integer NOT NULL, -- [pub]
-  status smallint NOT NULL DEFAULT 0, -- [pub]
-  added TIMESTAMPTZ NOT NULL DEFAULT NOW(), -- [pub]
-  notes varchar NOT NULL DEFAULT '', -- [pub]
-  PRIMARY KEY(uid, vid)
-);
-
--- votes
-CREATE TABLE votes (
-  vid integer NOT NULL DEFAULT 0, -- [pub]
-  uid integer NOT NULL DEFAULT 0, -- [pub]
-  vote integer NOT NULL DEFAULT 0, -- [pub]
-  date timestamptz NOT NULL DEFAULT NOW(), -- [pub]
-  PRIMARY KEY(vid, uid)
-);
-
 -- wikidata
 CREATE TABLE wikidata (
   id                 integer NOT NULL PRIMARY KEY, -- [pub]
@@ -965,13 +946,4 @@ CREATE TABLE wikidata (
   gog                text[],    -- [pub] P2725
   pixiv_user         integer[], -- [pub] P5435
   doujinshi_author   integer[]  -- [pub] P7511
-);
-
--- wlists
-CREATE TABLE wlists (
-  uid integer NOT NULL DEFAULT 0, -- [pub]
-  vid integer NOT NULL DEFAULT 0, -- [pub]
-  wstat smallint NOT NULL DEFAULT 0, -- [pub]
-  added timestamptz NOT NULL DEFAULT NOW(), -- [pub]
-  PRIMARY KEY(uid, vid)
 );
