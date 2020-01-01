@@ -1108,8 +1108,8 @@ my %GET_WISHLIST = (
 
 my %GET_ULIST_LABELS = (
   islist  => 1,
-  sql     => 'SELECT %s FROM ulist_labels ul WHERE (%s) AND NOT ul.private %s',
-  sqluser => 'SELECT %1$s FROM ulist_labels ul WHERE (%2$s) AND (ul.uid = %4$d OR NOT ul.private) %3$s',
+  sql     => 'SELECT %s FROM ulist_labels uv WHERE (%s) AND NOT uv.private %s',
+  sqluser => 'SELECT %1$s FROM ulist_labels uv WHERE (%2$s) AND (uv.uid = %4$d OR NOT uv.private) %3$s',
   select  => 'uid, id, label, private',
   proc    => sub {
     $_[0]{uid}*=1;
@@ -1149,12 +1149,12 @@ my %GET_ULIST = (
   flags   => {
     basic  => {},
     labels => {
-      fetch => [[ ['uid','vid'], 'SELECT uvl.uid, uvl.vid, ul.id, ul.label
+      fetch => [[ ['uid','vn'], 'SELECT uvl.uid, uvl.vid, ul.id, ul.label
                FROM ulist_vns_labels uvl JOIN ulist_labels ul ON ul.uid = uvl.uid AND ul.id = uvl.lbl
               WHERE (uvl.uid,uvl.vid) IN(%s) AND (NOT ul.private OR uvl.uid = %s)',
         sub { my($n, $r) = @_;
           for my $i (@$n) {
-            $i->{labels} = [ grep $i->{uid} == $_->{uid} && $i->{vid} == $_->{vid}, @$r ];
+            $i->{labels} = [ grep $i->{uid} == $_->{uid} && $i->{vn} == $_->{vid}, @$r ];
           }
           for (@$r) {
             $_->{id}*=1;
