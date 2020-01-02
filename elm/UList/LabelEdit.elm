@@ -69,7 +69,7 @@ update msg model =
            Api.post "/u/ulist/setlabel.json" (GLE.encode { uid = model.uid, vid = model.vid, label = l, applied = b }) (Saved l b)
            -- Unselect other progress labels (1..4) when setting a progress label
         :: if cascade
-           then (List.map (\i -> selfCmd (Toggle i False False)) <| List.filter (\i -> i >= 0 && l <= 4 && i /= l) <| Set.toList model.tsel)
+           then (List.map (\i -> selfCmd (Toggle i False False)) <| List.filter (\i -> i >= 0 && i <= 4 && i /= l) <| Set.toList model.tsel)
            else []
       )
 
