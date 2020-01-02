@@ -318,7 +318,7 @@ sub filters_ {
             br_;
             # XXX: Rather silly that everything in this form is a form element except for the alphabet filter. Meh, behavior seems intuitive enough.
             span_ class => 'browseopts', sub {
-                a_ href => $url->(ch => $_), ($_//'') eq ($opt->{ch}//'') ? (class => 'optselected') : (), !defined($_) ? 'ALL' : $_ ? uc $_ : '#'
+                a_ href => $url->(ch => $_, p => undef), ($_//'') eq ($opt->{ch}//'') ? (class => 'optselected') : (), !defined($_) ? 'ALL' : $_ ? uc $_ : '#'
                     for (undef, 'a'..'z', 0);
             };
             br_;
