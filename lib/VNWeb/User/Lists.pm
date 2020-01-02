@@ -361,20 +361,6 @@ sub vn_ {
                 }
             };
         };
-        td_ class => 'tc_title', sub {
-            a_ href => "/v$v->{id}", title => $v->{original}||$v->{title}, shorten $v->{title}, 70;
-            b_ class => 'grayedout', id => 'ulist_notes_'.$v->{id}, $v->{notes} if $v->{notes} || $own;
-        };
-
-        td_ class => 'tc_labels', sub {
-            my @l = grep $labels{$_->{id}} && $_->{id} != 7, @$labels;
-            my $txt = @l ? join ', ', map $_->{label}, @l : '-';
-            if($own) {
-                elm_ 'UList.LabelEdit' => $VNLABELS_OUT, { vid => $v->{id}, selected => [ grep $_ != 7, $v->{labels}->@* ] }, $txt;
-            } else {
-                txt_ $txt;
-            }
-        };
 
         td_ mkclass(tc_vote => 1, compact => $own, stealth => $own), sub {
             txt_ fmtvote $v->{vote} if !$own;
@@ -401,6 +387,21 @@ sub vn_ {
             txt_ sprintf '%.2f', ($v->{c_rating}||0)/10;
             b_ class => 'grayedout', sprintf ' (%d)', $v->{c_votecount};
         } if in rating => $opt->{c};
+
+        td_ class => 'tc_labels', sub {
+            my @l = grep $labels{$_->{id}} && $_->{id} != 7, @$labels;
+            my $txt = @l ? join ', ', map $_->{label}, @l : '-';
+            if($own) {
+                elm_ 'UList.LabelEdit' => $VNLABELS_OUT, { vid => $v->{id}, selected => [ grep $_ != 7, $v->{labels}->@* ] }, $txt;
+            } else {
+                txt_ $txt;
+            }
+        };
+
+        td_ class => 'tc_title', sub {
+            a_ href => "/v$v->{id}", title => $v->{original}||$v->{title}, shorten $v->{title}, 70;
+            b_ class => 'grayedout', id => 'ulist_notes_'.$v->{id}, $v->{notes} if $v->{notes} || $own;
+        };
     };
 
     tr_ mkclass(hidden => 1, 'collapsed_vid'.$v->{id} => 1, odd => $n % 2 == 0), sub {
@@ -489,8 +490,6 @@ sub listing_ {
                     input_ type => 'checkbox', class => 'checkall', name => 'collapse_vid', id => 'collapse_vid';
                     label_ for => 'collapse_vid', sub { txt_ 'Opt' };
                 };
-                td_ class => 'tc_title',    sub { txt_ 'Title';       sortable_ 'title',    $opt, \&url; debug_ $lst };
-                td_ class => 'tc_labels',   sub { txt_ 'Labels';      sortable_ 'label',    $opt, \&url };
                 td_ class => 'tc_vote',     sub { txt_ 'Vote';        sortable_ 'vote',     $opt, \&url } if in vote     => $opt->{c};
                 td_ class => 'tc_voted',    sub { txt_ 'Vote date';   sortable_ 'voted',    $opt, \&url } if in voted    => $opt->{c};
                 td_ class => 'tc_added',    sub { txt_ 'Added';       sortable_ 'added',    $opt, \&url } if in added    => $opt->{c};
@@ -499,6 +498,8 @@ sub listing_ {
                 td_ class => 'tc_finished', sub { txt_ 'Finish date'; sortable_ 'finished', $opt, \&url } if in finished => $opt->{c};
                 td_ class => 'tc_rel',      sub { txt_ 'Release date';sortable_ 'rel',      $opt, \&url } if in rel      => $opt->{c};
                 td_ class => 'tc_rating',   sub { txt_ 'Rating';      sortable_ 'rating',   $opt, \&url } if in rating   => $opt->{c};
+                td_ class => 'tc_labels',   sub { txt_ 'Labels';      sortable_ 'label',    $opt, \&url };
+                td_ class => 'tc_title',    sub { txt_ 'Title';       sortable_ 'title',    $opt, \&url; debug_ $lst };
             }};
             vn_ $uid, $own, $opt, $_, $lst->[$_], $labels for (0..$#$lst);
         };
