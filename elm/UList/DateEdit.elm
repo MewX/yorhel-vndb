@@ -6,6 +6,7 @@ import Html.Events exposing (..)
 import Task
 import Process
 import Browser
+import Regex
 import Lib.Html exposing (..)
 import Lib.Api as Api
 import Gen.Api as GApi
@@ -45,12 +46,18 @@ type Msg
   | Save Int
   | Saved GApi.Response
 
+isDate : String -> Bool
+isDate s
+  = Regex.fromString "^(?:19[7-9][0-9]|20[0-9][0-9])-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])$"
+  |> Maybe.map (\r -> Regex.contains r s) |> Maybe.withDefault True
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     Show    -> ({ model | visible = True }, Cmd.none)
-    Val s b -> ({ model | valid = b, val = s, debnum = model.debnum + 1 }, Task.perform (\_ -> Save (model.debnum+1)) <| Process.sleep 300)
+    Val s b ->
+      ({ model | val = s, debnum = model.debnum + 1, valid = b && isDate s }
+      , Task.perform (\_ -> Save (model.debnum+1)) <| Process.sleep 300)
 
     Save n ->
       if n /= model.debnum || model.val == model.flags.date || not model.valid
