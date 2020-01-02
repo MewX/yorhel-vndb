@@ -321,7 +321,7 @@ a.feed                  { float: right }
 
 /***** Browsing ******/
 
-p.browseopts a {
+.browseopts a {
   padding: 1px 3px;
   color: $maintext$;
   border: 1px solid $border$;
@@ -329,8 +329,9 @@ p.browseopts a {
   white-space: nowrap;
 }
 p.browseopts                    { text-align: center; padding: 2px; }
-p.browseopts a.optselected,
-p.browseopts a:hover            { border: 0; padding: 2px 4px; }
+span.browseopts                 { text-align: center; padding: 10px; display: inline-block }
+.browseopts a.optselected,
+.browseopts a:hover             { border: 0; padding: 2px 4px; }
 div.mainbox.browse              { padding: 0; }
 div.mainbox.browse table        { width: 100%; }
 div.mainbox.browse table td.tc1 { padding-left: 25px; }

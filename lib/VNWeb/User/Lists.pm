@@ -284,6 +284,7 @@ sub opt {
             s => { onerror => 'title', enum => [qw[ title label vote voted added modified started finished rel rating ]] },
             o => { onerror => 'a', enum => ['a', 'd'] },
             c => { onerror => [], type => 'array', scalar => 1, values => { enum => [qw[ label vote voted added modified started finished rel rating ]] } },
+            ch=> { onerror => undef, enum => [ 'a'..'z', 0 ] },
             q => { required => 0 },
             mul => { anybool => 1 },
         )->data;
@@ -299,7 +300,7 @@ sub opt {
 
 
 sub filters_ {
-    my($own, $filtlabels, $opt, $opt_labels) = @_;
+    my($own, $filtlabels, $opt, $opt_labels, $url) = @_;
 
     my sub lblfilt_ {
         input_ type => 'checkbox', name => 'l', value => $_->{id}, id => "form_l$_->{id}", tabindex => 10, $opt_labels->{$_->{id}} ? (checked => 'checked') : ();
@@ -310,9 +311,16 @@ sub filters_ {
     form_ method => 'get', sub {
         input_ type => 'hidden', name => 's', value => $opt->{s};
         input_ type => 'hidden', name => 'o', value => $opt->{o};
+        input_ type => 'hidden', name => 'ch', value => $opt->{ch} if defined $opt->{ch};
         input_ type => 'hidden', name => 'c', value => $_ for $opt->{c}->@*;
         p_ class => 'labelfilters', sub {
             input_ type => 'text', class => 'text', name => 'q', value => $opt->{q}||'', style => 'width: 500px', placeholder => 'Search', tabindex => 10;
+            br_;
+            # XXX: Rather silly that everything in this form is a form element except for the alphabet filter. Meh, behavior seems intuitive enough.
+            span_ class => 'browseopts', sub {
+                a_ href => $url->(ch => $_), ($_//'') eq ($opt->{ch}//'') ? (class => 'optselected') : (), !defined($_) ? 'ALL' : $_ ? uc $_ : '#'
+                    for (undef, 'a'..'z', 0);
+            };
             br_;
             span_ class => 'linkradio', sub {
                 join_ sub { em_ ' / ' }, \&lblfilt_, grep $_->{id} < 10, @$filtlabels;
@@ -416,7 +424,7 @@ sub vn_ {
 
 
 sub listing_ {
-    my($uid, $own, $opt, $labels) = @_;
+    my($uid, $own, $opt, $labels, $url) = @_;
 
     my @l = grep $_ > 0, $opt->{l}->@*;
     my($unlabeled) = grep $_ == -1, $opt->{l}->@*;
@@ -430,7 +438,9 @@ sub listing_ {
     my $where = sql_and
         sql('uv.uid =', \$uid),
         @where_vns ? sql_or(@where_vns) : (),
-        $opt->{q} ? map sql('v.c_search like', \"%$_%"), normalize_query $opt->{q} : ();
+        $opt->{q} ? map sql('v.c_search like', \"%$_%"), normalize_query $opt->{q} : (),
+        defined($opt->{ch}) && $opt->{ch} ? sql('LOWER(SUBSTR(v.title, 1, 1)) =', \$opt->{ch}) : (),
+        defined($opt->{ch}) && !$opt->{ch} ? sql('(ASCII(v.title) <', \97, 'OR ASCII(v.title) >', \122, ') AND (ASCII(v.title) <', \65, 'OR ASCII(v.title) >', \90, ')') : ();
 
     my $count = tuwf->dbVali('SELECT count(*) FROM ulist_vns uv JOIN vn v ON v.id = uv.vid WHERE', $where);
 
@@ -470,11 +480,9 @@ sub listing_ {
 
     enrich_flatten lang => id => id => sub { sql('SELECT id, lang FROM releases_lang WHERE id IN', $_, 'ORDER BY lang') }, map $_->{rels}, @$lst;
 
-    my sub url { '?'.query_encode %$opt, @_ }
-
     # TODO: Thumbnail view?
-    paginate_ \&url, $opt->{p}, [ $count, 50 ], 't', sub {
-        elm_ ColSelect => undef, [ url(), [
+    paginate_ $url, $opt->{p}, [ $count, 50 ], 't', sub {
+        elm_ ColSelect => undef, [ $url->(), [
             [ vote     => 'Vote'         ],
             [ voted    => 'Vote date'    ],
             [ added    => 'Added'        ],
@@ -493,21 +501,21 @@ sub listing_ {
                     input_ type => 'checkbox', class => 'checkall', name => 'collapse_vid', id => 'collapse_vid';
                     label_ for => 'collapse_vid', sub { txt_ 'Opt' };
                 };
-                td_ class => 'tc_vote',     sub { txt_ 'Vote';        sortable_ 'vote',     $opt, \&url } if in vote     => $opt->{c};
-                td_ class => 'tc_voted',    sub { txt_ 'Vote date';   sortable_ 'voted',    $opt, \&url } if in voted    => $opt->{c};
-                td_ class => 'tc_added',    sub { txt_ 'Added';       sortable_ 'added',    $opt, \&url } if in added    => $opt->{c};
-                td_ class => 'tc_modified', sub { txt_ 'Modified';    sortable_ 'modified', $opt, \&url } if in modified => $opt->{c};
-                td_ class => 'tc_started',  sub { txt_ 'Start date';  sortable_ 'started',  $opt, \&url } if in started  => $opt->{c};
-                td_ class => 'tc_finished', sub { txt_ 'Finish date'; sortable_ 'finished', $opt, \&url } if in finished => $opt->{c};
-                td_ class => 'tc_rel',      sub { txt_ 'Release date';sortable_ 'rel',      $opt, \&url } if in rel      => $opt->{c};
-                td_ class => 'tc_rating',   sub { txt_ 'Rating';      sortable_ 'rating',   $opt, \&url } if in rating   => $opt->{c};
-                td_ class => 'tc_labels',   sub { txt_ 'Labels';      sortable_ 'label',    $opt, \&url } if in label    => $opt->{c};
-                td_ class => 'tc_title',    sub { txt_ 'Title';       sortable_ 'title',    $opt, \&url; debug_ $lst };
+                td_ class => 'tc_vote',     sub { txt_ 'Vote';        sortable_ 'vote',     $opt, $url } if in vote     => $opt->{c};
+                td_ class => 'tc_voted',    sub { txt_ 'Vote date';   sortable_ 'voted',    $opt, $url } if in voted    => $opt->{c};
+                td_ class => 'tc_added',    sub { txt_ 'Added';       sortable_ 'added',    $opt, $url } if in added    => $opt->{c};
+                td_ class => 'tc_modified', sub { txt_ 'Modified';    sortable_ 'modified', $opt, $url } if in modified => $opt->{c};
+                td_ class => 'tc_started',  sub { txt_ 'Start date';  sortable_ 'started',  $opt, $url } if in started  => $opt->{c};
+                td_ class => 'tc_finished', sub { txt_ 'Finish date'; sortable_ 'finished', $opt, $url } if in finished => $opt->{c};
+                td_ class => 'tc_rel',      sub { txt_ 'Release date';sortable_ 'rel',      $opt, $url } if in rel      => $opt->{c};
+                td_ class => 'tc_rating',   sub { txt_ 'Rating';      sortable_ 'rating',   $opt, $url } if in rating   => $opt->{c};
+                td_ class => 'tc_labels',   sub { txt_ 'Labels';      sortable_ 'label',    $opt, $url } if in label    => $opt->{c};
+                td_ class => 'tc_title',    sub { txt_ 'Title';       sortable_ 'title',    $opt, $url; debug_ $lst };
             }};
             vn_ $uid, $own, $opt, $_, $lst->[$_], $labels for (0..$#$lst);
         };
     };
-    paginate_ \&url, $opt->{p}, [ $count, 50 ], 'b';
+    paginate_ $url, $opt->{p}, [ $count, 50 ], 'b';
 }
 
 
@@ -541,6 +549,7 @@ TUWF::get qr{/$RE{uid}/ulist}, sub {
     ];
 
     my($opt, $opt_labels) = opt $filtlabels;
+    my sub url { '?'.query_encode %$opt, @_ }
 
     # This page has 3 user tabs: list, wish and votes; Select the appropriate active tab based on label filters.
     my $num_core_labels = grep $_ < 10, keys %$opt_labels;
@@ -563,11 +572,11 @@ TUWF::get qr{/$RE{uid}/ulist}, sub {
                     ? 'Your list is empty! You can add visual novels to your list from the visual novel pages.'
                     : user_displayname($u).' does not have any visible visual novels in their list.';
             } else {
-                filters_ $own, $filtlabels, $opt, $opt_labels;
+                filters_ $own, $filtlabels, $opt, $opt_labels, \&url;
                 elm_ 'UList.ManageLabels' if $own;
             }
         };
-        listing_ $u->{id}, $own, $opt, $labels if !$empty;
+        listing_ $u->{id}, $own, $opt, $labels, \&url if !$empty;
     };
 };
 
