@@ -274,16 +274,16 @@ sub opt {
 
     my $opt =
         # Presets
-        tuwf->reqGet('vnlist')   ? { mul => 0, p => 1, l => [1,2,3,4,7,-1,0], s => 'title', o => 'a', c => [qw/vote added started finished/] } :
+        tuwf->reqGet('vnlist')   ? { mul => 0, p => 1, l => [1,2,3,4,7,-1,0], s => 'title', o => 'a', c => [qw/label vote added started finished/] } :
         tuwf->reqGet('votes')    ? { mul => 0, p => 1, l => [7],              s => 'voted', o => 'd', c => [qw/vote voted/] } :
-        tuwf->reqGet('wishlist') ? { mul => 0, p => 1, l => [5],              s => 'title', o => 'a', c => [qw/added/] } :
+        tuwf->reqGet('wishlist') ? { mul => 0, p => 1, l => [5],              s => 'title', o => 'a', c => [qw/label added/] } :
         # Full options
         tuwf->validate(get =>
             p => { upage => 1 },
             l => { onerror => [], type => 'array', scalar => 1, values => { int => 1 } },
             s => { onerror => 'title', enum => [qw[ title label vote voted added modified started finished rel rating ]] },
             o => { onerror => 'a', enum => ['a', 'd'] },
-            c => { onerror => [], type => 'array', scalar => 1, values => { enum => [qw[ vote voted added modified started finished rel rating ]] } },
+            c => { onerror => [], type => 'array', scalar => 1, values => { enum => [qw[ label vote voted added modified started finished rel rating ]] } },
             q => { required => 0 },
             mul => { anybool => 1 },
         )->data;
@@ -396,7 +396,7 @@ sub vn_ {
             } else {
                 txt_ $txt;
             }
-        };
+        } if in label => $opt->{c};
 
         td_ class => 'tc_title', sub {
             a_ href => "/v$v->{id}", title => $v->{original}||$v->{title}, shorten $v->{title}, 70;
@@ -481,6 +481,7 @@ sub listing_ {
             [ finished => 'Finish date'  ],
             [ rel      => 'Release date' ],
             [ rating   => 'Rating'       ],
+            [ label    => 'Labels'       ],
         ] ];
     };
     div_ class => 'mainbox browse ulist', sub {
@@ -498,7 +499,7 @@ sub listing_ {
                 td_ class => 'tc_finished', sub { txt_ 'Finish date'; sortable_ 'finished', $opt, \&url } if in finished => $opt->{c};
                 td_ class => 'tc_rel',      sub { txt_ 'Release date';sortable_ 'rel',      $opt, \&url } if in rel      => $opt->{c};
                 td_ class => 'tc_rating',   sub { txt_ 'Rating';      sortable_ 'rating',   $opt, \&url } if in rating   => $opt->{c};
-                td_ class => 'tc_labels',   sub { txt_ 'Labels';      sortable_ 'label',    $opt, \&url };
+                td_ class => 'tc_labels',   sub { txt_ 'Labels';      sortable_ 'label',    $opt, \&url } if in label    => $opt->{c};
                 td_ class => 'tc_title',    sub { txt_ 'Title';       sortable_ 'title',    $opt, \&url; debug_ $lst };
             }};
             vn_ $uid, $own, $opt, $_, $lst->[$_], $labels for (0..$#$lst);
