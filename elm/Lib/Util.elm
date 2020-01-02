@@ -1,6 +1,7 @@
 module Lib.Util exposing (..)
 
 import Dict
+import Task
 
 -- Delete an element from a List
 delidx : Int -> List a -> List a
@@ -35,3 +36,7 @@ hasDuplicates l =
 -- Haskell's 'lookup' - find an entry in an association list
 lookup : a -> List (a,b) -> Maybe b
 lookup n l = List.filter (\(a,_) -> a == n) l |> List.head |> Maybe.map Tuple.second
+
+
+selfCmd : msg -> Cmd msg
+selfCmd m = Task.perform (always m) (Task.succeed True)

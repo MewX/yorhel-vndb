@@ -4,8 +4,10 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Browser
+import Task
 import Set exposing (Set)
 import Dict exposing (Dict)
+import Lib.Util exposing (..)
 import Lib.Html exposing (..)
 import Lib.Api as Api
 import Lib.DropDown as DD
@@ -46,7 +48,7 @@ init f =
 
 type Msg
   = Open Bool
-  | Toggle Int Bool
+  | Toggle Int Bool Bool
   | Saved Int Bool GApi.Response
 
 
@@ -58,12 +60,17 @@ update msg model =
   case msg of
     Open b -> ({ model | dd = DD.toggle model.dd b }, Cmd.none)
 
-    Toggle l b ->
+    Toggle l cascade b ->
       ( { model
         | tsel   = if b then Set.insert l model.tsel else Set.remove l model.tsel
         , state  = Dict.insert l Api.Loading model.state
         }
-      , Api.post "/u/ulist/setlabel.json" (GLE.encode { uid = model.uid, vid = model.vid, label = l, applied = b }) (Saved l b)
+      , Cmd.batch <|
+           Api.post "/u/ulist/setlabel.json" (GLE.encode { uid = model.uid, vid = model.vid, label = l, applied = b }) (Saved l b)
+           -- Unselect other progress labels (1..4) when setting a progress label
+        :: if cascade
+           then (List.map (\i -> selfCmd (Toggle i False False)) <| List.filter (\i -> i >= 0 && l <= 4 && i /= l) <| Set.toList model.tsel)
+           else []
       )
 
     Saved l b (GApi.Success) ->
@@ -79,7 +86,7 @@ view model =
 
     item l =
       li [ ]
-      [ linkRadio (Set.member l.id model.tsel) (Toggle l.id)
+      [ linkRadio (Set.member l.id model.tsel) (Toggle l.id True)
         [ text l.label
         , text " "
         , span [ class "spinner", classList [("invisible", Dict.get l.id model.state /= Just Api.Loading)] ] []
