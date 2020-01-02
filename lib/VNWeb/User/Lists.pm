@@ -274,9 +274,9 @@ sub opt {
 
     my $opt =
         # Presets
-        tuwf->reqGet('vnlist')   ? { p => 1, l => [1,2,3,4,7,-1,0], s => 'title', o => 'a', c => [qw/vote added started finished/] } :
-        tuwf->reqGet('votes')    ? { p => 1, l => [7],              s => 'voted', o => 'd', c => [qw/vote voted/] } :
-        tuwf->reqGet('wishlist') ? { p => 1, l => [5],              s => 'title', o => 'a', c => [qw/added/] } :
+        tuwf->reqGet('vnlist')   ? { mul => 0, p => 1, l => [1,2,3,4,7,-1,0], s => 'title', o => 'a', c => [qw/vote added started finished/] } :
+        tuwf->reqGet('votes')    ? { mul => 0, p => 1, l => [7],              s => 'voted', o => 'd', c => [qw/vote voted/] } :
+        tuwf->reqGet('wishlist') ? { mul => 0, p => 1, l => [5],              s => 'title', o => 'a', c => [qw/added/] } :
         # Full options
         tuwf->validate(get =>
             p => { upage => 1 },
@@ -285,6 +285,7 @@ sub opt {
             o => { onerror => 'a', enum => ['a', 'd'] },
             c => { onerror => [], type => 'array', scalar => 1, values => { enum => [qw[ vote voted added modified started finished rel rating ]] } },
             q => { required => 0 },
+            mul => { anybool => 1 },
         )->data;
 
     # $labels only includes labels we are allowed to see, getting rid of any labels in 'l' that aren't in $labels ensures we only filter on visible labels
@@ -316,9 +317,9 @@ sub filters_ {
             span_ class => 'linkradio', sub {
                 join_ sub { em_ ' / ' }, \&lblfilt_, grep $_->{id} < 10, @$filtlabels;
 
-                em_ ' | ';
-                input_ type => 'checkbox', name => 'l', class => 'checkall', value => 0, id => 'form_l_all', tabindex => 10, $opt->{l}->@* == 0 ? (checked => 'checked') : ();
-                label_ for => 'form_l_all', 'Select all';
+                em_ ' || ';
+                input_ type => 'checkbox', name => 'mul', value => 1, id => 'form_l_multi', tabindex => 10, $opt->{mul} ? (checked => 'checked') : ();
+                label_ for => 'form_l_multi', 'Multi-select';
                 debug_ $filtlabels;
             };
             my @cust = grep $_->{id} >= 10, @$filtlabels;
