@@ -214,7 +214,10 @@ view model =
             ]
         ]
       , td [ class "tco2" ] [ RDate.display model.today nfo.released ]
-      , td [ class "tco3" ] <| List.map langIcon nfo.lang ++ [ releaseTypeIcon nfo.rtype ]
+      , td [ class "tco3" ]
+        <| List.map platformIcon nfo.platforms
+        ++ List.map langIcon nfo.lang
+        ++ [ releaseTypeIcon nfo.rtype ]
       , td [ class "tco4" ] [ a [ href ("/r"++String.fromInt nfo.id), title nfo.original ] [ text nfo.title ] ]
       ]
 

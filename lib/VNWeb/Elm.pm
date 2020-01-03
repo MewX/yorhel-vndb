@@ -53,6 +53,7 @@ my %apis = (
         released => { uint => 1 },
         rtype    => {},
         lang     => { type => 'array', values => {} },
+        platforms=> { type => 'array', values => {} },
     } } ],
     BoardResult    => [ { aoh => { # Response to /t/boards.json
         btype    => {},
@@ -253,9 +254,8 @@ sub write_types {
     $data .= def skins      => 'List (String, String)' =>
                 list map tuple(string $_, string tuwf->{skins}{$_}[0]),
                 sort { tuwf->{skins}{$a}[0] cmp tuwf->{skins}{$b}[0] } keys tuwf->{skins}->%*;
-    $data .= def languages  => 'List (String, String)' =>
-                list map tuple(string $_, string $LANGUAGE{$_}),
-                sort { $LANGUAGE{$a} cmp $LANGUAGE{$b} } keys %LANGUAGE;
+    $data .= def languages  => 'List (String, String)' => list map tuple(string $_, string $LANGUAGE{$_}), sort { $LANGUAGE{$a} cmp $LANGUAGE{$b} } keys %LANGUAGE;
+    $data .= def platforms  => 'List (String, String)' => list map tuple(string $_, string $PLATFORM{$_}), keys %PLATFORM;
     $data .= def releaseTypes => 'List (String, String)' => list map tuple(string $_, string $RELEASE_TYPE{$_}), keys %RELEASE_TYPE;
     $data .= def rlistStatus => 'List (Int, String)' => list map tuple($_, string $RLIST_STATUS{$_}), keys %RLIST_STATUS;
     $data .= def boardTypes => 'List (String, String)' => list map tuple(string $_, string $BOARD_TYPE{$_}{txt}), keys %BOARD_TYPE;

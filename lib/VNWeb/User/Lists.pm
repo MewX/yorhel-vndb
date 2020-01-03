@@ -179,6 +179,7 @@ my $VNOPT = form_compile any => {
         released => { uint => 1 },
         rtype    => {},
         lang     => { type => 'array', values => {} },
+        platforms=> { type => 'array', values => {} },
     } },
     relstatus => { type => 'array', values => { uint => 1 } }, # List of release statuses, same order as rels
 };
@@ -480,6 +481,7 @@ sub listing_ {
     }, $lst;
 
     enrich_flatten lang => id => id => sub { sql('SELECT id, lang FROM releases_lang WHERE id IN', $_, 'ORDER BY lang') }, map $_->{rels}, @$lst;
+    enrich_flatten platforms => id => id => sub { sql('SELECT id, platform FROM releases_platforms WHERE id IN', $_, 'ORDER BY platform') }, map $_->{rels}, @$lst;
 
     # TODO: Thumbnail view?
     paginate_ $url, $opt->{p}, [ $count, 50 ], 't', sub {

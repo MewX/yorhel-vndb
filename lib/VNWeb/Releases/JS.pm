@@ -15,6 +15,7 @@ json_api qr{/r/get\.json}, { vid => { id => 1 } }, sub {
          'ORDER BY r.released, r.title, r.id'
     );
     enrich_flatten lang => id => id => sub { sql('SELECT id, lang FROM releases_lang WHERE id IN', $_, 'ORDER BY lang') }, $l;
+    enrich_flatten platforms => id => id => sub { sql('SELECT id, platform FROM releases_platforms WHERE id IN', $_, 'ORDER BY platform') }, $l;
     elm_Releases $l;
 };
 
