@@ -82,8 +82,8 @@ div.warning h2, div.notice h2 { font-size: 13px; font-weight: bold; margin: 0; }
 #ds_box table       { width: 100%; }
 
 /* Elm dropdowns */
-.elm_dd > a { color: $maintext$; display: block; border: none!important; padding-right: 10px; position: relative }
-.elm_dd > a > span { position: absolute; right: 0; top: 0; width: 16px; text-align: right; display: block }
+.elm_dd > a { color: $maintext$; display: block; border: none!important; padding-right: 15px; position: relative }
+.elm_dd > a > span { position: absolute; right: 5px; top: 0; width: 16px; text-align: right; display: block }
 .elm_dd > a > span i { visibility: hidden; font-style: normal }
 .elm_dd > a:hover > span > i,
 .elm_dd > a:focus > span > i { visibility: visible }
@@ -92,9 +92,10 @@ div.warning h2, div.notice h2 { font-size: 13px; font-weight: bold; margin: 0; }
 .elm_dd.search > div { float: left }
 .elm_dd.search > div > ul { right: auto; left: 0; top: 23px }
 .elm_dd > div > ul li { white-space: nowrap }
-.elm_dd > div > ul li a { display: block; padding-left: 10px; border: 0; padding: 3px 5px 3px 3px }
+.elm_dd > div > ul li a { display: block; border: 0; padding: 3px 5px 3px 3px }
 .elm_dd > div > ul li a.active,
 .elm_dd > div > ul li a:hover  { background: $boxbg$ }
+.elm_dd > div > ul li p { white-space: normal; padding: 3px 5px 3px 3px }
 
 
 
@@ -821,6 +822,8 @@ div.votelist td.tc2 { width: 50px; text-align: right; padding-right: 10px }
 .managelabels tbody td:nth-child(4) { padding-left: 10px; width: 300px}
 .managelabels select { width: 100% }
 .managelabels tfoot div { float: right; text-align: right }
+
+.savedefault { width: 600px; margin: 10px auto }
 
 .ulist .tc1 { white-space: nowrap; width: 70px }
 .ulist .tc1 label { cursor: pointer }

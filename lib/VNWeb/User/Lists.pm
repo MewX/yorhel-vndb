@@ -236,7 +236,7 @@ my $VNADD = form_compile any => {
 
 elm_form 'UListAdd', undef, $VNADD;
 
-json_api qr{/u/ulist/add\.json}, $VNDEL, sub {
+json_api qr{/u/ulist/add\.json}, $VNADD, sub {
     my($data) = @_;
     return elm_Unauth if !own $data->{uid};
     tuwf->dbExeci('INSERT INTO ulist_vns', $data, 'ON CONFLICT (uid, vid) DO NOTHING');
@@ -270,24 +270,55 @@ json_api qr{/u/ulist/rstatus\.json}, $RSTATUS, sub {
 
 
 
+
+my %SAVED_OPTS = (
+    # Labels
+    l   => { onerror => [], type => 'array', scalar => 1, values => { int => 1 } },
+    mul => { anybool => 1 },
+    # Sort column & order
+    s   => { onerror => 'title', enum => [qw[ title label vote voted added modified started finished rel rating ]] },
+    o   => { onerror => 'a', enum => ['a', 'd'] },
+    # Visible columns
+    c   => { onerror => [], type => 'array', scalar => 1, values => { enum => [qw[ label vote voted added modified started finished rel rating ]] } },
+);
+
+my $SAVED_OPTS = {
+    uid   => { id => 1 },
+    opts  => { type => 'hash', keys => \%SAVED_OPTS },
+    field => { _when => 'in', enum => [qw/ vnlist votes wish /] },
+};
+
+my $SAVED_OPTS_IN  = form_compile in  => $SAVED_OPTS;
+my $SAVED_OPTS_OUT = form_compile out => $SAVED_OPTS;
+
+elm_form UListSaveDefault => $SAVED_OPTS_OUT, $SAVED_OPTS_IN;
+
+json_api qr{/u/ulist/savedefault\.json}, $SAVED_OPTS_IN, sub {
+    my($data) = @_;
+    return elm_Unauth if !own $data->{uid};
+    tuwf->dbExeci('UPDATE users SET ulist_'.$data->{field}, '=', \JSON::XS->new->encode($data->{opts}), 'WHERE id =', \$data->{uid});
+    elm_Success
+};
+
+
+
+
 sub opt {
-    my($filtlabels) = @_;
+    my($u, $filtlabels) = @_;
+
+    my sub load { my $o = $u->{"ulist_$_[0]"}; ($o && eval { JSON::XS->new->decode($o) } or {})->%* };
 
     my $opt =
         # Presets
-        tuwf->reqGet('vnlist')   ? { mul => 0, p => 1, l => [1,2,3,4,7,-1,0], s => 'title', o => 'a', c => [qw/label vote added started finished/] } :
-        tuwf->reqGet('votes')    ? { mul => 0, p => 1, l => [7],              s => 'voted', o => 'd', c => [qw/vote voted/] } :
-        tuwf->reqGet('wishlist') ? { mul => 0, p => 1, l => [5],              s => 'title', o => 'a', c => [qw/label added/] } :
+        tuwf->reqGet('vnlist')   ? { mul => 0, p => 1, l => [1,2,3,4,7,-1,0], s => 'title', o => 'a', c => [qw/label vote added started finished/], load 'vnlist' } :
+        tuwf->reqGet('votes')    ? { mul => 0, p => 1, l => [7],              s => 'voted', o => 'd', c => [qw/vote voted/], load 'votes' } :
+        tuwf->reqGet('wishlist') ? { mul => 0, p => 1, l => [5],              s => 'title', o => 'a', c => [qw/label added/], load 'wishlist' } :
         # Full options
         tuwf->validate(get =>
             p => { upage => 1 },
-            l => { onerror => [], type => 'array', scalar => 1, values => { int => 1 } },
-            s => { onerror => 'title', enum => [qw[ title label vote voted added modified started finished rel rating ]] },
-            o => { onerror => 'a', enum => ['a', 'd'] },
-            c => { onerror => [], type => 'array', scalar => 1, values => { enum => [qw[ label vote voted added modified started finished rel rating ]] } },
             ch=> { onerror => undef, enum => [ 'a'..'z', 0 ] },
             q => { required => 0 },
-            mul => { anybool => 1 },
+            %SAVED_OPTS
         )->data;
 
     # $labels only includes labels we are allowed to see, getting rid of any labels in 'l' that aren't in $labels ensures we only filter on visible labels
@@ -343,6 +374,7 @@ sub filters_ {
             br_;
             input_ type => 'submit', class => 'submit', tabindex => 10, value => 'Update filters';
             input_ type => 'button', class => 'submit', tabindex => 10, id => 'managelabels', value => 'Manage labels' if $own;
+            input_ type => 'button', class => 'submit', tabindex => 10, id => 'savedefault', value => 'Save as default' if $own;
         };
     };
 }
@@ -524,7 +556,7 @@ sub listing_ {
 
 # TODO: Ability to add VNs from this page
 TUWF::get qr{/$RE{uid}/ulist}, sub {
-    my $u = tuwf->dbRowi('SELECT id,', sql_user(), 'FROM users u WHERE id =', \tuwf->capture('id'));
+    my $u = tuwf->dbRowi('SELECT id,', sql_user(), ', ulist_votes, ulist_vnlist, ulist_wish FROM users u WHERE id =', \tuwf->capture('id'));
     return tuwf->resNotFound if !$u->{id};
 
     my $own = own $u->{id};
@@ -551,7 +583,7 @@ TUWF::get qr{/$RE{uid}/ulist}, sub {
         } : (),
     ];
 
-    my($opt, $opt_labels) = opt $filtlabels;
+    my($opt, $opt_labels) = opt $u, $filtlabels;
     my sub url { '?'.query_encode %$opt, @_ }
 
     # This page has 3 user tabs: list, wish and votes; Select the appropriate active tab based on label filters.
@@ -577,6 +609,7 @@ TUWF::get qr{/$RE{uid}/ulist}, sub {
             } else {
                 filters_ $own, $filtlabels, $opt, $opt_labels, \&url;
                 elm_ 'UList.ManageLabels' if $own;
+                elm_ 'UList.SaveDefault', $SAVED_OPTS_OUT, { uid => $u->{id}, opts => $opt } if $own;
             }
         };
         listing_ $u->{id}, $own, $opt, $labels, \&url if !$empty;

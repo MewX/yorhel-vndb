@@ -782,7 +782,10 @@ CREATE TABLE users (
   pubskin_can     boolean NOT NULL DEFAULT FALSE,
   pubskin_enabled boolean NOT NULL DEFAULT FALSE,
   c_vns           integer NOT NULL DEFAULT 0,
-  c_wish          integer NOT NULL DEFAULT 0
+  c_wish          integer NOT NULL DEFAULT 0,
+  ulist_votes     jsonb,
+  ulist_vnlist    jsonb,
+  ulist_wish      jsonb
 );
 
 -- vn
