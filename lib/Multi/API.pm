@@ -1076,7 +1076,7 @@ my %GET_VNLIST = (
   proc    => sub {
     $_[0]{uid}*=1;
     $_[0]{vn}*=1;
-    $_[0]{status} = defined $_[0]{status} ? $_[0]{status}*1 : undef;
+    $_[0]{status} = defined $_[0]{status} ? $_[0]{status}*1 : 0;
     $_[0]{added} = int $_[0]{added};
     $_[0]{notes} ||= undef;
   },
