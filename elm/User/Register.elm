@@ -3,11 +3,10 @@ module User.Register exposing (main)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Json.Encode as JE
 import Browser
 import Lib.Api as Api
 import Gen.Api as GApi
-import Gen.UserEdit as GUE
+import Gen.UserRegister as GUR
 import Lib.Html exposing (..)
 
 
@@ -39,13 +38,6 @@ init =
   }
 
 
-encodeForm : Model -> JE.Value
-encodeForm o = JE.object
-  [ ("username", JE.string o.username)
-  , ("email",    JE.string o.email)
-  , ("vns",      JE.int o.vns) ]
-
-
 type Msg
   = Username String
   | EMail String
@@ -62,7 +54,7 @@ update msg model =
     VNs      n -> ({ model | vns      = Maybe.withDefault model.vns (String.toInt n) }, Cmd.none)
 
     Submit -> ( { model | state = Api.Loading }
-              , Api.post "/u/register.json" (encodeForm model) Submitted )
+              , GUR.send { username = model.username, email = model.email, vns = model.vns } Submitted )
 
     Submitted GApi.Success      -> ({ model | success = True }, Cmd.none)
     Submitted e                 -> ({ model | state = Api.Error e }, Cmd.none)
@@ -83,13 +75,13 @@ view model =
       [ h1 [] [ text "Create an account" ]
       , table [ class "formtable" ]
         [ formField "username::Username"
-          [ inputText "username" model.username Username GUE.valUsername
+          [ inputText "username" model.username Username GUR.valUsername
           , br_ 1
           , text "Preferred username. Must be lowercase, between 2 and 15 characters long and consist entirely of alphanumeric characters or a dash."
           , text " Names that look like database identifiers (i.e. a single letter followed by several numbers) are also disallowed."
           ]
         , formField "email::E-Mail"
-          [ inputText "email" model.email EMail GUE.valEmail
+          [ inputText "email" model.email EMail GUR.valEmail
           , br_ 1
           , text "Your email address will only be used in case you lose your password. "
           , text "We will never send spam or newsletters unless you explicitly ask us for it or we get hacked."

@@ -3,11 +3,10 @@ module User.PassReset exposing (main)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Json.Encode as JE
 import Browser
 import Lib.Api as Api
 import Gen.Api as GApi
-import Gen.UserEdit as GUE
+import Gen.UserPassReset as GUPR
 import Lib.Html exposing (..)
 
 
@@ -35,11 +34,6 @@ init =
   }
 
 
-encodeForm : Model -> JE.Value
-encodeForm o = JE.object
-  [ ("email",    JE.string o.email) ]
-
-
 type Msg
   = EMail String
   | Submit
@@ -49,13 +43,10 @@ type Msg
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    EMail    n -> ({ model | email    = n }, Cmd.none)
-
-    Submit -> ( { model | state = Api.Loading }
-              , Api.post "/u/newpass" (encodeForm model) Submitted )
-
-    Submitted GApi.Success      -> ({ model | success = True }, Cmd.none)
-    Submitted e                 -> ({ model | state = Api.Error e }, Cmd.none)
+    EMail n -> ({ model | email    = n }, Cmd.none)
+    Submit -> ({ model | state = Api.Loading }, GUPR.send { email = model.email } Submitted)
+    Submitted GApi.Success -> ({ model | success = True }, Cmd.none)
+    Submitted e            -> ({ model | state = Api.Error e }, Cmd.none)
 
 
 view : Model -> Html Msg
@@ -77,7 +68,7 @@ view model =
         , text " and we'll send you instructions to set a new password within a few minutes!"
         ]
       , table [ class "formtable" ]
-        [ formField "email::E-Mail" [ inputText "email" model.email EMail GUE.valEmail ]
+        [ formField "email::E-Mail" [ inputText "email" model.email EMail GUPR.valEmail ]
         ]
       ]
     , div [ class "mainbox" ]

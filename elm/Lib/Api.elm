@@ -55,11 +55,12 @@ expectResponse msg =
   in Http.expectJson res decode
 
 
--- Send a POST request with a JSON body to the VNDB API and get a Response back.
+-- Send a POST request to a Perl `elm_api` endpoint
+-- Should not be used directly, use the `send` function in the appropriate Gen.FormName module instead.
 post : String -> JE.Value -> (Response -> msg) -> Cmd msg
-post url body msg =
+post name body msg =
   Http.post
-    { url = url
+    { url = "/elm/" ++ name ++ ".json"
     , body = Http.jsonBody body
     , expect = expectResponse msg
     }

@@ -135,7 +135,7 @@ update msg model =
         Nothing -> ({ model | boardAdd = nm }, c)
         Just r  -> ({ model | boardAdd = A.clear nm, boards = Maybe.map (\b -> b ++ [r]) model.boards }, c)
 
-    Submit -> ({ model | state = Api.Loading }, Api.post "/t/edit.json" (GDE.encode (encode model)) Submitted)
+    Submit -> ({ model | state = Api.Loading }, GDE.send (encode model) Submitted)
     Submitted (GApi.Redirect s) -> (model, load s)
     Submitted r -> ({ model | state = Api.Error r }, Cmd.none)
 

@@ -3,7 +3,6 @@ port module UList.Opt exposing (main)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Json.Encode as JE
 import Task
 import Process
 import Browser
@@ -16,12 +15,12 @@ import Lib.RDate as RDate
 import Lib.DropDown as DD
 import Gen.Types as T
 import Gen.Api as GApi
-import Gen.UListVNOpt as GVO
 import Gen.UListVNNotes as GVN
 import Gen.UListDel as GDE
 import Gen.UListRStatus as GRS
+import Gen.Release as GR
 
-main : Program GVO.Recv Model Msg
+main : Program GVN.Recv Model Msg
 main = Browser.element
   { init = \f -> (init f, Date.today |> Task.perform Today)
   , subscriptions = \model -> Sub.batch (List.map (\r -> DD.sub r.dd) <| model.rels)
@@ -49,7 +48,7 @@ newrel rid vid st =
   }
 
 type alias Model =
-  { flags      : GVO.Recv
+  { flags      : GVN.Recv
   , today      : Date.Date
   , del        : Bool
   , delState   : Api.State
@@ -62,7 +61,7 @@ type alias Model =
   , relState   : Api.State
   }
 
-init : GVO.Recv -> Model
+init : GVN.Recv -> Model
 init f =
   { flags      = f
   , today      = Date.fromOrdinalDate 2100 1
@@ -109,7 +108,7 @@ update msg model =
     Del b -> ({ model | del = b }, Cmd.none)
     Delete ->
       ( { model | delState = Api.Loading }
-      , Api.post "/u/ulist/del.json" (GDE.encode { uid = model.flags.uid, vid = model.flags.vid }) Deleted)
+      , GDE.send { uid = model.flags.uid, vid = model.flags.vid } Deleted)
     Deleted GApi.Success -> (model, ulistVNDeleted True)
     Deleted e -> ({ model | delState = Api.Error e }, Cmd.none)
 
@@ -120,7 +119,7 @@ update msg model =
       if rev /= model.notesRev || model.notes == model.flags.notes
       then (model, Cmd.none)
       else ( { model | notesState = Api.Loading }
-           , Api.post "/u/ulist/setnote.json" (GVN.encode { uid = model.flags.uid, vid = model.flags.vid, notes = model.notes }) (NotesSaved rev))
+           , GVN.send { uid = model.flags.uid, vid = model.flags.vid, notes = model.notes } (NotesSaved rev))
     NotesSaved rev GApi.Success ->
       let f = model.flags
           nf = { f | notes = model.notes }
@@ -132,7 +131,7 @@ update msg model =
     RelOpen rid b -> ({ model | rels = modrel rid (\r -> { r | dd = DD.toggle r.dd b }) model.rels }, Cmd.none)
     RelSet rid st _ ->
       ( { model | rels = modrel rid (\r -> { r | dd = DD.toggle r.dd False, status = st, state = Api.Loading }) model.rels }
-      , Api.post "/u/ulist/rstatus.json" (GRS.encode { uid = model.flags.uid, rid = rid, status = st }) (RelSaved rid st) )
+      , GRS.send { uid = model.flags.uid, rid = rid, status = st } (RelSaved rid st) )
     RelSaved rid st GApi.Success ->
       let nr = if st == -1 then List.filter (\r -> r.id /= rid) model.rels
                            else modrel rid (\r -> { r | state = Api.Normal }) model.rels
@@ -142,7 +141,7 @@ update msg model =
 
     RelLoad ->
       ( { model | relState = Api.Loading }
-      , Api.post "/r/get.json" (JE.object [("vid", JE.int model.flags.vid)]) RelLoaded )
+      , GR.send { vid = model.flags.vid } RelLoaded )
     RelLoaded (GApi.Releases rels) ->
       ( { model
         | relState = Api.Normal

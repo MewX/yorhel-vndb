@@ -2,14 +2,17 @@ package VNWeb::User::PassSet;
 
 use VNWeb::Prelude;
 
+my $FORM = {
+    uid      => { id => 1 },
+    token    => { regex => qr/[a-f0-9]{40}/ },
+    password => { _when => 'in', password => 1 },
+};
 
-# Compatibility with old the URL format
-TUWF::get qr{/$RE{uid}/setpass}, sub { tuwf->resRedirect(sprintf('/u%d/setpass/%s', tuwf->capture('id'), tuwf->reqGet('t')||''), 'temp') };
+my $FORM_IN  = form_compile in  => $FORM;
+my $FORM_OUT = form_compile out => $FORM;
 
 
-my $reset_url = qr{/$RE{uid}/setpass/(?<token>[a-f0-9]{40})};
-
-TUWF::get $reset_url, sub {
+TUWF::get qr{/$RE{uid}/setpass/(?<token>[a-f0-9]{40})}, sub {
     return tuwf->resRedirect('/', 'temp') if auth;
 
     my $id = tuwf->capture('id');
@@ -19,24 +22,20 @@ TUWF::get $reset_url, sub {
     return tuwf->resNotFound if !$name || !auth->isvalidtoken($id, $token);
 
     framework_ title => 'Set password', sub {
-        elm_ 'User.PassSet', tuwf->compile({}), tuwf->reqPath;
+        elm_ 'User.PassSet', $FORM_OUT, { uid => $id, token => $token };
     };
 };
 
 
-json_api $reset_url, {
-   password => { password => 1 },
-}, sub {
-    my $data = shift;
-    my $id = tuwf->capture('id');
-    my $token = tuwf->capture('token');
+elm_api UserPassSet => $FORM_OUT, $FORM_IN, sub {
+    my($data) = @_;
 
     return elm_InsecurePass if is_insecurepass($data->{password});
     # "CSRF" is kind of wrong here, but the message advices to reload the page,
     # which will give a 404, which should be a good enough indication that the
     # token has expired. This case won't happen often.
-    return elm_CSRF if !auth->setpass($id, $token, undef, $data->{password});
-    tuwf->dbExeci('UPDATE users SET email_confirmed = true WHERE id =', \$id);
+    return elm_CSRF if !auth->setpass($data->{uid}, $data->{token}, undef, $data->{password});
+    tuwf->dbExeci('UPDATE users SET email_confirmed = true WHERE id =', \$data->{uid});
     elm_Success
 };
 

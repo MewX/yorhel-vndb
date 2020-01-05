@@ -147,10 +147,7 @@ update msg model =
     AliasMain n _ -> ({ model | aid = n }, Cmd.none)
     AliasAdd      -> ({ model | alias = model.alias ++ [{ aid = newAid model, name = "", original = "", inuse = False }] }, Cmd.none)
 
-    Submit ->
-      let body = GSE.encode (encode model)
-      in ({ model | state = Api.Loading }, Api.post "/s/edit.json" body Submitted)
-
+    Submit -> ({ model | state = Api.Loading }, GSE.send (encode model) Submitted)
     Submitted (GApi.Redirect s) -> (model, load s)
     Submitted r -> ({ model | state = Api.Error r }, Cmd.none)
 

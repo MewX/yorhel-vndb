@@ -70,7 +70,6 @@ sub import {
 
     no strict 'refs';
     *{$c.'::RE'} = *RE;
-    *{$c.'::json_api'} = \&json_api;
     *{$c.'::in'} = \&in;
 }
 
@@ -98,41 +97,6 @@ our %RE = (
     drev => qr{d$id$rev?},
     postid => qr{t$id\.(?<num>$num)},
 );
-
-
-
-# Easy wrapper to create a simple API that accepts JSON data on POST requests.
-# The CSRF token and the input data are validated before the subroutine is
-# called.
-#
-# Usage:
-#
-#   json_api '/some/url', {
-#       username => { maxlength => 10 },
-#   }, sub {
-#       my $validated_data = shift;
-#   };
-sub json_api {
-    my($path, $keys, $sub) = @_;
-
-    my $schema = ref $keys eq 'HASH' ? tuwf->compile({ type => 'hash', keys => $keys }) : $keys;
-
-    TUWF::post $path => sub {
-        if(!auth->csrfcheck(tuwf->reqHeader('X-CSRF-Token')||'')) {
-            warn "Invalid CSRF token in request\n";
-            return elm_CSRF;
-        }
-
-        my $data = tuwf->validate(json => $schema);
-        if(!$data) {
-            warn "JSON validation failed\ninput: " . JSON::XS->new->allow_nonref->pretty->canonical->encode(tuwf->reqJSON) . "\nerror: " . JSON::XS->new->encode($data->err) . "\n";
-            return elm_Invalid;
-        }
-
-        $sub->($data->data);
-        warn "Non-JSON response to a json_api request, is this intended?\n" if tuwf->resHeader('Content-Type') !~ /^application\/json/;
-    };
-}
 
 
 # Simple "is this element in the array?" function, using 'eq' to test equality.

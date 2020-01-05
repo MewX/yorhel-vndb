@@ -3,12 +3,12 @@ module User.Login exposing (main)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Json.Encode as JE
 import Browser
 import Browser.Navigation exposing (load)
 import Lib.Api as Api
 import Gen.Api as GApi
-import Gen.UserEdit as GUE
+import Gen.UserLogin as GUL
+import Gen.UserChangePass as GUCP
 import Gen.Types exposing (adminEMail)
 import Lib.Html exposing (..)
 
@@ -47,19 +47,6 @@ init ref =
   }
 
 
-encodeLogin : Model -> JE.Value
-encodeLogin o = JE.object
-  [ ("username", JE.string o.username)
-  , ("password", JE.string o.password) ]
-
-
-encodeChangePass : Model -> JE.Value
-encodeChangePass o = JE.object
-  [ ("username", JE.string o.username)
-  , ("oldpass",  JE.string o.password)
-  , ("newpass",  JE.string o.newpass1) ]
-
-
 type Msg
   = Username String
   | Password String
@@ -80,11 +67,11 @@ update msg model =
     Submit ->
       if not model.insecure
       then ( { model | state = Api.Loading }
-           , Api.post "/u/login.json" (encodeLogin model) Submitted )
+           , GUL.send { username = model.username, password = model.password } Submitted )
       else if model.newpass1 /= model.newpass2
       then ( { model | noteq = True }, Cmd.none )
       else ( { model | state = Api.Loading }
-           , Api.post "/u/changepass.json" (encodeChangePass model) Submitted )
+           , GUCP.send { username = model.username, oldpass = model.password, newpass = model.newpass1 } Submitted )
 
     Submitted GApi.Success      -> (model, load model.ref)
     Submitted GApi.InsecurePass -> ({ model | insecure = True, state = if model.insecure then Api.Error GApi.InsecurePass else Api.Normal }, Cmd.none)
@@ -99,12 +86,12 @@ view model =
       [ h1 [] [ text "Login" ]
       , table [ class "formtable" ]
         [ formField "username::Username"
-          [ inputText "username" model.username Username GUE.valUsername
+          [ inputText "username" model.username Username GUL.valUsername
           , br_ 1
           , a [ href "/u/register" ] [ text "No account yet?" ]
           ]
         , formField "password::Password"
-          [ inputPassword "password" model.password Password GUE.valPasswordOld
+          [ inputPassword "password" model.password Password GUL.valPassword
           , br_ 1
           , a [ href "/u/newpass" ] [ text "Forgot your password?" ]
           ]
@@ -132,9 +119,9 @@ view model =
         , text "Your current password is in a public database of leaked passwords. You need to change it before you can continue."
         ]
       , table [ class "formtable" ]
-        [ formField "newpass1::New password" [ inputPassword "newpass1" model.newpass1 Newpass1 GUE.valPasswordNew ]
+        [ formField "newpass1::New password" [ inputPassword "newpass1" model.newpass1 Newpass1 GUCP.valNewpass ]
         , formField "newpass2::Repeat"
-          [ inputPassword "newpass2" model.newpass2 Newpass2 GUE.valPasswordNew
+          [ inputPassword "newpass2" model.newpass2 Newpass2 GUCP.valNewpass
           , br_ 1
           , if model.noteq then b [ class "standout" ] [ text "Passwords do not match" ] else text ""
           ]

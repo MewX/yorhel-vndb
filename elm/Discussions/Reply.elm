@@ -50,9 +50,7 @@ update msg model =
     NotOldAnymore -> ({ model | old = False }, Cmd.none)
     Content m -> let (nm,nc) = TP.update m model.msg in ({ model | msg = nm }, Cmd.map Content nc)
 
-    Submit ->
-      let body = GDR.encode { msg = model.msg.data, tid = model.tid }
-      in ({ model | state = Api.Loading }, Api.post "/t/reply.json" body Submitted)
+    Submit -> ({ model | state = Api.Loading }, GDR.send { msg = model.msg.data, tid = model.tid } Submitted)
     -- Reload is necessary because s may be the same as the current URL (with a location.hash)
     Submitted (GApi.Redirect s) -> (model, Cmd.batch [ load s, reload ])
     Submitted r -> ({ model | state = Api.Error r }, Cmd.none)

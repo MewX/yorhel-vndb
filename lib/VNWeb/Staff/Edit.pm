@@ -31,8 +31,6 @@ my $FORM_OUT = form_compile out => $FORM;
 my $FORM_IN  = form_compile in  => $FORM;
 my $FORM_CMP = form_compile cmp => $FORM;
 
-elm_form StaffEdit => $FORM_OUT, $FORM_IN;
-
 
 TUWF::get qr{/$RE{srev}/edit} => sub {
     my $e = db_entry s => tuwf->capture('id'), tuwf->capture('rev') or return tuwf->resNotFound;
@@ -65,7 +63,7 @@ TUWF::get qr{/s/new}, sub {
 };
 
 
-json_api qr{/s/edit\.json}, $FORM_IN, sub {
+elm_api StaffEdit => $FORM_OUT, $FORM_IN, sub {
     my $data = shift;
     my $new = !$data->{id};
     my $e = $new ? { id => 0 } : db_entry s => $data->{id} or return tuwf->resNotFound;

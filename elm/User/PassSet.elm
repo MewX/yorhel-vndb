@@ -3,18 +3,17 @@ module User.PassSet exposing (main)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Json.Encode as JE
 import Browser
 import Browser.Navigation exposing (load)
 import Lib.Api as Api
 import Gen.Api as GApi
-import Gen.UserEdit as GUE
+import Gen.UserPassSet as GUPS
 import Lib.Html exposing (..)
 
 
-main : Program String Model Msg
+main : Program GUPS.Recv Model Msg
 main = Browser.element
-  { init = \url -> (init url, Cmd.none)
+  { init = \f -> (init f, Cmd.none)
   , subscriptions = always Sub.none
   , view = view
   , update = update
@@ -22,7 +21,8 @@ main = Browser.element
 
 
 type alias Model =
-  { url      : String
+  { token    : String
+  , uid      : Int
   , newpass1 : String
   , newpass2 : String
   , state    : Api.State
@@ -30,19 +30,15 @@ type alias Model =
   }
 
 
-init : String -> Model
-init url =
-  { url      = url
+init : GUPS.Recv -> Model
+init f =
+  { token    = f.token
+  , uid      = f.uid
   , newpass1 = ""
   , newpass2 = ""
   , state    = Api.Normal
   , noteq    = False
   }
-
-
-encodeForm : Model -> JE.Value
-encodeForm o = JE.object
-  [ ("password", JE.string o.newpass1) ]
 
 
 type Msg
@@ -62,7 +58,7 @@ update msg model =
       if model.newpass1 /= model.newpass2
       then ( { model | noteq = True }, Cmd.none)
       else ( { model | state = Api.Loading }
-           , Api.post model.url (encodeForm model) Submitted )
+           , GUPS.send { token = model.token, uid = model.uid, password = model.newpass1 } Submitted )
 
     Submitted GApi.Success -> (model, load "/")
     Submitted e            -> ({ model | state = Api.Error e }, Cmd.none)
@@ -75,9 +71,9 @@ view model =
     [ h1 [] [ text "Set your password" ]
     , p [] [ text "Now you can set a password for your account. You will be logged in automatically after your password has been saved." ]
     , table [ class "formtable" ]
-      [ formField "newpass1::New password" [ inputPassword "newpass1" model.newpass1 Newpass1 GUE.valPasswordNew ]
+      [ formField "newpass1::New password" [ inputPassword "newpass1" model.newpass1 Newpass1 GUPS.valPassword ]
       , formField "newpass2::Repeat"
-        [ inputPassword "newpass2" model.newpass2 Newpass2 GUE.valPasswordNew
+        [ inputPassword "newpass2" model.newpass2 Newpass2 GUPS.valPassword
         , br_ 1
         , if model.noteq then b [ class "standout" ] [ text "Passwords do not match" ] else text ""
         ]

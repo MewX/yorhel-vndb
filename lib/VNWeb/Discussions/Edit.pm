@@ -34,61 +34,8 @@ my $FORM = {
 my $FORM_OUT = form_compile out => $FORM;
 my $FORM_IN  = form_compile in  => $FORM;
 
-elm_form DiscussionsEdit => $FORM_OUT, $FORM_IN;
 
-
-TUWF::get qr{(?:/t/(?<board>$BOARD_RE)/new|/$RE{postid}/edit)}, sub {
-    my($board_type, $board_id) = (tuwf->capture('board')||'') =~ /^([^0-9]+)([0-9]*)$/;
-    my($tid, $num) = (tuwf->capture('id'), tuwf->capture('num'));
-
-    $board_type = 'ge' if $board_type && $board_type eq 'an' && !auth->permBoardmod;
-
-    my $t = !$tid ? {} : tuwf->dbRowi('
-        SELECT t.id, tp.tid, tp.num, t.title, t.locked, t.private, t.poll_question, t.poll_max_options, tp.hidden, tp.msg, tp.uid AS user_id,', sql_totime('tp.date'), 'AS date
-          FROM threads t
-          JOIN threads_posts tp ON tp.tid = t.id AND tp.num =', \$num,
-        'WHERE t.id =', \$tid,
-          'AND', sql_visible_threads());
-    return tuwf->resNotFound if $tid && !$t->{id};
-    return tuwf->resDenied if !can_edit t => $t;
-
-    $t->{poll}{options} = $t->{poll_question} && [ map $_->{option}, tuwf->dbAlli('SELECT option FROM threads_poll_options WHERE tid =', \$t->{id}, 'ORDER BY id')->@* ];
-    $t->{poll}{question} = delete $t->{poll_question};
-    $t->{poll}{max_options} = delete $t->{poll_max_options};
-    $t->{poll} = undef if !$t->{poll}{question};
-
-    if($tid) {
-        enrich_boards undef, $t;
-    } else {
-        $t->{boards} = [ {
-            btype => $board_type,
-            iid   => $board_id||0,
-            title => !$board_id ? undef :
-                tuwf->dbVali('SELECT title FROM', sql_boards(), 'x WHERE btype =', \$board_type, 'AND iid =', \$board_id)
-        } ];
-        return tuwf->resNotFound if $board_id && !length $t->{boards}[0]{title};
-        push $t->{boards}->@*, { btype => 'u', iid => auth->uid, title => auth->user->{user_name} }
-            if $board_type eq 'u' && $board_id != auth->uid;
-    }
-
-    $t->{can_mod}     = auth->permBoardmod;
-    $t->{can_private} = auth->permBoardmod || auth->permDbmod || auth->permUsermod;
-
-    $t->{msg}     //= '';
-    $t->{title}   //= tuwf->reqGet('title');
-    $t->{tid}     //= undef;
-    $t->{num}     //= undef;
-    $t->{private} //= 0;
-    $t->{hidden}  //= 0;
-    $t->{locked}  //= 0;
-
-    framework_ title => $tid ? 'Edit post' : 'Create new thread', sub {
-        elm_ 'Discussions.Edit' => $FORM_OUT, $t;
-    };
-};
-
-
-json_api qr{/t/edit\.json}, $FORM_IN, sub {
+elm_api DiscussionsEdit => $FORM_OUT, $FORM_IN, sub {
     my($data) = @_;
     my $tid = $data->{tid};
     my $num = $data->{num} || 1;
@@ -159,5 +106,57 @@ json_api qr{/t/edit\.json}, $FORM_IN, sub {
 
     elm_Redirect post_url $tid, $num, $num;
 };
+
+
+TUWF::get qr{(?:/t/(?<board>$BOARD_RE)/new|/$RE{postid}/edit)}, sub {
+    my($board_type, $board_id) = (tuwf->capture('board')||'') =~ /^([^0-9]+)([0-9]*)$/;
+    my($tid, $num) = (tuwf->capture('id'), tuwf->capture('num'));
+
+    $board_type = 'ge' if $board_type && $board_type eq 'an' && !auth->permBoardmod;
+
+    my $t = !$tid ? {} : tuwf->dbRowi('
+        SELECT t.id, tp.tid, tp.num, t.title, t.locked, t.private, t.poll_question, t.poll_max_options, tp.hidden, tp.msg, tp.uid AS user_id,', sql_totime('tp.date'), 'AS date
+          FROM threads t
+          JOIN threads_posts tp ON tp.tid = t.id AND tp.num =', \$num,
+        'WHERE t.id =', \$tid,
+          'AND', sql_visible_threads());
+    return tuwf->resNotFound if $tid && !$t->{id};
+    return tuwf->resDenied if !can_edit t => $t;
+
+    $t->{poll}{options} = $t->{poll_question} && [ map $_->{option}, tuwf->dbAlli('SELECT option FROM threads_poll_options WHERE tid =', \$t->{id}, 'ORDER BY id')->@* ];
+    $t->{poll}{question} = delete $t->{poll_question};
+    $t->{poll}{max_options} = delete $t->{poll_max_options};
+    $t->{poll} = undef if !$t->{poll}{question};
+
+    if($tid) {
+        enrich_boards undef, $t;
+    } else {
+        $t->{boards} = [ {
+            btype => $board_type,
+            iid   => $board_id||0,
+            title => !$board_id ? undef :
+                tuwf->dbVali('SELECT title FROM', sql_boards(), 'x WHERE btype =', \$board_type, 'AND iid =', \$board_id)
+        } ];
+        return tuwf->resNotFound if $board_id && !length $t->{boards}[0]{title};
+        push $t->{boards}->@*, { btype => 'u', iid => auth->uid, title => auth->user->{user_name} }
+            if $board_type eq 'u' && $board_id != auth->uid;
+    }
+
+    $t->{can_mod}     = auth->permBoardmod;
+    $t->{can_private} = auth->permBoardmod || auth->permDbmod || auth->permUsermod;
+
+    $t->{msg}     //= '';
+    $t->{title}   //= tuwf->reqGet('title');
+    $t->{tid}     //= undef;
+    $t->{num}     //= undef;
+    $t->{private} //= 0;
+    $t->{hidden}  //= 0;
+    $t->{locked}  //= 0;
+
+    framework_ title => $tid ? 'Edit post' : 'Create new thread', sub {
+        elm_ 'Discussions.Edit' => $FORM_OUT, $t;
+    };
+};
+
 
 1;

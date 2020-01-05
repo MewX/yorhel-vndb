@@ -10,7 +10,7 @@ TUWF::get '/u/newpass' => sub {
 };
 
 
-json_api '/u/newpass', {
+elm_api UserPassReset => undef, {
     email => { email => 1 },
 }, sub {
     my $data = shift;

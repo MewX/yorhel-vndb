@@ -3,42 +3,43 @@ module Lib.TextPreview exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Json.Encode as JE
 import Lib.Html exposing (..)
 import Lib.Ffi as Ffi
 import Lib.Api as Api
 import Gen.Api as GApi
+import Gen.Markdown as GM
+import Gen.BBCode as GB
 
 
 type alias Model =
-  { state   : Api.State
-  , data    : String  -- contents of the textarea
-  , preview : String  -- Rendered HTML, "" if not in sync with data
-  , display : Bool    -- False = textarea is displayed, True = preview is displayed
-  , apiUrl  : String
-  , class   : String
+  { state    : Api.State
+  , data     : String  -- contents of the textarea
+  , preview  : String  -- Rendered HTML, "" if not in sync with data
+  , display  : Bool    -- False = textarea is displayed, True = preview is displayed
+  , endpoint : { content : String } -> (GApi.Response -> Msg) -> Cmd Msg
+  , class    : String
   }
 
 
 bbcode : String -> Model
 bbcode data =
-  { state   = Api.Normal
-  , data    = data
-  , preview = ""
-  , display = False
-  , apiUrl  = "/js/bbcode.json"
-  , class   = "preview bbcode"
+  { state    = Api.Normal
+  , data     = data
+  , preview  = ""
+  , display  = False
+  , endpoint = GB.send
+  , class    = "preview bbcode"
   }
 
 
 markdown : String -> Model
 markdown data =
-  { state   = Api.Normal
-  , data    = data
-  , preview = ""
-  , display = False
-  , apiUrl  = "/js/markdown.json"
-  , class   = "preview docs"
+  { state    = Api.Normal
+  , data     = data
+  , preview  = ""
+  , display  = False
+  , endpoint = GM.send
+  , class    = "preview docs"
   }
 
 
@@ -59,7 +60,7 @@ update msg model =
       if model.preview /= ""
       then ( { model | display = True }, Cmd.none)
       else ( { model | display = True, state = Api.Loading }
-           , Api.post model.apiUrl (JE.object [("content", JE.string model.data)]) HandlePreview
+           , model.endpoint { content = model.data } HandlePreview
            )
 
     HandlePreview (GApi.Content s) -> ({ model | state = Api.Normal, preview = s }, Cmd.none)

@@ -39,8 +39,6 @@ my $FORM = form_compile in => {
     authmod   => { anybool => 1 },
 };
 
-# Some validations in this form are also used by other User.* Elm modules.
-elm_form UserEdit => undef, $FORM;
 
 
 sub _getmail {
@@ -77,7 +75,7 @@ TUWF::get qr{/$RE{uid}/edit}, sub {
 };
 
 
-json_api qr{/u/edit\.json}, $FORM, sub {
+elm_api UserEdit => undef, $FORM, sub {
     my $data = shift;
 
     my $username = tuwf->dbVali('SELECT username FROM users WHERE id =', \$data->{id});

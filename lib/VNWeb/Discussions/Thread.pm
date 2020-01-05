@@ -19,14 +19,26 @@ my $POLL_OUT = form_compile any => {
     } },
 };
 
-
 my $POLL_IN = form_compile any => {
     tid     => { id => 1 },
     options => { type => 'array', values => { id => 1 } },
 };
 
+elm_api DiscussionsPoll => $POLL_OUT, $POLL_IN, sub {
+    my($data) = @_;
+    return elm_Unauth if !auth;
 
-elm_form 'DiscussionsPoll' => $POLL_OUT, $POLL_IN;
+    my $t = tuwf->dbRowi('SELECT poll_question, poll_max_options FROM threads t WHERE id =', \$data->{tid}, 'AND', sql_visible_threads());
+    return tuwf->resNotFound if !$t->{poll_question};
+
+    die 'Too many options' if $data->{options}->@* > $t->{poll_max_options};
+    validate_dbid sql('SELECT id FROM threads_poll_options WHERE tid =', \$data->{tid}, 'AND id IN'), $data->{options}->@*;
+
+    tuwf->dbExeci('DELETE FROM threads_poll_votes WHERE tid =', \$data->{tid}, 'AND uid =', \auth->uid);
+    tuwf->dbExeci('INSERT INTO threads_poll_votes', { tid => $data->{tid}, uid => auth->uid, optid => $_ }) for $data->{options}->@*;
+    elm_Success
+};
+
 
 
 
@@ -39,7 +51,19 @@ my $REPLY = {
 my $REPLY_IN  = form_compile in  => $REPLY;
 my $REPLY_OUT = form_compile out => $REPLY;
 
-elm_form 'DiscussionsReply' => $REPLY_OUT, $REPLY_IN;
+elm_api DiscussionsReply => $REPLY_OUT, $REPLY_IN, sub {
+    my($data) = @_;
+    my $t = tuwf->dbRowi('SELECT id, locked, count FROM threads t WHERE id =', \$data->{tid}, 'AND', sql_visible_threads());
+    return tuwf->resNotFound if !$t->{id};
+    return elm_Unauth if !can_edit t => $t;
+
+    my $num = $t->{count}+1;
+    my $msg = bb_subst_links $data->{msg};
+    tuwf->dbExeci('INSERT INTO threads_posts', { tid => $t->{id}, num => $num, uid => auth->uid, msg => $msg });
+    tuwf->dbExeci('UPDATE threads SET count =', \$num, 'WHERE id =', \$t->{id});
+    elm_Redirect post_url $t->{id}, $num, 'last';
+};
+
 
 
 
@@ -176,36 +200,6 @@ TUWF::get qr{/$RE{tid}(?:/$RE{num})?}, sub {
 TUWF::get qr{/$RE{postid}}, sub {
     my($id, $num) = (tuwf->capture('id'), tuwf->capture('num'));
     tuwf->resRedirect(post_url($id, $num, $num), 'perm')
-};
-
-
-json_api qr{/t/pollvote\.json}, $POLL_IN, sub {
-    my($data) = @_;
-    return elm_Unauth if !auth;
-
-    my $t = tuwf->dbRowi('SELECT poll_question, poll_max_options FROM threads t WHERE id =', \$data->{tid}, 'AND', sql_visible_threads());
-    return tuwf->resNotFound if !$t->{poll_question};
-
-    die 'Too many options' if $data->{options}->@* > $t->{poll_max_options};
-    validate_dbid sql('SELECT id FROM threads_poll_options WHERE tid =', \$data->{tid}, 'AND id IN'), $data->{options}->@*;
-
-    tuwf->dbExeci('DELETE FROM threads_poll_votes WHERE tid =', \$data->{tid}, 'AND uid =', \auth->uid);
-    tuwf->dbExeci('INSERT INTO threads_poll_votes', { tid => $data->{tid}, uid => auth->uid, optid => $_ }) for $data->{options}->@*;
-    elm_Success
-};
-
-
-json_api qr{/t/reply\.json}, $REPLY_IN, sub {
-    my($data) = @_;
-    my $t = tuwf->dbRowi('SELECT id, locked, count FROM threads t WHERE id =', \$data->{tid}, 'AND', sql_visible_threads());
-    return tuwf->resNotFound if !$t->{id};
-    return elm_Unauth if !can_edit t => $t;
-
-    my $num = $t->{count}+1;
-    my $msg = bb_subst_links $data->{msg};
-    tuwf->dbExeci('INSERT INTO threads_posts', { tid => $t->{id}, num => $num, uid => auth->uid, msg => $msg });
-    tuwf->dbExeci('UPDATE threads SET count =', \$num, 'WHERE id =', \$t->{id});
-    elm_Redirect post_url $t->{id}, $num, 'last';
 };
 
 1;

@@ -24,6 +24,7 @@ import Lib.Util exposing (..)
 import Lib.Api as Api
 import Gen.Types exposing (boardTypes)
 import Gen.Api as GApi
+import Gen.Boards as GB
 
 
 type alias Config m a =
@@ -37,9 +38,8 @@ type alias Config m a =
 
 
 type alias SourceConfig m a =
-    -- API path to query for completion results.
-    -- (The API must accept POST requests with {"search":".."} as body)
-  { path     : String
+    -- API endpoint to query for completion results.
+  { endpoint : String -> (GApi.Response -> m) -> Cmd m
     -- How to decode results from the API
   , decode   : GApi.Response -> Maybe (List a)
     -- How to display the decoded results
@@ -54,7 +54,7 @@ type alias SourceConfig m a =
 
 boardSource : SourceConfig m GApi.ApiBoardResult
 boardSource =
-  { path    = "/t/boards.json"
+  { endpoint = \s -> GB.send { search = s }
   , decode  = \x -> case x of
       GApi.BoardResult e -> Just e
       _ -> Nothing
@@ -161,7 +161,7 @@ update cfg msg model =
       if model.value == "" || model.wait /= i
       then mod model
       else ( model
-           , Api.post cfg.source.path (JE.object [("search", JE.string model.value)]) (cfg.wrap << Results model.value)
+           , cfg.source.endpoint model.value (cfg.wrap << Results model.value)
            , Nothing )
 
     Results s r -> mod <|

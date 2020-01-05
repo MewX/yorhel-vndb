@@ -49,7 +49,7 @@ update msg model =
 
     Submit ->
       ( { model | state = Api.Loading, hid = False }
-      , Api.post "/u/ulist/savedefault.json" (GUSD.encode { uid = model.uid, opts = model.opts, field = model.field }) Submitted)
+      , GUSD.send { uid = model.uid, opts = model.opts, field = model.field } Submitted)
     Submitted GApi.Success -> ({ model | state = Api.Normal, hid = True }, Cmd.none)
     Submitted r -> ({ model | state = Api.Error r }, Cmd.none)
 

@@ -27,9 +27,7 @@ my $LABELS = form_compile any => {
     } }
 };
 
-elm_form 'UListManageLabels', undef, $LABELS;
-
-json_api qr{/u/ulist/labels\.json}, $LABELS, sub {
+elm_api UListManageLabels => undef, $LABELS, sub {
     my($uid, $labels) = ($_[0]{uid}, $_[0]{labels});
     return elm_Unauth if !own $uid;
 
@@ -88,9 +86,7 @@ my $VNVOTE = form_compile any => {
     vote => { vnvote => 1 },
 };
 
-elm_form 'UListVoteEdit', undef, $VNVOTE;
-
-json_api qr{/u/ulist/setvote\.json}, $VNVOTE, sub {
+elm_api UListVoteEdit => undef, $VNVOTE, sub {
     my($data) = @_;
     return elm_Unauth if !own $data->{uid};
     tuwf->dbExeci(
@@ -120,9 +116,7 @@ my $VNLABELS = {
 my $VNLABELS_OUT = form_compile out => $VNLABELS;
 my $VNLABELS_IN  = form_compile in  => $VNLABELS;
 
-elm_form 'UListLabelEdit', $VNLABELS_OUT, $VNLABELS_IN;
-
-json_api qr{/u/ulist/setlabel\.json}, $VNLABELS_IN, sub {
+elm_api UListLabelEdit => $VNLABELS_OUT, $VNLABELS_IN, sub {
     my($data) = @_;
     return elm_Unauth if !own $data->{uid};
     die "Attempt to set vote label" if $data->{label} == 7;
@@ -151,9 +145,7 @@ my $VNDATE = form_compile any => {
     start => { anybool => 1 }, # Field selection, started/finished
 };
 
-elm_form 'UListDateEdit', undef, $VNDATE;
-
-json_api qr{/u/ulist/setdate\.json}, $VNDATE, sub {
+elm_api UListDateEdit => undef, $VNDATE, sub {
     my($data) = @_;
     return elm_Unauth if !own $data->{uid};
     tuwf->dbExeci(
@@ -184,20 +176,14 @@ my $VNOPT = form_compile any => {
     relstatus => { type => 'array', values => { uint => 1 } }, # List of release statuses, same order as rels
 };
 
-elm_form 'UListVNOpt', $VNOPT, undef;
 
 
-
-
-my $VNNOTES = form_compile any => {
+# UListVNNotes module is abused for the UList.Opts flag definition
+elm_api UListVNNotes => $VNOPT, {
     uid   => { id => 1 },
     vid   => { id => 1 },
     notes => { required => 0, default => '', maxlength => 2000 },
-};
-
-elm_form 'UListVNNotes', undef, $VNNOTES;
-
-json_api qr{/u/ulist/setnote\.json}, $VNNOTES, sub {
+}, sub {
     my($data) = @_;
     return elm_Unauth if !own $data->{uid};
     tuwf->dbExeci(
@@ -211,14 +197,10 @@ json_api qr{/u/ulist/setnote\.json}, $VNNOTES, sub {
 
 
 
-my $VNDEL = form_compile any => {
+elm_api UListDel => undef, {
     uid => { id => 1 },
     vid => { id => 1 },
-};
-
-elm_form 'UListDel', undef, $VNDEL;
-
-json_api qr{/u/ulist/del\.json}, $VNDEL, sub {
+}, sub {
     my($data) = @_;
     return elm_Unauth if !own $data->{uid};
     tuwf->dbExeci('DELETE FROM ulist_vns WHERE uid =', \$data->{uid}, 'AND vid =', \$data->{vid});
@@ -229,14 +211,10 @@ json_api qr{/u/ulist/del\.json}, $VNDEL, sub {
 
 
 
-my $VNADD = form_compile any => {
+elm_api UListAdd => undef, {
     uid => { id => 1 },
     vid => { id => 1 },
-};
-
-elm_form 'UListAdd', undef, $VNADD;
-
-json_api qr{/u/ulist/add\.json}, $VNADD, sub {
+}, sub {
     my($data) = @_;
     return elm_Unauth if !own $data->{uid};
     tuwf->dbExeci('INSERT INTO ulist_vns', $data, 'ON CONFLICT (uid, vid) DO NOTHING');
@@ -247,16 +225,12 @@ json_api qr{/u/ulist/add\.json}, $VNADD, sub {
 
 
 
-my $RSTATUS = form_compile any => {
+# Adds the release when not in the list.
+elm_api UListRStatus => undef, {
     uid => { id => 1 },
     rid => { id => 1 },
     status => { int => 1, enum => [ -1, keys %RLIST_STATUS ] }, # -1 meaning delete
-};
-
-elm_form 'UListRStatus', undef, $RSTATUS;
-
-# Adds the release when not in the list.
-json_api qr{/u/ulist/rstatus\.json}, $RSTATUS, sub {
+}, sub {
     my($data) = @_;
     return elm_Unauth if !own $data->{uid};
     if($data->{status} == -1) {
@@ -291,9 +265,7 @@ my $SAVED_OPTS = {
 my $SAVED_OPTS_IN  = form_compile in  => $SAVED_OPTS;
 my $SAVED_OPTS_OUT = form_compile out => $SAVED_OPTS;
 
-elm_form UListSaveDefault => $SAVED_OPTS_OUT, $SAVED_OPTS_IN;
-
-json_api qr{/u/ulist/savedefault\.json}, $SAVED_OPTS_IN, sub {
+elm_api UListSaveDefault => $SAVED_OPTS_OUT, $SAVED_OPTS_IN, sub {
     my($data) = @_;
     return elm_Unauth if !own $data->{uid};
     tuwf->dbExeci('UPDATE users SET ulist_'.$data->{field}, '=', \JSON::XS->new->encode($data->{opts}), 'WHERE id =', \$data->{uid});

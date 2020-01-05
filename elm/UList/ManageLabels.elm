@@ -59,8 +59,7 @@ update msg model =
       ( { model | labels = model.labels ++ [{ id = -1, label = "New label", private = List.all (\il -> il.private) model.labels, count = 0, delete = Nothing }] }
       , Task.attempt (always Noop) <| Ffi.elemCall "select" <| "label_txt_" ++ String.fromInt (List.length model.labels) )
 
-    Submit -> ({ model | state = Api.Loading }, Api.post "/u/ulist/labels.json" (GML.encode { uid = model.uid, labels = model.labels }) Submitted)
-
+    Submit -> ({ model | state = Api.Loading }, GML.send { uid = model.uid, labels = model.labels } Submitted)
     Submitted GApi.Success -> (model, reload)
     Submitted r -> ({ model | state = Api.Error r }, Cmd.none)
 

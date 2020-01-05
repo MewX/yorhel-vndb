@@ -18,7 +18,7 @@ use VNDB::Types;
 use VNWeb::Auth;
 
 our @EXPORT = qw/
-    elm_form
+    elm_api
 /;
 
 
@@ -176,30 +176,63 @@ sub write_module {
 
 
 
-
-# Create type definitions and a JSON encoder for a typical form.
+# Create an API endpoint that can be called from Elm.
 # Usage:
 #
-#   elm_form 'FormName', $TO_ELM_SCHEMA, $TO_SERVER_SCHEMA;
+#   elm_api FormName => $OUT_SCHEMA, $IN_SCHEMA, sub {
+#       my($data) = @_;
+#       elm_Success # Or any other elm_Response() function
+#   };
 #
-# That will create a Gen.FormName module with the following definitions:
+# That will create an endpoint at `POST /elm/FormName.json` that accepts JSON
+# data that must validate $IN_SCHEMA. The subroutine is given the validated
+# data as argument.
 #
+# It will also create an Elm module called `Gen.FormName` with the following definitions:
+#
+#   -- Elm type corresponding to $OUT_SCHEMA
 #   type alias Recv = { .. }
+#   -- Elm type corresponding to $IN_SCHEMA
 #   type alias Send = { .. }
-#   encode : Send -> JE.Value
+#   -- HTML Validation attributes corresponding to fields in `Send`
 #   valFieldName : List Html.Attribute
 #
-sub elm_form {
-    return if !tuwf->{elmgen};
-    my($name, $out, $in) = @_;
+#   -- Command to send an API request to the endpoint and receive a response
+#   send : Send -> (Gen.Api.Response -> msg) -> Cmd msg
+#
+sub elm_api {
+    my($name, $out, $in, $sub) = @_;
 
-    my $data = '';
-    $data .= def_type Recv => $out->analyze if $out;
-    $data .= def_type Send => $in->analyze if $in;
-    $data .= encoder encode => 'Send', $in->analyze if $in;
-    $data .= def_validation val => $in->analyze if $in;
+    $in  = ref $in  eq 'HASH' ? tuwf->compile({ type => 'hash', keys => $in  }) : $in;
+    $out = ref $out eq 'HASH' ? tuwf->compile({ type => 'hash', keys => $out }) : $out;
 
-    write_module $name, $data;
+    TUWF::post qr{/elm/\Q$name\E\.json} => sub {
+        if(!auth->csrfcheck(tuwf->reqHeader('X-CSRF-Token')||'')) {
+            warn "Invalid CSRF token in request\n";
+            return elm_CSRF();
+        }
+
+        my $data = tuwf->validate(json => $in);
+        if(!$data) {
+            warn "JSON validation failed\ninput: " . JSON::XS->new->allow_nonref->pretty->canonical->encode(tuwf->reqJSON) . "\nerror: " . JSON::XS->new->encode($data->err) . "\n";
+            return elm_Invalid();
+        }
+
+        $sub->($data->data);
+        warn "Non-JSON response to a json_api request, is this intended?\n" if tuwf->resHeader('Content-Type') !~ /^application\/json/;
+    };
+
+    if(tuwf->{elmgen}) {
+        my $data = "import Gen.Api as GApi\n";
+        $data .=   "import Lib.Api as Api\n";
+        $data .= def_type Recv => $out->analyze if $out;
+        $data .= def_type Send => $in->analyze;
+        $data .= def_validation val => $in->analyze;
+        $data .= encoder encode => 'Send', $in->analyze;
+        $data .= "send : Send -> (GApi.Response -> msg) -> Cmd msg\n";
+        $data .= "send v m = Api.post \"$name\" (encode v) m\n";
+        write_module $name, $data;
+    }
 }
 
 

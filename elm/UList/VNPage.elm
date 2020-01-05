@@ -74,12 +74,12 @@ update msg model =
     Labels m -> let (nm, cmd) = LE.update m model.labels in ({ model | labels = nm}, Cmd.map Labels cmd)
     Vote   m -> let (nm, cmd) = VE.update m model.vote   in ({ model | vote   = nm}, Cmd.map Vote   cmd)
 
-    Add -> ({ model | state = Api.Loading }, Api.post "/u/ulist/add.json" (GAD.encode { uid = model.flags.uid, vid = model.flags.vid }) Added)
+    Add -> ({ model | state = Api.Loading }, GAD.send { uid = model.flags.uid, vid = model.flags.vid } Added)
     Added GApi.Success -> ({ model | state = Api.Normal, onlist = True }, Cmd.none)
     Added e -> ({ model | state = Api.Error e }, Cmd.none)
 
     Del b -> ({ model | del = b }, Cmd.none)
-    Delete -> ({ model | state = Api.Loading }, Api.post "/u/ulist/del.json" (GDE.encode { uid = model.flags.uid, vid = model.flags.vid }) Deleted)
+    Delete -> ({ model | state = Api.Loading }, GDE.send { uid = model.flags.uid, vid = model.flags.vid } Deleted)
     Deleted GApi.Success -> ({ model | state = Api.Normal, onlist = False, del = False }, Cmd.none)
     Deleted e -> ({ model | state = Api.Error e }, Cmd.none)
 

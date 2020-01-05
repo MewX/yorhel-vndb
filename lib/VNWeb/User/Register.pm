@@ -11,7 +11,7 @@ TUWF::get '/u/register', sub {
 };
 
 
-json_api qr{/u/register\.json}, {
+elm_api UserRegister => undef, {
     username => { username => 1 },
     email    => { email => 1 },
     vns      => { int => 1 },

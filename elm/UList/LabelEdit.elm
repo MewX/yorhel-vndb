@@ -66,7 +66,7 @@ update msg model =
         , state  = Dict.insert l Api.Loading model.state
         }
       , Cmd.batch <|
-           Api.post "/u/ulist/setlabel.json" (GLE.encode { uid = model.uid, vid = model.vid, label = l, applied = b }) (Saved l b)
+           GLE.send { uid = model.uid, vid = model.vid, label = l, applied = b } (Saved l b)
            -- Unselect other progress labels (1..4) when setting a progress label
         :: if cascade
            then (List.map (\i -> selfCmd (Toggle i False False)) <| List.filter (\i -> l >= 0 && l <= 4 && i >= 0 && i <= 4 && i /= l) <| Set.toList model.tsel)

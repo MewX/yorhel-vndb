@@ -5,7 +5,6 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Browser
 import Browser.Navigation exposing (load)
-import Json.Encode as JE
 import Lib.Html exposing (..)
 import Lib.TextPreview as TP
 import Lib.Api as Api
@@ -69,10 +68,7 @@ update msg model =
     Title s   -> ({ model | title   = s }, Cmd.none)
     Content m -> let (nm,nc) = TP.update m model.content in ({ model | content = nm }, Cmd.map Content nc)
 
-    Submit ->
-      let body = GD.encode (encode model)
-      in ({ model | state = Api.Loading }, Api.post "/d/edit.json" body Submitted)
-
+    Submit -> ({ model | state = Api.Loading }, GD.send (encode model) Submitted)
     Submitted (GApi.Redirect s) -> (model, load s)
     Submitted r -> ({ model | state = Api.Error r }, Cmd.none)
 

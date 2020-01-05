@@ -18,8 +18,6 @@ my $FORM_OUT = form_compile out => $FORM;
 my $FORM_IN  = form_compile in  => $FORM;
 my $FORM_CMP = form_compile cmp => $FORM;
 
-elm_form DocEdit => $FORM_OUT, $FORM_IN;
-
 
 TUWF::get qr{/$RE{drev}/edit} => sub {
     my $d = db_entry d => tuwf->capture('id'), tuwf->capture('rev') or return tuwf->resNotFound;
@@ -34,7 +32,7 @@ TUWF::get qr{/$RE{drev}/edit} => sub {
 };
 
 
-json_api qr{/d/edit\.json}, $FORM_IN, sub {
+elm_api DocEdit => $FORM_OUT, $FORM_IN, sub {
     my $data = shift;
     my $doc = db_entry d => $data->{id} or return tuwf->resNotFound;
 
@@ -46,7 +44,7 @@ json_api qr{/d/edit\.json}, $FORM_IN, sub {
 };
 
 
-json_api qr{/js/markdown\.json}, {
+elm_api Markdown => undef, {
     content => { required => 0, default => '' }
 }, sub {
     return elm_Unauth if !auth->permDbmod;

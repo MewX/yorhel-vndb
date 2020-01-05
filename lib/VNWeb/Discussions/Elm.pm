@@ -1,10 +1,10 @@
-package VNWeb::Discussions::JS;
+package VNWeb::Discussions::Elm;
 
 use VNWeb::Prelude;
 use VNWeb::Discussions::Lib;
 
 # Autocompletion search results for boards
-json_api qr{/t/boards.json}, {
+elm_api Boards => undef, {
     search => {},
 }, sub {
     return elm_Unauth if !auth->permBoard;

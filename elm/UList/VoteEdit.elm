@@ -60,7 +60,7 @@ update msg model =
       let nmodel = { model | text = if model.text == "" then "-" else model.text }
       in if nmodel.valid && (Just nmodel.text) /= nmodel.flags.vote
          then ( { nmodel | state = Api.Loading }
-              , Api.post "/u/ulist/setvote.json" (GVE.encode { uid = model.flags.uid, vid = model.flags.vid, vote = Just model.text }) Saved )
+              , GVE.send { uid = model.flags.uid, vid = model.flags.vid, vote = Just model.text } Saved )
          else (nmodel, Task.attempt (always Noop) <| Ffi.elemCall "reportValidity" model.fieldId)
 
     Saved GApi.Success ->

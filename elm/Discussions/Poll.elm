@@ -62,7 +62,7 @@ update msg model =
       if toomany model then (model, Cmd.none)
       else
       ( { model | state = Api.Loading }
-      , Api.post "/t/pollvote.json" (GDP.encode { tid = model.data.tid, options = List.filterMap (\o -> if o.my then Just o.id else Nothing) model.data.options }) Submitted
+      , GDP.send { tid = model.data.tid, options = List.filterMap (\o -> if o.my then Just o.id else Nothing) model.data.options } Submitted
       )
 
     Submitted (GApi.Success) ->
