@@ -284,7 +284,7 @@ sub opt {
         # Presets
         tuwf->reqGet('vnlist')   ? { mul => 0, p => 1, l => [1,2,3,4,7,-1,0], s => 'title', o => 'a', c => [qw/label vote added started finished/], load 'vnlist' } :
         tuwf->reqGet('votes')    ? { mul => 0, p => 1, l => [7],              s => 'voted', o => 'd', c => [qw/vote voted/], load 'votes' } :
-        tuwf->reqGet('wishlist') ? { mul => 0, p => 1, l => [5],              s => 'title', o => 'a', c => [qw/label added/], load 'wishlist' } :
+        tuwf->reqGet('wishlist') ? { mul => 0, p => 1, l => [5],              s => 'title', o => 'a', c => [qw/label added/], load 'wish' } :
         # Full options
         tuwf->validate(get =>
             p => { upage => 1 },
