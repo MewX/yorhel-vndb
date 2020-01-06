@@ -226,9 +226,6 @@ function serialize(obj) {
       values[fo.fil_code] = v;
   }
 
-  if(!values['tag_inc'] && !values['trait_inc'])
-    delete values['tagspoil'];
-
   var l = [];
   for(var f in values)
     l.push(f+'-'+values[f]);
