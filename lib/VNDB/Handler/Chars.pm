@@ -229,13 +229,13 @@ sub charTable {
        td;
         my $first = 0;
         for my $g (sort { $vns{$a}[0]{vntitle} cmp $vns{$b}[0]{vntitle} } keys %vns) {
-          br if $first++;
           my @r = @{$vns{$g}};
           # special case: all releases, no exceptions
           if(!$vn && @r == 1 && !$r[0]{rid}) {
             span class => charspoil $r[0]{spoil};
              txt $CHAR_ROLE{$r[0]{role}}{txt}.' - ';
              a href => "/v$r[0]{vid}/chars", $r[0]{vntitle};
+             br;
             end;
             next;
           }
@@ -257,6 +257,7 @@ sub charTable {
               }
              end;
            }
+           br;
           end;
         }
        end;
