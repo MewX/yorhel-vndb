@@ -52,6 +52,13 @@ table.stripe tbody tr:nth-child(odd):not(.nostripe),
   clip: rect(1px 1px 1px 1px);
 }
 
+/* Generic spoiler level hiding
+ * .spoillvl-[012]  -> parent tag indicating currently visible level
+ * .spoil-[012]     -> child tags indicating item spoiler level */
+.spoillvl-0 .spoil-1,
+.spoillvl-0 .spoil-2,
+.spoillvl-1 .spoil-2 { display: none }
+
 /* Warning/Notice Box */
 div.warning, div.notice       { margin: 5px 10%; padding: 15px; background-color: $warnbg$; border: 1px solid $warnborder$; }
 div.notice                    { background-color: $noticebg$; border: 1px solid $noticeborder$; }
@@ -308,6 +315,14 @@ div.maintabs.bottom > ul li a       { padding: 4px 7px 2px 7px; border-bottom: 1
 div.maintabs.bottom > ul li.tabselected a,
 div.maintabs.bottom > ul li a:hover { padding-top: 5px; height: 22px; margin-top: -1px }
 
+h1.boxtitle, h1.boxtitle a, div.maintabs h1 {
+  font-family: "Futura", "Century New Gothic", "Arial", Serif;
+  font-weight: bold;
+  font-style: italic;
+  color: $grayedout$;
+  font-size: 17px;
+}
+h1.boxtitle, h1.boxtitle a { margin: 20px 0 -20px 0 }
 
 
 
@@ -393,14 +408,6 @@ div.postsearch td.tc1_1           { width: 60px; padding-left: 0; padding-right:
 div.postsearch td.tc1_2           { width: 25px; padding-left: 0 }
 div.postsearch td.tc2             { width: 65px;  }
 div.postsearch td.tc3             { width: 90px; }
-h1.boxtitle, h1.boxtitle a {
-  font-family: "Futura", "Century New Gothic", "Arial", Serif;
-  font-weight: bold;
-  font-style: italic;
-  color: $grayedout$;
-  font-size: 17px;
-  margin: 20px 0 -20px 0;
-}
 
 
 

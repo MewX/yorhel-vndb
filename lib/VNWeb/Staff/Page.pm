@@ -113,7 +113,8 @@ sub _cast_ {
     my %alias = map +($_->{aid}, $_), $s->{alias}->@*;
 
     my $cast = tuwf->dbAlli(q{
-        SELECT vs.aid, v.id, v.c_released, v.title, v.original, c.id AS cid, c.name AS c_name, c.original AS c_original, vs.note
+        SELECT vs.aid, v.id, v.c_released, v.title, v.original, c.id AS cid, c.name AS c_name, c.original AS c_original, vs.note,
+               (SELECT MIN(cv.spoil) FROM chars_vns cv WHERE cv.id = c.id AND cv.vid = v.id) AS spoil
           FROM vn_seiyuu vs
           JOIN vn v ON v.id = vs.id
           JOIN chars c ON c.id = vs.cid
@@ -124,17 +125,26 @@ sub _cast_ {
     });
     return if !@$cast;
 
-    h1_ class => 'boxtitle', sprintf 'Voiced characters (%d)', scalar @$cast;
-    div_ class => 'mainbox browse staffroles', sub {
+    my $spoillvl = tuwf->authPref('spoilers')||0;
+
+    div_ class => 'maintabs', sub {
+        h1_ sprintf 'Voiced characters (%d)', scalar @$cast;
+        ul_ sub {
+            li_ mkclass(tabselected => $spoillvl == 0), sub { a_ href => '#', class => 'spoilset-0', 'data-target' => 'voicedchars', 'hide spoilers' };
+            li_ mkclass(tabselected => $spoillvl == 1), sub { a_ href => '#', class => 'spoilset-1', 'data-target' => 'voicedchars', 'minor spoilers' };
+            li_ mkclass(tabselected => $spoillvl == 2), sub { a_ href => '#', class => 'spoilset-2', 'data-target' => 'voicedchars', 'spoil me!' };
+        };
+    };
+    div_ class => "mainbox browse staffroles voicedchars spoillvl-$spoillvl", sub {
         table_ class => 'stripe', sub {
             thead_ sub { tr_ sub {
-                td_ class => 'tc1', 'Title';
+                td_ class => 'tc1', sub { txt_ 'Title'; debug_ $cast };
                 td_ class => 'tc2', 'Released';
                 td_ class => 'tc3', 'Cast';
                 td_ class => 'tc4', 'As';
                 td_ class => 'tc5', 'Note';
             }};
-            tr_ sub {
+            tr_ class => "spoil-$_->{spoil}", sub {
                 my($v, $a) = ($_, $alias{$_->{aid}});
                 td_ class => 'tc1', sub {
                     a_ href => "/v$v->{id}", title => $v->{original}||$v->{title}, shorten $v->{title}, 60;
