@@ -82,7 +82,7 @@ update msg model =
 view : Model -> Html Msg
 view model =
   let
-    str = String.join ", " <| List.filterMap (\l -> if Set.member l.id model.sel then Just l.label else Nothing) model.labels
+    str = String.join ", " <| List.filterMap (\l -> if l.id /= 7 && Set.member l.id model.sel then Just l.label else Nothing) model.labels
 
     item l =
       li [ ]
