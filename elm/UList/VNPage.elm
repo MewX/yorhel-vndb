@@ -5,6 +5,7 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Browser
 import Lib.Html exposing (..)
+import Lib.Util exposing (..)
 import Lib.Api as Api
 import Lib.DropDown as DD
 import Gen.Api as GApi
@@ -34,7 +35,7 @@ type alias Recv =
 main : Program Recv Model Msg
 main = Browser.element
   { init = \f -> (init f, Cmd.none)
-  , subscriptions = \model -> Sub.map Labels (DD.sub model.labels.dd)
+  , subscriptions = \model -> Sub.batch [ Sub.map Labels (DD.sub model.labels.dd), Sub.map Vote (DD.sub model.vote.dd) ]
   , view = view
   , update = update
   }
@@ -87,7 +88,7 @@ update msg model =
 isPublic : Model -> Bool
 isPublic model =
      LE.isPublic model.labels
-  || (model.vote.text /= "" && model.vote.text /= "-" && List.any (\l -> l.id == 7 && not l.private) model.labels.labels)
+  || (isJust model.vote.vote && List.any (\l -> l.id == 7 && not l.private) model.labels.labels)
 
 
 view : Model -> Html Msg
@@ -110,16 +111,17 @@ view model =
         table [ style "width" "100%" ]
         [ tr [ class "nostripe" ]
           [ td [ style "width" "70px" ] [ text "Labels:" ]
-          , td [] [ Html.map Labels (LE.view model.labels) ]
+          , td [ colspan 2 ] [ Html.map Labels (LE.view model.labels) ]
           ]
         , if model.flags.canvote || (Maybe.withDefault "-" model.flags.vote /= "-")
           then tr [ class "nostripe" ]
                [ td [] [ text "Vote:" ]
-               , td [ class "compact stealth" ] [ Html.map Vote (VE.view model.vote) ]
+               , td [ style "width" "80px", class "compact stealth" ] [ Html.map Vote (VE.view model.vote) ]
+               , td [] []
                ]
           else text ""
         , tr [ class "nostripe" ]
-          [ td [ colspan 2 ]
+          [ td [ colspan 3 ]
             [ span [ classList [("invisible", not (isPublic model))], title "This visual novel is on your public list" ] [ text "👁 " ]
             , a [ onClickD (Del True) ] [ text "Remove from list" ]
             ]

@@ -15,6 +15,7 @@ use Exporter 'import';
 use List::Util 'max';
 use VNDB::Config;
 use VNDB::Types;
+use VNDB::Func 'fmtrating';
 use VNWeb::Auth;
 
 our @EXPORT = qw/
@@ -292,6 +293,7 @@ sub write_types {
     $data .= def releaseTypes => 'List (String, String)' => list map tuple(string $_, string $RELEASE_TYPE{$_}), keys %RELEASE_TYPE;
     $data .= def rlistStatus => 'List (Int, String)' => list map tuple($_, string $RLIST_STATUS{$_}), keys %RLIST_STATUS;
     $data .= def boardTypes => 'List (String, String)' => list map tuple(string $_, string $BOARD_TYPE{$_}{txt}), keys %BOARD_TYPE;
+    $data .= def ratings => 'List String' => list map string(fmtrating $_), 1..10;
 
     write_module Types => $data;
 }
