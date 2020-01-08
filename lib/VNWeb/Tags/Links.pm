@@ -1,35 +1,7 @@
 package VNWeb::Tags::Links;
 
 use VNWeb::Prelude;
-
-
-# XXX: This is ugly, both in code and UI. Not sure what to replace it with.
-sub tagscore_ {
-    my $s = shift;
-    div_ class => 'taglvl', style => sprintf('width: %.0fpx', ($s-floor($s))*10), ' ' if $s < 0 && $s-floor($s) > 0;
-    for(-3..3) {
-        if($_ < 0) {
-            if($s > 0 || floor($s) > $_) {
-                div_ class => "taglvl taglvl$_", ' ';
-            } elsif(floor($s) != $_) {
-                div_ class => "taglvl taglvl$_ taglvlsel", ' ';
-            } else {
-                div_ class => "taglvl taglvl$_ taglvlsel", style => sprintf('width: %.0fpx', 10-($s-$_)*10), ' ';
-            }
-        } elsif($_ > 0) {
-            if($s < 0 || ceil($s) < $_) {
-                div_ class => "taglvl taglvl$_", ' ';
-            } elsif(ceil($s) != $_) {
-                div_ class => "taglvl taglvl$_ taglvlsel", ' ';
-            } else {
-                div_ class => "taglvl taglvl$_ taglvlsel", style => sprintf('width: %.0fpx', 10-($_-$s)*10), ' ';
-            }
-        } else {
-            div_ class => "taglvl taglvl0", sprintf '%.1f', $s;
-        }
-    }
-    div_ class => 'taglvl', style => sprintf('width: %.0fpx', (ceil($s)-$s)*10), ' ' if $s > 0 && ceil($s)-$s > 0;
-}
+use VNWeb::Tags::Lib;
 
 
 sub listing_ {
@@ -53,12 +25,16 @@ sub listing_ {
                     a_ href => $url->(u => $i->{uid}, p=>undef), class => 'setfil', '> ' if !defined $opt->{u};
                     user_ $i;
                 };
-                td_ mkclass(tc3 => 1, ignored => $i->{ignored}), sub { tagscore_ $i->{vote} };
+                td_ class => 'tc3', sub { tagscore_ $i->{vote}, $i->{ignore} };
                 td_ class => 'tc4', sub {
                     a_ href => $url->(t => $i->{uid}, p=>undef), class => 'setfil', '> ' if !defined $opt->{t};
                     a_ href => "/g$i->{tag}", $i->{name};
                 };
-                td_ class => 'tc5', !defined $i->{spoiler} ? '' : fmtspoil $i->{spoiler};
+                td_ class => 'tc5', sub {
+                    my $s = !defined $i->{spoiler} ? '' : fmtspoil $i->{spoiler};
+                    b_ class => 'grayedout', $s if $i->{ignore};
+                    txt_ $s if !$i->{ignore};
+                };
                 td_ class => 'tc6', sub {
                     a_ href => $url->(v => $i->{vid}, p=>undef), class => 'setfil', '> ' if !defined $opt->{v};
                     a_ href => "/v$i->{vid}", shorten $i->{title}, 50;
@@ -104,11 +80,6 @@ TUWF::get qr{/g/links}, sub {
     framework_ title => 'Tag link browser', sub {
         div_ class => 'mainbox', sub {
             h1_ 'Tag link browser';
-            div_ class => 'warning', sub {
-                h2_ 'Spoiler warning';
-                p_ 'This list displays the tag votes of individual users. Spoilery tags are not hidden, and may not even be correctly flagged as such.';
-            };
-            br_;
             if($filt) {
                 p_ 'Active filters:';
                 ul_ sub {
@@ -130,9 +101,11 @@ TUWF::get qr{/g/links}, sub {
                 }
             }
             if($lst && @$lst) {
+                br_;
                 p_ 'Click the arrow before a user, tag or VN to add it as a filter.'
-                    if !defined $opt->{u} && !defined $opt->{t} && !defined $opt->{v};
+                    unless defined $opt->{u} && defined $opt->{t} && defined $opt->{v};
             } else {
+                br_;
                 p_ 'No tag votes matching the requested filters.';
             }
         };

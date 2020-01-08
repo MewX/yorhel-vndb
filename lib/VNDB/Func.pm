@@ -11,7 +11,7 @@ use VNDBUtil;
 use VNDB::Types;
 use VNDB::BBCode;
 our @EXPORT = (@VNDBUtil::EXPORT, 'bb2html', 'bb2text', qw|
-  clearfloat cssicon tagscore minage fil_parse fil_serialize parenttags
+  clearfloat cssicon minage fil_parse fil_serialize parenttags
   childtags charspoil imgpath imgurl
   fmtvote fmtmedia fmtvnlen fmtage fmtdatestr fmtdate fmtrating fmtspoil
   lang_attr
@@ -38,34 +38,6 @@ sub cssicon {
   abbr class => "icons $_[0]", title => $_[1];
    lit '&#xa0;';
   end;
-}
-
-
-# Tag score in html tags, argument: score, users
-sub tagscore {
-  my $s = shift;
-  div class => 'taglvl', style => sprintf('width: %.0fpx', ($s-floor($s))*10), ' ' if $s < 0 && $s-floor($s) > 0;
-  for(-3..3) {
-    div(class => "taglvl taglvl0", sprintf '%.1f', $s), next if !$_;
-    if($_ < 0) {
-      if($s > 0 || floor($s) > $_) {
-        div class => "taglvl taglvl$_", ' ';
-      } elsif(floor($s) != $_) {
-        div class => "taglvl taglvl$_ taglvlsel", ' ';
-      } else {
-        div class => "taglvl taglvl$_ taglvlsel", style => sprintf('width: %.0fpx', 10-($s-$_)*10), ' ';
-      }
-    } else {
-      if($s < 0 || ceil($s) < $_) {
-        div class => "taglvl taglvl$_", ' ';
-      } elsif(ceil($s) != $_) {
-        div class => "taglvl taglvl$_ taglvlsel", ' ';
-      } else {
-        div class => "taglvl taglvl$_ taglvlsel", style => sprintf('width: %.0fpx', 10-($_-$s)*10), ' ';
-      }
-    }
-  }
-  div class => 'taglvl', style => sprintf('width: %.0fpx', (ceil($s)-$s)*10), ' ' if $s > 0 && ceil($s)-$s > 0;
 }
 
 

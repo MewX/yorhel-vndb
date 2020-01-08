@@ -568,8 +568,7 @@ div.scr_uploader     { visibility: hidden; overflow: hidden; width: 1px; height:
 
 /****** VN browse ********/
 
-.vnbrowse thead .tc_s { padding-left: 30px }
-.vnbrowse .tc_s       { width: 65px }
+.vnbrowse .tc_s       { padding-left: 30px; width: 70px  }
 .vnbrowse .tc2        { text-align: right; padding: 0; }
 .vnbrowse .tc3        { padding: 0; }
 .vnbrowse .tc5        { text-align: right; padding-right: 10px }
@@ -930,10 +929,16 @@ div.uposts td.tc4 b { margin-left: 10px }
 /***** Tag links *****/
 
 .browse.taglinks .tc1 { width: 70px }
-.browse.taglinks .tc3 { width: 90px }
-.browse.taglinks .ignored .taglvl.taglvlsel { background-color: #222 }
-.browse.taglinks .ignored .taglvl.taglvl0 { color: $grayedout$!important }
+.browse.taglinks .tc3 { width: 80px }
 .browse.taglinks .setfil { font-size: 10px; padding-right: 3px }
+
+.tagscore { white-space: nowrap; display: inline-block; width: 58px; }
+.tagscore > span { display: inline-block; width: 25px; text-align: right; padding-right: 3px; font-size: 11px }
+.tagscore > div  { display: inline-block; height: 13px; background: linear-gradient(90deg, #cf0 0px, #0f0 30px) }
+.tagscore.negative > div  { background: #f00 }
+.tagscore.negative > span { color: $standout$ }
+.tagscore.ignored  > div  { background: #222 }
+.tagscore.ignored  > span { color: $grayedout$ }
 
 
 /***** VN tagmod *****/

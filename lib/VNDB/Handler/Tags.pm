@@ -525,7 +525,7 @@ sub _tagmod_list {
        }
        td class => 'tc_myspoil', defined $m->{spoiler} ? $m->{spoiler} : -1;
        td class => 'tc_allvote';
-        tagscore $t->{rating};
+        VNWeb::Tags::Lib::tagscore_($t->{rating});
         i $t->{overruled} ? (class => 'grayedout') : (), " ($t->{cnt})";
         b class => 'standout', style => 'font-weight: bold', title => 'Tag overruled. All votes other than that of the moderator who overruled it will be ignored.', ' !' if $t->{overruled};
        end;
