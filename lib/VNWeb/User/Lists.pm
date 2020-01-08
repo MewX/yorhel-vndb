@@ -1,6 +1,7 @@
 package VNWeb::User::Lists;
 
 use VNWeb::Prelude;
+use POSIX 'strftime';
 
 
 # Do we have "ownership" access to this users' list (i.e. can we edit and see private stuff)?
@@ -381,7 +382,8 @@ sub vn_ {
 
         td_ mkclass(tc_vote => 1, compact => $own, stealth => $own), sub {
             txt_ fmtvote $v->{vote} if !$own;
-            elm_ 'UList.VoteEdit' => $VNVOTE, { uid => $uid, vid => $v->{id}, vote => fmtvote($v->{vote}) }, fmtvote $v->{vote} if $own;
+            elm_ 'UList.VoteEdit' => $VNVOTE, { uid => $uid, vid => $v->{id}, vote => fmtvote($v->{vote}) }, fmtvote $v->{vote}
+                if $own && sprintf('%08d', $v->{c_released}||0) < strftime '%Y%m%d', gmtime;
         } if in vote => $opt->{c};
 
         td_ class => 'tc_rating', sub {
