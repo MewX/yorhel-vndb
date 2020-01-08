@@ -931,7 +931,6 @@ div.uposts td.tc4 b { margin-left: 10px }
 
 .browse.taglinks .tc1 { width: 70px }
 .browse.taglinks .tc3 { width: 90px }
-.browse.taglinks .tc3 { width: 90px }
 .browse.taglinks .ignored .taglvl.taglvlsel { background-color: #222 }
 .browse.taglinks .ignored .taglvl.taglvl0 { color: $grayedout$!important }
 .browse.taglinks .setfil { font-size: 10px; padding-right: 3px }

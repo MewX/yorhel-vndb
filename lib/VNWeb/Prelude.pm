@@ -8,13 +8,13 @@
 #  use Exporter 'import';
 #  use Time::HiRes 'time';
 #  use List::Util 'min', 'max', 'sum';
-#  use POSIX 'ceil';
+#  use POSIX 'ceil', 'floor';
 #
 #  use VNDBUtil;
 #  use VNDB::BBCode;
 #  use VNDB::Types;
 #  use VNDB::Config;
-#  use VNDB::Func 'fmtdate', 'fmtage', 'fmtvote', 'query_encode';
+#  use VNDB::Func 'fmtdate', 'fmtage', 'fmtvote', 'fmtspoil', 'query_encode';
 #  use VNDB::ExtLinks;
 #  use VNWeb::Auth;
 #  use VNWeb::HTML;
@@ -52,13 +52,13 @@ sub import {
     use Exporter 'import';
     use Time::HiRes 'time';
     use List::Util 'min', 'max', 'sum';
-    use POSIX 'ceil';
+    use POSIX 'ceil', 'floor';
 
     use VNDBUtil;
     use VNDB::BBCode;
     use VNDB::Types;
     use VNDB::Config;
-    use VNDB::Func 'fmtdate', 'fmtage', 'fmtvote', 'query_encode';
+    use VNDB::Func 'fmtdate', 'fmtage', 'fmtvote', 'fmtspoil', 'query_encode';
     use VNDB::ExtLinks;
     use VNWeb::Auth;
     use VNWeb::HTML;

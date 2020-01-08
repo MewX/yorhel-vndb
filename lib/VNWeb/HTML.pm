@@ -47,7 +47,7 @@ sub clearfloat_ { div_ class => 'clearfloat', '' }
 sub debug_ {
     return if !tuwf->debug;
     # This provides a nice JSON browser in FF, not sure how other browsers render it.
-    my $data = uri_escape(JSON::XS->new->canonical->encode($_[0]));
+    my $data = uri_escape(JSON::XS->new->canonical->allow_nonref->encode($_[0]));
     a_ style => 'margin: 0 5px', title => 'Debug', href => 'data:application/json,'.$data, ' ⚙ ';
 }
 

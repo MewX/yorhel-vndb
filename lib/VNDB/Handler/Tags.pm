@@ -15,7 +15,6 @@ TUWF::register(
   qr{g([1-9]\d*)/(add)},    \&tagedit,
   qr{g/new},                \&tagedit,
   qr{g/list},               \&taglist,
-  qr{g/links},              \&taglinks,
   qr{v([1-9]\d*)/tagmod},   \&vntagmod,
   qr{u([1-9]\d*)/tags},     \&usertags,
   qr{g},                    \&tagindex,
@@ -376,120 +375,6 @@ sub taglist {
       }
     );
   }
-  $self->htmlFooter;
-}
-
-
-sub taglinks {
-  my $self = shift;
-
-  my $f = $self->formValidate(
-    { get => 'p', required => 0, default => 1, template => 'page' },
-    { get => 'o', required => 0, default => 'd', enum => ['a', 'd'] },
-    { get => 's', required => 0, default => 'date', enum => [qw|date tag|] },
-    { get => 'v', required => 0, default => 0, template => 'id' },
-    { get => 'u', required => 0, default => 0, template => 'id' },
-    { get => 't', required => 0, default => 0, template => 'id' },
-  );
-  return $self->resNotFound if $f->{_err} || $f->{p} > 100;
-
-  my($list, $np) = $self->dbTagLinks(
-    what => 'details',
-    results => 50,
-    page => $f->{p},
-    sort => $f->{s},
-    reverse => $f->{o} eq 'd',
-    $f->{v} ? (vid => $f->{v}) : (),
-    $f->{u} ? (uid => $f->{u}) : (),
-    $f->{t} ? (tag => $f->{t}) : (),
-  );
-
-  my $url = sub {
-    my %f = ((map +($_,$f->{$_}), qw|s o v u t|), @_);
-    my $qs = join ';', map $f{$_}?"$_=$f{$_}":(), keys %f;
-    return '/g/links'.($qs?"?$qs":'')
-  };
-
-  $self->htmlHeader(noindex => 1, title => 'Tag link browser');
-  div class => 'mainbox';
-   h1 'Tag link browser';
-
-   div class => 'warning';
-    h2 'Spoiler warning';
-    p 'This list displays the tag votes of individual users. Spoilery tags are not hidden, and may not even be correctly flagged as such.';
-   end;
-   br;
-
-   if($f->{u} || $f->{t} || $f->{v}) {
-     p 'Active filters:';
-     ul;
-      if($f->{u}) {
-        my $o = $self->dbUserGet(uid => $f->{u})->[0];
-        li;
-         txt '['; a href => $url->(u=>0), 'remove'; txt '] ';
-         txt 'User: ';
-         VNWeb::HTML::user_($o);
-        end;
-      }
-      if($f->{t}) {
-        my $o = $self->dbTagGet(id => $f->{t})->[0];
-        li;
-         txt '['; a href => $url->(t=>0), 'remove'; txt '] ';
-         txt 'Tag:'; txt ' ';
-         a href => "/g$f->{t}", $o->{name}||'Unknown tag';
-        end;
-      }
-      if($f->{v}) {
-        my $o = $self->dbVNGet(id => $f->{v})->[0];
-        li;
-         txt '['; a href => $url->(v=>0), 'remove'; txt '] ';
-         txt 'Visual novel:'; txt ' ';
-         a href => "/v$f->{v}", $o->{title}||'Unknown VN';
-        end;
-      }
-     end 'ul';
-   }
-   p 'Click the arrow beside a user, tag or VN to add it as a filter.' unless $f->{v} && $f->{u} && $f->{t};
-  end 'div';
-
-  $self->htmlBrowse(
-    class    => 'taglinks',
-    options  => $f,
-    nextpage => $np,
-    items    => $list,
-    pageurl  => $url->(),
-    sorturl  => $url->(s=>0,o=>0),
-    header   => [
-      [ 'Date',   'date' ],
-      [ 'User'    ],
-      [ 'Rating'  ],
-      [ 'Tag',    'tag' ],
-      [ 'Spoiler' ],
-      [ 'Visual novel' ],
-    ],
-    row      => sub {
-      my($s, $n, $l) = @_;
-      Tr;
-       td class => 'tc1', fmtdate $l->{date};
-       td class => 'tc2';
-        a href => $url->(u=>$l->{uid}), class => 'setfil', '> ' if $l->{user_id} && !$f->{u};
-        VNWeb::HTML::user_($l);
-       end;
-       td class => 'tc3'.($l->{ignore}?' ignored':'');
-        tagscore $l->{vote};
-       end;
-       td class => 'tc4';
-        a href => $url->(t=>$l->{tag}), class => 'setfil', '> ' if !$f->{t};
-        a href => "/g$l->{tag}", $l->{name};
-       end;
-       td class => 'tc5', !defined $l->{spoiler} ? ' ' : fmtspoil $l->{spoiler};
-       td class => 'tc6';
-        a href => $url->(v=>$l->{vid}), class => 'setfil', '> ' if !$f->{v};
-        a href => "/v$l->{vid}", shorten $l->{title}, 50;
-       end;
-      end;
-    },
-  );
   $self->htmlFooter;
 }
 
