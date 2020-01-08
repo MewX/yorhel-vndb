@@ -383,7 +383,7 @@ sub vn_ {
         td_ mkclass(tc_vote => 1, compact => $own, stealth => $own), sub {
             txt_ fmtvote $v->{vote} if !$own;
             elm_ 'UList.VoteEdit' => $VNVOTE, { uid => $uid, vid => $v->{id}, vote => fmtvote($v->{vote}) }, fmtvote $v->{vote}
-                if $own && sprintf('%08d', $v->{c_released}||0) < strftime '%Y%m%d', gmtime;
+                if $own && ($v->{vote} || sprintf('%08d', $v->{c_released}||0) < strftime '%Y%m%d', gmtime);
         } if in vote => $opt->{c};
 
         td_ class => 'tc_rating', sub {
