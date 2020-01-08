@@ -140,13 +140,14 @@ $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION update_users_ulist_stats(integer) RETURNS void AS $$
 BEGIN
   WITH cnt(uid, votes, vns, wish) AS (
-      SELECT u.id
-         , COUNT(*) FILTER (WHERE ul.id = 7) -- Voted
-         , COUNT(DISTINCT uvl.vid) FILTER (WHERE ul.id NOT IN(5,6)) -- Labelled, but not wishlish/blacklist
-         , COUNT(DISTINCT uvl.vid) FILTER (WHERE ul.id = 5) -- Wishlist
+    SELECT u.id
+         , COUNT(DISTINCT uvl.vid) FILTER (WHERE NOT ul.private AND uv.vote IS NOT NULL) -- Voted
+         , COUNT(DISTINCT uvl.vid) FILTER (WHERE NOT ul.private AND ul.id NOT IN(5,6)) -- Labelled, but not wishlish/blacklist
+         , COUNT(DISTINCT uvl.vid) FILTER (WHERE NOT ul.private AND ul.id = 5) -- Wishlist
       FROM users u
       LEFT JOIN ulist_vns_labels uvl ON uvl.uid = u.id
-      LEFT JOIN ulist_labels ul ON ul.id = uvl.lbl AND ul.uid = u.id AND NOT ul.private
+      LEFT JOIN ulist_labels ul ON ul.id = uvl.lbl AND ul.uid = u.id
+      LEFT JOIN ulist_vns uv ON uv.uid = u.id AND uv.vid = uvl.vid
      WHERE $1 IS NULL OR u.id = $1
      GROUP BY u.id
   ) UPDATE users SET c_votes = votes, c_vns = vns, c_wish = wish FROM cnt WHERE id = uid;

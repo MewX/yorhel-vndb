@@ -112,12 +112,12 @@ sub _votestats_ {
 
     my $recent = tuwf->dbAlli('
         SELECT vn.id, vn.title, vn.original, uv.vote,', sql_totime('uv.vote_date'), 'AS date
-          FROM ulist_vns uv',
-          $own ? () : (
-              'JOIN ulist_labels ul ON ul.uid = uv.uid AND ul.id =', \7, 'AND NOT ul.private'
-          ), '
+          FROM ulist_vns uv
           JOIN vn ON vn.id = uv.vid
-         WHERE uv.vote IS NOT NULL AND uv.uid =', \$u->{id}, '
+         WHERE uv.vote IS NOT NULL AND uv.uid =', \$u->{id},
+          $own ? () : (
+              'AND EXISTS(SELECT 1 FROM ulist_vns_labels uvl JOIN ulist_labels ul ON ul.uid = uvl.uid AND ul.id = uvl.lbl WHERE uvl.uid = uv.uid AND uvl.vid = uv.vid AND NOT ul.private)'
+          ), '
          ORDER BY uv.vote_date DESC LIMIT', \8
     );
 
@@ -152,11 +152,11 @@ TUWF::get qr{/$RE{uid}}, sub {
 
     $u->{votes} = tuwf->dbAlli('
         SELECT (uv.vote::numeric/10)::int AS idx, COUNT(uv.vote) as votes, SUM(uv.vote) AS total
-          FROM ulist_vns uv',
+          FROM ulist_vns uv
+         WHERE uv.vote IS NOT NULL AND uv.uid =', \$u->{id},
           $own ? () : (
-              'JOIN ulist_labels ul ON ul.uid = uv.uid AND ul.id =', \7, 'AND NOT ul.private'
+              'AND EXISTS(SELECT 1 FROM ulist_vns_labels uvl JOIN ulist_labels ul ON ul.uid = uvl.uid AND ul.id = uvl.lbl WHERE uvl.uid = uv.uid AND uvl.vid = uv.vid AND NOT ul.private)'
           ), '
-         WHERE uv.vote IS NOT NULL AND uv.uid =', \$u->{id}, '
          GROUP BY (uv.vote::numeric/10)::int
     ');
 
