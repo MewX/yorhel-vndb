@@ -119,7 +119,7 @@ view model =
       , td [ colspan 2 ] [ Html.map Labels (LE.view model.labels) ]
       ]
     , if model.flags.canvote || (Maybe.withDefault "-" model.flags.vote /= "-")
-      then tr [ class "nostripe" ]
+      then tr [ class "nostripe compact" ]
            [ td [] [ text "Vote" ]
            , td [ style "width" "80px" ] [ Html.map Vote (VE.view model.vote) ]
            , td [] []
