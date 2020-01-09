@@ -440,6 +440,7 @@ sub page {
      _affiliate_links($self, $r);
 
      _anime($self, $v) if @{$v->{anime}};
+
      _useroptions($self, $v, $r) if $self->authInfo->{id};
 
      Tr class => 'nostripe';
@@ -725,9 +726,8 @@ sub _useroptions {
   );
   my $lst = tuwf->dbRowi('SELECT vid, vote FROM ulist_vns WHERE uid =', \$self->authInfo->{id}, 'AND vid =', \$v->{id});
 
-  Tr;
-   td 'User options';
-   td;
+  Tr class => 'nostripe';
+   td colspan => 2;
     VNWeb::HTML::elm_('UList.VNPage', undef, {
       uid      => 1*$self->authInfo->{id},
       vid      => 1*$v->{id},
@@ -738,7 +738,7 @@ sub _useroptions {
       selected => [ map $_->{id}, grep $_->{assigned}, @$labels ],
     });
    end;
-  end 'tr';
+  end;
 }
 
 

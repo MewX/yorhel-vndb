@@ -91,13 +91,13 @@ elm_api UListVoteEdit => undef, $VNVOTE, sub {
     my($data) = @_;
     return elm_Unauth if !own $data->{uid};
     tuwf->dbExeci(
-        'UPDATE ulist_vns
-            SET vote =', \$data->{vote},
-             ', vote_date = CASE WHEN', \$data->{vote}, '::smallint IS NULL THEN NULL WHEN vote IS NULL THEN NOW() ELSE vote_date END',
-             ', lastmod = NOW()
-          WHERE uid =', \$data->{uid}, 'AND vid =', \$data->{vid}
+        'INSERT INTO ulist_vns', { %$data, vote_date => sql $data->{vote} ? 'NOW()' : 'NULL' },
+            'ON CONFLICT (uid, vid) DO UPDATE
+            SET', { %$data,
+                lastmod   => sql('NOW()'),
+                vote_date => sql $data->{vote} ? 'CASE WHEN ulist_vns.vote IS NULL THEN NOW() ELSE ulist_vns.vote_date END' : 'NULL'
+            }
     );
-
     updcache $data->{uid};
     elm_Success
 };
@@ -122,6 +122,7 @@ elm_api UListLabelEdit => $VNLABELS_OUT, $VNLABELS_IN, sub {
     return elm_Unauth if !own $data->{uid};
     die "Attempt to set vote label" if $data->{label} == 7;
 
+    tuwf->dbExeci('INSERT INTO ulist_vns', {uid => $data->{uid}, vid => $data->{vid}}, 'ON CONFLICT (uid, vid) DO NOTHING');
     tuwf->dbExeci(
         'DELETE FROM ulist_vns_labels
           WHERE uid =', \$data->{uid}, 'AND vid =', \$data->{vid}, 'AND lbl =', \$data->{label}
@@ -205,20 +206,6 @@ elm_api UListDel => undef, {
     my($data) = @_;
     return elm_Unauth if !own $data->{uid};
     tuwf->dbExeci('DELETE FROM ulist_vns WHERE uid =', \$data->{uid}, 'AND vid =', \$data->{vid});
-    updcache $data->{uid};
-    elm_Success
-};
-
-
-
-
-elm_api UListAdd => undef, {
-    uid => { id => 1 },
-    vid => { id => 1 },
-}, sub {
-    my($data) = @_;
-    return elm_Unauth if !own $data->{uid};
-    tuwf->dbExeci('INSERT INTO ulist_vns', $data, 'ON CONFLICT (uid, vid) DO NOTHING');
     updcache $data->{uid};
     elm_Success
 };

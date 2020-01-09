@@ -4,13 +4,13 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Browser
+import Set
 import Lib.Html exposing (..)
 import Lib.Util exposing (..)
 import Lib.Api as Api
 import Lib.DropDown as DD
 import Gen.Api as GApi
 import Gen.UListDel as GDE
-import Gen.UListAdd as GAD
 import UList.LabelEdit as LE
 import UList.VoteEdit as VE
 
@@ -60,28 +60,31 @@ init f =
   }
 
 type Msg
-  = Add
-  | Added GApi.Response
-  | Labels LE.Msg
+  = Labels LE.Msg
   | Vote VE.Msg
   | Del Bool
   | Delete
   | Deleted GApi.Response
 
 
+setOnList : Model -> Model
+setOnList model = { model | onlist = model.onlist || model.vote.ovote /= Nothing || not (Set.isEmpty model.labels.sel) }
+
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    Labels m -> let (nm, cmd) = LE.update m model.labels in ({ model | labels = nm}, Cmd.map Labels cmd)
-    Vote   m -> let (nm, cmd) = VE.update m model.vote   in ({ model | vote   = nm}, Cmd.map Vote   cmd)
-
-    Add -> ({ model | state = Api.Loading }, GAD.send { uid = model.flags.uid, vid = model.flags.vid } Added)
-    Added GApi.Success -> ({ model | state = Api.Normal, onlist = True }, Cmd.none)
-    Added e -> ({ model | state = Api.Error e }, Cmd.none)
+    Labels m -> let (nm, cmd) = LE.update m model.labels in (setOnList { model | labels = nm}, Cmd.map Labels cmd)
+    Vote   m -> let (nm, cmd) = VE.update m model.vote   in (setOnList { model | vote   = nm}, Cmd.map Vote   cmd)
 
     Del b -> ({ model | del = b }, Cmd.none)
     Delete -> ({ model | state = Api.Loading }, GDE.send { uid = model.flags.uid, vid = model.flags.vid } Deleted)
-    Deleted GApi.Success -> ({ model | state = Api.Normal, onlist = False, del = False }, Cmd.none)
+    Deleted GApi.Success ->
+      ( { model
+        | state  = Api.Normal, onlist = False, del = False
+        , labels = LE.init { uid = model.flags.uid, vid = model.flags.vid, labels = model.flags.labels, selected = [] }
+        , vote   = VE.init { uid = model.flags.uid, vid = model.flags.vid, vote = Nothing }
+        }
+      , Cmd.none)
     Deleted e -> ({ model | state = Api.Error e }, Cmd.none)
 
 
@@ -93,37 +96,34 @@ isPublic model =
 
 view : Model -> Html Msg
 view model =
-  case model.state of
-    Api.Loading -> div [ class "spinner" ] []
-    Api.Error e -> b [ class "standout" ] [ text <| Api.showResponse e ]
-    Api.Normal ->
-      if not model.onlist
-      then a [ href "#", onClickD Add ] [ text "Add to list" ]
-      else if model.del
-      then
-        span []
-        [ text "Sure you want to remove this VN from your list? "
-        , a [ onClickD Delete ] [ text "Yes" ]
+  div [ class "ulistvn" ]
+  [ span [] <|
+    case (model.state, model.del, model.onlist) of
+      (Api.Loading, _, _) -> [ span [ class "spinner" ] [] ]
+      (Api.Error e, _, _) -> [ b [ class "standout" ] [ text <| Api.showResponse e ] ]
+      (Api.Normal, _, False) -> [ b [ class "grayedout" ] [ text "not on your list" ] ]
+      (Api.Normal, True, _) ->
+        [ a [ onClickD Delete ] [ text "Yes, delete" ]
         , text " | "
         , a [ onClickD (Del False) ] [ text "Cancel" ]
         ]
-      else
-        table [ style "width" "100%" ]
-        [ tr [ class "nostripe" ]
-          [ td [ style "width" "70px" ] [ text "Labels:" ]
-          , td [ colspan 2 ] [ Html.map Labels (LE.view model.labels) ]
-          ]
-        , if model.flags.canvote || (Maybe.withDefault "-" model.flags.vote /= "-")
-          then tr [ class "nostripe" ]
-               [ td [] [ text "Vote:" ]
-               , td [ style "width" "80px", class "compact stealth" ] [ Html.map Vote (VE.view model.vote) ]
-               , td [] []
-               ]
-          else text ""
-        , tr [ class "nostripe" ]
-          [ td [ colspan 3 ]
-            [ span [ classList [("invisible", not (isPublic model))], title "This visual novel is on your public list" ] [ text "👁 " ]
-            , a [ onClickD (Del True) ] [ text "Remove from list" ]
-            ]
-          ]
+      (Api.Normal, False, True) ->
+        [ span [ classList [("hidden", not (isPublic model))], title "This visual novel is on your public list" ] [ text "👁 " ]
+        , text "On your list | "
+        , a [ onClickD (Del True) ] [ text "Remove from list" ]
         ]
+  , b [] [ text "User options" ]
+  , table [ style "margin" "4px 0 0 0" ]
+    [ tr [ class "odd" ]
+      [ td [ class "key" ] [ text "Labels" ]
+      , td [ colspan 2 ] [ Html.map Labels (LE.view model.labels) ]
+      ]
+    , if model.flags.canvote || (Maybe.withDefault "-" model.flags.vote /= "-")
+      then tr [ class "nostripe" ]
+           [ td [] [ text "Vote" ]
+           , td [ style "width" "80px" ] [ Html.map Vote (VE.view model.vote) ]
+           , td [] []
+           ]
+      else text ""
+    ]
+  ]
