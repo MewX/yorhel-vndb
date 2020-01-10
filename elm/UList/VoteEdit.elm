@@ -3,7 +3,6 @@ port module UList.VoteEdit exposing (main, init, update, view, Model, Msg)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Json.Decode as JD
 import Browser
 import Task
 import Lib.Html exposing (..)
@@ -93,7 +92,7 @@ view model =
           in li [] [ linkRadio (Just sn == model.ovote) (Set (Just sn)) [ text <| sn ++ " (" ++ s ++ ")" ] ]
         ) (List.reverse ratings)
         ++
-        [ li [] [ p []
+        [ li [] [ Html.form [ onSubmit Save ] [ p []
           [ text "custom: "
           , input (
               [ type_ "text"
@@ -105,13 +104,9 @@ view model =
               , onFocus Focus
               , placeholder "7.5"
               , style "width" "55px"
-              , custom "keydown" -- Grab enter key
-                <| JD.andThen (\c -> if c == "Enter" then JD.succeed { preventDefault = True, stopPropagation = True, message = Save } else JD.fail "")
-                <| JD.field "key" JD.string
-              ]
-              ++ GVE.valVote
+              ] ++ GVE.valVote
             ) []
-          ]
+          ] ]
         ] ]
         ++
         ( if isJust (model.ovote)
