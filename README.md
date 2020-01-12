@@ -79,7 +79,8 @@ util/multi.pl (application server, optional):
 ## Manual setup
 
 - Make sure all the required dependencies (see above) are installed. Hint: See
-  the Docker file for Ubuntu commands. For non-root setup: Use cpanm & local::lib.
+  the Docker file for Alpine Linux commands, other distributions will be similar.
+  For non-root setup, check out cpanminus & local::lib.
 - Run the build system:
 
 ```

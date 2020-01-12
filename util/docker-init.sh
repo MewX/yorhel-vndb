@@ -1,8 +1,17 @@
 #!/bin/sh
 
-if ! test -f /var/vndb-docker-image; then
-    echo "This script should only be run from within the VNDB docker container."
-    echo "Check the README for instructions."
+VER=`test -f /var/www/Dockerfile && grep VNDB_DOCKER_VERSION= /var/www/Dockerfile | sed -E s/^.+=//`
+
+if [ -z "$VER" -o -z "$VNDB_DOCKER_VERSION" -o "$VER" != "$VNDB_DOCKER_VERSION" ]; then
+    echo "The Docker image version ($VNDB_DOCKER_VERSION) does not match the version in the currently checked out source code ($VER)."
+    echo
+    echo "Please rebuild the Docker image and try again:"
+    echo
+    echo "  docker rmi vndb"
+    echo "  docker build -t vndb ."
+    echo
+    echo "Check README.md for instructions."
+    echo
     exit 1
 fi
 

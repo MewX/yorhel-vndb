@@ -1,6 +1,9 @@
 FROM alpine:3.11
 MAINTAINER Yoran Heling <contact@vndb.org>
 
+ENV VNDB_DOCKER_VERSION=1
+CMD /var/www/util/docker-init.sh
+
 RUN apk add --no-cache \
         build-base \
         curl \
@@ -31,7 +34,4 @@ RUN apk add --no-cache \
         Text::MultiMarkdown \
         git://g.blicky.net/tuwf.git \
     && curl -sL https://github.com/elm/compiler/releases/download/0.19.1/binary-for-linux-64-bit.gz | zcat >/usr/bin/elm \
-    && chmod 755 /usr/bin/elm \
-    && touch /var/vndb-docker-image
-
-CMD /var/www/util/docker-init.sh
+    && chmod 755 /usr/bin/elm
