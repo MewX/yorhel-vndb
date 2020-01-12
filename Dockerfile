@@ -1,46 +1,35 @@
-FROM ubuntu:bionic
+FROM alpine:3.11
 MAINTAINER Yoran Heling <contact@vndb.org>
 
-RUN apt-get update \
-    && apt-get install -y locales \
-    && localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8
-
-ENV LANG en_US.utf8
-
-RUN apt-get install -y tzdata \
-    && apt-get install -y --no-install-recommends \
-        build-essential \
-        cpanminus \
+RUN apk add --no-cache \
+        build-base \
         curl \
         git \
         graphviz \
         imagemagick \
-        libalgorithm-diff-xs-perl \
-        libanyevent-http-perl \
-        libanyevent-irc-perl \
-        libanyevent-perl \
-        libcrypt-urandom-perl \
-        libdbd-pg-perl \
-        libhttp-server-simple-perl \
-        libimage-magick-perl \
-        libjson-xs-perl \
-        libperlio-gzip-perl \
-        libpq-dev \
-        libtext-multimarkdown-perl \
-        libxml-parser-perl \
+        imagemagick-perlmagick \
+        perl-anyevent \
+        perl-app-cpanminus \
+        perl-dbd-pg \
+        perl-dev \
+        perl-json-xs \
+        perl-module-build \
+        perl-xml-parser \
         postgresql \
-    && cpanm -vn \
+        postgresql-dev \
+        zlib-dev \
+    && cpanm -nq \
+        Algorithm::Diff::XS \
+        AnyEvent::HTTP \
+        AnyEvent::IRC \
         AnyEvent::Pg \
         Crypt::ScryptKDF \
-        SQL::Interp
-
-# Get TUWF from Git; I tend to experiment with VNDB before releasing new versions to CPAN.
-# Get Elm from the binaries.
-RUN cd /root \
-    && git clone git://g.blicky.net/tuwf.git \
-    && cd tuwf \
-    && perl Build.PL \
-    && ./Build install \
+        Crypt::URandom \
+        HTTP::Server::Simple \
+        PerlIO::gzip \
+        SQL::Interp \
+        Text::MultiMarkdown \
+        git://g.blicky.net/tuwf.git \
     && curl -sL https://github.com/elm/compiler/releases/download/0.19.1/binary-for-linux-64-bit.gz | zcat >/usr/bin/elm \
     && chmod 755 /usr/bin/elm \
     && touch /var/vndb-docker-image

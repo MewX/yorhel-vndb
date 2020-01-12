@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 if ! test -f /var/vndb-docker-image; then
     echo "This script should only be run from within the VNDB docker container."
@@ -18,27 +18,23 @@ mkdevuser() {
     USER_UID=`stat -c '%u' /var/www`
     USER_GID=`stat -c '%g' /var/www`
     if test $USER_UID -eq 0; then
-        groupadd devgroup
-        useradd -m -s /bin/bash devuser
+        addgroup devgroup
+        adduser -s /bin/sh devuser
     else
-        groupadd -g $USER_GID devgroup
-        useradd -u $USER_UID -g $USER_GID -m -s /bin/bash devuser
+        addgroup -g $USER_GID devgroup
+        adduser -s /bin/sh -u $USER_UID -G devgroup -D devuser
     fi
-
-    echo 'LANG=en_US.UTF-8' >>/home/devuser/.profile
-    echo 'export LANG'      >>/home/devuser/.profile
-    chown devuser:devgroup -R /var/run/postgresql/
+    install -d -o devuser -g devgroup /run/postgresql
 }
 
 
 # Should run as devuser
 pg_start() {
-    if [ ! -d /var/www/data/docker-pg/10 ]; then
-        mkdir -p /var/www/data/docker-pg/10
-        /usr/lib/postgresql/10/bin/pg_ctl initdb -D /var/www/data/docker-pg/10
+    if [ ! -d /var/www/data/docker-pg/12 ]; then
+        mkdir -p /var/www/data/docker-pg/12
+        initdb -D /var/www/data/docker-pg/12 --locale en_US.UTF-8 -A trust
     fi
-    echo 'local all all trust' >/var/www/data/docker-pg/10/pg_hba.conf
-    /usr/lib/postgresql/10/bin/pg_ctl -D /var/www/data/docker-pg/10 -l /var/www/data/docker-pg/10/logfile start
+    pg_ctl -D /var/www/data/docker-pg/12 -l /var/www/data/docker-pg/12/logfile start
 
     cd /var/www
     if test -f data/docker-pg/vndb-init-done; then
@@ -66,10 +62,10 @@ pg_start() {
     echo "ALTER ROLE vndb_site  LOGIN" | psql postgres
     echo "ALTER ROLE vndb_multi LOGIN" | psql postgres
 
-    if [[ $opt =~ ^[Ee] ]]
+    if [ $opt = e ]
     then
         psql -U vndb -f dump.sql
-    elif [[ $opt =~ ^[Yy] ]]
+    elif [ $opt = y ]
     then
         curl -L https://dl.vndb.org/dump/vndb-dev-latest.tar.gz | tar -xzf-
         psql -U vndb -f dump.sql
@@ -90,7 +86,7 @@ pg_start() {
 devshell() {
     cd /var/www
     util/vndb-dev-server.pl
-    bash
+    sh
 }
 
 
