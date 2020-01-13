@@ -19,7 +19,7 @@ main : Program GVE.Send Model Msg
 main = Browser.element
   { init = \f -> (init f, Cmd.none)
   , subscriptions = \model -> DD.sub model.dd
-  , view = view
+  , view = \m -> view m "-"
   , update = update
   }
 
@@ -80,11 +80,11 @@ update msg model =
     Saved e -> ({ model | state = Api.Error e }, Cmd.none)
 
 
-view : Model -> Html Msg
-view model =
+view : Model -> String -> Html Msg
+view model txt =
   div [ class "elm_votedd" ]
   [ DD.view model.dd model.state
-      (text <| Maybe.withDefault "-" model.ovote)
+      (text <| Maybe.withDefault txt model.ovote)
       <| \_ ->
       [ ul [] <|
         List.indexedMap (\n s ->

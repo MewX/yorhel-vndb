@@ -96,7 +96,7 @@ isPublic model =
 
 view : Model -> Html Msg
 view model =
-  div [ class "ulistvn" ]
+  div [ class "ulistvn elm_dd_input" ]
   [ span [] <|
     case (model.state, model.del, model.onlist) of
       (Api.Loading, _, _) -> [ span [ class "spinner" ] [] ]
@@ -115,13 +115,13 @@ view model =
   , b [] [ text "User options" ]
   , table [ style "margin" "4px 0 0 0" ]
     [ tr [ class "odd" ]
-      [ td [ class "key" ] [ text "Labels" ]
-      , td [ colspan 2 ] [ Html.map Labels (LE.view model.labels) ]
+      [ td [ class "key" ] [ text "My labels" ]
+      , td [ colspan 2 ] [ Html.map Labels (LE.view model.labels "- select label -") ]
       ]
     , if model.flags.canvote || (Maybe.withDefault "-" model.flags.vote /= "-")
       then tr [ class "nostripe compact" ]
-           [ td [] [ text "Vote" ]
-           , td [ style "width" "80px" ] [ Html.map Vote (VE.view model.vote) ]
+           [ td [] [ text "My vote" ]
+           , td [ style "width" "80px" ] [ Html.map Vote (VE.view model.vote "- vote -") ]
            , td [] []
            ]
       else text ""

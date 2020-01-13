@@ -19,7 +19,7 @@ main : Program GLE.Recv Model Msg
 main = Browser.element
   { init = \f -> (init f, Cmd.none)
   , subscriptions = \model -> DD.sub model.dd
-  , view = view
+  , view = \m -> view m "-"
   , update = update
   }
 
@@ -79,8 +79,8 @@ update msg model =
     Saved l b e -> ({ model | state = Dict.insert l (Api.Error e) model.state }, Cmd.none)
 
 
-view : Model -> Html Msg
-view model =
+view : Model -> String -> Html Msg
+view model txt =
   let
     str = String.join ", " <| List.filterMap (\l -> if l.id /= 7 && Set.member l.id model.sel then Just l.label else Nothing) model.labels
 
@@ -98,5 +98,5 @@ view model =
   in
     DD.view model.dd
       (if List.any (\s -> s == Api.Loading) <| Dict.values model.state then Api.Loading else Api.Normal)
-      (text <| if str == "" then "-" else str)
+      (text <| if str == "" then txt else str)
       (\_ -> [ ul [] <| List.map item <| List.filter (\l -> l.id /= 7) model.labels ])
