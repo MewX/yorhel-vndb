@@ -56,7 +56,7 @@ update msg model =
   case msg of
     Show    -> ({ model | visible = True }, Cmd.none)
     Val s b ->
-      ({ model | val = s, debnum = model.debnum + 1, valid = b && isDate s }
+      ({ model | val = s, debnum = model.debnum + 1, valid = b && (s == "" || isDate s) }
       , Task.perform (\_ -> Save (model.debnum+1)) <| Process.sleep 300)
 
     Save n ->
