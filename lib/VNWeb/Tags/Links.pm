@@ -27,7 +27,7 @@ sub listing_ {
                 };
                 td_ class => 'tc3', sub { tagscore_ $i->{vote}, $i->{ignore} };
                 td_ class => 'tc4', sub {
-                    a_ href => $url->(t => $i->{uid}, p=>undef), class => 'setfil', '> ' if !defined $opt->{t};
+                    a_ href => $url->(t => $i->{tag}, p=>undef), class => 'setfil', '> ' if !defined $opt->{t};
                     a_ href => "/g$i->{tag}", $i->{name};
                 };
                 td_ class => 'tc5', sub {
