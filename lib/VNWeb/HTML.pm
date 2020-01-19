@@ -73,7 +73,7 @@ sub user_ {
     my $capital = shift;
     my sub f($) { $obj->{"${prefix}$_[0]"} }
 
-    return lit_ '[deleted]' if !f 'id';
+    return b_ class => 'grayedout', 'anonymous' if !f 'id';
     my $fancy = !(auth->pref('nodistract_can') && auth->pref('nodistract_nofancy'));
     my $uniname = f 'uniname_can' && f 'uniname';
     a_ href => '/u'.f('id'),
