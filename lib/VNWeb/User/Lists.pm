@@ -277,7 +277,7 @@ sub opt {
         tuwf->validate(get =>
             p => { upage => 1 },
             ch=> { onerror => undef, enum => [ 'a'..'z', 0 ] },
-            q => { required => 0 },
+            q => { onerror => undef },
             %SAVED_OPTS
         )->data;
 
