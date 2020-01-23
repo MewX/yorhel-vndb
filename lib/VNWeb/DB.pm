@@ -224,11 +224,10 @@ my $entry_types = do {
     my %types = map +($_->{dbentry_type}, { prefix => $_->{name} }), grep $_->{dbentry_type}, values %$schema;
     for my $t (values %$schema) {
         my $n = $t->{name};
-        my($type) = grep $n =~ s/^$_->{prefix}_//, values %types;
-        next if !$type;
-        $type->{base} = $t if $n eq 'hist';
-        next if $n !~ s/_hist$//;
-        $type->{tables}{$n} = $t;
+        my($type) = grep $n =~ /^$_->{prefix}_/, values %types;
+        next if !$type || $n !~ s/^$type->{prefix}_?(.*)_hist$/$1/;
+        if($n eq '') { $type->{base}       = $t }
+        else         { $type->{tables}{$n} = $t }
     }
     \%types;
 };

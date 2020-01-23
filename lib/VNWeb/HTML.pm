@@ -526,7 +526,7 @@ sub _revision_fmtcol_ {
                 b_ class => 'diff_add', sub { _revision_fmtval_ $opt, $val }
             } elsif(@$l > 1 && $i == 1 && ($ch eq '-' || $ch eq 'c')) {
                 b_ class => 'diff_del', sub { _revision_fmtval_ $opt, $val }
-            } elsif($ch eq 'c' || $ch eq 'u') {
+            } elsif($ch eq 'c' || $ch eq 'u' || @$l == 1) {
                 _revision_fmtval_ $opt, $val;
             }
         }, @$l;

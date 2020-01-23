@@ -72,14 +72,6 @@ if(byId('wishsel'))
   };
 
 
-// Release & VN list dropdown box (/r+ and /v+)
-if(byId('listsel'))
-  byId('listsel').onchange = function() {
-    if(this.selectedIndex != 0)
-      ulist_redirect('[rv]', '/list', this.name, 'e='+this.options[this.selectedIndex].value);
-  };
-
-
 // 'more' / 'less' summarization of some boxes on VN pages
 (function(){
   function set(o, h) {

@@ -1,7 +1,6 @@
 package VNWeb::Staff::Page;
 
 use VNWeb::Prelude;
-use VNWeb::Docs::Lib;
 
 
 sub enrich_item {
@@ -169,7 +168,7 @@ TUWF::get qr{/$RE{srev}} => sub {
     enrich_extlinks s => $s;
     my($main) = grep $_->{aid} == $s->{aid}, $s->{alias}->@*;
 
-    framework_ title => $main->{name}, index => 1, type => 's', dbobj => $s, hiddenmsg => 1,
+    framework_ title => $main->{name}, index => !tuwf->capture('rev'), type => 's', dbobj => $s, hiddenmsg => 1,
         og => {
             description => bb2text $s->{desc}
         },

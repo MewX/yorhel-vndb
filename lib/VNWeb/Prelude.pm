@@ -14,7 +14,7 @@
 #  use VNDB::BBCode;
 #  use VNDB::Types;
 #  use VNDB::Config;
-#  use VNDB::Func 'fmtdate', 'fmtage', 'fmtvote', 'fmtspoil', 'query_encode';
+#  use VNDB::Func qw/fmtdate fmtage fmtvote fmtspoil fmtmedia minage query_encode lang_attr/;
 #  use VNDB::ExtLinks;
 #  use VNWeb::Auth;
 #  use VNWeb::HTML;
@@ -58,7 +58,7 @@ sub import {
     use VNDB::BBCode;
     use VNDB::Types;
     use VNDB::Config;
-    use VNDB::Func 'fmtdate', 'fmtage', 'fmtvote', 'fmtspoil', 'query_encode';
+    use VNDB::Func qw/fmtdate fmtage fmtvote fmtspoil fmtmedia minage query_encode lang_attr/;
     use VNDB::ExtLinks;
     use VNWeb::Auth;
     use VNWeb::HTML;
