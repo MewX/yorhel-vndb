@@ -13,17 +13,17 @@ import Lib.Html exposing (..)
 import Lib.Api as Api
 import Lib.RDate as RDate
 import Lib.DropDown as DD
+import UList.ReleaseEdit as RE
 import Gen.Types as T
 import Gen.Api as GApi
 import Gen.UListVNNotes as GVN
 import Gen.UListDel as GDE
-import Gen.UListRStatus as GRS
 import Gen.Release as GR
 
 main : Program GVN.Recv Model Msg
 main = Browser.element
   { init = \f -> (init f, Date.today |> Task.perform Today)
-  , subscriptions = \model -> Sub.batch (List.map (\r -> DD.sub r.dd) <| model.rels)
+  , subscriptions = \model -> List.map (\r -> Sub.map (Rel r.rid) (DD.sub r.dd)) model.rels |> Sub.batch
   , view = view
   , update = update
   }
@@ -31,21 +31,6 @@ main = Browser.element
 port ulistVNDeleted : Bool -> Cmd msg
 port ulistNotesChanged : String -> Cmd msg
 port ulistRelChanged : (Int, Int) -> Cmd msg
-
-type alias Rel =
-  { id     : Int
-  , status : Int -- Special value -1 means 'delete this release from my list'
-  , state  : Api.State
-  , dd     : DD.Config Msg
-  }
-
-newrel : Int -> Int -> Int -> Rel
-newrel rid vid st =
-  { id     = rid
-  , status = st
-  , state  = Api.Normal
-  , dd     = DD.init ("ulist_reldd" ++ String.fromInt vid ++ "_" ++ String.fromInt rid) (RelOpen rid)
-  }
 
 type alias Model =
   { flags      : GVN.Recv
@@ -55,7 +40,7 @@ type alias Model =
   , notes      : String
   , notesRev   : Int
   , notesState : Api.State
-  , rels       : List Rel
+  , rels       : List RE.Model
   , relNfo     : Dict Int GApi.ApiReleases
   , relOptions : Maybe (List (Int, String))
   , relState   : Api.State
@@ -70,7 +55,7 @@ init f =
   , notes      = f.notes
   , notesRev   = 0
   , notesState = Api.Normal
-  , rels       = List.map2 (\st nfo -> newrel nfo.id f.vid st) f.relstatus f.rels
+  , rels       = List.map2 (\st nfo -> RE.init f.vid { uid = f.uid, rid = nfo.id, status = Just st }) f.relstatus f.rels
   , relNfo     = Dict.fromList <| List.map (\r -> (r.id, r)) f.rels
   , relOptions = Nothing
   , relState   = Api.Normal
@@ -84,16 +69,10 @@ type Msg
   | Notes String
   | NotesSave Int
   | NotesSaved Int GApi.Response
-  | RelOpen Int Bool
-  | RelSet Int Int Bool
-  | RelSaved Int Int GApi.Response
+  | Rel Int RE.Msg
   | RelLoad
   | RelLoaded GApi.Response
   | RelAdd Int
-
-
-modrel : Int -> (Rel -> Rel) -> List Rel -> List Rel
-modrel rid f = List.map (\r -> if r.id == rid then f r else r)
 
 
 showrel : GApi.ApiReleases -> String
@@ -128,16 +107,19 @@ update msg model =
           else ({model | flags = nf, notesState = Api.Normal }, ulistNotesChanged model.notes)
     NotesSaved _ e -> ({ model | notesState = Api.Error e }, Cmd.none)
 
-    RelOpen rid b -> ({ model | rels = modrel rid (\r -> { r | dd = DD.toggle r.dd b }) model.rels }, Cmd.none)
-    RelSet rid st _ ->
-      ( { model | rels = modrel rid (\r -> { r | dd = DD.toggle r.dd False, status = st, state = Api.Loading }) model.rels }
-      , GRS.send { uid = model.flags.uid, rid = rid, status = st } (RelSaved rid st) )
-    RelSaved rid st GApi.Success ->
-      let nr = if st == -1 then List.filter (\r -> r.id /= rid) model.rels
-                           else modrel rid (\r -> { r | state = Api.Normal }) model.rels
-      in ( { model | rels = nr }
-         , ulistRelChanged (List.length <| List.filter (\r -> r.status == 2) nr, List.length nr) )
-    RelSaved rid _ e -> ({ model | rels = modrel rid (\r -> { r | state = Api.Error e }) model.rels }, Cmd.none)
+    Rel rid m ->
+      case List.filterMap (\r -> if r.rid == rid then Just (RE.update m r) else Nothing) model.rels |> List.head of
+        Nothing -> (model, Cmd.none)
+        Just (rm, rc) ->
+          let
+            nr = if rm.state == Api.Normal && rm.status == Nothing
+                 then List.filter (\r -> r.rid /= rid) model.rels
+                 else List.map (\r -> if r.rid == rid then rm else r) model.rels
+            nm = { model | rels = nr }
+            nc = Cmd.batch
+                 [ Cmd.map (Rel rid) rc
+                 , ulistRelChanged (List.length <| List.filter (\r -> r.status == Just 2) nr, List.length nr) ]
+          in (nm, nc)
 
     RelLoad ->
       ( { model | relState = Api.Loading }
@@ -150,8 +132,8 @@ update msg model =
         }, Cmd.none)
     RelLoaded e -> ({ model | relState = Api.Error e }, Cmd.none)
     RelAdd rid ->
-      ( { model | rels = model.rels ++ (if rid == 0 then [] else [newrel rid model.flags.vid 2]) }
-      , Task.perform (RelSet rid 2) <| Task.succeed True)
+      ( { model | rels = model.rels ++ (if rid == 0 then [] else [RE.init model.flags.vid { rid = rid, uid = model.flags.uid, status = Just 2 }]) }
+      , Task.perform (always <| Rel rid <| RE.Set (Just 2) True) <| Task.succeed True)
 
 
 view : Model -> Html Msg
@@ -188,7 +170,7 @@ view model =
             -- Or just throw all releases in the table and use the status field for add stuff.
             case (model.relOptions, model.relState) of
               (Just opts, _)   -> [ inputSelect "" 0 RelAdd [ style "width" "500px" ]
-                                    <| (0, "-- add release --") :: List.filter (\(rid,_) -> not <| List.any (\r -> r.id == rid) model.rels) opts ]
+                                    <| (0, "-- add release --") :: List.filter (\(rid,_) -> not <| List.any (\r -> r.rid == rid) model.rels) opts ]
               (_, Api.Normal)  -> []
               (_, Api.Loading) -> [ span [ class "spinner" ] [], text "Loading releases..." ]
               (_, Api.Error e) -> [ b [ class "standout" ] [ text <| Api.showResponse e ], text ". ", a [ href "#", onClickD RelLoad ] [ text "Try again" ] ]
@@ -197,21 +179,13 @@ view model =
       ]
 
     rel r =
-      case Dict.get r.id model.relNfo of
+      case Dict.get r.rid model.relNfo of
         Nothing -> text ""
         Just nfo -> relnfo r nfo
 
     relnfo r nfo =
       tr []
-      [ td [ class "tco1" ]
-        [ DD.view r.dd r.state (text <| Maybe.withDefault "removing" <| lookup r.status T.rlistStatus)
-          <| \_ ->
-            [ ul [] <| List.map (\(n, status) ->
-                li [ ] [ linkRadio (n == r.status) (RelSet r.id n) [ text status ] ]
-              ) T.rlistStatus
-              ++ [ li [] [ a [ href "#", onClickD (RelSet r.id -1 True) ] [ text "remove" ] ] ]
-            ]
-        ]
+      [ td [ class "tco1" ] [ Html.map (Rel r.rid) (RE.view r) ]
       , td [ class "tco2" ] [ RDate.display model.today nfo.released ]
       , td [ class "tco3" ]
         <| List.map platformIcon nfo.platforms

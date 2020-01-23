@@ -187,6 +187,16 @@ sub _infotable_ {
                 join_ ', ', sub { a_ href => $_->[1], $_->[0] }, $r->{extlinks}->@*;
             }
         } if $r->{extlinks}->@*;
+
+        tr_ sub {
+            td_ 'User options';
+            td_ sub {
+                div_ class => 'elm_dd_input', style => 'width: 150px', sub {
+                    my $d = tuwf->dbVali('SELECT status FROM rlists WHERE', { rid => $r->{id}, uid => auth->uid });
+                    elm_ 'UList.ReleaseEdit', $VNWeb::User::Lists::RLIST_STATUS, { rid => $r->{id}, uid => auth->uid, status => $d };
+                }
+            };
+        } if auth;
     }
 }
 

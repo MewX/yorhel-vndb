@@ -214,14 +214,16 @@ elm_api UListDel => undef, {
 
 
 # Adds the release when not in the list.
-elm_api UListRStatus => undef, {
+# $RLIST_STATUS is also referenced from VNWeb::Releases::Page.
+our $RLIST_STATUS = form_compile any => {
     uid => { id => 1 },
     rid => { id => 1 },
-    status => { int => 1, enum => [ -1, keys %RLIST_STATUS ] }, # -1 meaning delete
-}, sub {
+    status => { required => 0, uint => 1, enum => \%RLIST_STATUS }, # undef meaning delete
+};
+elm_api UListRStatus => undef, $RLIST_STATUS, sub {
     my($data) = @_;
     return elm_Unauth if !own $data->{uid};
-    if($data->{status} == -1) {
+    if(!defined $data->{status}) {
         tuwf->dbExeci('DELETE FROM rlists WHERE uid =', \$data->{uid}, 'AND rid =', \$data->{rid})
     } else {
         tuwf->dbExeci('INSERT INTO rlists', $data, 'ON CONFLICT (uid, rid) DO UPDATE SET status =', \$data->{status})
