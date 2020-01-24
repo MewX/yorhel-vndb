@@ -6,22 +6,11 @@ use Text::MultiMarkdown 'markdown';
 our @EXPORT = qw/md2html/;
 
 
-# Lets you call TUWF::XML functions and returns a string, doesn't affect any existing TUWF::XML outputs.
-# Nice idea for a TUWF::XML feature.
-sub lexicalxml(&) {
-    my $f = shift;
-    my $buf = '';
-    local $TUWF::XML::OBJ = TUWF::XML->new(write => sub { $buf .= shift });
-    $f->();
-    $buf
-}
-
-
 sub _moderators {
     my $l = tuwf->dbAlli('SELECT id, username, perm FROM users WHERE (perm & ', \(auth->allPerms &~ auth->defaultPerms), ') > 0 ORDER BY id LIMIT 100');
     my @modperms = grep 0 == (auth->listPerms->{$_} & auth->defaultPerms), keys auth->listPerms->%*;
 
-    lexicalxml {
+    xml_string sub {
         dl_ sub {
             for my $u (@$l) {
                 dt_ sub { a_ href => "/u$u->{id}", $u->{username} };
@@ -40,7 +29,7 @@ sub _skincontrib {
 
     my $u = tuwf->dbAlli('SELECT id, username FROM users WHERE id IN', [keys %users]);
 
-    lexicalxml {
+    xml_string sub {
         dl_ sub {
             for my $u (@$u) {
                 dt_ sub { a_ href => "/u$u->{id}", $u->{username} };

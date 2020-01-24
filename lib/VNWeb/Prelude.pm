@@ -4,7 +4,7 @@
 #  use warnings;
 #  use utf8;
 #
-#  use TUWF ':html5_', 'mkclass';
+#  use TUWF ':html5_', 'mkclass', 'xml_string';
 #  use Exporter 'import';
 #  use Time::HiRes 'time';
 #  use List::Util 'min', 'max', 'sum';
@@ -48,7 +48,7 @@ sub import {
     die $@ if !eval <<"    EOM;";
     package $c;
 
-    use TUWF ':html5_', 'mkclass';
+    use TUWF ':html5_', 'mkclass', 'xml_string';
     use Exporter 'import';
     use Time::HiRes 'time';
     use List::Util 'min', 'max', 'sum';
