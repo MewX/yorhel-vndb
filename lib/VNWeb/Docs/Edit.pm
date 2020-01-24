@@ -39,6 +39,7 @@ elm_api DocEdit => $FORM_OUT, $FORM_IN, sub {
     return elm_Unauth if !can_edit d => $doc;
     return elm_Unchanged if !form_changed $FORM_CMP, $data, $doc;
 
+    $data->{html} = md2html $data->{content};
     my($id,undef,$rev) = db_edit d => $doc->{id}, $data;
     elm_Redirect "/d$id.$rev";
 };
@@ -48,7 +49,7 @@ elm_api Markdown => undef, {
     content => { required => 0, default => '' }
 }, sub {
     return elm_Unauth if !auth->permDbmod;
-    elm_Content md2html shift->{content};
+    elm_Content enrich_html md2html shift->{content};
 };
 
 

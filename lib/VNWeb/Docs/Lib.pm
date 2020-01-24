@@ -1,9 +1,8 @@
 package VNWeb::Docs::Lib;
 
 use VNWeb::Prelude;
-use Text::MultiMarkdown 'markdown';
 
-our @EXPORT = qw/md2html/;
+our @EXPORT = qw/enrich_html/;
 
 
 sub _moderators {
@@ -42,36 +41,11 @@ sub _skincontrib {
 }
 
 
-sub md2html {
-    my $content = shift;
+sub enrich_html {
+    my $html = shift;
 
-    $content =~ s{^:MODERATORS:$}{_moderators}me;
-    $content =~ s{^:SKINCONTRIB:$}{_skincontrib}me;
-
-    my $html = markdown $content, {
-        strip_metadata => 1,
-        img_ids => 0,
-        disable_footnotes => 1,
-        disable_bibliography => 1,
-    };
-
-    # Number sections and turn them into links
-    my($sec, $subsec) = (0,0);
-    $html =~ s{<h([1-2])[^>]+>(.*?)</h\1>}{
-        if($1 == 1) {
-            $sec++;
-            $subsec = 0;
-            qq{<h3><a href="#$sec" name="$sec">$sec. $2</a></h3>}
-        } elsif($1 == 2) {
-            $subsec++;
-            qq|<h4><a href="#$sec.$subsec" name="$sec.$subsec">$sec.$subsec. $2</a></h4>\n|
-        }
-    }ge;
-
-    # Text::MultiMarkdown doesn't handle fenced code blocks properly. The
-    # following solution breaks inline code blocks, but I don't use those anyway.
-    $html =~ s/<code>/<pre>/g;
-    $html =~ s#</code>#</pre>#g;
+    $html =~ s{^:MODERATORS:}{_moderators}me;
+    $html =~ s{^:SKINCONTRIB:}{_skincontrib}me;
 
     $html
 }

@@ -188,14 +188,16 @@ CREATE TABLE docs ( -- dbentry_type=d
   locked     boolean NOT NULL DEFAULT FALSE,
   hidden     boolean NOT NULL DEFAULT FALSE,
   title      varchar(200) NOT NULL DEFAULT '', -- [pub]
-  content    text NOT NULL DEFAULT '' -- [pub]
+  content    text NOT NULL DEFAULT '', -- [pub]
+  html       text -- cache, can be manually updated with util/update-docs-html-cache.pl
 );
 
 -- docs_hist
 CREATE TABLE docs_hist (
   chid       integer  NOT NULL PRIMARY KEY,
   title      varchar(200) NOT NULL DEFAULT '',
-  content    text NOT NULL DEFAULT ''
+  content    text NOT NULL DEFAULT '',
+  html       text -- cache
 );
 
 -- login_throttle

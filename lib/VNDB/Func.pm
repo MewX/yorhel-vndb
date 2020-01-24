@@ -18,6 +18,7 @@ our @EXPORT = (@VNDBUtil::EXPORT, 'bb2html', 'bb2text', qw|
   json_encode json_decode script_json
   form_compare
   query_encode
+  md2html
 |);
 
 
@@ -315,6 +316,36 @@ sub query_encode {
         my($k, $v) = ($_, $o->{$_});
         !defined $v ? () : ref $v ? map "$k=".uri_escape($_), sort @$v : "$k=".uri_escape($v)
     } sort keys %$o;
+}
+
+
+sub md2html {
+    require Text::MultiMarkdown;
+    my $html = Text::MultiMarkdown::markdown(shift, {
+        strip_metadata => 1,
+        img_ids => 0,
+        disable_footnotes => 1,
+        disable_bibliography => 1,
+    });
+
+    # Number sections and turn them into links
+    my($sec, $subsec) = (0,0);
+    $html =~ s{<h([1-2])[^>]+>(.*?)</h\1>}{
+        if($1 == 1) {
+            $sec++;
+            $subsec = 0;
+            qq{<h3><a href="#$sec" name="$sec">$sec. $2</a></h3>}
+        } elsif($1 == 2) {
+            $subsec++;
+            qq|<h4><a href="#$sec.$subsec" name="$sec.$subsec">$sec.$subsec. $2</a></h4>\n|
+        }
+    }ge;
+
+    # Text::MultiMarkdown doesn't handle fenced code blocks properly. The
+    # following solution breaks inline code blocks, but I don't use those anyway.
+    $html =~ s/<code>/<pre>/g;
+    $html =~ s#</code>#</pre>#g;
+    $html
 }
 
 1;
