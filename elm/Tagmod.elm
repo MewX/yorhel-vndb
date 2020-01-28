@@ -148,7 +148,7 @@ viewTag t sel_ vid mod =
       Vote _         -> [ td [ colspan 3 ] [ text "Downvote (-3)" ] ]
       Spoil Nothing  -> [ td [ colspan 3 ] [ text "Spoiler status not known" ] ]
       Spoil (Just 0) -> [ td [ colspan 3 ] [ text "This is not spoiler" ] ]
-      Spoil (Just 1) -> [ td [ colspan 3 ] [ text "This is a minior spoiler" ] ]
+      Spoil (Just 1) -> [ td [ colspan 3 ] [ text "This is a minor spoiler" ] ]
       Spoil (Just 2) -> [ td [ colspan 3 ] [ text "This is a major spoiler" ] ]
       _ ->
         if t.count == 0 then [ td [ colspan 3 ] [] ]
