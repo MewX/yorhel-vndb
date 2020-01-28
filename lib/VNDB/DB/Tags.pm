@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Exporter 'import';
 
-our @EXPORT = qw|dbTagGet dbTTTree dbTagEdit dbTagAdd dbTagMerge dbTagLinks dbTagLinkEdit dbTagStats dbTagWipeVotes|;
+our @EXPORT = qw|dbTagGet dbTTTree dbTagEdit dbTagAdd dbTagMerge dbTagLinks dbTagStats dbTagWipeVotes|;
 
 
 # %options->{ id noid name search state searchable applicable page results what sort reverse  }
@@ -208,38 +208,6 @@ sub dbTagLinks {
     join(', ', @select), join(' ', @join), \%where, $order
   );
   return wantarray ? ($r, $np) : $r;
-}
-
-
-# Change a user's tags for a VN entry
-sub dbTagLinkEdit {
-  my($self, $uid, $vid, $insert, $update, $delete, $overrule) = @_;
-
-  # overrule
-  # 1. set ignore flag for everyone except $uid
-  $self->dbExec('UPDATE tags_vn SET ignore = ? WHERE tag = ? AND vid = ? AND uid <> ?',
-    $overrule->{$_}?1:0, $_, $vid, $uid) for(keys %$overrule);
-  # 2. make sure $uid isn't ignored when others are set to ignore
-  #    (this happens when a mod takes over an other mods' overrule)
-  $self->dbExec('UPDATE tags_vn SET ignore = false WHERE tag = ? AND vid = ? AND uid = ?',
-    $_, $vid, $uid) for(grep $overrule->{$_}, keys %$overrule);
-
-  # delete
-  $self->dbExec('DELETE FROM tags_vn WHERE vid = ? AND uid = ? AND tag IN(!l)',
-    $vid, $uid, [ keys %$delete ]) if keys %$delete;
-
-  # insert
-  my $val = join ',', map '(?,?,?,?,?,?)', keys %$insert;
-  $self->dbExec("INSERT INTO tags_vn (tag, vid, uid, vote, spoiler, ignore) VALUES $val", map
-      +($_, $vid, $uid, $insert->{$_}[0], $insert->{$_}[1]<0?undef:$insert->{$_}[1], $insert->{$_}[2]?1:0),
-    keys %$insert) if keys %$insert;
-
-  # update
-  $self->dbExec('UPDATE tags_vn SET vote = ?, spoiler = ?, date = NOW() WHERE tag = ? AND vid = ? AND uid = ?',
-    $update->{$_}[0], $update->{$_}[1]<0?undef:$update->{$_}[1], $_, $vid, $uid) for (keys %$update);
-
-  # Update cache
-  $self->dbExec('SELECT tag_vn_calc(?)', $vid);
 }
 
 

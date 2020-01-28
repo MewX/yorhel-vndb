@@ -44,6 +44,7 @@ showResponse res =
     MailChange                      -> unexp
     Releases _                      -> unexp
     BoardResult _                   -> unexp
+    TagResult _                     -> unexp
 
 
 expectResponse : (Response -> msg) -> Http.Expect msg

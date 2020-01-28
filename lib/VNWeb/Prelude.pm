@@ -89,6 +89,7 @@ our %RE = (
     iid  => qr{i$id},
     did  => qr{d$id},
     tid  => qr{t$id},
+    gid  => qr{g$id},
     vrev => qr{v$id$rev?},
     rrev => qr{r$id$rev?},
     prev => qr{p$id$rev?},

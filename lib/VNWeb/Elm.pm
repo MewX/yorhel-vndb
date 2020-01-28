@@ -1,7 +1,8 @@
 # This module is responsible for generating elm/Gen/*.
 #
-# It exports an `elm_form` function to generate type definitions, a JSON
-# encoder and HTML5 validation attributes to simplify and synchronize forms.
+# It exports an `elm_api` function to create an API endpoint, type definitions,
+# a JSON encoder and HTML5 validation attributes to simplify and synchronize
+# forms.
 #
 # It also exports an `elm_Response` function for each possible API response
 # (see %apis below).
@@ -47,7 +48,7 @@ my %apis = (
     DoubleIP       => [], # Account with same IP already exists
     BadCurPass     => [], # Current password is incorrect when changing password
     MailChange     => [], # A confirmation mail has been sent to change a user's email address
-    Releases       => [ { aoh => { # Response to /r/get.json
+    Releases       => [ { aoh => { # Response to 'Release'
         id       => { id => 1 },
         title    => {},
         original => { required => 0, default => '' },
@@ -56,10 +57,17 @@ my %apis = (
         lang     => { type => 'array', values => {} },
         platforms=> { type => 'array', values => {} },
     } } ],
-    BoardResult    => [ { aoh => { # Response to /t/boards.json
+    BoardResult    => [ { aoh => { # Response to 'Boards'
         btype    => {},
         iid      => { required => 0, default => 0, id => 1 },
         title    => { required => 0 },
+    } } ],
+    TagResult      => [ { aoh => { # Response to 'Tags'
+        id           => { id => 1 },
+        name         => {},
+        searchable   => { anybool => 1 },
+        applicable   => { anybool => 1 },
+        state        => { int => 1 },
     } } ],
 );
 

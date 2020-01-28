@@ -4,6 +4,7 @@ module Lib.Autocomplete exposing
   , Model
   , Msg
   , boardSource
+  , tagSource
   , init
   , clear
   , update
@@ -25,6 +26,7 @@ import Lib.Api as Api
 import Gen.Types exposing (boardTypes)
 import Gen.Api as GApi
 import Gen.Boards as GB
+import Gen.Tags as GT
 
 
 type alias Config m a =
@@ -65,6 +67,26 @@ boardSource =
       _ -> []
     )
   , key     = \i -> i.btype ++ String.fromInt i.iid
+  }
+
+
+tagSource : SourceConfig m GApi.ApiTagResult
+tagSource =
+  { endpoint = \s -> GT.send { search = s }
+  , decode  = \x -> case x of
+      GApi.TagResult e -> Just e
+      _ -> Nothing
+  , view    = \i ->
+    [ text i.name
+    , case (i.searchable, i.applicable, i.state) of
+        (_,     _,     0) -> b [ class "grayedout" ] [ text " (awaiting approval)" ]
+        (_,     _,     1) -> b [ class "grayedout" ] [ text " (deleted)" ] -- (not returned by the API for now)
+        (False, False, _) -> b [ class "grayedout" ] [ text " (meta)" ]
+        (True,  False, _) -> b [ class "grayedout" ] [ text " (not applicable)" ]
+        (False, True,  _) -> b [ class "grayedout" ] [ text " (not searchable)" ]
+        _ -> text ""
+    ]
+  , key     = \i -> String.fromInt i.id
   }
 
 

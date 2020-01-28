@@ -185,7 +185,7 @@ sub enrich_merge {
     _enrich sub {
         my($data, $array) = @_;
         my %ids = map +(delete($_->{$key}), $_), @$data;
-        %$_ = (%$_, $ids{ $_->{$key} }->%*) for @$array;
+        %$_ = (%$_, ($ids{ $_->{$key} }||{})->%*) for @$array;
     }, $key, $sql, @array;
 }
 

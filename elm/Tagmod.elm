@@ -1,0 +1,232 @@
+module Tagmod exposing (main)
+
+import Html exposing (..)
+import Html.Attributes exposing (..)
+import Html.Events exposing (..)
+import Html.Lazy
+import Browser
+import Browser.Navigation exposing (reload)
+import Dict
+import Lib.Html exposing (..)
+import Lib.Api as Api
+import Lib.Ffi as Ffi
+import Lib.Autocomplete as A
+import Gen.Api as GApi
+import Gen.Tagmod as GT
+
+
+main : Program GT.Recv Model Msg
+main = Browser.element
+  { init   = \e -> (init e, Cmd.none)
+  , view   = view
+  , update = update
+  , subscriptions = always Sub.none
+  }
+
+type alias Tag = GT.RecvTags
+
+type Sel
+  = NoSel
+  | Vote Int
+  | Spoil (Maybe Int)
+
+type alias Model =
+  { state    : Api.State
+  , title    : String
+  , id       : Int
+  , mod      : Bool
+  , tags     : List Tag
+  , sel      : Dict.Dict Int Sel -- Tag id -> message to display; only ever contains one element at most, but this allows for easy use of Html.Lazy
+  , negCount : Int
+  , negShow  : Bool
+  , add      : A.Model GApi.ApiTagResult
+  , addMsg   : String
+  }
+
+
+init : GT.Recv -> Model
+init f =
+  { state    = Api.Normal
+  , title    = f.title
+  , id       = f.id
+  , mod      = f.mod
+  , tags     = f.tags
+  , sel      = Dict.empty
+  , negCount = List.length <| List.filter (\t -> t.rating <= 0) f.tags
+  , negShow  = False
+  , add      = A.init
+  , addMsg   = ""
+  }
+
+searchConfig : A.Config Msg GApi.ApiTagResult
+searchConfig = { wrap = TagSearch, id = "tagadd", source = A.tagSource }
+
+
+type Msg
+  = SetSel Int Sel
+  | SetVote Int Int
+  | SetOver Int Bool
+  | SetSpoil Int (Maybe Int)
+  | NegShow Bool
+  | TagSearch (A.Msg GApi.ApiTagResult)
+  | Submit
+  | Submitted GApi.Response
+
+
+modtag : Model -> Int -> (Tag -> Tag) -> Model
+modtag model id f = { model | addMsg = "", tags = List.map (\t -> if t.id == id then f t else t) model.tags }
+
+update : Msg -> Model -> (Model, Cmd Msg)
+update msg model =
+  case msg of
+    SetSel   id v -> ({ model | sel = Dict.fromList [(id,v)] }, Cmd.none)
+    SetVote  id v -> (modtag model id (\t -> { t | vote = v }), Cmd.none)
+    SetOver  id b -> (modtag model id (\t -> { t | overrule = b }), Cmd.none)
+    SetSpoil id s -> (modtag model id (\t -> { t | spoil = s }), Cmd.none)
+    NegShow  b    -> ({ model | negShow = b }, Cmd.none)
+
+    TagSearch m ->
+      let (nm, c, res) = A.update searchConfig m model.add
+      in case res of
+        Nothing -> ({ model | add = nm }, c)
+        Just t ->
+          let (nl, ms) =
+                if t.state == 1                                    then ([], "Can't add deleted tags")
+                else if not t.applicable                           then ([], "Tag is not applicable")
+                else if List.any (\it -> it.id == t.id) model.tags then ([], "Tag is already in the list")
+                else ([{ id = t.id, vote = 2, spoil = Nothing, overrule = False, cat = "new", name = t.name, rating = 0, count = 0, spoiler = 0, overruled = False }], "")
+          in ({ model | add = if ms == "" then A.clear nm else nm, tags = model.tags ++ nl, addMsg = ms }, c)
+
+    Submit ->
+      ( { model | state = Api.Loading, addMsg = "" }
+      , GT.send { id = model.id, tags = List.map (\t -> { id = t.id, vote = t.vote, spoil = t.spoil, overrule = t.overrule }) model.tags } Submitted)
+    Submitted GApi.Success -> (model, reload)
+    Submitted r -> ({ model | state = Api.Error r }, Cmd.none)
+
+
+
+viewTag : Tag -> Maybe Sel -> Int -> Bool -> Html Msg
+viewTag t sel_ vid mod =
+  let
+    sel = Maybe.withDefault NoSel sel_
+
+    -- Similar to VNWeb::Tags::Lib::tagscore_
+    tagscore s =
+      div [ class "tagscore", classList [("negative", s < 0)] ]
+      [ span [] [ text <| Ffi.fmtFloat s 1 ]
+      , div [ style "width" <| String.fromFloat (abs (s/3*30)) ++ "px" ] []
+      ]
+
+    vote  = case sel of Vote v  -> v
+                        _       -> t.vote
+    spoil = case sel of Spoil s -> s
+                        _       -> t.spoil
+  in
+    tr [] <|
+    [ td [ class "tc_tagname" ] [ a [ href <| "/g"++String.fromInt t.id ] [ text t.name ] ]
+    , td [ class "tc_myvote buts"  ]
+      [ a [ href "#", onMouseOver (SetSel t.id (Vote -3)), onMouseOut (SetSel 0 NoSel), onClickD (SetVote t.id -3), classList [("ld", vote <  0)], title "Downvote"    ] []
+      , a [ href "#", onMouseOver (SetSel t.id (Vote  0)), onMouseOut (SetSel 0 NoSel), onClickD (SetVote t.id  0), classList [("l0", vote == 0)], title "Remove vote" ] []
+      , a [ href "#", onMouseOver (SetSel t.id (Vote  1)), onMouseOut (SetSel 0 NoSel), onClickD (SetVote t.id  1), classList [("l1", vote >= 1)], title "+1"          ] []
+      , a [ href "#", onMouseOver (SetSel t.id (Vote  2)), onMouseOut (SetSel 0 NoSel), onClickD (SetVote t.id  2), classList [("l2", vote >= 2)], title "+2"          ] []
+      , a [ href "#", onMouseOver (SetSel t.id (Vote  3)), onMouseOut (SetSel 0 NoSel), onClickD (SetVote t.id  3), classList [("l3", vote == 3)], title "+3"          ] []
+      ]
+    , td [ class "tc_myover" ] [ if mod && t.vote /= 0 then inputCheck "" t.overrule (SetOver t.id) else text "" ]
+    , td [ class "tc_myspoil buts" ] <|
+      if t.vote <= 0 then [] else
+      [ a [ href "#", onMouseOver (SetSel t.id (Spoil Nothing)),  onMouseOut (SetSel 0 NoSel), onClickD (SetSpoil t.id Nothing),  classList [("sn", spoil == Nothing)], title "Unknown"       ] []
+      , a [ href "#", onMouseOver (SetSel t.id (Spoil (Just 0))), onMouseOut (SetSel 0 NoSel), onClickD (SetSpoil t.id (Just 0)), classList [("s0", spoil == Just 0 )], title "Not a spoiler" ] []
+      , a [ href "#", onMouseOver (SetSel t.id (Spoil (Just 1))), onMouseOut (SetSel 0 NoSel), onClickD (SetSpoil t.id (Just 1)), classList [("s1", spoil == Just 1 )], title "Minor spoiler" ] []
+      , a [ href "#", onMouseOver (SetSel t.id (Spoil (Just 2))), onMouseOut (SetSel 0 NoSel), onClickD (SetSpoil t.id (Just 2)), classList [("s2", spoil == Just 2 )], title "Major spoiler" ] []
+      ]
+    ] ++
+    case sel of
+      Vote 0         -> [ td [ colspan 3 ] [ text "Remove vote" ] ]
+      Vote 1         -> [ td [ colspan 3 ] [ text "Vote +1" ] ]
+      Vote 2         -> [ td [ colspan 3 ] [ text "Vote +2" ] ]
+      Vote 3         -> [ td [ colspan 3 ] [ text "Vote +3" ] ]
+      Vote _         -> [ td [ colspan 3 ] [ text "Downvote (-3)" ] ]
+      Spoil Nothing  -> [ td [ colspan 3 ] [ text "Spoiler status not known" ] ]
+      Spoil (Just 0) -> [ td [ colspan 3 ] [ text "This is not spoiler" ] ]
+      Spoil (Just 1) -> [ td [ colspan 3 ] [ text "This is a minior spoiler" ] ]
+      Spoil (Just 2) -> [ td [ colspan 3 ] [ text "This is a major spoiler" ] ]
+      _ ->
+        if t.count == 0 then [ td [ colspan 3 ] [] ]
+        else
+        [ td [ class "tc_allvote" ]
+          [ tagscore t.rating
+          , i [ classList [("grayedout", t.overruled)] ] [ text <| " (" ++ String.fromInt t.count ++ ")" ]
+          , if not t.overruled then text ""
+            else b [ class "standout", style "font-weight" "bold", title "Tag overruled. All votes other than that of the moderator who overruled it will be ignored." ] [ text "!" ]
+          ]
+        , td [ class "tc_allspoil"] [ text <| Ffi.fmtFloat t.spoiler 2 ]
+        , td [ class "tc_allwho"  ] [ a [ href <| "/g/links?v="++String.fromInt vid++"&t="++String.fromInt t.id ] [ text "Who?" ] ]
+        ]
+
+viewHead : Bool -> Int -> Bool -> Html Msg
+viewHead mod negCount negShow =
+  thead []
+  [ tr []
+    [ td [ style "font-weight" "normal", style "text-align" "right" ] <|
+      if negCount == 0 then []
+      else [ linkRadio negShow NegShow [ text "Show downvoted tags " ], i [] [ text <| " (" ++ String.fromInt negCount ++ ")" ] ]
+    , td [ colspan 3, class "tc_you" ] [ text "You" ]
+    , td [ colspan 3, class "tc_others" ] [ text "Others" ]
+    ]
+  , tr []
+    [ td [ class "tc_tagname" ] [ text "Tag" ]
+    , td [ class "tc_myvote"  ] [ text "Rating" ]
+    , td [ class "tc_myover"  ] [ text (if mod then "O" else "") ]
+    , td [ class "tc_myspoil" ] [ text "Spoiler" ]
+    , td [ class "tc_allvote" ] [ text "Rating" ]
+    , td [ class "tc_allspoil"] [ text "Spoiler" ]
+    , td [ class "tc_allwho"  ] []
+    ]
+  ]
+
+viewFoot : Api.State -> A.Model GApi.ApiTagResult -> String -> Html Msg
+viewFoot state add addMsg =
+  tfoot [] [ tr [] [ td [ colspan 7 ]
+  [ div [ style "display" "flex", style "justify-content" "space-between" ]
+    [ A.view searchConfig add [placeholder "Add tags..."]
+    , if addMsg == "" then text "" else b [ class "standout" ] [ text addMsg ]
+    , submitButton "Save changes" state True
+    ]
+  , text "Check the ", a [ href "/g" ] [ text "tag list" ], text " to browse all available tags."
+  , br [] []
+  , text "Can't find what you're looking for? ", a [ href "/g/new" ] [ text "Request a new tag" ]
+  ] ] ]
+
+
+-- The table has a lot of interactivity, the use of Html.Lazy is absolutely necessary for good responsiveness.
+view : Model -> Html Msg
+view model =
+  form_ Submit (model.state == Api.Loading)
+    [ div [ class "mainbox" ]
+      [ h1 [] [ text <| "Edit tags for " ++ model.title ]
+      , p []
+        [ text "This is where you can add tags to the visual novel and vote on the existing tags."
+        , br [] []
+        , text "Don't forget to also select the appropriate spoiler option for each tag."
+        , br [] []
+        , text "For more information, check out the ", a [ href "/d10" ] [ text "guidelines." ]
+        ]
+      , table [ class "tgl stripe" ]
+        [ Html.Lazy.lazy3 viewHead model.mod model.negCount model.negShow
+        , Html.Lazy.lazy3 viewFoot model.state model.add model.addMsg
+        , tbody []
+          <| List.concatMap (\(id,nam) ->
+            let lst = List.filter (\t -> t.cat == id && (t.cat == "new" || t.rating > 0 || t.vote > 0 || model.negShow)) model.tags
+            in
+              if List.length lst == 0
+              then []
+              else tr [class "tagmod_cat"] [ td [] [text nam], td [ class "tc_you", colspan 3 ] [], td [ class "tc_others", colspan 3 ] [] ]
+                   :: List.map (\t -> Html.Lazy.lazy4 viewTag t (Dict.get t.id model.sel) model.id model.mod) lst)
+          [ ("cont", "Content")
+          , ("ero",  "Sexual content")
+          , ("tech", "Technical")
+          , ("new",  "Newly added tags")
+          ]
+        ]
+      ]
+    ]

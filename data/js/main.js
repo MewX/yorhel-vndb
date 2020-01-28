@@ -39,9 +39,6 @@ VARS = /*VARS*/;
 //include vnstaff.js
 //include vncast.js
 
-// VN tag editing (/v+/tagmod)
-//include vntagmod.js
-
 // Release editing (/r+/edit)
 //include relmedia.js
 //include relvns.js

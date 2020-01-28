@@ -22,3 +22,10 @@ innerHtml s = Html.Attributes.title ""
 -- Like Browser.Dom.focus, except it can call any function (without arguments)
 elemCall : String -> String -> Task.Task Browser.Dom.Error ()
 elemCall s = Browser.Dom.focus
+
+-- Format a floating point number with a fixed number of fractional digits.
+-- (The coinop-logan/elm-format-number package seems to be the go-to way to do
+-- this in Elm, but why reimplement float operations when the browser can do it
+-- just as well?)
+fmtFloat : Float -> Int -> String
+fmtFloat _ _ = ""
