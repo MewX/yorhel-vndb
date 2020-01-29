@@ -209,7 +209,7 @@ view model =
     [ h1 [] [ text <| if model.tid == Nothing then "Create new thread" else "Edit post" ]
     , table [ class "formtable" ] <|
       [ if thread
-        then formField "title::Thread title" [ inputText "title" (Maybe.withDefault "" model.title) Title (style "width" "400px" :: GDE.valTitle) ]
+        then formField "title::Thread title" [ inputText "title" (Maybe.withDefault "" model.title) Title (style "width" "400px" :: required True :: GDE.valTitle) ]
         else formField "Topic" [ a [ href <| "/t" ++ String.fromInt (Maybe.withDefault 0 model.tid) ] [ text (Maybe.withDefault "" model.title) ] ]
       , if thread && model.can_mod
         then formField "" [ label [] [ inputCheck "" model.locked Locked, text " Locked" ] ]
