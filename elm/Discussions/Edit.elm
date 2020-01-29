@@ -154,7 +154,7 @@ view model =
         ] ++ case (bd.btype, bd.title) of
           (_, Just title) ->
             [ b [ class "grayedout" ] [ text " > " ]
-            , a [ href <| bd.btype ++ String.fromInt bd.iid ] [ text title ]
+            , a [ href <| "/" ++ bd.btype ++ String.fromInt bd.iid ] [ text title ]
             ]
           ("u", _) -> [ b [ class "grayedout" ] [ text " > " ], text <| bd.btype ++ String.fromInt bd.iid ++ " (deleted)" ]
           (_, _) -> []
