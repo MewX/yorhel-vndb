@@ -88,7 +88,7 @@ update msg model =
   case msg of
     Noop -> (model, Cmd.none)
     SetSel id v ->
-      ( if id == 0 && model.selType == NoteSet then model else { model | selId = id, selType = v }
+      ( if model.selType == NoteSet && not (id == model.selId && v == NoSel) then model else { model | selId = id, selType = v }
       , if v == NoteSet then Task.attempt (always Noop) (focus "tag_note") else Cmd.none)
 
     SetVote  id v -> (modtag model id (\t -> { t | vote = v }), Cmd.none)
@@ -152,9 +152,9 @@ viewTag t sel vid mod =
     , td [ class "tc_mynote" ] <|
       if t.vote <= 0 then [] else
       [ span
-        [ onMouseOver (SetSel t.id (if sel == NoteSet then NoteSet else Note))
+        [ onMouseOver (SetSel t.id Note)
         , onMouseOut (SetSel 0 NoSel)
-        , onClickD (SetSel t.id (if sel == NoteSet then NoSel else NoteSet))
+        , onClickD (SetSel t.id NoteSet)
         , title <| if t.notes == "" then "set note" else t.notes
         , style "opacity" <| if t.notes == "" then "0.5" else "1.0"
         ] [ text "💬" ]
@@ -174,7 +174,7 @@ viewTag t sel vid mod =
       NoteSet ->
         [ td [ colspan 3, class "compact" ]
           [ Html.form [ onSubmit (SetSel t.id NoSel) ]
-            [ inputText "tag_note" t.notes (SetNote t.id) (style "width" "400px" :: style "position" "absolute" :: placeholder "Set note..." :: GT.valTagsNotes) ]
+            [ inputText "tag_note" t.notes (SetNote t.id) (onBlur (SetSel t.id NoSel) :: style "width" "400px" :: style "position" "absolute" :: placeholder "Set note..." :: GT.valTagsNotes) ]
           ]
         ]
       _ ->
