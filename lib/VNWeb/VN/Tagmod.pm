@@ -7,17 +7,19 @@ use VNWeb::Tags::Lib;
 my $FORM = {
     id    => { id => 1 },
     title => { _when => 'out' },
-    tags  => { aoh => {
+    tags  => { sort_keys => 'id', aoh => {
         id        => { id => 1 },
         vote      => { int => 1, enum => [ -3..3 ] },
         spoil     => { required => 0, uint => 1, enum => [ 0..2 ] },
         overrule  => { anybool => 1 },
+        notes     => { required => 0, default => '', maxlength => 1000 },
         cat       => { _when => 'out' },
         name      => { _when => 'out' },
         rating    => { _when => 'out', num => 1 },
         count     => { _when => 'out', uint => 1 },
         spoiler   => { _when => 'out', num => 1 },
         overruled => { _when => 'out', anybool => 1 },
+        othnotes  => { _when => 'out' },
     } },
     mod   => { _when => 'out', anybool => 1 },
 };
@@ -44,7 +46,7 @@ elm_api Tagmod => $FORM_OUT, $FORM_IN, sub {
 
     # Add & update tags
     for(@$tags) {
-        my $row = { uid => auth->uid, vid => $id, tag => $_->{id}, vote => $_->{vote}, spoiler => $_->{spoil}, ignore => ($_->{overruled} && !$_->{overrule})?1:0 };
+        my $row = { uid => auth->uid, vid => $id, tag => $_->{id}, vote => $_->{vote}, spoiler => $_->{spoil}, ignore => ($_->{overruled} && !$_->{overrule})?1:0, notes => $_->{notes} };
         tuwf->dbExeci('INSERT INTO tags_vn', $row, 'ON CONFLICT (uid, vid, tag) DO UPDATE SET', $row);
         tuwf->dbExeci('UPDATE tags_vn SET ignore = TRUE WHERE uid <>', \auth->uid, 'AND vid =', \$id, 'AND tag =', \$_->{id}) if $_->{overrule};
     }
@@ -74,12 +76,17 @@ TUWF::get qr{/$RE{vid}/tagmod}, sub {
          GROUP BY t.id, t.name, t.cat
          ORDER BY t.name'
     );
-    enrich_merge id => sub { sql 'SELECT tag AS id, vote, spoiler AS spoil, ignore FROM tags_vn WHERE', { uid => auth->uid, vid => $v->{id} } }, $tags;
+    enrich_merge id => sub { sql 'SELECT tag AS id, vote, spoiler AS spoil, ignore, notes FROM tags_vn WHERE', { uid => auth->uid, vid => $v->{id} } }, $tags;
+    enrich othnotes => id => tag => sub {
+        sql('SELECT tv.tag, ', sql_user(), ', tv.notes FROM tags_vn tv JOIN users u ON u.id = tv.uid WHERE tv.notes <> \'\' AND uid <>', \auth->uid, 'AND vid=', \$v->{id})
+    }, $tags;
 
     for(@$tags) {
         $_->{vote} //= 0;
         $_->{spoil} //= undef;
+        $_->{notes} //= '';
         $_->{overrule} = $_->{vote} && !$_->{ignore} && $_->{overruled};
+        $_->{othnotes} = join "\n", map user_displayname($_).': '.$_->{notes}, $_->{othnotes}->@*;
     }
 
     framework_ title => "Edit tags for $v->{title}", type => 'v', dbobj => $v, tab => 'tagmod', sub {

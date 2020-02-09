@@ -17,6 +17,7 @@ sub listing_ {
                     td_ class => 'tc4', sub { txt_ 'Tag';  sortable_ 'tag', $opt, $url };
                     td_ class => 'tc5', 'Spoiler';
                     td_ class => 'tc6', 'Visual novel';
+                    td_ class => 'tc7', 'Note';
                 }};
             tr_ sub {
                 my $i = $_;
@@ -39,6 +40,7 @@ sub listing_ {
                     a_ href => $url->(v => $i->{vid}, p=>undef), class => 'setfil', '> ' if !defined $opt->{v};
                     a_ href => "/v$i->{vid}", shorten $i->{title}, 50;
                 };
+                td_ class => 'tc7', $i->{notes};
             } for @$lst;
         };
     };
@@ -65,7 +67,7 @@ TUWF::get qr{/g/links}, sub {
 
     my $count = $filt && tuwf->dbVali('SELECT COUNT(*) FROM tags_vn tv WHERE', $where);
     my($lst, $np) = tuwf->dbPagei({ page => $opt->{p}, results => 50 }, '
-        SELECT tv.vid, tv.uid, tv.tag, tv.vote, tv.spoiler,', sql_totime('tv.date'), 'as date, tv.ignore, v.title,', sql_user(), ', t.name
+        SELECT tv.vid, tv.uid, tv.tag, tv.vote, tv.spoiler,', sql_totime('tv.date'), 'as date, tv.ignore, tv.notes, v.title,', sql_user(), ', t.name
           FROM tags_vn tv
           JOIN vn v ON v.id = tv.vid
           JOIN users u ON u.id = tv.uid

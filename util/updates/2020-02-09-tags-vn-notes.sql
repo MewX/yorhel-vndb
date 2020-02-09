@@ -1,0 +1,1 @@
+ALTER TABLE tags_vn ADD COLUMN notes text NOT NULL DEFAULT '';
