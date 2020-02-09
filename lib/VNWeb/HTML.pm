@@ -89,7 +89,7 @@ sub user_displayname {
     my $prefix = shift||'user_';
     my sub f($) { $obj->{"${prefix}$_[0]"} }
 
-    return '[deleted]' if !f 'id';
+    return 'anonymous' if !f 'id';
     my $fancy = !(auth->pref('nodistract_can') && auth->pref('nodistract_nofancy'));
     $fancy && f 'uniname_can' && f 'uniname' ? f 'uniname' : f 'name'
 }
