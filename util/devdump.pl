@@ -149,7 +149,8 @@ sub copy_entry {
     # VN-related niceties
     copy tags_vn     => "SELECT DISTINCT ON (tag,vid,uid%10) * FROM tags_vn WHERE vid IN($vids)", {uid => 'user'};
     copy quotes      => "SELECT * FROM quotes WHERE vid IN($vids)";
-    my $votes = "SELECT vid, uid%8+2 AS uid, (percentile_cont((uid%8+1)::float/9) WITHIN GROUP (ORDER BY vote))::smallint AS vote, MIN(date) AS vote_date FROM votes WHERE vid IN($vids) GROUP BY vid, uid%8";
+    my $votes = "SELECT vid, uid%8+2 AS uid, (percentile_cont((uid%8+1)::float/9) WITHIN GROUP (ORDER BY vote))::smallint AS vote, MIN(vote_date) AS vote_date"
+               ."  FROM ulist_vns WHERE vid IN($vids) AND vote IS NOT NULL GROUP BY vid, uid%8";
     copy ulist_vns   => $votes, {uid => 'user'};
     copy ulist_vns_labels => "SELECT vid, uid, 7 AS lbl FROM ($votes) x", {uid => 'user'};
 
