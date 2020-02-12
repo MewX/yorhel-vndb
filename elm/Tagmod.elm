@@ -39,6 +39,8 @@ type alias Model =
   , id       : Int
   , mod      : Bool
   , tags     : List Tag
+  , saved    : List Tag
+  , changed  : Bool
   , selId    : Int
   , selType  : Sel
   , negCount : Int
@@ -55,6 +57,8 @@ init f =
   , id       = f.id
   , mod      = f.mod
   , tags     = f.tags
+  , saved    = f.tags
+  , changed  = False
   , selId    = 0
   , selType  = NoSel
   , negCount = List.length <| List.filter (\t -> t.rating <= 0) f.tags
@@ -80,21 +84,22 @@ type Msg
   | Submitted GApi.Response
 
 
-modtag : Model -> Int -> (Tag -> Tag) -> Model
-modtag model id f = { model | addMsg = "", tags = List.map (\t -> if t.id == id then f t else t) model.tags }
-
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
+  let
+    changed m = { m | changed = m.saved /= m.tags }
+    modtag id f = changed { model | addMsg = "", tags = List.map (\t -> if t.id == id then f t else t) model.tags }
+  in
   case msg of
     Noop -> (model, Cmd.none)
     SetSel id v ->
       ( if model.selType == NoteSet && not (id == model.selId && v == NoSel) then model else { model | selId = id, selType = v }
       , if v == NoteSet then Task.attempt (always Noop) (focus "tag_note") else Cmd.none)
 
-    SetVote  id v -> (modtag model id (\t -> { t | vote = v }), Cmd.none)
-    SetOver  id b -> (modtag model id (\t -> { t | overrule = b }), Cmd.none)
-    SetSpoil id s -> (modtag model id (\t -> { t | spoil = s }), Cmd.none)
-    SetNote  id s -> (modtag model id (\t -> { t | notes = s }), Cmd.none)
+    SetVote  id v -> (modtag id (\t -> { t | vote = v }), Cmd.none)
+    SetOver  id b -> (modtag id (\t -> { t | overrule = b }), Cmd.none)
+    SetSpoil id s -> (modtag id (\t -> { t | spoil = s }), Cmd.none)
+    SetNote  id s -> (modtag id (\t -> { t | notes = s }), Cmd.none)
     NegShow  b    -> ({ model | negShow = b }, Cmd.none)
 
     TagSearch m ->
@@ -107,7 +112,7 @@ update msg model =
                 else if not t.applicable                           then ([], "Tag is not applicable")
                 else if List.any (\it -> it.id == t.id) model.tags then ([], "Tag is already in the list")
                 else ([{ id = t.id, vote = 2, spoil = Nothing, overrule = False, notes = "", cat = "new", name = t.name, rating = 0, count = 0, spoiler = 0, overruled = False, othnotes = "" }], "")
-          in ({ model | add = if ms == "" then A.clear nm else nm, tags = model.tags ++ nl, addMsg = ms }, c)
+          in (changed { model | add = if ms == "" then A.clear nm else nm, tags = model.tags ++ nl, addMsg = ms }, c)
 
     Submit ->
       ( { model | state = Api.Loading, addMsg = "" }
@@ -215,12 +220,16 @@ viewHead mod negCount negShow =
     ]
   ]
 
-viewFoot : Api.State -> A.Model GApi.ApiTagResult -> String -> Html Msg
-viewFoot state add addMsg =
+viewFoot : Api.State -> Bool -> A.Model GApi.ApiTagResult -> String -> Html Msg
+viewFoot state changed add addMsg =
   tfoot [] [ tr [] [ td [ colspan 8 ]
   [ div [ style "display" "flex", style "justify-content" "space-between" ]
     [ A.view searchConfig add [placeholder "Add tags..."]
-    , if addMsg == "" then text "" else b [ class "standout" ] [ text addMsg ]
+    , if addMsg /= ""
+      then b [ class "standout" ] [ text addMsg ]
+      else if changed
+      then b [ class "standout" ] [ text "You have unsaved changes" ]
+      else text ""
     , submitButton "Save changes" state True
     ]
   , text "Check the ", a [ href "/g" ] [ text "tag list" ], text " to browse all available tags."
@@ -244,7 +253,7 @@ view model =
         ]
       , table [ class "tgl stripe" ]
         [ Html.Lazy.lazy3 viewHead model.mod model.negCount model.negShow
-        , Html.Lazy.lazy3 viewFoot model.state model.add model.addMsg
+        , Html.Lazy.lazy4 viewFoot model.state model.changed model.add model.addMsg
         , tbody []
           <| List.concatMap (\(id,nam) ->
             let lst = List.filter (\t -> t.cat == id && (t.cat == "new" || t.rating > 0 || t.vote > 0 || model.negShow)) model.tags
