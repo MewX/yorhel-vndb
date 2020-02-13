@@ -158,7 +158,7 @@ sub chartable_ {
 
             my @visvns = grep $_->{spoil} <= $view->{spoilers}, $c->{vns}->@*;
             tr_ sub {
-                td_ $vn ? 'Releases' : 'Visual novels';
+                td_ class => 'key', $vn ? 'Releases' : 'Visual novels';
                 td_ sub {
                     my @vns;
                     for(@visvns) {
@@ -191,7 +191,7 @@ sub chartable_ {
             } if @visvns && (!$vn || $vn && (@visvns > 1 || $visvns[0]{rid}));
 
             tr_ sub {
-                td_ 'Voiced by';
+                td_ class => 'key', 'Voiced by';
                 td_ sub {
                     join_ \&br_, sub {
                         a_ href => "/s$_->{id}", title => $_->{original}||$_->{name}, $_->{name};
