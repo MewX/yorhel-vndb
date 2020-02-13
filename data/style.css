@@ -52,13 +52,6 @@ table.stripe tbody tr:nth-child(odd):not(.nostripe),
   clip: rect(1px 1px 1px 1px);
 }
 
-/* Generic spoiler level hiding
- * .spoillvl-[012]  -> parent tag indicating currently visible level
- * .spoil-[012]     -> child tags indicating item spoiler level */
-.spoillvl-0 .spoil-1,
-.spoillvl-0 .spoil-2,
-.spoillvl-1 .spoil-2 { display: none }
-
 /* Warning/Notice Box */
 div.warning, div.notice       { margin: 5px 10%; padding: 15px; background-color: $warnbg$; border: 1px solid $warnborder$; }
 div.notice                    { background-color: $noticebg$; border: 1px solid $noticeborder$; }

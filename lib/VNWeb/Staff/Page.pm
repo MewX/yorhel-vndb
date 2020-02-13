@@ -124,17 +124,18 @@ sub _cast_ {
     });
     return if !@$cast;
 
-    my $spoillvl = tuwf->authPref('spoilers')||0;
+    my $spoilers = viewget->{spoilers};
+    my $max_spoil = max(map $_->{spoil}, @$cast);
 
     div_ class => 'maintabs', sub {
         h1_ sprintf 'Voiced characters (%d)', scalar @$cast;
         ul_ sub {
-            li_ mkclass(tabselected => $spoillvl == 0), sub { a_ href => '#', class => 'spoilset-0', 'data-target' => 'voicedchars', 'hide spoilers' };
-            li_ mkclass(tabselected => $spoillvl == 1), sub { a_ href => '#', class => 'spoilset-1', 'data-target' => 'voicedchars', 'minor spoilers' };
-            li_ mkclass(tabselected => $spoillvl == 2), sub { a_ href => '#', class => 'spoilset-2', 'data-target' => 'voicedchars', 'spoil me!' };
-        };
+            li_ mkclass(tabselected => $spoilers == 0), sub { a_ href => '?view='.viewset(spoilers => 0), 'hide spoilers' };
+            li_ mkclass(tabselected => $spoilers == 1), sub { a_ href => '?view='.viewset(spoilers => 1), 'minor spoilers' };
+            li_ mkclass(tabselected => $spoilers == 2), sub { a_ href => '?view='.viewset(spoilers => 2), 'spoil me!' } if $max_spoil == 2;
+        } if $max_spoil;
     };
-    div_ class => "mainbox browse staffroles voicedchars spoillvl-$spoillvl", sub {
+    div_ class => "mainbox browse staffroles", sub {
         table_ class => 'stripe', sub {
             thead_ sub { tr_ sub {
                 td_ class => 'tc1', sub { txt_ 'Title'; debug_ $cast };
@@ -143,7 +144,7 @@ sub _cast_ {
                 td_ class => 'tc4', 'As';
                 td_ class => 'tc5', 'Note';
             }};
-            tr_ class => "spoil-$_->{spoil}", sub {
+            tr_ sub {
                 my($v, $a) = ($_, $alias{$_->{aid}});
                 td_ class => 'tc1', sub {
                     a_ href => "/v$v->{id}", title => $v->{original}||$v->{title}, shorten $v->{title}, 60;
@@ -154,7 +155,7 @@ sub _cast_ {
                 };
                 td_ class => 'tc4', title => $a->{original}||$a->{name}, $a->{name};
                 td_ class => 'tc5', $v->{note};
-            } for @$cast;
+            } for grep $_->{spoil} <= $spoilers, @$cast;
         };
     };
 }
