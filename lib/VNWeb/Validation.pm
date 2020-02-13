@@ -188,7 +188,7 @@ sub can_edit {
 #   s/S -> 1/0 traits_sexual
 # Missing flags will use default.
 sub viewget {
-    (tuwf->reqGet('view')) =~ /^([0-2]?)([sS]?)$/;
+    (tuwf->reqGet('view')) =~ /^([0-2])?([sS]?)$/;
     {
         spoilers => $1 // auth->pref('spoilers') || 0,
         traits_sexual => !$2 ? auth->pref('traits_sexual') : $2 eq 's',
