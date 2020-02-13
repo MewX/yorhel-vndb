@@ -147,6 +147,11 @@ FINAL:
 }
 
 
+# charspoil:
+#   0/undef/missing: Output <b class="spoiler">..
+#   1: Output 'charspoil_*' classes
+#   2: Just output 'hidden by spoiler setting' message
+#   3: Just output the spoilers, unmarked
 sub bb2html {
   my($input, $maxlength, $charspoil) = @_;
 
@@ -186,11 +191,13 @@ sub bb2html {
       $ret .= $e->($raw);
 
     } elsif($tag eq 'spoiler_start') {
-      $ret .= !$charspoil
-        ? '<b class="spoiler">'
-        : '<b class="grayedout charspoil charspoil_-1">&lt;hidden by spoiler settings&gt;</b><span class="charspoil charspoil_2">';
+      $ret .= !$charspoil ? '<b class="spoiler">' :
+          $charspoil == 1 ? '<b class="grayedout charspoil charspoil_-1">&lt;hidden by spoiler settings&gt;</b><span class="charspoil charspoil_2">' :
+          $charspoil == 2 ? '<b class="grayedout charspoil charspoil_-1">&lt;hidden by spoiler settings&gt;</b><!--' : '';
     } elsif($tag eq 'spoiler_end') {
-      $ret .= !$charspoil ? '</b>' : '</span>';
+      $ret .= !$charspoil ? '</b>' :
+          $charspoil == 1 ? '</span>' :
+          $charspoil == 2 ? '-->' : '';
 
     } elsif($tag eq 'quote_start') {
       $ret .= '<div class="quote">' if !$maxlength;

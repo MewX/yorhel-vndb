@@ -16,6 +16,7 @@ our @EXPORT = qw/
     form_changed
     validate_dbid
     can_edit
+    viewget viewset
 /;
 
 
@@ -172,6 +173,33 @@ sub can_edit {
         if $entry->{id} && (!exists $entry->{entry_hidden} || !exists $entry->{entry_locked});
 
     auth->permDbmod || (auth->permEdit && !($entry->{entry_hidden} || $entry->{entry_locked}));
+}
+
+
+# Returns { spoilers => 0-2, traits_sexual => 0/1 }
+# Based on the view= query parameter or the user's preferences.
+# The query parameter has the following format:
+#   view=1   -> spoilers=1, traits_sexual=<default>
+#   view=2s  -> spoilers=2, traits_sexual=1
+#   view=2S  -> spoilers=2, traits_sexual=0
+#   view=S   -> spoilers=<default>, traits_sexual=0
+# i.e. a list of single-character flags:
+#   0-2 -> spoilers
+#   s/S -> 1/0 traits_sexual
+# Missing flags will use default.
+sub viewget {
+    (tuwf->reqGet('view')) =~ /^([0-2]?)([sS]?)$/;
+    {
+        spoilers => $1 // auth->pref('spoilers') || 0,
+        traits_sexual => !$2 ? auth->pref('traits_sexual') : $2 eq 's',
+    }
+}
+
+# Modifies the current view settings and serializes that into a view= value.
+# XXX: This may include more flags than the current page will use.
+sub viewset {
+    my %s = (viewget->%*, @_);
+    $s{spoilers}.($s{traits_sexual}?'s':'S')
 }
 
 1;

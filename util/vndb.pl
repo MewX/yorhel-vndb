@@ -37,6 +37,13 @@ TUWF::set %{ config->{tuwf} };
 tuwf->{elmgen} = $ARGV[0] && $ARGV[0] eq 'elmgen';
 
 
+# tuwf->imgpath(cg => $image_id)
+sub TUWF::Object::imgpath { sprintf '%s/%s/%02d/%d.jpg', $ROOT, $_[1], $_[2]%100, $_[2] }
+
+# tuwf->imgurl(cv => $image_id)
+sub TUWF::Object::imgurl { sprintf '%s/%s/%02d/%d.jpg', $_[0]->{url_static}, $_[1], $_[2]%100, $_[2] }
+
+
 TUWF::hook before => sub {
     # If we're running standalone, serve www/ and static/ too.
     if(tuwf->{_TUWF}{http}) {

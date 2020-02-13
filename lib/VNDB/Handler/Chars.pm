@@ -12,7 +12,7 @@ use List::Util 'min';
 our @EXPORT = ('charOps', 'charTable', 'charBrowseTable');
 
 TUWF::register(
-  qr{c([1-9]\d*)(?:\.([1-9]\d*))?} => \&page,
+  qr{oc([1-9]\d*)(?:\.([1-9]\d*))?} => \&page,
   qr{c(?:([1-9]\d*)(?:\.([1-9]\d*))?/(edit|copy)|/new)}
     => \&edit,
   qr{c/([a-z0]|all)} => \&list,

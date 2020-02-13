@@ -205,8 +205,8 @@ p.linkradio { padding: 2px }
  *   <a href="#" class="linkradio checked">Checked option</a>
  */
 a.linkradio:before { content: '✗' }
-a.linkradio.checked { color: $maintext$ }
 a.linkradio.checked:before { content: '✓' }
+a.checked { color: $maintext$ }
 
 /* Spinner, <div class="spinner"></div> for a large one, <span> for a smaller inline-text version */
 .spinner { content: ''; box-sizing: border-box; border: 3px solid #9eaebd; border-bottom-color: transparent; border-radius: 100%; animation: spin 1s infinite linear; width: 16px; height: 16px; display: inline-block; margin: auto }
@@ -287,6 +287,8 @@ div.mainbox-overflow-hack { overflow: hidden; width: 100%; box-sizing: border-bo
 .mainbox table p     { margin: 0; }
 .mainbox h2          { font-weight: bold; font-size: 16px; margin: 10px 0 0 5px; }
 a.addnew, p.addnew   { float: right; margin: 0 }
+a.mainopts, p.mainopts { float: right; margin: 0 }
+p.mainopts a         { margin: 0 5px }
 
 .mainbox.threelayout    { border-collapse: separate; border-spacing: 10px; margin: 10px -10px -20px -10px; min-width: 100%; }
 .mainbox.threelayout td { width: 32%; padding: 0 2px 10px 2px; }
