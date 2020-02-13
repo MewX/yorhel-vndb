@@ -173,7 +173,7 @@ update cfg msg model =
     Key _           -> mod model
 
     Input s ->
-      if s == ""
+      if String.trim s == ""
       then mod { model | value = s, loading = False, results = [] }
       else   ( { model | value = s, loading = True,  wait = model.wait + 1 }
              , Task.perform (always <| cfg.wrap <| Search <| model.wait + 1) (Process.sleep 500)
