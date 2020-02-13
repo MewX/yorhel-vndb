@@ -29,6 +29,37 @@ sub enrich_item {
 }
 
 
+# Fetch multiple character entries with a format suitable for chartable_()
+sub fetch_chars {
+    my($vid, $where) = @_;
+    my $l = tuwf->dbAlli('
+        SELECT id, name, original, alias, "desc", gender, b_month, b_day, s_bust, s_waist, s_hip, height, weight, bloodt, cup_size, age, image
+          FROM chars WHERE NOT hidden AND (', $where, ')'
+    );
+
+    enrich vns => id => id => sub { sql '
+        SELECT cv.id, cv.vid, cv.rid, cv.spoil, cv.role, v.title, v.original, r.title AS rtitle, r.original AS roriginal
+          FROM chars_vns cv
+          JOIN vn v ON v.id = cv.vid
+          LEFT JOIN releases r ON r.id = cv.rid
+         WHERE cv.id IN', $_, $vid ? ('AND cv.vid =', \$vid) : (), '
+         ORDER BY v.title, cv.vid, cv.rid NULLS LAST'
+    }, $l;
+
+    enrich traits => id => id => sub { sql '
+        SELECT ct.id, ct.tid, ct.spoil, t.name, t.sexual, coalesce(g.id, t.id) AS group, coalesce(g.name, t.name) AS groupname, coalesce(g.order,0) AS order
+          FROM chars_traits ct
+          JOIN traits t ON t.id = ct.tid
+          LEFT JOIN traits g ON t.group = g.id
+         WHERE ct.id IN', $_, '
+         ORDER BY g.order NULLS FIRST, coalesce(g.name, t.name), t.name'
+    }, $l;
+
+    enrich_seiyuu $vid, $l;
+    $l
+}
+
+
 sub _rev_ {
     my($c) = @_;
     revision_ c => $c, \&enrich_item,
@@ -187,6 +218,7 @@ TUWF::get qr{/$RE{crev}} => sub {
 
     enrich_item $c;
     enrich_seiyuu undef, $c;
+    my $view = viewget;
 
     framework_ title => $c->{name}, index => !tuwf->capture('rev'), type => 'c', dbobj => $c, hiddenmsg => 1,
         og => {
@@ -197,7 +229,6 @@ TUWF::get qr{/$RE{crev}} => sub {
         div_ class => 'mainbox', sub {
             itemmsg_ c => $c;
             p_ class => 'mainopts', sub {
-                my $view = viewget;
                 a_ mkclass(checked => $view->{spoilers} == 0), href => '?view='.viewset(spoilers=>0), 'Hide spoilers';
                 a_ mkclass(checked => $view->{spoilers} == 1), href => '?view='.viewset(spoilers=>1), 'Show minor spoilers';
                 a_ mkclass(standout =>$view->{spoilers} == 2), href => '?view='.viewset(spoilers=>2), 'Spoil me!';
@@ -209,7 +240,17 @@ TUWF::get qr{/$RE{crev}} => sub {
             chartable_ $c;
         };
 
-        # TODO: Other instances
+        my $inst = $c->{main} && $c->{main_spoil} > $view->{spoilers} ? []
+            : fetch_chars undef, sql
+                # If this entry doesn't have a 'main', look for other entries with a 'main' referencing this entry
+                !$c->{main} ? ('main =', \$c->{id}, 'AND main_spoil <=', \$view->{spoilers}) :
+                # Otherwise, look for other entries with the same 'main', and also fetch the 'main' entry itself
+                ('(id <>', \$c->{id}, 'AND main =', \$c->{main}, 'AND main_spoil <=', \$view->{spoilers}, ') OR id =', \$c->{main});
+
+        div_ class => 'mainbox', sub {
+            h1_ 'Other instances';
+            chartable_ $_, 1, $_ != $inst->[0] for @$inst;
+        } if @$inst;
     };
 };
 

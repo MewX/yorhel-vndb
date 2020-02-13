@@ -12,100 +12,10 @@ use List::Util 'min';
 our @EXPORT = ('charOps', 'charTable', 'charBrowseTable');
 
 TUWF::register(
-  qr{oc([1-9]\d*)(?:\.([1-9]\d*))?} => \&page,
   qr{c(?:([1-9]\d*)(?:\.([1-9]\d*))?/(edit|copy)|/new)}
     => \&edit,
   qr{c/([a-z0]|all)} => \&list,
 );
-
-
-sub page {
-  my($self, $id, $rev) = @_;
-
-  my $method = $rev ? 'dbCharGetRev' : 'dbCharGet';
-  my $r = $self->$method(
-    id => $id,
-    what => 'extended traits vns seiyuu',
-    $rev ? ( rev => $rev ) : ()
-  )->[0];
-  return $self->resNotFound if !$r->{id};
-
-  my $metadata = {
-    'og:title' => $r->{name},
-    'og:description' => bb2text($r->{desc}),
-    'og:image' => $r->{image} && imgurl(ch => $r->{image}),
-  };
-
-  $self->htmlHeader(title => $r->{name}, noindex => $rev, metadata => $metadata);
-  $self->htmlMainTabs(c => $r);
-  return if $self->htmlHiddenMessage('c', $r);
-
-  if($rev) {
-    my $prev = $rev && $rev > 1 && $self->dbCharGetRev(id => $id, rev => $rev-1, what => 'extended traits vns')->[0];
-    $self->htmlRevision('c', $prev, $r,
-      [ name      => 'Name',          diff => 1 ],
-      [ original  => 'Original name', diff => 1 ],
-      [ alias     => 'Aliases',       diff => qr/[ ,\n\.]/ ],
-      [ desc      => 'Description',   diff => qr/[ ,\n\.]/ ],
-      [ gender    => 'Sex',           serialize => sub { $GENDER{$_[0]} } ],
-      [ b_month   => 'Birthday/month',serialize => sub { $_[0]||'[empty]' } ],
-      [ b_day     => 'Birthday/day',  serialize => sub { $_[0]||'[empty]' } ],
-      [ s_bust    => 'Bust',          serialize => sub { $_[0]||'[empty]' } ],
-      [ s_waist   => 'Waist',         serialize => sub { $_[0]||'[empty]' } ],
-      [ s_hip     => 'Hip',           serialize => sub { $_[0]||'[empty]' } ],
-      [ height    => 'Height',        serialize => sub { $_[0]||'[empty]' } ],
-      [ weight    => 'Weight',        serialize => sub { $_[0]//'[empty]' } ],
-      [ bloodt    => 'Blood type',    serialize => sub { $BLOOD_TYPE{$_[0]} } ],
-      [ cup_size  => 'Cup size',      serialize => sub { $CUP_SIZE{$_[0]} } ],
-      [ age       => 'Age',           serialize => sub { $_[0]//'[empty]' } ],
-      [ main      => 'Main character',htmlize => sub { $_[0] ? sprintf '<a href="/c%d">c%d</a>', $_[0], $_[0] : '[empty]' } ],
-      [ main_spoil=> 'Spoiler',       serialize => \&fmtspoil ],
-      [ image     => 'Image', htmlize => sub {
-        return $_[0] ? sprintf '<img src="%s" />', imgurl(ch => $_[0]) : 'No image';
-      }],
-      [ traits    => 'Traits', join => '<br />', split => sub {
-        map sprintf('%s<a href="/i%d">%s</a> (%s)', $_->{group}?qq|<b class="grayedout">$_->{groupname} / </b> |:'',
-            $_->{tid}, $_->{name}, fmtspoil $_->{spoil}), @{$_[0]}
-      }],
-      [ vns       => 'Visual novels', join => '<br />', split => sub {
-        map sprintf('<a href="/v%d">v%d</a> %s %s (%s)', $_->{vid}, $_->{vid},
-          $_->{rid}?sprintf('[<a href="/r%d">r%d</a>]', $_->{rid}, $_->{rid}):'',
-          $CHAR_ROLE{$_->{role}}{txt}, fmtspoil $_->{spoil}), @{$_[0]};
-      }],
-    );
-  }
-
-  div class => 'charops', id => 'charops';
-   $self->charOps(1, 'char');
-
-   div class => 'mainbox';
-    $self->htmlItemMessage('c', $r);
-    h1 $r->{name};
-    h2 class => 'alttitle', $r->{original} if $r->{original};
-    $self->charTable($r);
-   end;
-
-   # TODO: ordering of these instances?
-   my $inst = [];
-   if(!$r->{main}) {
-     $inst = $self->dbCharGet(instance => $r->{id}, what => 'extended traits vns seiyuu');
-   } else {
-     $inst = $self->dbCharGet(instance => $r->{main}, notid => $r->{id}, what => 'extended traits vns seiyuu');
-     push @$inst, $self->dbCharGet(id => $r->{main}, what => 'extended traits vns seiyuu')->[0];
-   }
-   if(@$inst) {
-     my $spoil = sub { local $_=shift; !$r->{main} ? $_->{main_spoil} : $_->{main_spoil} > $r->{main_spoil} ? $_->{main_spoil} : $r->{main_spoil} };
-     my $minspoil = min map $spoil->($_), @$inst;
-     div class => 'mainbox '.charspoil($minspoil);
-      h1 'Other instances';
-      $self->charTable($_, 1, $_ != $inst->[0], 0, $spoil->($_)) for @$inst;
-     end;
-   }
-
-  end;
-
-  $self->htmlFooter;
-}
 
 
 sub charOps {
