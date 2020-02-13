@@ -220,6 +220,23 @@ TUWF::get qr{/$RE{crev}} => sub {
     enrich_seiyuu undef, $c;
     my $view = viewget;
 
+    my $inst_maxspoil = tuwf->dbVali('SELECT MAX(main_spoil) FROM chars WHERE NOT hidden AND main IN', [ $c->{id}, $c->{main}||() ]);
+
+    my $inst = !defined($inst_maxspoil) || ($c->{main} && $c->{main_spoil} > $view->{spoilers}) ? []
+        : fetch_chars undef, sql
+            # If this entry doesn't have a 'main', look for other entries with a 'main' referencing this entry
+            !$c->{main} ? ('main =', \$c->{id}, 'AND main_spoil <=', \$view->{spoilers}) :
+            # Otherwise, look for other entries with the same 'main', and also fetch the 'main' entry itself
+            ('(id <>', \$c->{id}, 'AND main =', \$c->{main}, 'AND main_spoil <=', \$view->{spoilers}, ') OR id =', \$c->{main});
+
+    my $max_spoil = max(
+        $inst_maxspoil||0,
+        (map $_->{spoil}, $c->{traits}->@*),
+        $c->{desc} =~ /\[spoiler\]/i ? 2 : 0, # crude
+    );
+    # Only display the sexual traits toggle when there are sexual traits within the current spoiler level.
+    my $has_sex = grep $_->{spoil} <= $view->{spoilers} && $_->{sexual}, map $_->{traits}->@*, $c, @$inst;
+
     framework_ title => $c->{name}, index => !tuwf->capture('rev'), type => 'c', dbobj => $c, hiddenmsg => 1,
         og => {
             description => bb2text $c->{desc}
@@ -229,23 +246,18 @@ TUWF::get qr{/$RE{crev}} => sub {
         div_ class => 'mainbox', sub {
             itemmsg_ c => $c;
             p_ class => 'mainopts', sub {
-                a_ mkclass(checked => $view->{spoilers} == 0), href => '?view='.viewset(spoilers=>0), 'Hide spoilers';
-                a_ mkclass(checked => $view->{spoilers} == 1), href => '?view='.viewset(spoilers=>1), 'Show minor spoilers';
-                a_ mkclass(standout =>$view->{spoilers} == 2), href => '?view='.viewset(spoilers=>2), 'Spoil me!';
-                b_ class => 'grayedout', ' | ';
-                a_ mkclass(checked => $view->{traits_sexual}), href => '?view='.viewset(traits_sexual=>!$view->{traits_sexual}), 'Show sexual traits';
+                if($max_spoil) {
+                    a_ mkclass(checked => $view->{spoilers} == 0), href => '?view='.viewset(spoilers=>0), 'Hide spoilers';
+                    a_ mkclass(checked => $view->{spoilers} == 1), href => '?view='.viewset(spoilers=>1), 'Show minor spoilers';
+                    a_ mkclass(standout =>$view->{spoilers} == 2), href => '?view='.viewset(spoilers=>2), 'Spoil me!' if $max_spoil == 2;
+                }
+                b_ class => 'grayedout', ' | ' if $has_sex && $max_spoil;
+                a_ mkclass(checked => $view->{traits_sexual}), href => '?view='.viewset(traits_sexual=>!$view->{traits_sexual}), 'Show sexual traits' if $has_sex;
             };
             h1_ sub { txt_ $c->{name}; debug_ $c };
             h2_ class => 'alttitle', $c->{original} if length $c->{original};
             chartable_ $c;
         };
-
-        my $inst = $c->{main} && $c->{main_spoil} > $view->{spoilers} ? []
-            : fetch_chars undef, sql
-                # If this entry doesn't have a 'main', look for other entries with a 'main' referencing this entry
-                !$c->{main} ? ('main =', \$c->{id}, 'AND main_spoil <=', \$view->{spoilers}) :
-                # Otherwise, look for other entries with the same 'main', and also fetch the 'main' entry itself
-                ('(id <>', \$c->{id}, 'AND main =', \$c->{main}, 'AND main_spoil <=', \$view->{spoilers}, ') OR id =', \$c->{main});
 
         div_ class => 'mainbox', sub {
             h1_ 'Other instances';
