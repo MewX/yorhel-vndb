@@ -817,6 +817,11 @@ sub editmsg_ {
               }
           }
       };
+      p_ class => 'center', sub {
+          txt_ "If you're having trouble using this new form, the ";
+          a_ href => '/old'.tuwf->reqPath().tuwf->reqQuery(), 'old form';
+          txt_ ' is still available.';
+      } if $type eq 'r' && tuwf->reqPath() !~ m{^/old/};
   }
 }
 

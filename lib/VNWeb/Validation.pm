@@ -7,6 +7,7 @@ use VNDB::Types;
 use VNDB::Config;
 use VNWeb::Auth;
 use VNWeb::DB;
+use VNDB::Func 'gtintype';
 use Carp 'croak';
 use Exporter 'import';
 
@@ -28,6 +29,7 @@ TUWF::set custom_validations => {
     username    => { regex => qr/^(?!-*[a-z][0-9]+-*$)[a-z0-9-]*$/, minlength => 2, maxlength => 15 },
     password    => { length => [ 4, 500 ] },
     language    => { enum => \%LANGUAGE },
+    gtin        => { uint => 1, func => sub { $_[0] eq 0 || gtintype($_[0]) } },
     # Accepts a user-entered vote string (or '-' or empty) and converts that into a DB vote number (or undef) - opposite of fmtvote()
     vnvote      => { required => 0, default => undef, regex => qr/^(?:|-|[1-9]|10|[1-9]\.[0-9]|10\.0)$/, func => sub { $_[0] = $_[0] eq '-' ? undef : 10*$_[0]; 1 } },
     # Sort an array by the listed hash keys, using string comparison on each key
