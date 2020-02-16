@@ -79,6 +79,7 @@ elm_api StaffEdit => $FORM_OUT, $FORM_IN, sub {
     # The form validation only checks for duplicate aid's, but the name+original should also be unique.
     my %names;
     die "Duplicate aliases" if grep $names{"$_->{name}\x00$_->{original}"}++, $data->{alias}->@*;
+    die "Original = name" if grep $_->{name} eq $_->{original}, $data->{alias}->@*;
 
     # For positive alias IDs: Make sure they exist and are owned by this entry.
     validate_dbid

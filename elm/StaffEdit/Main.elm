@@ -153,7 +153,7 @@ update msg model =
 
 
 isValid : Model -> Bool
-isValid model = not model.aliasDup
+isValid model = not (model.aliasDup || List.any (\l -> l.name == l.original) model.alias)
 
 
 view : Model -> Html Msg
@@ -163,7 +163,10 @@ view model =
       tr []
       [ td [ class "tc_id" ] [ inputRadio "main" (e.aid == model.aid) (AliasMain e.aid) ]
       , td [ class "tc_name" ] [ inputText "" e.name (AliasName n) GSE.valAliasName ]
-      , td [ class "tc_original" ] [ inputText "" e.original (AliasOrig n) GSE.valAliasOriginal ]
+      , td [ class "tc_original" ]
+        [ inputText "" e.original (AliasOrig n) GSE.valAliasOriginal
+        , if e.name /= "" && e.name == e.original then b [ class "standout" ] [ text "May not be the same as Name (romaji)" ] else text ""
+        ]
       , td [ class "tc_add" ]
         [ if model.aid == e.aid then b [ class "grayedout" ] [ text " primary" ]
           else if e.inuse then b [ class "grayedout" ] [ text " referenced" ]
