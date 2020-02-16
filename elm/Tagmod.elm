@@ -155,7 +155,7 @@ viewTag t sel vid mod =
       , a [ href "#", onMouseOver (SetSel t.id (Spoil (Just 2))), onMouseOut (SetSel 0 NoSel), onClickD (SetSpoil t.id (Just 2)), classList [("s2", spoil == Just 2 )], title "Major spoiler" ] []
       ]
     , td [ class "tc_mynote" ] <|
-      if t.vote <= 0 then [] else
+      if t.vote == 0 then [] else
       [ span
         [ onMouseOver (SetSel t.id Note)
         , onMouseOut (SetSel 0 NoSel)
