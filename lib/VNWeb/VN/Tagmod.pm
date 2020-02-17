@@ -34,8 +34,13 @@ elm_api Tagmod => $FORM_OUT, $FORM_IN, sub {
     $tags = [ grep $_->{vote}, @$tags ];
     $_->{overrule} = 0 for auth->permTagmod ? () : @$tags;
 
-    # Weed out invalid/deleted/non-applicable tags
-    enrich_merge id => 'SELECT id, 1 as exists FROM tags WHERE state <> 1 AND applicable AND id IN', $tags;
+    # Weed out invalid/deleted/non-applicable tags.
+    # Voting on non-applicable tags is still allowed if there are existing votes for this tag on this VN.
+    enrich_merge id => sql('
+        SELECT tag AS id, 1 as exists FROM tags_vn WHERE vid =', \$id, '
+        UNION
+        SELECT id, 1 as exists FROM tags WHERE state <> 1 AND applicable AND id IN'
+    ), $tags;
     $tags = [ grep $_->{exists}, @$tags ];
 
     # Find out if any of these tags are being overruled
