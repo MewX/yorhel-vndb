@@ -12,6 +12,7 @@ BEGIN { ($ROOT = abs_path $0) =~ s{/util/vndb\.pl$}{}; }
 
 use lib $ROOT.'/lib';
 use SkinFile;
+use VNDB::Func ();
 use VNDB::Config;
 use VNWeb::Auth;
 use VNWeb::HTML ();
@@ -37,11 +38,17 @@ TUWF::set %{ config->{tuwf} };
 tuwf->{elmgen} = $ARGV[0] && $ARGV[0] eq 'elmgen';
 
 
-# tuwf->imgpath(cg => $image_id)
-sub TUWF::Object::imgpath { sprintf '%s/%s/%02d/%d.jpg', $ROOT, $_[1], $_[2]%100, $_[2] }
+sub _path {
+    my($t, $id) = $_[1] =~ /\(([a-z]+),([0-9]+)\)/;
+    $t = 'st' if $t eq 'sf' && $_[2];
+    sprintf '%s/%s/%02d/%d.jpg', $_[0], $t, $id%100, $id;
+}
 
-# tuwf->imgurl(cv => $image_id)
-sub TUWF::Object::imgurl { sprintf '%s/%s/%02d/%d.jpg', $_[0]->{url_static}, $_[1], $_[2]%100, $_[2] }
+# tuwf->imgpath($image_id, $thumb)
+sub TUWF::Object::imgpath { _path $ROOT, $_[1], $_[2] }
+
+# tuwf->imgurl($image_id, $thumb)
+sub TUWF::Object::imgurl { _path $_[0]{url_static}, $_[1], $_[2] }
 
 
 TUWF::hook before => sub {

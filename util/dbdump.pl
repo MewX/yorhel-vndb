@@ -56,6 +56,9 @@ my %tables = (
                                 .' AND (rid IS NULL OR rid IN(SELECT id FROM releases WHERE NOT hidden))'
                            , order => 'id, vid, rid' },
     docs                => { where => 'NOT hidden' },
+    images              => { where => 'id IN(SELECT scr FROM vn_screenshots vs JOIN vn v ON v.id = vs.id WHERE NOT v.hidden'
+                                    .' UNION SELECT image FROM chars WHERE image IS NOT NULL AND NOT hidden'
+                                    .' UNION SELECT image from vn WHERE image IS NOT NULL AND NOT hidden)' },
     producers           => { where => 'NOT hidden' },
     producers_relations => { where => 'id IN(SELECT id FROM producers WHERE NOT hidden)' },
     releases            => { where => 'NOT hidden' },
@@ -70,7 +73,6 @@ my %tables = (
                                                     .' JOIN ulist_vns_labels uvl ON uvl.vid = rv.vid'
                                                     .' JOIN ulist_labels ul ON ul.uid = uvl.uid AND ul.id = uvl.lbl'
                                                    .' WHERE r.id = rlists.rid AND uvl.uid = rlists.uid AND NOT r.hidden AND NOT v.hidden AND NOT ul.private)' },
-    screenshots         => { where => 'id IN(SELECT scr FROM vn_screenshots vs JOIN vn v ON v.id = vs.id WHERE NOT v.hidden)' },
     staff               => { where => 'NOT hidden' },
     staff_alias         => { where => 'id IN(SELECT id FROM staff WHERE NOT hidden)' },
     tags                => { where => 'state = 2' },
@@ -169,6 +171,7 @@ sub export_import_script {
     _
 
     print $F "\n\n";
+    print $F "$types->{image_type}{decl}\n";
     my %types = map +($_->{type}, 1), grep $_->{pub}, map @{$schema->{$_->{name}}{cols}}, @tables;
     print $F "$types->{$_}{decl}\n" for (sort grep $types->{$_}, keys %types);
 
@@ -247,9 +250,9 @@ sub export_img {
 
     my %scr;
     my %dir = (ch => {}, cv => {}, sf => \%scr, st => \%scr);
-    $dir{sf}{$_->[0]} = 1 for $db->selectall_array("SELECT id FROM screenshots WHERE $tables{screenshots}{where} ORDER BY id");
-    $dir{cv}{$_->[0]} = 1 for $db->selectall_array("SELECT image FROM vn WHERE image <> 0 AND $tables{vn}{where} ORDER BY image");
-    $dir{ch}{$_->[0]} = 1 for $db->selectall_array("SELECT image FROM chars WHERE image <> 0 AND $tables{chars}{where} ORDER BY image");
+    $dir{sf}{$_->[0]} = 1 for $db->selectall_array("SELECT (scr).id FROM vn_screenshots WHERE $tables{vn_screenshots}{where}");
+    $dir{cv}{$_->[0]} = 1 for $db->selectall_array("SELECT (image).id FROM vn WHERE image IS NOT NULL AND $tables{vn}{where}");
+    $dir{ch}{$_->[0]} = 1 for $db->selectall_array("SELECT (image).id FROM chars WHERE image IS NOT NULL AND $tables{chars}{where}");
     $db->rollback;
     undef $db;
 

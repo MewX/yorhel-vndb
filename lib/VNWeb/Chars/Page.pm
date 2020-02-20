@@ -83,7 +83,7 @@ sub _rev_ {
             a_ href => "/c$c->{id}", title => $c->{name}, "c$c->{id}"
         } ],
         [ main_spoil => 'Spoiler',       fmt => sub { txt_ fmtspoil $_ } ],
-        [ image      => 'Image',         empty => 0, fmt => sub { img_ src => tuwf->imgurl(ch => $_) } ],
+        [ image      => 'Image',         empty => 0, fmt => sub { img_ src => tuwf->imgurl($_) } ],
         [ vns        => 'Visual novels', fmt => sub {
             a_ href => "/v$_->{vid}", title => $_->{original}||$_->{title}, "v$_->{vid}";
             if($_->{rid}) {
@@ -109,7 +109,7 @@ sub chartable_ {
     div_ mkclass(chardetails => 1, charsep => $sep), sub {
         div_ class => 'charimg', sub {
             p_ 'No image uploaded yet' if !$c->{image};
-            img_ src => tuwf->imgurl(ch => $c->{image}), alt => $c->{name} if $c->{image};
+            img_ src => tuwf->imgurl($c->{image}), alt => $c->{name} if $c->{image};
         };
         table_ class => 'stripe', sub {
             thead_ sub { tr_ sub { td_ colspan => 2, sub {

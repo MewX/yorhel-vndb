@@ -8,6 +8,12 @@ use warnings;
 use autodie;
 use DBI;
 use DBD::Pg;
+use Cwd 'abs_path';
+
+my $ROOT;
+BEGIN { ($ROOT = abs_path $0) =~ s{/util/devdump\.pl$}{}; }
+
+use lib $ROOT.'/lib';
 
 my $db = DBI->connect('dbi:Pg:dbname=vndb', 'vndb', undef, { RaiseError => 1 });
 
@@ -29,7 +35,11 @@ my $characters = $db->selectcol_arrayref(
    ."UNION "
    ."SELECT DISTINCT h.main FROM chars_vns_hist e JOIN changes c ON c.id = e.chid JOIN chars_hist h ON h.chid = e.chid WHERE e.vid IN($vids) AND h.main IS NOT NULL"
 );
-
+my $images = $db->selectcol_arrayref(q{
+         SELECT image FROM chars_hist          ch JOIN changes c ON c.id = ch.chid WHERE c.type = 'c' AND c.itemid IN(}.join(',',@$characters).qq{) AND ch.image IS NOT NULL
+   UNION SELECT image FROM vn_hist             vh JOIN changes c ON c.id = vh.chid WHERE c.type = 'v' AND c.itemid IN($vids) AND vh.image IS NOT NULL
+   UNION SELECT scr   FROM vn_screenshots_hist vs JOIN changes c ON c.id = vs.chid WHERE c.type = 'v' AND c.itemid IN($vids)
+});
 
 
 # Helper function to copy a table or SQL statement. Can do modifications on a
@@ -121,6 +131,9 @@ sub copy_entry {
     # Wikidata (TODO: This could be a lot more selective)
     copy 'wikidata';
 
+    # Image metadata
+    copy images => 'SELECT * FROM images WHERE id IN('.join(',',map "'$_'", @$images).')';
+
     # Threads (announcements)
     my $threads = join ',', @{ $db->selectcol_arrayref("SELECT tid FROM threads_boards b WHERE b.type = 'an'") };
     copy threads        => "SELECT * FROM threads WHERE id IN($threads)";
@@ -141,7 +154,6 @@ sub copy_entry {
     copy_entry c => [qw/chars chars_traits chars_vns/], $characters;
 
     # Visual novels
-    copy screenshots => "SELECT DISTINCT s.* FROM screenshots s JOIN vn_screenshots_hist v ON v.scr = s.id JOIN changes c ON c.id = v.chid WHERE c.type = 'v' AND c.itemid IN($vids)";
     copy anime       => "SELECT DISTINCT a.* FROM anime a JOIN vn_anime_hist v ON v.aid = a.id JOIN changes c ON c.id = v.chid WHERE c.type = 'v' AND c.itemid IN($vids)";
     copy relgraphs   => "SELECT DISTINCT ON (r.id) r.* FROM relgraphs r JOIN vn v ON v.rgraph = r.id WHERE v.id IN($vids)", {};
     copy_entry v     => [qw/vn vn_anime vn_seiyuu vn_staff vn_relations vn_screenshots/], \@vids;
@@ -181,11 +193,8 @@ sub copy_entry {
 
 
 # Now figure out which images we need, and throw everything in a tarball
-sub imgs { map sprintf('static/%s/%02d/%d.jpg', $_[0], $_%100, $_), @{$_[1]} }
+sub img { sprintf 'static/%s/%02d/%d.jpg', $_[0], $_[1]%100, $_[1] }
+my @imgpaths = sort map { my($t,$id) = /\((.+),(.+)\)/; (img($t, $id), $t eq 'sf' ? img('st', $id) : ()) } @$images;
 
-my $ch = $db->selectcol_arrayref("SELECT DISTINCT e.image FROM chars_hist          e JOIN changes c ON c.id = e.chid WHERE c.type = 'c' AND e.image <> 0 AND c.itemid IN(".join(',', @$characters).")");
-my $cv = $db->selectcol_arrayref("SELECT DISTINCT e.image FROM vn_hist             e JOIN changes c ON c.id = e.chid WHERE c.type = 'v' AND e.image <> 0 AND c.itemid IN($vids)");
-my $sf = $db->selectcol_arrayref("SELECT DISTINCT e.scr   FROM vn_screenshots_hist e JOIN changes c ON c.id = e.chid WHERE c.type = 'v' AND c.itemid IN($vids)");
-
-system("tar -czf devdump.tar.gz dump.sql ".join ' ', imgs(ch => $ch), imgs(cv => $cv), imgs(sf => $sf), imgs(st => $sf));
+system("tar -czf devdump.tar.gz dump.sql ".join ' ', @imgpaths);
 unlink 'dump.sql';

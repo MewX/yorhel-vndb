@@ -68,9 +68,13 @@ CREATE TYPE vn_relation       AS ENUM ('seq', 'preq', 'set', 'alt', 'char', 'sid
 CREATE TYPE resolution        AS ENUM ('unknown', 'nonstandard', '640x480', '800x600', '1024x768', '1280x960', '1600x1200', '640x400', '960x600', '960x640', '1024x576', '1024x600', '1024x640', '1280x720', '1280x800', '1366x768', '1600x900', '1920x1080');
 CREATE TYPE session_type      AS ENUM ('web', 'pass', 'mail');
 
+CREATE TYPE image_type        AS ENUM ('ch', 'cv', 'sf');
+CREATE TYPE image_id          AS (itype image_type, id int);
+
 -- Sequences used for ID generation of items not in the DB
 CREATE SEQUENCE covers_seq;
 CREATE SEQUENCE charimg_seq;
+CREATE SEQUENCE screenshots_seq;
 
 
 
@@ -108,7 +112,7 @@ CREATE TABLE chars ( -- dbentry_type=c
   name       varchar(250) NOT NULL DEFAULT '', -- [pub]
   original   varchar(250) NOT NULL DEFAULT '', -- [pub]
   alias      varchar(500) NOT NULL DEFAULT '', -- [pub]
-  image      integer  NOT NULL DEFAULT 0, -- [pub]
+  image      image_id CONSTRAINT chars_image_check CHECK((image).itype = 'ch'), -- [pub]
   "desc"     text     NOT NULL DEFAULT '', -- [pub]
   gender     gender NOT NULL DEFAULT 'unknown', -- [pub]
   s_bust     smallint NOT NULL DEFAULT 0, -- [pub]
@@ -131,7 +135,7 @@ CREATE TABLE chars_hist (
   name       varchar(250) NOT NULL DEFAULT '',
   original   varchar(250) NOT NULL DEFAULT '',
   alias      varchar(500) NOT NULL DEFAULT '',
-  image      integer  NOT NULL DEFAULT 0,
+  image      image_id CONSTRAINT chars_hist_image_check CHECK((image).itype = 'ch'),
   "desc"     text     NOT NULL DEFAULT '',
   gender     gender NOT NULL DEFAULT 'unknown',
   s_bust     smallint NOT NULL DEFAULT 0,
@@ -198,6 +202,13 @@ CREATE TABLE docs_hist (
   title      varchar(200) NOT NULL DEFAULT '',
   content    text NOT NULL DEFAULT '',
   html       text -- cache
+);
+
+-- images
+CREATE TABLE images (
+  id       image_id NOT NULL PRIMARY KEY, -- [pub]
+  width    smallint, -- [pub] dimensions are only set for the 'sf' type (for now)
+  height   smallint -- [pub]
 );
 
 -- login_throttle
@@ -447,13 +458,6 @@ CREATE TABLE rlists (
   status smallint NOT NULL DEFAULT 0, -- [pub]
   added timestamptz NOT NULL DEFAULT NOW(), -- [pub]
   PRIMARY KEY(uid, rid)
-);
-
--- screenshots
-CREATE TABLE screenshots (
-  id SERIAL NOT NULL PRIMARY KEY, -- [pub]
-  width smallint NOT NULL DEFAULT 0, -- [pub]
-  height smallint NOT NULL DEFAULT 0 -- [pub]
 );
 
 -- sessions
@@ -800,7 +804,7 @@ CREATE TABLE vn ( -- dbentry_type=v
   alias      varchar(500) NOT NULL DEFAULT '', -- [pub]
   length     smallint NOT NULL DEFAULT 0, -- [pub]
   img_nsfw   boolean NOT NULL DEFAULT FALSE, -- [pub]
-  image      integer NOT NULL DEFAULT 0, -- [pub]
+  image      image_id CONSTRAINT vn_image_check CHECK((image).itype = 'cv'), -- [pub]
   "desc"     text NOT NULL DEFAULT '', -- [pub]
   l_wp       varchar(150) NOT NULL DEFAULT '', -- [pub] (deprecated)
   l_encubed  varchar(100) NOT NULL DEFAULT '', -- [pub] (deprecated)
@@ -825,7 +829,7 @@ CREATE TABLE vn_hist (
   alias      varchar(500) NOT NULL DEFAULT '',
   length     smallint NOT NULL DEFAULT 0,
   img_nsfw   boolean NOT NULL DEFAULT FALSE,
-  image      integer NOT NULL DEFAULT 0,
+  image      image_id CONSTRAINT vn_hist_image_check CHECK((image).itype = 'cv'),
   "desc"     text NOT NULL DEFAULT '',
   l_wp       varchar(150) NOT NULL DEFAULT '',
   l_encubed  varchar(100) NOT NULL DEFAULT '',
@@ -868,7 +872,7 @@ CREATE TABLE vn_relations_hist (
 -- vn_screenshots
 CREATE TABLE vn_screenshots (
   id         integer NOT NULL, -- [pub]
-  scr        integer NOT NULL, -- [pub] screenshots.id
+  scr        image_id NOT NULL CONSTRAINT vn_screenshots_scr_check CHECK((scr).itype = 'sf'), -- [pub] images.id
   rid        integer,          -- [pub] releases.id (only NULL for old revisions, nowadays not allowed anymore)
   nsfw       boolean NOT NULL DEFAULT FALSE, -- [pub]
   PRIMARY KEY(id, scr)
@@ -877,7 +881,7 @@ CREATE TABLE vn_screenshots (
 -- vn_screenshots_hist
 CREATE TABLE vn_screenshots_hist (
   chid       integer NOT NULL,
-  scr        integer NOT NULL,
+  scr        image_id NOT NULL CONSTRAINT vn_screenshots_hist_scr_check CHECK((scr).itype = 'sf'),
   rid        integer,
   nsfw       boolean NOT NULL DEFAULT FALSE,
   PRIMARY KEY(chid, scr)
