@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Exporter 'import';
 
-our @EXPORT = qw|dbTagGet dbTTTree dbTagEdit dbTagAdd dbTagMerge dbTagLinks dbTagStats dbTagWipeVotes|;
+our @EXPORT = qw|dbTagGet dbTTTree dbTagEdit dbTagAdd dbTagMerge dbTagStats dbTagWipeVotes|;
 
 
 # %options->{ id noid name search state searchable applicable page results what sort reverse  }
@@ -167,47 +167,6 @@ sub dbTagMerge {
     for (@{$self->dbAll('SELECT name FROM tags WHERE id IN(!l)', \@merge)});
   $self->dbExec('DELETE FROM tags_parents WHERE tag IN(!l)', \@merge);
   $self->dbExec('DELETE FROM tags WHERE id IN(!l)', \@merge);
-}
-
-
-# Directly fetch rows from tags_vn
-# Options: vid uid tag page results what sort reverse
-# What: details
-sub dbTagLinks {
-  my($self, %o) = @_;
-  $o{results} ||= 999;
-  $o{page}    ||= 1;
-  $o{what}    ||= '';
-
-  my %where = (
-    $o{vid} ? ('tv.vid = ?' => $o{vid}) : (),
-    $o{uid} ? ('tv.uid = ?' => $o{uid}) : (),
-    $o{tag} ? ('tv.tag = ?' => $o{tag}) : (),
-  );
-
-  my @select = (
-    qw|tv.tag tv.vid tv.uid tv.vote tv.spoiler tv.ignore|, "EXTRACT('epoch' from tv.date) AS date",
-    $o{what} =~ /details/ ? (qw|v.title t.name|, VNWeb::DB::sql_user()) : (),
-  );
-
-  my @join = $o{what} =~ /details/ ? (
-    'JOIN vn v ON v.id = tv.vid',
-    'JOIN users u ON u.id = tv.uid',
-    'JOIN tags t ON t.id = tv.tag'
-  ) : ();
-
-  my $order = !$o{sort} ? '' : 'ORDER BY '.{
-    username => 'u.username',
-    date     => 'tv.date',
-    title    => 'v.title',
-    tag      => 't.name',
-  }->{$o{sort}}.($o{reverse} ? ' DESC' : ' ASC');
-
-  my($r, $np) = $self->dbPage(\%o,
-    'SELECT !s FROM tags_vn tv !s !W !s',
-    join(', ', @select), join(' ', @join), \%where, $order
-  );
-  return wantarray ? ($r, $np) : $r;
 }
 
 

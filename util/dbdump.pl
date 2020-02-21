@@ -76,7 +76,7 @@ my %tables = (
     tags                => { where => 'state = 2' },
     tags_aliases        => { where => 'tag IN(SELECT id FROM tags WHERE state = 2)' },
     tags_parents        => { where => 'tag IN(SELECT id FROM tags WHERE state = 2)' },
-    tags_vn             => { where => 'tag IN(SELECT id FROM tags WHERE state = 2) AND vid IN(SELECT id FROM vn WHERE NOT hidden)' },
+    tags_vn             => { where => 'tag IN(SELECT id FROM tags WHERE state = 2) AND vid IN(SELECT id FROM vn WHERE NOT hidden)', order => 'tag, vid, uid, date' },
     traits              => { where => 'state = 2' },
     traits_parents      => { where => 'trait IN(SELECT id FROM traits WHERE state = 2)' },
     ulist_labels        => { where => 'NOT private AND EXISTS(SELECT 1 FROM ulist_vns_labels uvl WHERE uvl.lbl = id AND ulist_labels.uid = uvl.uid)' },

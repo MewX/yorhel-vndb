@@ -52,8 +52,8 @@ elm_api Tagmod => $FORM_OUT, $FORM_IN, sub {
     # Add & update tags
     for(@$tags) {
         my $row = { uid => auth->uid, vid => $id, tag => $_->{id}, vote => $_->{vote}, spoiler => $_->{spoil}, ignore => ($_->{overruled} && !$_->{overrule})?1:0, notes => $_->{notes} };
-        tuwf->dbExeci('INSERT INTO tags_vn', $row, 'ON CONFLICT (uid, vid, tag) DO UPDATE SET', $row);
-        tuwf->dbExeci('UPDATE tags_vn SET ignore = TRUE WHERE uid <>', \auth->uid, 'AND vid =', \$id, 'AND tag =', \$_->{id}) if $_->{overrule};
+        tuwf->dbExeci('INSERT INTO tags_vn', $row, 'ON CONFLICT (uid, tag, vid) DO UPDATE SET', $row);
+        tuwf->dbExeci('UPDATE tags_vn SET ignore = TRUE WHERE uid IS DISTINCT FROM (', \auth->uid, ') AND vid =', \$id, 'AND tag =', \$_->{id}) if $_->{overrule};
     }
 
     # Make sure to reset the ignore flag when a moderator removes an overruled vote.
@@ -83,7 +83,7 @@ TUWF::get qr{/$RE{vid}/tagmod}, sub {
     );
     enrich_merge id => sub { sql 'SELECT tag AS id, vote, spoiler AS spoil, ignore, notes FROM tags_vn WHERE', { uid => auth->uid, vid => $v->{id} } }, $tags;
     enrich othnotes => id => tag => sub {
-        sql('SELECT tv.tag, ', sql_user(), ', tv.notes FROM tags_vn tv JOIN users u ON u.id = tv.uid WHERE tv.notes <> \'\' AND uid <>', \auth->uid, 'AND vid=', \$v->{id})
+        sql('SELECT tv.tag, ', sql_user(), ', tv.notes FROM tags_vn tv JOIN users u ON u.id = tv.uid WHERE tv.notes <> \'\' AND uid IS DISTINCT FROM (', \auth->uid, ') AND vid=', \$v->{id})
     }, $tags;
 
     for(@$tags) {

@@ -605,13 +605,12 @@ CREATE TABLE tags_parents (
 CREATE TABLE tags_vn (
   tag integer NOT NULL, -- [pub]
   vid integer NOT NULL, -- [pub]
-  uid integer NOT NULL, -- [pub]
+  uid integer, -- [pub]
   vote smallint NOT NULL DEFAULT 3 CHECK (vote >= -3 AND vote <= 3 AND vote <> 0), -- [pub]
   spoiler smallint CHECK(spoiler >= 0 AND spoiler <= 2), -- [pub]
   date timestamptz NOT NULL DEFAULT NOW(), -- [pub]
   ignore boolean NOT NULL DEFAULT false, -- [pub]
-  notes text NOT NULL DEFAULT '', -- [pub]
-  PRIMARY KEY(tag, vid, uid)
+  notes text NOT NULL DEFAULT '' -- [pub]
 );
 
 -- tags_vn_inherit

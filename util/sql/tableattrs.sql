@@ -54,7 +54,7 @@ ALTER TABLE tags_parents             ADD CONSTRAINT tags_parents_tag_fkey       
 ALTER TABLE tags_parents             ADD CONSTRAINT tags_parents_parent_fkey           FOREIGN KEY (parent)    REFERENCES tags          (id);
 ALTER TABLE tags_vn                  ADD CONSTRAINT tags_vn_tag_fkey                   FOREIGN KEY (tag)       REFERENCES tags          (id);
 ALTER TABLE tags_vn                  ADD CONSTRAINT tags_vn_vid_fkey                   FOREIGN KEY (vid)       REFERENCES vn            (id);
-ALTER TABLE tags_vn                  ADD CONSTRAINT tags_vn_uid_fkey                   FOREIGN KEY (uid)       REFERENCES users         (id) ON DELETE CASCADE;
+ALTER TABLE tags_vn                  ADD CONSTRAINT tags_vn_uid_fkey                   FOREIGN KEY (uid)       REFERENCES users         (id) ON DELETE SET DEFAULT;
 ALTER TABLE threads                  ADD CONSTRAINT threads_id_fkey                    FOREIGN KEY (id, count) REFERENCES threads_posts (tid, num) DEFERRABLE INITIALLY DEFERRED;
 ALTER TABLE threads_poll_options     ADD CONSTRAINT threads_poll_options_tid_fkey      FOREIGN KEY (tid)       REFERENCES threads       (id) ON DELETE CASCADE;
 ALTER TABLE threads_poll_votes       ADD CONSTRAINT threads_poll_votes_tid_fkey        FOREIGN KEY (tid)       REFERENCES threads       (id) ON DELETE CASCADE;
@@ -111,11 +111,12 @@ CREATE        INDEX notifications_uid      ON notifications (uid);
 CREATE        INDEX releases_producers_pid ON releases_producers (pid);
 CREATE        INDEX releases_vn_vid        ON releases_vn (vid);
 CREATE        INDEX staff_alias_id         ON staff_alias (id);
+CREATE UNIQUE INDEX tags_vn_pkey           ON tags_vn (tag,vid,uid);
 CREATE        INDEX tags_vn_date           ON tags_vn (date);
 CREATE        INDEX tags_vn_inherit_tag_vid ON tags_vn_inherit (tag, vid);
-CREATE        INDEX tags_vn_uid            ON tags_vn (uid);
-CREATE        INDEX shop_playasia__gtin    ON shop_playasia (gtin);
+CREATE        INDEX tags_vn_uid            ON tags_vn (uid) WHERE uid IS NOT NULL;
 CREATE        INDEX tags_vn_vid            ON tags_vn (vid);
+CREATE        INDEX shop_playasia__gtin    ON shop_playasia (gtin);
 CREATE        INDEX threads_posts_date     ON threads_posts (date);
 CREATE        INDEX threads_posts_ts       ON threads_posts USING gin(bb_tsvector(msg));
 CREATE        INDEX threads_posts_uid      ON threads_posts (uid); -- Only really used on /u+ pages to get stats

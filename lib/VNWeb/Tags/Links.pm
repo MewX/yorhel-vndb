@@ -23,7 +23,7 @@ sub listing_ {
                 my $i = $_;
                 td_ class => 'tc1', fmtdate $i->{date};
                 td_ class => 'tc2', sub {
-                    a_ href => $url->(u => $i->{uid}, p=>undef), class => 'setfil', '> ' if !defined $opt->{u};
+                    a_ href => $url->(u => $i->{uid}, p=>undef), class => 'setfil', '> ' if $i->{uid} && !defined $opt->{u};
                     user_ $i;
                 };
                 td_ class => 'tc3', sub { tagscore_ $i->{vote}, $i->{ignore} };
@@ -70,7 +70,7 @@ TUWF::get qr{/g/links}, sub {
         SELECT tv.vid, tv.uid, tv.tag, tv.vote, tv.spoiler,', sql_totime('tv.date'), 'as date, tv.ignore, tv.notes, v.title,', sql_user(), ', t.name
           FROM tags_vn tv
           JOIN vn v ON v.id = tv.vid
-          JOIN users u ON u.id = tv.uid
+          LEFT JOIN users u ON u.id = tv.uid
           JOIN tags t ON t.id = tv.tag
          WHERE', $where, '
          ORDER BY', { date => 'tv.date', tag => 't.name' }->{$opt->{s}}, { a => 'ASC', d => 'DESC' }->{$opt->{o}}
