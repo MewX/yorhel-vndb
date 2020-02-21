@@ -206,9 +206,24 @@ CREATE TABLE docs_hist (
 
 -- images
 CREATE TABLE images (
-  id       image_id NOT NULL PRIMARY KEY, -- [pub]
-  width    smallint NOT NULL, -- [pub]
-  height   smallint NOT NULL -- [pub]
+  id                image_id NOT NULL PRIMARY KEY, -- [pub]
+  width             smallint NOT NULL, -- [pub]
+  height            smallint NOT NULL, -- [pub]
+  c_votecount       integer  NOT NULL DEFAULT 0, -- [pub] (cached columns are marked [pub] for easy querying...)
+  c_sexual_avg      float, -- [pub]
+  c_sexual_stddev   float, -- [pub]
+  c_violence_avg    float, -- [pub]
+  c_violence_stddev float, -- [pub]
+  c_weight          float NOT NULL DEFAULT 0 -- [pub]
+);
+
+-- image_votes
+CREATE TABLE image_votes (
+  id       image_id NOT NULL, -- [pub]
+  uid      integer, -- [pub]
+  sexual   smallint NOT NULL CHECK(sexual >= 0 AND sexual <= 2), -- [pub]
+  violence smallint NOT NULL CHECK(violence >= 0 AND violence <= 2), -- [pub]
+  date     timestamptz NOT NULL DEFAULT NOW() -- [pub]
 );
 
 -- login_throttle

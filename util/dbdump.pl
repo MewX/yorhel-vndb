@@ -56,9 +56,8 @@ my %tables = (
                                 .' AND (rid IS NULL OR rid IN(SELECT id FROM releases WHERE NOT hidden))'
                            , order => 'id, vid, rid' },
     docs                => { where => 'NOT hidden' },
-    images              => { where => 'id IN(SELECT scr FROM vn_screenshots vs JOIN vn v ON v.id = vs.id WHERE NOT v.hidden'
-                                    .' UNION SELECT image FROM chars WHERE image IS NOT NULL AND NOT hidden'
-                                    .' UNION SELECT image from vn WHERE image IS NOT NULL AND NOT hidden)' },
+    images              => { where => "c_weight > 0" }, # Only images with a positive weight are referenced.
+    image_votes         => { where => "id IN(SELECT id FROM images WHERE c_weight > 0)", order => 'uid, id' },
     producers           => { where => 'NOT hidden' },
     producers_relations => { where => 'id IN(SELECT id FROM producers WHERE NOT hidden)' },
     releases            => { where => 'NOT hidden' },

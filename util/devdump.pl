@@ -132,7 +132,9 @@ sub copy_entry {
     copy 'wikidata';
 
     # Image metadata
-    copy images => 'SELECT * FROM images WHERE id IN('.join(',',map "'$_'", @$images).')';
+    my $image_ids = join ',', map "'$_'", @$images;
+    copy images => "SELECT * FROM images WHERE id IN($image_ids)";
+    copy image_votes => "SELECT * FROM image_votes WHERE id IN($image_ids)", { uid => 'user' };
 
     # Threads (announcements)
     my $threads = join ',', @{ $db->selectcol_arrayref("SELECT tid FROM threads_boards b WHERE b.type = 'an'") };

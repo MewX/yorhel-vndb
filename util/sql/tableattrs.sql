@@ -16,6 +16,7 @@ ALTER TABLE chars_vns                ADD CONSTRAINT chars_vns_rid_fkey          
 ALTER TABLE chars_vns_hist           ADD CONSTRAINT chars_vns_hist_chid_fkey           FOREIGN KEY (chid)      REFERENCES changes       (id) ON DELETE CASCADE;
 ALTER TABLE chars_vns_hist           ADD CONSTRAINT chars_vns_hist_vid_fkey            FOREIGN KEY (vid)       REFERENCES vn            (id) DEFERRABLE;
 ALTER TABLE chars_vns_hist           ADD CONSTRAINT chars_vns_hist_rid_fkey            FOREIGN KEY (rid)       REFERENCES releases      (id) DEFERRABLE;
+ALTER TABLE image_votes              ADD CONSTRAINT image_votes_id_fkey                FOREIGN KEY (id)        REFERENCES images        (id);
 ALTER TABLE notifications            ADD CONSTRAINT notifications_uid_fkey             FOREIGN KEY (uid)       REFERENCES users         (id) ON DELETE CASCADE;
 ALTER TABLE notifications            ADD CONSTRAINT notifications_c_byuser_fkey        FOREIGN KEY (c_byuser)  REFERENCES users         (id) ON DELETE SET DEFAULT;
 ALTER TABLE producers                ADD CONSTRAINT producers_rgraph_fkey              FOREIGN KEY (rgraph)    REFERENCES relgraphs     (id);
@@ -111,6 +112,9 @@ ALTER TABLE vn_staff_hist            ADD CONSTRAINT vn_staff_hist_chid_fkey     
 
 CREATE        INDEX chars_main             ON chars (main) WHERE main IS NOT NULL AND NOT hidden; -- Only used on /c+
 CREATE        INDEX chars_vns_vid          ON chars_vns (vid);
+CREATE        INDEX chars_image            ON chars (image);
+CREATE UNIQUE INDEX image_votes_pkey       ON image_votes (uid, id);
+CREATE        INDEX image_votes_id         ON image_votes (id);
 CREATE        INDEX notifications_uid      ON notifications (uid);
 CREATE        INDEX releases_producers_pid ON releases_producers (pid);
 CREATE        INDEX releases_vn_vid        ON releases_vn (vid);
@@ -125,6 +129,8 @@ CREATE        INDEX threads_posts_date     ON threads_posts (date);
 CREATE        INDEX threads_posts_ts       ON threads_posts USING gin(bb_tsvector(msg));
 CREATE        INDEX threads_posts_uid      ON threads_posts (uid); -- Only really used on /u+ pages to get stats
 CREATE        INDEX traits_chars_tid       ON traits_chars (tid);
+CREATE        INDEX vn_image               ON vn (image);
+CREATE        INDEX vn_screenshots_scr     ON vn_screenshots (scr);
 CREATE        INDEX vn_seiyuu_aid          ON vn_seiyuu (aid); -- Only used on /s+?
 CREATE        INDEX vn_seiyuu_cid          ON vn_seiyuu (cid); -- Only used on /c+?
 CREATE        INDEX vn_staff_aid           ON vn_staff (aid);

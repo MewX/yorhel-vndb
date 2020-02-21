@@ -329,3 +329,17 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER notify_announce AFTER INSERT ON threads_posts FOR EACH ROW WHEN (NEW.num = 1) EXECUTE PROCEDURE notify_announce();
+
+
+
+
+-- Call update_images_cache() for every change on image_votes
+
+CREATE OR REPLACE FUNCTION update_images_cache() RETURNS trigger AS $$
+BEGIN
+  PERFORM update_images_cache(id) FROM (SELECT OLD.id UNION SELECT NEW.id) AS x(id) WHERE id IS NOT NULL;
+  RETURN NULL;
+END
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER image_votes_cache AFTER INSERT OR UPDATE OR DELETE ON image_votes FOR EACH ROW EXECUTE PROCEDURE update_images_cache();
