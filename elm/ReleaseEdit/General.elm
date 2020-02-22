@@ -8,44 +8,63 @@ import Lib.Html exposing (..)
 import Lib.Util exposing (..)
 import Lib.DropDown as DD
 import Lib.Api as Api
+import Lib.RDate as D
 import Gen.Types as GT
 import Gen.ReleaseEdit as GRE
 
+-- TODO: links, notes, engine, producers, VNs
+
 
 type alias Model =
-  { title     : String
-  , original  : String
-  , rtype     : String
-  , patch     : Bool
-  , freeware  : Bool
-  , doujin    : Bool
-  , lang      : Set.Set String
-  , langDd    : DD.Config Msg
-  , plat      : Set.Set String
-  , platDd    : DD.Config Msg
-  , media     : List GRE.RecvMedia
-  , gtinInput : String
-  , gtin      : Int
-  , catalog   : String
+  { title      : String
+  , original   : String
+  , rtype      : String
+  , patch      : Bool
+  , freeware   : Bool
+  , doujin     : Bool
+  , lang       : Set.Set String
+  , langDd     : DD.Config Msg
+  , plat       : Set.Set String
+  , platDd     : DD.Config Msg
+  , media      : List GRE.RecvMedia
+  , gtinInput  : String
+  , gtin       : Int
+  , catalog    : String
+  , released   : D.RDate
+  , minage     : Int
+  , uncensored : Bool
+  , resolution : String
+  , voiced     : Int
+  , ani_story  : Int
+  , ani_ero    : Int
+  , website    : String
   }
 
 
 init : GRE.Recv -> Model
 init d =
-  { title     = d.title
-  , original  = d.original
-  , rtype     = d.rtype
-  , patch     = d.patch
-  , freeware  = d.freeware
-  , doujin    = d.doujin
-  , lang      = Set.fromList <| List.map (\e -> e.lang) d.lang
-  , langDd    = DD.init "lang" LangOpen
-  , plat      = Set.fromList <| List.map (\e -> e.platform) d.platforms
-  , platDd    = DD.init "platforms" PlatOpen
-  , media     = List.map (\m -> { m | qty = if m.qty == 0 then 1 else m.qty }) d.media
-  , gtinInput = formatGtin d.gtin
-  , gtin      = d.gtin
-  , catalog   = d.catalog
+  { title      = d.title
+  , original   = d.original
+  , rtype      = d.rtype
+  , patch      = d.patch
+  , freeware   = d.freeware
+  , doujin     = d.doujin
+  , lang       = Set.fromList <| List.map (\e -> e.lang) d.lang
+  , langDd     = DD.init "lang" LangOpen
+  , plat       = Set.fromList <| List.map (\e -> e.platform) d.platforms
+  , platDd     = DD.init "platforms" PlatOpen
+  , media      = List.map (\m -> { m | qty = if m.qty == 0 then 1 else m.qty }) d.media
+  , gtinInput  = formatGtin d.gtin
+  , gtin       = d.gtin
+  , catalog    = d.catalog
+  , released   = d.released
+  , minage     = d.minage
+  , uncensored = d.uncensored
+  , resolution = d.resolution
+  , voiced     = d.voiced
+  , ani_story  = d.ani_story
+  , ani_ero    = d.ani_ero
+  , website    = d.website
   }
 
 
@@ -70,6 +89,14 @@ type Msg
   | MediaAdd
   | Gtin String
   | Catalog String
+  | Released D.RDate
+  | Minage Int
+  | Uncensored Bool
+  | Resolution String
+  | Voiced Int
+  | AniStory Int
+  | AniEro Int
+  | Website String
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -93,6 +120,14 @@ update msg model =
     MediaAdd   -> mod { model | media = model.media ++ [{ medium = "in", qty = 1 }] }
     Gtin s     -> mod { model | gtinInput = s, gtin = validateGtin s }
     Catalog s  -> mod { model | catalog = s }
+    Released d -> mod { model | released = d }
+    Minage i   -> mod { model | minage = i }
+    Uncensored b->mod { model | uncensored = b }
+    Resolution s->mod { model | resolution = s }
+    Voiced i   -> mod { model | voiced = i }
+    AniStory i -> mod { model | ani_story = i }
+    AniEro i   -> mod { model | ani_ero = i }
+    Website s  -> mod { model | website = s }
 
 
 isValid : Model -> Bool
@@ -106,26 +141,28 @@ isValid model = not
 view : Model -> Html Msg
 view model =
   table [ class "formtable" ]
-  [ formField "title::Title (romaji)" [ inputText "title" model.title Title (style "width" "400px" :: GRE.valTitle) ]
+  [ formField "title::Title (romaji)" [ inputText "title" model.title Title (style "width" "500px" :: GRE.valTitle) ]
   , formField "original::Original title"
-    [ inputText "original" model.original Original (style "width" "400px" :: GRE.valOriginal)
+    [ inputText "original" model.original Original (style "width" "500px" :: GRE.valOriginal)
     , if model.title /= "" && model.title == model.original
       then b [ class "standout" ] [ br [] [], text "Should not be the same as the Title (romaji). Leave blank is the original title is already in the latin alphabet" ]
       else text ""
     ]
 
   , tr [ class "newpart" ] [ td [] [] ]
-  , formField "Type" [ inputSelect "" model.rtype RType [] GT.releaseTypes ]
-  , formField "" [ label [] [ inputCheck "" model.patch    Patch   , text " This release is a patch to another release." ] ]
+  , formField "rtype::Type" [ inputSelect "rtype" model.rtype RType [] GT.releaseTypes ]
+  , formField "minage::Age rating" [ inputSelect "minage" model.minage Minage [] GT.ageRatings, b [ class "standout" ] [ text " (*)" ] ]
+  , formField "" [ label [] [ inputCheck "" model.patch    Patch   , text " This release is a patch to another release.", b [ class "standout" ] [ text " (*)" ] ] ]
   , formField "" [ label [] [ inputCheck "" model.freeware Freeware, text " Freeware (i.e. available at no cost)" ] ]
   , if model.patch then text "" else
     formField "" [ label [] [ inputCheck "" model.doujin   Doujin  , text " Doujin (self-published, not by a company)" ] ]
+  , formField "Release date" [ D.view model.released False Released, text " Leave month or day blank if they are unknown." ]
 
     -- XXX: Not entirely sure if this is a convenient way of handling lists,
     -- the number of languages/platforms is a bit too large for comfortable
     -- selection and it would be nice if a language could be removed directly
     -- from the view rather than by finding it somewhere in the dropdown list.
-  , tr [ class "newpart" ] [ td [] [] ]
+  , tr [ class "newpart" ] [ td [ colspan 2 ] [ text "Format" ] ]
   , formField "Language(s)"
     [ div [ class "elm_dd_input" ] [ DD.view model.langDd Api.Normal
       (if Set.isEmpty model.lang
@@ -156,11 +193,24 @@ view model =
       else text ""
     , a [ href "#", onClickD MediaAdd ] [ text "Add medium" ]
     ]
+  , if model.patch then text "" else
+    formField "resolution::Resolution" [ inputSelect "resolution" model.resolution Resolution [] GT.resolutions ]
+  , if model.patch then text "" else
+    formField "voiced::Voiced" [ inputSelect "voiced" model.voiced Voiced [] GT.voiced ]
+  , if model.patch then text "" else
+    formField "ani_story::Animations"
+    [ inputSelect "ani_story" model.ani_story AniStory [] GT.animated
+    , if model.minage == 18 then text " <= story | ero scenes => " else text ""
+    , if model.minage == 18 then inputSelect "" model.ani_ero AniEro [] GT.animated else text ""
+    ]
+  , if model.minage /= 18 then text "" else
+    formField "" [ label [] [ inputCheck "" model.uncensored Uncensored, text " Uncensored (No mosaic or other optical censoring, only check if this release has erotic content)" ] ]
 
-  , tr [ class "newpart" ] [ td [] [] ]
+  , tr [ class "newpart" ] [ td [ colspan 2 ] [ text "External identifiers & links" ] ]
   , formField "gtin::JAN/UPC/EAN"
     [ inputText "gtin" model.gtinInput Gtin [pattern "[0-9]+"]
     , if model.gtinInput /= "" && model.gtin == 0 then b [ class "standout" ] [ text "Invalid GTIN code" ] else text ""
     ]
   , formField "catalog::Catalog number" [ inputText "catalog" model.catalog Catalog GRE.valCatalog ]
+  , formField "website::Website" [ inputText "website" model.website Website (style "width" "500px" :: GRE.valWebsite) ]
   ]

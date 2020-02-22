@@ -60,6 +60,14 @@ encode model =
   , media       = model.general.media
   , gtin        = model.general.gtin
   , catalog     = model.general.catalog
+  , released    = model.general.released
+  , minage      = model.general.minage
+  , uncensored  = model.general.uncensored
+  , resolution  = model.general.resolution
+  , voiced      = model.general.voiced
+  , ani_story   = model.general.ani_story
+  , ani_ero     = model.general.ani_ero
+  , website     = model.general.website
   }
 
 

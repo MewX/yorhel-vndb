@@ -300,9 +300,14 @@ sub write_types {
     $data .= def platforms  => 'List (String, String)' => list map tuple(string $_, string $PLATFORM{$_}), keys %PLATFORM;
     $data .= def releaseTypes => 'List (String, String)' => list map tuple(string $_, string $RELEASE_TYPE{$_}), keys %RELEASE_TYPE;
     $data .= def media      => 'List (String, String, Bool)' => list map tuple(string $_, string $MEDIUM{$_}{txt}, $MEDIUM{$_}{qty}?'True':'False'), keys %MEDIUM;
-    $data .= def rlistStatus => 'List (Int, String)' => list map tuple($_, string $RLIST_STATUS{$_}), keys %RLIST_STATUS;
+    $data .= def rlistStatus=> 'List (Int, String)' => list map tuple($_, string $RLIST_STATUS{$_}), keys %RLIST_STATUS;
     $data .= def boardTypes => 'List (String, String)' => list map tuple(string $_, string $BOARD_TYPE{$_}{txt}), keys %BOARD_TYPE;
-    $data .= def ratings => 'List String' => list map string(fmtrating $_), 1..10;
+    $data .= def ratings    => 'List String' => list map string(fmtrating $_), 1..10;
+    $data .= def ageRatings => 'List (Int, String)' => list map tuple($_, string $AGE_RATING{$_}{txt}), keys %AGE_RATING;
+    $data .= def resolutions=> 'List (String, String)' => list map tuple(string $_, string +($RESOLUTION{$_}{cat}?"$RESOLUTION{$_}{cat} / ":'').$RESOLUTION{$_}{txt}), keys %RESOLUTION;
+    $data .= def voiced     => 'List (Int, String)' => list map tuple($_, string $VOICED{$_}{txt}), keys %VOICED;
+    $data .= def animated   => 'List (Int, String)' => list map tuple($_, string $ANIMATED{$_}{txt}), keys %ANIMATED;
+    $data .= def curYear    => Int => (gmtime)[5]+1900;
 
     write_module Types => $data;
 }

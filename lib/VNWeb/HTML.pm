@@ -815,6 +815,11 @@ sub editmsg_ {
                       txt_ " to see if we already have information about this $typename.";
                   }
               }
+              if($type eq 'r') {
+                  li_ sub {
+                      txt_ 'Fields marked with '; b_ class => 'standout', '(*)'; txt_ ' may cause other fields to become (un)available depending on the selection.';
+                  }
+              }
           }
       };
       p_ class => 'center', sub {
