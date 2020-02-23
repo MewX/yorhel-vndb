@@ -56,7 +56,7 @@ init d =
   , nolastmod   = False
   , title       = d.title
   , boards      = d.boards
-  , boardAdd    = A.init
+  , boardAdd    = A.init ""
   , msg         = TP.bbcode d.msg
   , poll        = d.poll
   , pollEnabled = isJust d.poll
@@ -133,7 +133,7 @@ update msg model =
       let (nm, c, res) = A.update searchConfig m model.boardAdd
       in case res of
         Nothing -> ({ model | boardAdd = nm }, c)
-        Just r  -> ({ model | boardAdd = A.clear nm, boards = Maybe.map (\b -> b ++ [r]) model.boards }, c)
+        Just r  -> ({ model | boardAdd = A.clear nm "", boards = Maybe.map (\b -> b ++ [r]) model.boards }, c)
 
     Submit -> ({ model | state = Api.Loading }, GDE.send (encode model) Submitted)
     Submitted (GApi.Redirect s) -> (model, load s)

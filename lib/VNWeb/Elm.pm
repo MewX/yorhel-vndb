@@ -69,6 +69,10 @@ my %apis = (
         applicable   => { anybool => 1 },
         state        => { int => 1 },
     } } ],
+    EngineResult   => [ { aoh => { # Response to 'Engines'
+        engine => {},
+        count  => { int => 1 }
+    } } ],
 );
 
 

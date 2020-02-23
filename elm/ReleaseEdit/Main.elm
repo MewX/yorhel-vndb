@@ -68,6 +68,7 @@ encode model =
   , ani_story   = model.general.ani_story
   , ani_ero     = model.general.ani_ero
   , website     = model.general.website
+  , engine      = model.general.engine.value
   }
 
 

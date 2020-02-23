@@ -63,7 +63,7 @@ init f =
   , selType  = NoSel
   , negCount = List.length <| List.filter (\t -> t.rating <= 0) f.tags
   , negShow  = False
-  , add      = A.init
+  , add      = A.init ""
   , addMsg   = ""
   }
 
@@ -112,7 +112,7 @@ update msg model =
                 else if not t.applicable                           then ([], "Tag is not applicable")
                 else if List.any (\it -> it.id == t.id) model.tags then ([], "Tag is already in the list")
                 else ([{ id = t.id, vote = 2, spoil = Nothing, overrule = False, notes = "", cat = "new", name = t.name, rating = 0, count = 0, spoiler = 0, overruled = False, othnotes = "" }], "")
-          in (changed { model | add = if ms == "" then A.clear nm else nm, tags = model.tags ++ nl, addMsg = ms }, c)
+          in (changed { model | add = if ms == "" then A.clear nm "" else nm, tags = model.tags ++ nl, addMsg = ms }, c)
 
     Submit ->
       ( { model | state = Api.Loading, addMsg = "" }

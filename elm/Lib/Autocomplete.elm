@@ -5,6 +5,7 @@ module Lib.Autocomplete exposing
   , Msg
   , boardSource
   , tagSource
+  , engineSource
   , init
   , clear
   , update
@@ -27,6 +28,7 @@ import Gen.Types exposing (boardTypes)
 import Gen.Api as GApi
 import Gen.Boards as GB
 import Gen.Tags as GT
+import Gen.Engines as GE
 
 
 type alias Config m a =
@@ -90,32 +92,46 @@ tagSource =
   }
 
 
+engineSource : SourceConfig m GApi.ApiEngineResult
+engineSource =
+  { endpoint = \s -> GE.send { search = s }
+  , decode  = \x -> case x of
+      GApi.EngineResult e -> Just e
+      _ -> Nothing
+  , view    = \i -> [ text i.engine, b [ class "grayedout" ] [ text <| " (" ++ String.fromInt i.count ++ ")" ] ]
+  , key     = \i -> i.engine
+  }
+
+
 type alias Model a =
   { visible  : Bool
   , value    : String
   , results  : List a
   , sel      : String
+  , default  : String
   , loading  : Bool
   , wait     : Int
   }
 
 
-init : Model a
-init =
+init : String -> Model a
+init s =
   { visible  = False
-  , value    = ""
+  , value    = s
   , results  = []
   , sel      = ""
+  , default  = s
   , loading  = False
   , wait     = 0
   }
 
 
-clear : Model a -> Model a
-clear m = { m
-  | value    = ""
+clear : Model a -> String -> Model a
+clear m v = { m
+  | value    = v
   , results  = []
   , sel      = ""
+  , default  = v
   , loading  = False
   }
 
@@ -174,8 +190,8 @@ update cfg msg model =
 
     Input s ->
       if String.trim s == ""
-      then mod { model | value = s, loading = False, results = [] }
-      else   ( { model | value = s, loading = True,  wait = model.wait + 1 }
+      then mod { model | value = s, default = "", loading = False, results = [] }
+      else   ( { model | value = s, default = "", loading = True,  wait = model.wait + 1 }
              , Task.perform (always <| cfg.wrap <| Search <| model.wait + 1) (Process.sleep 500)
              , Nothing )
 
@@ -207,7 +223,7 @@ view cfg model attrs =
             ) <| JD.field "key" JD.string
         ] ++ attrs
 
-    visible = model.visible && model.value /= "" && not (model.loading && List.isEmpty model.results)
+    visible = model.visible && model.value /= model.default && not (model.loading && List.isEmpty model.results)
 
     msg = [("",
         if List.isEmpty model.results

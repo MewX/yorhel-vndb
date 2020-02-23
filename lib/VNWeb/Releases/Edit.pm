@@ -27,6 +27,7 @@ my $FORM = {
     ani_story  => { uint => 1, enum => \%ANIMATED },
     ani_ero    => { uint => 1, enum => \%ANIMATED },
     website    => { required => 0, default => '', weburl => 1 },
+    engine     => { required => 0, default => '', maxlength => 50 },
     hidden     => { anybool => 1 },
     locked     => { anybool => 1 },
 
@@ -86,6 +87,19 @@ elm_api ReleaseEdit => $FORM_OUT, $FORM_IN, sub {
 
     my($id,undef,$rev) = db_edit r => $e->{id}, $data;
     elm_Redirect "/r$id.$rev";
+};
+
+
+# TODO: This API is kind of silly, the entire list of engines can just be sent to the browser for instant autocompletion.
+elm_api Engines => undef, { search => {} }, sub {
+    my $q = $_[0]{search};
+    my $qs = $q =~ s/[_%]//gr;
+    my $r = tuwf->dbAlli(
+        'SELECT engine, count(*) AS count FROM releases
+          WHERE NOT hidden AND engine ILIKE', \"%$qs%",
+         'GROUP BY engine ORDER BY count(*) DESC, engine LIMIT 10');
+    warn JSON::XS::encode_json $r;
+    elm_EngineResult $r;
 };
 
 1;

@@ -8,7 +8,9 @@ import Lib.Html exposing (..)
 import Lib.Util exposing (..)
 import Lib.DropDown as DD
 import Lib.Api as Api
+import Gen.Api as GApi
 import Lib.RDate as D
+import Lib.Autocomplete as A
 import Gen.Types as GT
 import Gen.ReleaseEdit as GRE
 
@@ -38,6 +40,7 @@ type alias Model =
   , ani_story  : Int
   , ani_ero    : Int
   , website    : String
+  , engine     : A.Model GApi.ApiEngineResult
   }
 
 
@@ -65,7 +68,12 @@ init d =
   , ani_story  = d.ani_story
   , ani_ero    = d.ani_ero
   , website    = d.website
+  , engine     = A.init d.engine
   }
+
+
+engineConfig : A.Config Msg GApi.ApiEngineResult
+engineConfig = { wrap = Engine, id = "engine", source = A.engineSource }
 
 
 sub : Model -> Sub Msg
@@ -97,6 +105,7 @@ type Msg
   | AniStory Int
   | AniEro Int
   | Website String
+  | Engine (A.Msg GApi.ApiEngineResult)
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -128,6 +137,7 @@ update msg model =
     AniStory i -> mod { model | ani_story = i }
     AniEro i   -> mod { model | ani_ero = i }
     Website s  -> mod { model | website = s }
+    Engine m   -> let (nm, c, en) = A.update engineConfig m model.engine in ({ model | engine = if isJust en then A.clear nm nm.sel else nm }, c)
 
 
 isValid : Model -> Bool
@@ -193,6 +203,9 @@ view model =
       else text ""
     , a [ href "#", onClickD MediaAdd ] [ text "Add medium" ]
     ]
+
+  , if model.patch then text "" else
+    formField "engine::Engine" [ A.view engineConfig model.engine [] ]
   , if model.patch then text "" else
     formField "resolution::Resolution" [ inputSelect "resolution" model.resolution Resolution [] GT.resolutions ]
   , if model.patch then text "" else
