@@ -31,6 +31,10 @@ my $FORM = {
     hidden     => { anybool => 1 },
     locked     => { anybool => 1 },
 
+    engines    => { _when => 'out', aoh => {
+        engine => {},
+        count  => { uint => 1 },
+    } },
     authmod    => { _when => 'out', anybool => 1 },
     editsum    => { _when => 'in out', editsum => 1 },
 };
@@ -48,6 +52,11 @@ TUWF::get qr{/$RE{rrev}/(?<action>edit|copy)} => sub {
     $e->{rtype} = delete $e->{type};
     $e->{authmod} = auth->permDbmod;
     $e->{editsum} = $e->{chrev} == $e->{maxrev} ? '' : "Reverted to revision r$e->{id}.$e->{chrev}";
+
+    $e->{engines} = tuwf->dbAlli(q{
+         SELECT engine, count(*) AS count FROM releases WHERE NOT hidden AND engine <> ''
+          GROUP BY engine ORDER BY count(*) DESC, engine
+    });
 
     my $title = ($copy ? 'Copy ' : 'Edit ').$e->{title};
     framework_ title => $title, type => 'r', dbobj => $e, tab => tuwf->capture('action'),
@@ -89,17 +98,5 @@ elm_api ReleaseEdit => $FORM_OUT, $FORM_IN, sub {
     elm_Redirect "/r$id.$rev";
 };
 
-
-# TODO: This API is kind of silly, the entire list of engines can just be sent to the browser for instant autocompletion.
-elm_api Engines => undef, { search => {} }, sub {
-    my $q = $_[0]{search};
-    my $qs = $q =~ s/[_%]//gr;
-    my $r = tuwf->dbAlli(
-        'SELECT engine, count(*) AS count FROM releases
-          WHERE NOT hidden AND engine ILIKE', \"%$qs%",
-         'GROUP BY engine ORDER BY count(*) DESC, engine LIMIT 10');
-    warn JSON::XS::encode_json $r;
-    elm_EngineResult $r;
-};
 
 1;

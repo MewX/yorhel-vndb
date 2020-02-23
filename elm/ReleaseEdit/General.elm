@@ -14,7 +14,7 @@ import Lib.Autocomplete as A
 import Gen.Types as GT
 import Gen.ReleaseEdit as GRE
 
--- TODO: links, notes, engine, producers, VNs
+-- TODO: links, notes, producers, VNs
 
 
 type alias Model =
@@ -40,7 +40,8 @@ type alias Model =
   , ani_story  : Int
   , ani_ero    : Int
   , website    : String
-  , engine     : A.Model GApi.ApiEngineResult
+  , engineConf : A.Config Msg GRE.RecvEngines
+  , engine     : A.Model GRE.RecvEngines
   }
 
 
@@ -68,12 +69,14 @@ init d =
   , ani_story  = d.ani_story
   , ani_ero    = d.ani_ero
   , website    = d.website
+  , engineConf = { wrap   = Engine
+                 , id = "engine"
+                 , source = { source = A.Func (\s -> List.filter (\e -> String.contains (String.toLower s) (String.toLower e.engine)) d.engines |> List.take 10)
+                            , view   = \i -> [ text i.engine, b [ class "grayedout" ] [ text <| " (" ++ String.fromInt i.count ++ ")" ] ]
+                            , key    = \i -> i.engine }
+                 }
   , engine     = A.init d.engine
   }
-
-
-engineConfig : A.Config Msg GApi.ApiEngineResult
-engineConfig = { wrap = Engine, id = "engine", source = A.engineSource }
 
 
 sub : Model -> Sub Msg
@@ -105,7 +108,7 @@ type Msg
   | AniStory Int
   | AniEro Int
   | Website String
-  | Engine (A.Msg GApi.ApiEngineResult)
+  | Engine (A.Msg GRE.RecvEngines)
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -137,7 +140,12 @@ update msg model =
     AniStory i -> mod { model | ani_story = i }
     AniEro i   -> mod { model | ani_ero = i }
     Website s  -> mod { model | website = s }
-    Engine m   -> let (nm, c, en) = A.update engineConfig m model.engine in ({ model | engine = if isJust en then A.clear nm nm.sel else nm }, c)
+    Engine m   ->
+      let (nm, c, en) = A.update model.engineConf m model.engine
+          nmod = case en of
+            Just e  -> A.clear nm e.engine
+            Nothing -> nm
+      in ({ model | engine = nmod }, c)
 
 
 isValid : Model -> Bool
@@ -205,7 +213,7 @@ view model =
     ]
 
   , if model.patch then text "" else
-    formField "engine::Engine" [ A.view engineConfig model.engine [] ]
+    formField "engine::Engine" [ A.view model.engineConf model.engine [] ]
   , if model.patch then text "" else
     formField "resolution::Resolution" [ inputSelect "resolution" model.resolution Resolution [] GT.resolutions ]
   , if model.patch then text "" else

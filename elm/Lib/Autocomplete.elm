@@ -1,11 +1,11 @@
 module Lib.Autocomplete exposing
   ( Config
+  , SearchSource(..)
   , SourceConfig
   , Model
   , Msg
   , boardSource
   , tagSource
-  , engineSource
   , init
   , clear
   , update
@@ -28,7 +28,6 @@ import Gen.Types exposing (boardTypes)
 import Gen.Api as GApi
 import Gen.Boards as GB
 import Gen.Tags as GT
-import Gen.Engines as GE
 
 
 type alias Config m a =
@@ -41,11 +40,16 @@ type alias Config m a =
   }
 
 
+type SearchSource m a
+    -- API endpoint to query for completion results + Function to decode results from the API
+  = Endpoint (String -> (GApi.Response -> m) -> Cmd m) (GApi.Response -> Maybe (List a))
+    -- Pure function for instant completion results
+  | Func (String -> List a)
+
+
 type alias SourceConfig m a =
-    -- API endpoint to query for completion results.
-  { endpoint : String -> (GApi.Response -> m) -> Cmd m
-    -- How to decode results from the API
-  , decode   : GApi.Response -> Maybe (List a)
+    -- Where to get completion results from
+  { source   : SearchSource m a
     -- How to display the decoded results
   , view     : a -> List (Html m)
     -- Unique ID of an item (must not be an empty string).
@@ -55,11 +59,10 @@ type alias SourceConfig m a =
   }
 
 
-
 boardSource : SourceConfig m GApi.ApiBoardResult
 boardSource =
-  { endpoint = \s -> GB.send { search = s }
-  , decode  = \x -> case x of
+  { source  = Endpoint (\s -> GB.send { search = s })
+    <| \x -> case x of
       GApi.BoardResult e -> Just e
       _ -> Nothing
   , view    = (\i ->
@@ -74,8 +77,8 @@ boardSource =
 
 tagSource : SourceConfig m GApi.ApiTagResult
 tagSource =
-  { endpoint = \s -> GT.send { search = s }
-  , decode  = \x -> case x of
+  { source  = Endpoint (\s -> GT.send { search = s })
+    <| \x -> case x of
       GApi.TagResult e -> Just e
       _ -> Nothing
   , view    = \i ->
@@ -89,17 +92,6 @@ tagSource =
         _ -> text ""
     ]
   , key     = \i -> String.fromInt i.id
-  }
-
-
-engineSource : SourceConfig m GApi.ApiEngineResult
-engineSource =
-  { endpoint = \s -> GE.send { search = s }
-  , decode  = \x -> case x of
-      GApi.EngineResult e -> Just e
-      _ -> Nothing
-  , view    = \i -> [ text i.engine, b [ class "grayedout" ] [ text <| " (" ++ String.fromInt i.count ++ ")" ] ]
-  , key     = \i -> i.engine
   }
 
 
@@ -191,21 +183,25 @@ update cfg msg model =
     Input s ->
       if String.trim s == ""
       then mod { model | value = s, default = "", loading = False, results = [] }
-      else   ( { model | value = s, default = "", loading = True,  wait = model.wait + 1 }
-             , Task.perform (always <| cfg.wrap <| Search <| model.wait + 1) (Process.sleep 500)
-             , Nothing )
+      else case cfg.source.source of
+        Endpoint _ _ ->
+          ( { model | value = s, default = "", loading = True,  wait = model.wait + 1 }
+          , Task.perform (always <| cfg.wrap <| Search <| model.wait + 1) (Process.sleep 500)
+          , Nothing )
+        Func f -> mod { model | value = s, default = "", results = f s }
 
     Search i ->
       if model.value == "" || model.wait /= i
       then mod model
-      else ( model
-           , cfg.source.endpoint model.value (cfg.wrap << Results model.value)
-           , Nothing )
+      else case cfg.source.source of
+        Endpoint e _ -> (model, e model.value (cfg.wrap << Results model.value), Nothing)
+        Func _ -> mod model
 
     Results s r -> mod <|
-      if s == model.value
-      then { model | loading = False, results = cfg.source.decode r |> Maybe.withDefault [] }
-      else model -- Discard stale results
+      if s /= model.value then model -- Discard stale results
+      else case cfg.source.source of
+        Endpoint _ d -> { model | loading = False, results = d r |> Maybe.withDefault [] }
+        Func _ -> model
 
 
 view : Config m a -> Model a -> List (Attribute m) -> Html m
