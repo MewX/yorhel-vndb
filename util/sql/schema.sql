@@ -810,9 +810,9 @@ CREATE TABLE vn ( -- dbentry_type=v
   c_languages language[] NOT NULL DEFAULT '{}',
   c_olang    language[] NOT NULL DEFAULT '{}',
   c_platforms platform[] NOT NULL DEFAULT '{}',
-  c_popularity real,
-  c_rating   real,
-  c_votecount integer NOT NULL DEFAULT 0,
+  c_popularity real, -- [pub]
+  c_rating   real, -- [pub]
+  c_votecount integer NOT NULL DEFAULT 0, -- [pub]
   c_search   text,
   l_wikidata integer -- [pub]
 );
