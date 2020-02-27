@@ -307,25 +307,32 @@ sub db_edit {
         ilock     => $data->{locked},
     });
 
+    # Array columns need special care; SQL::Interp and DBD::Pg don't like them
+    # as single bind params and Postgres can't infer their type.
+    my sub val {
+        my($v, $col) = @_;
+        ref $v ? (sql_array(@$v), '::'.$col->{type}) : \$v
+    }
+
     {
         my $base = $t->{base}{name} =~ s/_hist$//r;
         tuwf->dbExeci("UPDATE edit_${base} SET ", sql_comma(
-            map sql(sql_identifier($_->{name}), ' = ', \$data->{$_->{name}}),
+            map sql(sql_identifier($_->{name}), ' = ', val $data->{$_->{name}}, $_),
                 grep exists $data->{$_->{name}}, $t->{base}{cols}->@*
         ));
     }
 
     while(my($name, $tbl) = each $t->{tables}->%*) {
         my $base = $tbl->{name} =~ s/_hist$//r;
-        my @colnames = grep $_ ne 'chid', map $_->{name}, $tbl->{cols}->@*;
-        my @cols = sql_comma(map sql_identifier($_), @colnames);
+        my @cols = grep $_->{name} ne 'chid', $tbl->{cols}->@*;
+        my @colnames = sql_comma(map sql_identifier($_->{name}), @cols);
         my @rows = map {
             my $d = $_;
-            sql '(', sql_comma(map \$d->{$_}, @colnames), ')'
+            sql '(', sql_comma(map val($d->{$_->{name}}, $_), @cols), ')'
         } $data->{$name}->@*;
 
         tuwf->dbExeci("DELETE FROM edit_${base}");
-        tuwf->dbExeci("INSERT INTO edit_${base} (", @cols, ') VALUES ', sql_comma @rows) if @rows;
+        tuwf->dbExeci("INSERT INTO edit_${base} (", @colnames, ') VALUES ', sql_comma @rows) if @rows;
     }
 
     my $r = tuwf->dbRow("SELECT * FROM edit_${type}_commit()");

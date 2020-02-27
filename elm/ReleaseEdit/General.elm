@@ -11,10 +11,12 @@ import Lib.Api as Api
 import Gen.Api as GApi
 import Lib.RDate as D
 import Lib.Autocomplete as A
+import Lib.ExtLinks as EL
 import Gen.Types as GT
 import Gen.ReleaseEdit as GRE
+import Gen.ExtLinks as GEL
 
--- TODO: links, notes, producers, VNs
+-- TODO: notes, producers, VNs
 
 
 type alias Model =
@@ -42,6 +44,7 @@ type alias Model =
   , website    : String
   , engineConf : A.Config Msg GRE.RecvEngines
   , engine     : A.Model GRE.RecvEngines
+  , extlinks   : EL.Model GRE.RecvExtlinks
   }
 
 
@@ -76,6 +79,7 @@ init d =
                             , key    = \i -> i.engine }
                  }
   , engine     = A.init d.engine
+  , extlinks   = EL.new d.extlinks GEL.releaseLinks
   }
 
 
@@ -109,6 +113,7 @@ type Msg
   | AniEro Int
   | Website String
   | Engine (A.Msg GRE.RecvEngines)
+  | ExtLinks (EL.Msg GRE.RecvExtlinks)
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -146,6 +151,7 @@ update msg model =
             Just e  -> A.clear nm e.engine
             Nothing -> nm
       in ({ model | engine = nmod }, c)
+    ExtLinks m -> mod { model | extlinks = EL.update m model.extlinks }
 
 
 isValid : Model -> Bool
@@ -234,4 +240,5 @@ view model =
     ]
   , formField "catalog::Catalog number" [ inputText "catalog" model.catalog Catalog GRE.valCatalog ]
   , formField "website::Website" [ inputText "website" model.website Website (style "width" "500px" :: GRE.valWebsite) ]
+  , formField "External Links" [ Html.map ExtLinks (EL.view model.extlinks) ]
   ]

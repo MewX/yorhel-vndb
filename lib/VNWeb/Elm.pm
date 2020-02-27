@@ -17,6 +17,7 @@ use List::Util 'max';
 use VNDB::Config;
 use VNDB::Types;
 use VNDB::Func 'fmtrating';
+use VNDB::ExtLinks ();
 use VNWeb::Auth;
 
 our @EXPORT = qw/
@@ -313,10 +314,59 @@ sub write_types {
 }
 
 
+sub write_extlinks {
+    my $data =<<~'_';
+        import Regex
+        import Gen.ReleaseEdit as GRE
+
+        type alias Site a =
+          { name  : String
+          , fmt   : String
+          , regex : Regex.Regex
+          , multi : Bool
+          , links : a -> List String
+          , del   : Int -> a -> a
+          , add   : String -> a -> a
+          }
+
+        reg r = Maybe.withDefault Regex.never (Regex.fromStringWith {caseInsensitive=True, multiline=False} r)
+        delidx n l = List.take n l ++ List.drop (n+1) l
+        toint v = Maybe.withDefault 0 (String.toInt v)
+
+        -- Link extraction functions for `Site.links`, i=integer, s=string, m=multi
+        li v = if v == 0 then [] else [String.fromInt v]
+        lim = List.map String.fromInt
+        ls v = if v == "" then [] else [v]
+        lsm v = v
+        _
+
+    my sub links {
+        my($name, $type, @links) = @_;
+        def $name => "List (Site $type)" => list map {
+            my($i,$l) = ($_, $links[$_]);
+            my $addval = $l->{int} ? 'toint v' : 'v';
+            '{ '.join("\n  , ",
+                'name  = '.string($l->{name}),
+                'fmt   = '.string($l->{fmt}),
+                'regex = reg '.string(TUWF::Validate::Interop::_re_compat($l->{regex})),
+                'multi = '.($l->{multi}?'True':'False'),
+                'links = '.sprintf('(\m -> l%s%s m.%s)', $l->{int}?'i':'s', $l->{multi}?'m':'', $l->{id}),
+                'del   = (\i m -> { m | '.$l->{id}.' = '.($l->{multi} ? "delidx i m.$l->{id}" : $l->{default}).' })',
+                'add   = (\v m -> { m | '.$l->{id}.' = '.($l->{multi} ? "m.$l->{id} ++ [$addval]" : $addval).' })'
+            )."\n  }";
+        } 0..$#links;
+    }
+    $data .= links releaseLinks => 'GRE.RecvExtlinks' => VNDB::ExtLinks::extlinks_sites('r');
+
+    write_module ExtLinks => $data;
+}
+
+
 if(tuwf->{elmgen}) {
     mkdir config->{root}.'/elm/Gen';
     write_api;
     write_types;
+    write_extlinks;
     open my $F, '>', config->{root}.'/elm/Gen/.generated';
     print $F scalar gmtime;
 }

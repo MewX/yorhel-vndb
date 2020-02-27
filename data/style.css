@@ -220,6 +220,9 @@ fieldset.submit .textpreview { margin: 0 auto }
 .stealth input:hover, .stealth input:focus,
 .stealth select:hover, .stealth select:focus { border: 1px solid $secborder$; background: $secbg$ }
 
+table.formtable .elm_extlinks td { padding-right: 15px }
+.elm_extlinks table { margin-bottom: 5px }
+
 
 /***** menu *****/
 

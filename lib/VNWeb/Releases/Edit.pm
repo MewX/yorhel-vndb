@@ -28,6 +28,7 @@ my $FORM = {
     ani_ero    => { uint => 1, enum => \%ANIMATED },
     website    => { required => 0, default => '', weburl => 1 },
     engine     => { required => 0, default => '', maxlength => 50 },
+    extlinks   => validate_extlinks('r'),
     hidden     => { anybool => 1 },
     locked     => { anybool => 1 },
 
@@ -43,6 +44,7 @@ my $FORM_OUT = form_compile out => $FORM;
 my $FORM_IN  = form_compile in  => $FORM;
 my $FORM_CMP = form_compile cmp => $FORM;
 
+sub to_extlinks { $_[0]{extlinks} = { map +($_, delete $_[0]{$_}), grep /^l_/, keys $_[0]->%* } }
 
 TUWF::get qr{/$RE{rrev}/(?<action>edit|copy)} => sub {
     my $e = db_entry r => tuwf->capture('id'), tuwf->capture('rev') or return tuwf->resNotFound;
@@ -57,6 +59,7 @@ TUWF::get qr{/$RE{rrev}/(?<action>edit|copy)} => sub {
          SELECT engine, count(*) AS count FROM releases WHERE NOT hidden AND engine <> ''
           GROUP BY engine ORDER BY count(*) DESC, engine
     });
+    to_extlinks $e;
 
     my $title = ($copy ? 'Copy ' : 'Edit ').$e->{title};
     framework_ title => $title, type => 'r', dbobj => $e, tab => tuwf->capture('action'),
@@ -90,8 +93,13 @@ elm_api ReleaseEdit => $FORM_OUT, $FORM_IN, sub {
     }
     $_->{qty} = $MEDIUM{$_->{medium}}{qty} ? $_->{qty}||1 : 0 for $data->{media}->@*;
 
+    to_extlinks $e;
     $e->{rtype} = delete $e->{type};
+
     return elm_Unchanged if !$new && !form_changed $FORM_CMP, $data, $e;
+
+    $data->{$_} = $data->{extlinks}{$_} for $data->{extlinks}->%*;
+    delete $data->{extlinks};
     $data->{type} = delete $data->{rtype};
 
     my($id,undef,$rev) = db_edit r => $e->{id}, $data;
