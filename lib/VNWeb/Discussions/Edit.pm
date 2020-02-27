@@ -115,7 +115,7 @@ TUWF::get qr{(?:/t/(?<board>$BOARD_RE)/new|/$RE{postid}/edit)}, sub {
     $board_type = 'ge' if $board_type && $board_type eq 'an' && !auth->permBoardmod;
 
     my $t = !$tid ? {} : tuwf->dbRowi('
-        SELECT t.id, tp.tid, tp.num, t.title, t.locked, t.private, t.poll_question, t.poll_max_options, tp.hidden, tp.msg, tp.uid AS user_id,', sql_totime('tp.date'), 'AS date
+        SELECT t.id, tp.tid, tp.num, t.title, t.locked, t.private, t.hidden AS thread_hidden, t.poll_question, t.poll_max_options, tp.hidden, tp.msg, tp.uid AS user_id,', sql_totime('tp.date'), 'AS date
           FROM threads t
           JOIN threads_posts tp ON tp.tid = t.id AND tp.num =', \$num,
         'WHERE t.id =', \$tid,
@@ -145,12 +145,12 @@ TUWF::get qr{(?:/t/(?<board>$BOARD_RE)/new|/$RE{postid}/edit)}, sub {
     $t->{can_mod}     = auth->permBoardmod;
     $t->{can_private} = auth->permBoardmod || auth->permDbmod || auth->permUsermod;
 
+    $t->{hidden}  = $tid && $num == 1 ? $t->{thread_hidden}//0 : $t->{hidden}//0;
     $t->{msg}     //= '';
     $t->{title}   //= tuwf->reqGet('title');
     $t->{tid}     //= undef;
     $t->{num}     //= undef;
     $t->{private} //= 0;
-    $t->{hidden}  //= 0;
     $t->{locked}  //= 0;
 
     framework_ title => $tid ? 'Edit post' : 'Create new thread', sub {
