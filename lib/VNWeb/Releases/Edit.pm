@@ -29,6 +29,7 @@ my $FORM = {
     website    => { required => 0, default => '', weburl => 1 },
     engine     => { required => 0, default => '', maxlength => 50 },
     extlinks   => validate_extlinks('r'),
+    notes      => { required => 0, default => '', maxlength => 10240 },
     hidden     => { anybool => 1 },
     locked     => { anybool => 1 },
 

@@ -12,11 +12,12 @@ import Gen.Api as GApi
 import Lib.RDate as D
 import Lib.Autocomplete as A
 import Lib.ExtLinks as EL
+import Lib.TextPreview as TP
 import Gen.Types as GT
 import Gen.ReleaseEdit as GRE
 import Gen.ExtLinks as GEL
 
--- TODO: notes, producers, VNs
+-- TODO: producers, VNs
 
 
 type alias Model =
@@ -45,6 +46,7 @@ type alias Model =
   , engineConf : A.Config Msg GRE.RecvEngines
   , engine     : A.Model GRE.RecvEngines
   , extlinks   : EL.Model GRE.RecvExtlinks
+  , notes      : TP.Model
   }
 
 
@@ -80,6 +82,7 @@ init d =
                  }
   , engine     = A.init d.engine
   , extlinks   = EL.new d.extlinks GEL.releaseLinks
+  , notes      = TP.bbcode d.notes
   }
 
 
@@ -114,6 +117,7 @@ type Msg
   | Website String
   | Engine (A.Msg GRE.RecvEngines)
   | ExtLinks (EL.Msg GRE.RecvExtlinks)
+  | Notes (TP.Msg)
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -152,6 +156,7 @@ update msg model =
             Nothing -> nm
       in ({ model | engine = nmod }, c)
     ExtLinks m -> mod { model | extlinks = EL.update m model.extlinks }
+    Notes m    -> let (nm, nc) = TP.update m model.notes in ({ model | notes = nm }, Cmd.map Notes nc)
 
 
 isValid : Model -> Bool
@@ -241,4 +246,10 @@ view model =
   , formField "catalog::Catalog number" [ inputText "catalog" model.catalog Catalog GRE.valCatalog ]
   , formField "website::Website" [ inputText "website" model.website Website (style "width" "500px" :: GRE.valWebsite) ]
   , formField "External Links" [ Html.map ExtLinks (EL.view model.extlinks) ]
+
+  , tr [ class "newpart" ] [ td [ colspan 2 ] [] ]
+  , formField "notes::Notes"
+    [ TP.view "notes" model.notes Notes 700 [] [ b [ class "standout" ] [ text " (English please!) " ] ]
+    , text "Miscellaneous notes/comments, information that does not fit in the above fields. E.g.: Types of censoring or for which releases this patch applies."
+    ]
   ]

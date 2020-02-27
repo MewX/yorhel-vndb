@@ -70,6 +70,7 @@ encode model =
   , website     = model.general.website
   , engine      = model.general.engine.value
   , extlinks    = model.general.extlinks.links
+  , notes       = model.general.notes.data
   }
 
 
