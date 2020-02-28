@@ -170,8 +170,10 @@ td.label label           { display: block; }
 td.field label           { margin: 0 5px 0 5px; }
 table.formtable          { margin: 0 20px 20px 20px; }
 table.formtable td       { padding: 0; }
-table.formtable tr.newfield td { padding-top: 5px; }
+table.formtable tr.newfield > td { padding-top: 5px; }
 table.formtable tr.newpart td { padding-top: 20px; font-weight: bold; }
+table.formtable td table td { padding-right: 15px }
+table.formtable td table    { margin-bottom: 5px }
 
 /* Format checkboxes and radio buttons as if they were normal links with unicode icons.
  * Usage:
@@ -219,9 +221,6 @@ fieldset.submit .textpreview { margin: 0 auto }
 .stealth input, .stealth select { font: inherit; background: none; border: 1px solid transparent; -moz-appearance: none; -webkit-appearance: none; appearance: none }
 .stealth input:hover, .stealth input:focus,
 .stealth select:hover, .stealth select:focus { border: 1px solid $secborder$; background: $secbg$ }
-
-table.formtable .elm_extlinks td { padding-right: 15px }
-.elm_extlinks table { margin-bottom: 5px }
 
 
 /***** menu *****/

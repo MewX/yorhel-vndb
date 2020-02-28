@@ -70,6 +70,7 @@ encode model =
   , website     = model.general.website
   , engine      = model.general.engine.value
   , extlinks    = model.general.extlinks.links
+  , vn          = List.map (\l -> {vid=l.vid}) model.general.vn
   , notes       = model.general.notes.data
   }
 

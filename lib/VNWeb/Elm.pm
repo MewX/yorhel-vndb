@@ -70,6 +70,11 @@ my %apis = (
         applicable   => { anybool => 1 },
         state        => { int => 1 },
     } } ],
+    VNResult       => [ { aoh => { # Response to 'VN'
+        id       => { id => 1 },
+        title    => {},
+        original => { required => 0, default => '' },
+    } } ],
 );
 
 

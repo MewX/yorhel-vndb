@@ -45,6 +45,7 @@ showResponse res =
     Releases _                      -> unexp
     BoardResult _                   -> unexp
     TagResult _                     -> unexp
+    VNResult _                      -> unexp
 
 
 expectResponse : (Response -> msg) -> Http.Expect msg

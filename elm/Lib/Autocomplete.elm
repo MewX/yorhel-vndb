@@ -6,6 +6,7 @@ module Lib.Autocomplete exposing
   , Msg
   , boardSource
   , tagSource
+  , vnSource
   , init
   , clear
   , update
@@ -28,6 +29,7 @@ import Gen.Types exposing (boardTypes)
 import Gen.Api as GApi
 import Gen.Boards as GB
 import Gen.Tags as GT
+import Gen.VN as GV
 
 
 type alias Config m a =
@@ -91,6 +93,19 @@ tagSource =
         (False, True,  _) -> b [ class "grayedout" ] [ text " (not searchable)" ]
         _ -> text ""
     ]
+  , key     = \i -> String.fromInt i.id
+  }
+
+
+vnSource : SourceConfig m GApi.ApiVNResult
+vnSource =
+  { source  = Endpoint (\s -> GV.send { search = s })
+    <| \x -> case x of
+      GApi.VNResult e -> Just e
+      _ -> Nothing
+  , view    = \i ->
+    [ b [ class "grayedout" ] [ text <| "v" ++ String.fromInt i.id ++ ": " ]
+    , text i.title ]
   , key     = \i -> String.fromInt i.id
   }
 

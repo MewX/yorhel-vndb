@@ -30,6 +30,10 @@ my $FORM = {
     engine     => { required => 0, default => '', maxlength => 50 },
     extlinks   => validate_extlinks('r'),
     notes      => { required => 0, default => '', maxlength => 10240 },
+    vn         => { sort_keys => 'vid', aoh => {
+        vid    => { id => 1 },
+        title  => { _when => 'out' },
+    } },
     hidden     => { anybool => 1 },
     locked     => { anybool => 1 },
 
@@ -61,6 +65,8 @@ TUWF::get qr{/$RE{rrev}/(?<action>edit|copy)} => sub {
           GROUP BY engine ORDER BY count(*) DESC, engine
     });
     to_extlinks $e;
+
+    enrich_merge vid => 'SELECT id AS vid, title FROM vn WHERE id IN', $e->{vn};
 
     my $title = ($copy ? 'Copy ' : 'Edit ').$e->{title};
     framework_ title => $title, type => 'r', dbobj => $e, tab => tuwf->capture('action'),

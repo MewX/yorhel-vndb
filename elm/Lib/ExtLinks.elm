@@ -85,7 +85,7 @@ update msg model =
 
 
 view : Model a -> Html (Msg a)
-view model = Html.form [ class "elm_extlinks", onSubmit Enter ]
+view model = Html.form [ onSubmit Enter ]
   [ table [] <| List.concatMap (\s ->
       List.indexedMap (\i l ->
         let (pre, val, suf) = splitPrintf s.fmt l

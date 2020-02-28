@@ -17,7 +17,7 @@ import Gen.Types as GT
 import Gen.ReleaseEdit as GRE
 import Gen.ExtLinks as GEL
 
--- TODO: producers, VNs
+-- TODO: producers
 
 
 type alias Model =
@@ -46,6 +46,8 @@ type alias Model =
   , engineConf : A.Config Msg GRE.RecvEngines
   , engine     : A.Model GRE.RecvEngines
   , extlinks   : EL.Model GRE.RecvExtlinks
+  , vn         : List GRE.RecvVn
+  , vnAdd      : A.Model GApi.ApiVNResult
   , notes      : TP.Model
   }
 
@@ -82,9 +84,14 @@ init d =
                  }
   , engine     = A.init d.engine
   , extlinks   = EL.new d.extlinks GEL.releaseLinks
+  , vn         = d.vn
+  , vnAdd      = A.init ""
   , notes      = TP.bbcode d.notes
   }
 
+
+vnConfig : A.Config Msg GApi.ApiVNResult
+vnConfig = { wrap = VNSearch, id = "vnadd", source = A.vnSource }
 
 sub : Model -> Sub Msg
 sub model = Sub.batch [ DD.sub model.langDd, DD.sub model.platDd ]
@@ -117,6 +124,8 @@ type Msg
   | Website String
   | Engine (A.Msg GRE.RecvEngines)
   | ExtLinks (EL.Msg GRE.RecvExtlinks)
+  | VNDel Int
+  | VNSearch (A.Msg GApi.ApiVNResult)
   | Notes (TP.Msg)
 
 
@@ -156,6 +165,15 @@ update msg model =
             Nothing -> nm
       in ({ model | engine = nmod }, c)
     ExtLinks m -> mod { model | extlinks = EL.update m model.extlinks }
+    VNDel i    -> mod { model | vn = delidx i model.vn }
+    VNSearch m ->
+      let (nm, c, res) = A.update vnConfig m model.vnAdd
+      in case res of
+        Nothing -> ({ model | vnAdd = nm }, c)
+        Just v  ->
+          if List.any (\vn -> vn.vid == v.id) model.vn
+          then ({ model | vnAdd = nm }, c)
+          else ({ model | vnAdd = A.clear nm "", vn = model.vn ++ [{ vid = v.id, title = v.title}] }, c)
     Notes m    -> let (nm, nc) = TP.update m model.notes in ({ model | notes = nm }, Cmd.map Notes nc)
 
 
@@ -165,6 +183,7 @@ isValid model = not
   || Set.isEmpty model.lang
   || hasDuplicates (List.map (\m -> (m.medium, m.qty)) model.media)
   || (model.gtinInput /= "" && model.gtin == 0)
+  || List.isEmpty model.vn
   )
 
 view : Model -> Html Msg
@@ -193,17 +212,17 @@ view model =
     -- from the view rather than by finding it somewhere in the dropdown list.
   , tr [ class "newpart" ] [ td [ colspan 2 ] [ text "Format" ] ]
   , formField "Language(s)"
-    [ div [ class "elm_dd_input" ] [ DD.view model.langDd Api.Normal
+    [ div [ class "elm_dd_input", style "width" "500px" ] [ DD.view model.langDd Api.Normal
       (if Set.isEmpty model.lang
        then b [ class "standout" ] [ text "No language selected" ]
-       else span [] <| List.intersperse (text ", ") <| List.map (\(l,t) -> span [] [ langIcon l, text t ]) <| List.filter (\(l,_) -> Set.member l model.lang) GT.languages)
+       else span [] <| List.intersperse (text ", ") <| List.map (\(l,t) -> span [ style "white-space" "nowrap" ] [ langIcon l, text t ]) <| List.filter (\(l,_) -> Set.member l model.lang) GT.languages)
       <| \() -> [ ul [] <| List.map (\(l,t) -> li [] [ linkRadio (Set.member l model.lang) (Lang l) [ langIcon l, text t ] ]) GT.languages ]
     ] ]
   , formField "Platform(s)"
-    [ div [ class "elm_dd_input" ] [ DD.view model.platDd Api.Normal
+    [ div [ class "elm_dd_input", style "width" "500px" ] [ DD.view model.platDd Api.Normal
       (if Set.isEmpty model.plat
        then text "No platform selected"
-       else span [] <| List.intersperse (text ", ") <| List.map (\(p,t) -> span [] [ platformIcon p, text t ]) <| List.filter (\(p,_) -> Set.member p model.plat) GT.platforms)
+       else span [] <| List.intersperse (text ", ") <| List.map (\(p,t) -> span [ style "white-space" "nowrap" ] [ platformIcon p, text t ]) <| List.filter (\(p,_) -> Set.member p model.plat) GT.platforms)
       <| \() -> [ ul [] <| List.map (\(p,t) -> li [] [ linkRadio (Set.member p model.plat) (Plat p) [ platformIcon p, text t ] ]) GT.platforms ]
     ] ]
   , formField "Media"
@@ -246,6 +265,18 @@ view model =
   , formField "catalog::Catalog number" [ inputText "catalog" model.catalog Catalog GRE.valCatalog ]
   , formField "website::Website" [ inputText "website" model.website Website (style "width" "500px" :: GRE.valWebsite) ]
   , formField "External Links" [ Html.map ExtLinks (EL.view model.extlinks) ]
+
+  , tr [ class "newpart" ] [ td [ colspan 2 ] [ text "Database relations" ] ]
+  , formField "Visual novels"
+    [ if List.isEmpty model.vn then b [ class "standout" ] [ text "No visual novels selected.", br [] [] ]
+      else table [] <| List.indexedMap (\i v -> tr []
+        [ td [ style "text-align" "right" ] [ b [ class "grayedout" ] [ text <| "v" ++ String.fromInt v.vid ++ ":" ] ]
+        , td [] [ a [ href <| "/v" ++ String.fromInt v.vid ] [ text v.title ] ]
+        , td [] [ a [ href "#", onClickD (VNDel i) ] [ text "remove" ] ]
+        ]
+      ) model.vn
+    , A.view vnConfig model.vnAdd [placeholder "Add visual novel..."]
+    ]
 
   , tr [ class "newpart" ] [ td [ colspan 2 ] [] ]
   , formField "notes::Notes"
