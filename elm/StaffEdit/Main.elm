@@ -170,7 +170,7 @@ view model =
       , td [ class "tc_add" ]
         [ if model.aid == e.aid then b [ class "grayedout" ] [ text " primary" ]
           else if e.inuse then b [ class "grayedout" ] [ text " referenced" ]
-          else a [ onClick (AliasDel n) ] [ text " remove" ]
+          else inputButton "remove" (AliasDel n) []
         ]
       ]
 

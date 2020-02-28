@@ -173,6 +173,7 @@ update msg model =
             Nothing -> nm
       in ({ model | engine = nmod }, c)
     ExtLinks m -> mod { model | extlinks = EL.update m model.extlinks }
+
     VNDel i    -> mod { model | vn = delidx i model.vn }
     VNSearch m ->
       let (nm, c, res) = A.update vnConfig m model.vnAdd
@@ -182,7 +183,8 @@ update msg model =
           if List.any (\vn -> vn.vid == v.id) model.vn
           then ({ model | vnAdd = nm }, c)
           else ({ model | vnAdd = A.clear nm "", vn = model.vn ++ [{ vid = v.id, title = v.title}] }, c)
-    ProdDel i   -> mod { model | vn = delidx i model.vn }
+
+    ProdDel i   -> mod { model | prod = delidx i model.prod }
     ProdRole i (d,p) -> mod { model | prod = modidx i (\e -> { e | developer = d, publisher = p }) model.prod }
     ProdSearch m ->
       let (nm, c, res) = A.update producerConfig m model.prodAdd
@@ -251,7 +253,7 @@ view model =
             tr []
             [ td [] [ inputSelect "" m.medium (MediaType i) [] <| List.map (\(a,b,_) -> (a,b)) GT.media ]
             , td [] [ if q then inputSelect "" m.qty (MediaQty i) [ style "width" "100px" ] <| List.map (\a -> (a,String.fromInt a)) <| List.range 1 20 else text "" ]
-            , td [] [ a [ href "#", onClickD (MediaDel i) ] [ text "remove" ] ]
+            , td [] [ inputButton "remove" (MediaDel i) [] ]
             ]
       ) model.media
     , if hasDuplicates (List.map (\m -> (m.medium, m.qty)) model.media)
@@ -282,6 +284,7 @@ view model =
     ]
   , formField "catalog::Catalog number" [ inputText "catalog" model.catalog Catalog GRE.valCatalog ]
   , formField "website::Website" [ inputText "website" model.website Website (style "width" "500px" :: GRE.valWebsite) ]
+  , tr [ class "newpart" ] [ td [ colspan 2 ] [] ]
   , formField "External Links" [ Html.map ExtLinks (EL.view model.extlinks) ]
 
   , tr [ class "newpart" ] [ td [ colspan 2 ] [ text "Database relations" ] ]
@@ -290,17 +293,18 @@ view model =
       else table [] <| List.indexedMap (\i v -> tr []
         [ td [ style "text-align" "right" ] [ b [ class "grayedout" ] [ text <| "v" ++ String.fromInt v.vid ++ ":" ] ]
         , td [] [ a [ href <| "/v" ++ String.fromInt v.vid ] [ text v.title ] ]
-        , td [] [ a [ href "#", onClickD (VNDel i) ] [ text "remove" ] ]
+        , td [] [ inputButton "remove" (VNDel i) [] ]
         ]
       ) model.vn
     , A.view vnConfig model.vnAdd [placeholder "Add visual novel..."]
     ]
+  , tr [ class "newpart" ] [ td [ colspan 2 ] [] ]
   , formField "Producers"
     [ table [ class "compact" ] <| List.indexedMap (\i p -> tr []
         [ td [ style "text-align" "right" ] [ b [ class "grayedout" ] [ text <| "p" ++ String.fromInt p.pid ++ ":" ] ]
         , td [] [ a [ href <| "/p" ++ String.fromInt p.pid ] [ text p.name ] ]
         , td [] [ inputSelect "" (p.developer, p.publisher) (ProdRole i) [style "width" "100px"] [((True,False), "Developer"), ((False,True), "Publisher"), ((True,True), "Both")] ]
-        , td [] [ a [ href "#", onClickD (ProdDel i) ] [ text "remove" ] ]
+        , td [] [ inputButton "remove" (ProdDel i) [] ]
         ]
       ) model.prod
     , A.view producerConfig model.prodAdd [placeholder "Add producer..."]

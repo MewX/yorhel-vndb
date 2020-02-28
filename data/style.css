@@ -172,7 +172,7 @@ table.formtable          { margin: 0 20px 20px 20px; }
 table.formtable td       { padding: 0; }
 table.formtable tr.newfield > td { padding-top: 5px; }
 table.formtable tr.newpart td { padding-top: 20px; font-weight: bold; }
-table.formtable td table td { padding-right: 15px }
+table.formtable td table td { padding: 1px 15px 1px 0px }
 table.formtable td table    { margin-bottom: 5px }
 
 /* Format checkboxes and radio buttons as if they were normal links with unicode icons.
@@ -218,6 +218,7 @@ fieldset.submit .textpreview { margin: 0 auto }
 /* .compact input elements are smaller and can be embedded in tables/inline text
  * .stealth input elements pretend to be just regular text, but turn into visibile input elements on mouse-over */
 .compact input.text, .compact select { margin: -2px -1px; padding: 1px 0 }
+.compact input.submit                { margin: -2px -1px; padding: 1px 3px }
 .stealth input, .stealth select { font: inherit; background: none; border: 1px solid transparent; -moz-appearance: none; -webkit-appearance: none; appearance: none }
 .stealth input:hover, .stealth input:focus,
 .stealth select:hover, .stealth select:focus { border: 1px solid $secborder$; background: $secbg$ }

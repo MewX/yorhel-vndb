@@ -92,7 +92,7 @@ view model = Html.form [ onSubmit Enter ]
         in tr []
            [ td [] [ a [ href <| pre ++ val ++ suf, target "_blank" ] [ text s.name ] ]
            , td [] [ b [ class "grayedout" ] [ text pre ], text val, b [ class "grayedout" ] [ text suf ] ]
-           , td [] [ a [ href "#", onClickD (Del s.del i) ] [ text "remove" ] ]
+           , td [] [ inputButton "remove" (Del s.del i) [] ]
            ]
       ) (s.links model.links)
     ) model.sites
