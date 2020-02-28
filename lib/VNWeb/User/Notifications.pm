@@ -66,7 +66,7 @@ sub listing_ {
             td_ class => 'tc4', sub { a_ href => $url, $lid };
             td_ class => 'tc5', sub {
                 a_ href => $url, sub {
-                    txt_ $l->{ltype} eq 't' ? 'Edit of ' : $l->{subid} == 1 ? 'New thread ' : 'Reply to ';
+                    txt_ $l->{ltype} ne 't' ? 'Edit of ' : $l->{subid} == 1 ? 'New thread ' : 'Reply to ';
                     i_ $l->{c_title};
                     txt_ ' by ';
                     i_ user_displayname $l;
