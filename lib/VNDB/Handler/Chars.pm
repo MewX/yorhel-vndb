@@ -283,7 +283,9 @@ sub edit {
       $frm->{main_spoil} = 0 if !$frm->{main};
 
       @traits = sort { $a->[0] <=> $b->[0] } map /^(\d+)-(\d+)$/&&[$1,$2], split / /, $frm->{traits};
-      my %traits = @traits ? map +($_->{id}, 1), @{$self->dbTraitGet(results => 500, state => 2, applicable => 1, id => [ map $_->[0], @traits ])} : ();
+      my %traits = !@traits ? () : map +($_, 1),
+        (map $_->{id}, @{$self->dbTraitGet(results => 500, state => 2, applicable => 1, id => [ map $_->[0], @traits ])}),
+        ($id ? map $_->{tid}, @{$r->{traits}} : ());
       @traits = grep $traits{$_->[0]}, @traits;
       $frm->{traits} = join(' ', map sprintf('%d-%d', @$_), @traits);
 
