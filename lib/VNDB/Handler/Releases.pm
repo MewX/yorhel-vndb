@@ -12,7 +12,7 @@ our @EXPORT = ('releaseExtLinks');
 
 
 TUWF::register(
-  qr{(v)([1-9]\d*)/add}            => \&edit,
+  qr{old/(v)([1-9]\d*)/add}        => \&edit,
   qr{r}                            => \&browse,
   qr{old/r(?:([1-9]\d*)(?:\.([1-9]\d*))?/(edit|copy))}
     => \&edit,

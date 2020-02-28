@@ -304,7 +304,7 @@ sub validate_extlinks {
 
 
 # Returns a list of sites for use in VNWeb::Elm:
-# { id => $id, name => $label, fmt => $label, regex => $regex, int => $bool, multi => $bool, default => 0||'""' }
+# { id => $id, name => $label, fmt => $label, regex => $regex, int => $bool, multi => $bool, default => 0||'""'||'[]' }
 sub extlinks_sites {
     my($type) = @_;
     my($schema) = grep +($_->{dbentry_type}||'') eq $type, values VNDB::Schema::schema->%*;
@@ -313,7 +313,7 @@ sub extlinks_sites {
         my($s) = grep $_->{name} eq $f, $schema->{cols}->@*;
         +{ id => $_, name => $p->{label}, fmt => $p->{fmt}, regex => full_regex($p->{regex})
          , int => $s->{type} =~ /^int/?1:0, multi => $s->{type} =~ /\[\]/?1:0
-         , default => $s->{type} =~ /^int/?0:'""' }
+         , default => $s->{type} =~ /\[\]/ ? '[]' : $s->{type} =~ /^int/ ? 0 : '""' }
     } sort grep $LINKS{$type}{$_}{regex}, keys $LINKS{$type}->%*
 }
 

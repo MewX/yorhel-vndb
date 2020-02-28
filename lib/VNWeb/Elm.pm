@@ -202,7 +202,7 @@ sub write_module {
 #   elm_api FormName => $OUT_SCHEMA, $IN_SCHEMA, sub {
 #       my($data) = @_;
 #       elm_Success # Or any other elm_Response() function
-#   };
+#   }, %extra_schemas;
 #
 # That will create an endpoint at `POST /elm/FormName.json` that accepts JSON
 # data that must validate $IN_SCHEMA. The subroutine is given the validated
@@ -220,11 +220,12 @@ sub write_module {
 #   -- Command to send an API request to the endpoint and receive a response
 #   send : Send -> (Gen.Api.Response -> msg) -> Cmd msg
 #
+# Extra type aliases can be added using %extra_schemas.
 sub elm_api {
-    my($name, $out, $in, $sub) = @_;
+    my($name, $out, $in, $sub, %extra) = @_;
 
-    $in  = ref $in  eq 'HASH' ? tuwf->compile({ type => 'hash', keys => $in  }) : $in;
-    $out = ref $out eq 'HASH' ? tuwf->compile({ type => 'hash', keys => $out }) : $out;
+    my sub comp { ref $_[0] eq 'HASH' ? tuwf->compile({ type => 'hash', keys => $_[0] }) : $_[0] }
+    $in = comp $in;
 
     TUWF::post qr{/elm/\Q$name\E\.json} => sub {
         if(!auth->csrfcheck(tuwf->reqHeader('X-CSRF-Token')||'')) {
@@ -245,8 +246,9 @@ sub elm_api {
     if(tuwf->{elmgen}) {
         my $data = "import Gen.Api as GApi\n";
         $data .=   "import Lib.Api as Api\n";
-        $data .= def_type Recv => $out->analyze if $out;
+        $data .= def_type Recv => comp($out)->analyze if $out;
         $data .= def_type Send => $in->analyze;
+        $data .= def_type $_ => comp($extra{$_})->analyze for sort keys %extra;
         $data .= def_validation val => $in->analyze;
         $data .= encoder encode => 'Send', $in->analyze;
         $data .= "send : Send -> (GApi.Response -> msg) -> Cmd msg\n";
@@ -352,8 +354,8 @@ sub write_extlinks {
 
     my sub links {
         my($name, $type, @links) = @_;
-        def $name => "List (Site $type)" => list map {
-            my($i,$l) = ($_, $links[$_]);
+        $data .= def $name.'Sites' => "List (Site $type)" => list map {
+            my $l = $_;
             my $addval = $l->{int} ? 'toint v' : 'v';
             '{ '.join("\n  , ",
                 'name  = '.string($l->{name}),
@@ -364,9 +366,12 @@ sub write_extlinks {
                 'del   = (\i m -> { m | '.$l->{id}.' = '.($l->{multi} ? "delidx i m.$l->{id}" : $l->{default}).' })',
                 'add   = (\v m -> { m | '.$l->{id}.' = '.($l->{multi} ? "m.$l->{id} ++ [$addval]" : $addval).' })'
             )."\n  }";
-        } 0..$#links;
+        } @links;
+
+        $data .= def $name.'New' => $type =>
+            "\n  { ".join("\n  , ", map sprintf('%-10s = %s', $_->{id}, $_->{default}), @links)."\n  }";
     }
-    $data .= links releaseLinks => 'GRE.RecvExtlinks' => VNDB::ExtLinks::extlinks_sites('r');
+    links release => 'GRE.RecvExtlinks' => VNDB::ExtLinks::extlinks_sites('r');
 
     write_module ExtLinks => $data;
 }

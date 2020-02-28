@@ -1,4 +1,4 @@
-module ReleaseEdit.Main exposing (Model, Msg, main, view, update)
+module ReleaseEdit.Main exposing (Model, Msg, main, new, view, update, sub)
 
 import Html exposing (..)
 import Html.Events exposing (..)
@@ -26,7 +26,7 @@ main = Browser.element
   { init   = \e -> (init e, Cmd.none)
   , view   = view
   , update = update
-  , subscriptions = \m -> Sub.batch [ DD.sub m.langDd, DD.sub m.platDd ]
+  , subscriptions = sub
   }
 
 
@@ -67,6 +67,17 @@ type alias Model =
   }
 
 
+engineConf : List GRE.RecvEngines -> A.Config Msg GRE.RecvEngines
+engineConf lst =
+  { wrap   = Engine
+  , id = "engine"
+  , source =
+    { source = A.Func (\s -> List.filter (\e -> String.contains (String.toLower s) (String.toLower e.engine)) lst |> List.take 10)
+    , view   = \i -> [ text i.engine, b [ class "grayedout" ] [ text <| " (" ++ String.fromInt i.count ++ ")" ] ]
+    , key    = \i -> i.engine
+    }
+  }
+
 init : GRE.Recv -> Model
 init d =
   { state      = Api.Normal
@@ -92,14 +103,9 @@ init d =
   , ani_story  = d.ani_story
   , ani_ero    = d.ani_ero
   , website    = d.website
-  , engineConf = { wrap   = Engine
-                 , id = "engine"
-                 , source = { source = A.Func (\s -> List.filter (\e -> String.contains (String.toLower s) (String.toLower e.engine)) d.engines |> List.take 10)
-                            , view   = \i -> [ text i.engine, b [ class "grayedout" ] [ text <| " (" ++ String.fromInt i.count ++ ")" ] ]
-                            , key    = \i -> i.engine }
-                 }
+  , engineConf = engineConf d.engines
   , engine     = A.init d.engine
-  , extlinks   = EL.new d.extlinks GEL.releaseLinks
+  , extlinks   = EL.new d.extlinks GEL.releaseSites
   , vn         = d.vn
   , vnAdd      = A.init ""
   , prod       = d.producers
@@ -107,6 +113,44 @@ init d =
   , notes      = TP.bbcode d.notes
   , editsum    = { authmod = d.authmod, editsum = TP.bbcode d.editsum, locked = d.locked, hidden = d.hidden }
   , id         = d.id
+  }
+
+
+new : GRE.New -> Model
+new d =
+  { state      = Api.Normal
+  , title      = d.title
+  , original   = d.original
+  , rtype      = "complete"
+  , patch      = False
+  , freeware   = False
+  , doujin     = False
+  , lang       = Set.empty
+  , langDd     = DD.init "lang" LangOpen
+  , plat       = Set.empty
+  , platDd     = DD.init "platforms" PlatOpen
+  , media      = []
+  , gtinInput  = formatGtin 0
+  , gtin       = 0
+  , catalog    = ""
+  , released   = 99999999 -- TODO: Would be nice to set this to 'unknown' and force the user to change it
+  , minage     = -1
+  , uncensored = False
+  , resolution = "unknown"
+  , voiced     = 0
+  , ani_story  = 0
+  , ani_ero    = 0
+  , website    = ""
+  , engineConf = engineConf d.engines
+  , engine     = A.init ""
+  , extlinks   = EL.new GEL.releaseNew GEL.releaseSites
+  , vn         = d.vn
+  , vnAdd      = A.init ""
+  , prod       = []
+  , prodAdd    = A.init ""
+  , notes      = TP.bbcode ""
+  , editsum    = Editsum.new
+  , id         = Nothing
   }
 
 
@@ -148,6 +192,8 @@ vnConfig = { wrap = VNSearch, id = "vnadd", source = A.vnSource }
 producerConfig : A.Config Msg GApi.ApiProducerResult
 producerConfig = { wrap = ProdSearch, id = "prodadd", source = A.producerSource }
 
+sub : Model -> Sub Msg
+sub m = Sub.batch [ DD.sub m.langDd, DD.sub m.platDd ]
 
 type Msg
   = Title String
