@@ -17,8 +17,6 @@ import Gen.Types as GT
 import Gen.ReleaseEdit as GRE
 import Gen.ExtLinks as GEL
 
--- TODO: producers
-
 
 type alias Model =
   { title      : String
@@ -48,6 +46,8 @@ type alias Model =
   , extlinks   : EL.Model GRE.RecvExtlinks
   , vn         : List GRE.RecvVn
   , vnAdd      : A.Model GApi.ApiVNResult
+  , prod       : List GRE.RecvProducers
+  , prodAdd    : A.Model GApi.ApiProducerResult
   , notes      : TP.Model
   }
 
@@ -86,12 +86,17 @@ init d =
   , extlinks   = EL.new d.extlinks GEL.releaseLinks
   , vn         = d.vn
   , vnAdd      = A.init ""
+  , prod       = d.producers
+  , prodAdd    = A.init ""
   , notes      = TP.bbcode d.notes
   }
 
 
 vnConfig : A.Config Msg GApi.ApiVNResult
 vnConfig = { wrap = VNSearch, id = "vnadd", source = A.vnSource }
+
+producerConfig : A.Config Msg GApi.ApiProducerResult
+producerConfig = { wrap = ProdSearch, id = "prodadd", source = A.producerSource }
 
 sub : Model -> Sub Msg
 sub model = Sub.batch [ DD.sub model.langDd, DD.sub model.platDd ]
@@ -126,6 +131,9 @@ type Msg
   | ExtLinks (EL.Msg GRE.RecvExtlinks)
   | VNDel Int
   | VNSearch (A.Msg GApi.ApiVNResult)
+  | ProdDel Int
+  | ProdRole Int (Bool, Bool)
+  | ProdSearch (A.Msg GApi.ApiProducerResult)
   | Notes (TP.Msg)
 
 
@@ -174,6 +182,16 @@ update msg model =
           if List.any (\vn -> vn.vid == v.id) model.vn
           then ({ model | vnAdd = nm }, c)
           else ({ model | vnAdd = A.clear nm "", vn = model.vn ++ [{ vid = v.id, title = v.title}] }, c)
+    ProdDel i   -> mod { model | vn = delidx i model.vn }
+    ProdRole i (d,p) -> mod { model | prod = modidx i (\e -> { e | developer = d, publisher = p }) model.prod }
+    ProdSearch m ->
+      let (nm, c, res) = A.update producerConfig m model.prodAdd
+      in case res of
+        Nothing -> ({ model | prodAdd = nm }, c)
+        Just p  ->
+          if List.any (\e -> e.pid == p.id) model.prod
+          then ({ model | prodAdd = nm }, c)
+          else ({ model | prodAdd = A.clear nm "", prod = model.prod ++ [{ pid = p.id, name = p.name, developer = False, publisher = True}] }, c)
     Notes m    -> let (nm, nc) = TP.update m model.notes in ({ model | notes = nm }, Cmd.map Notes nc)
 
 
@@ -276,6 +294,16 @@ view model =
         ]
       ) model.vn
     , A.view vnConfig model.vnAdd [placeholder "Add visual novel..."]
+    ]
+  , formField "Producers"
+    [ table [ class "compact" ] <| List.indexedMap (\i p -> tr []
+        [ td [ style "text-align" "right" ] [ b [ class "grayedout" ] [ text <| "p" ++ String.fromInt p.pid ++ ":" ] ]
+        , td [] [ a [ href <| "/p" ++ String.fromInt p.pid ] [ text p.name ] ]
+        , td [] [ inputSelect "" (p.developer, p.publisher) (ProdRole i) [style "width" "100px"] [((True,False), "Developer"), ((False,True), "Publisher"), ((True,True), "Both")] ]
+        , td [] [ a [ href "#", onClickD (ProdDel i) ] [ text "remove" ] ]
+        ]
+      ) model.prod
+    , A.view producerConfig model.prodAdd [placeholder "Add producer..."]
     ]
 
   , tr [ class "newpart" ] [ td [ colspan 2 ] [] ]

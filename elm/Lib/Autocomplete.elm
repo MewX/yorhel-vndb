@@ -7,6 +7,7 @@ module Lib.Autocomplete exposing
   , boardSource
   , tagSource
   , vnSource
+  , producerSource
   , init
   , clear
   , update
@@ -30,6 +31,7 @@ import Gen.Api as GApi
 import Gen.Boards as GB
 import Gen.Tags as GT
 import Gen.VN as GV
+import Gen.Producers as GP
 
 
 type alias Config m a =
@@ -106,6 +108,19 @@ vnSource =
   , view    = \i ->
     [ b [ class "grayedout" ] [ text <| "v" ++ String.fromInt i.id ++ ": " ]
     , text i.title ]
+  , key     = \i -> String.fromInt i.id
+  }
+
+
+producerSource : SourceConfig m GApi.ApiProducerResult
+producerSource =
+  { source  = Endpoint (\s -> GP.send { search = s })
+    <| \x -> case x of
+      GApi.ProducerResult e -> Just e
+      _ -> Nothing
+  , view    = \i ->
+    [ b [ class "grayedout" ] [ text <| "p" ++ String.fromInt i.id ++ ": " ]
+    , text i.name ]
   , key     = \i -> String.fromInt i.id
   }
 

@@ -46,6 +46,7 @@ showResponse res =
     BoardResult _                   -> unexp
     TagResult _                     -> unexp
     VNResult _                      -> unexp
+    ProducerResult _                -> unexp
 
 
 expectResponse : (Response -> msg) -> Http.Expect msg

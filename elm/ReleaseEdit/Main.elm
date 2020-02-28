@@ -72,6 +72,7 @@ encode model =
   , extlinks    = model.general.extlinks.links
   , vn          = List.map (\l -> {vid=l.vid}) model.general.vn
   , notes       = model.general.notes.data
+  , producers   = List.map (\l -> {pid=l.pid, developer=l.developer, publisher=l.publisher}) model.general.prod
   }
 
 

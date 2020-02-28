@@ -34,6 +34,12 @@ my $FORM = {
         vid    => { id => 1 },
         title  => { _when => 'out' },
     } },
+    producers  => { sort_keys => 'pid', aoh => {
+        pid       => { id => 1 },
+        developer => { anybool => 1 },
+        publisher => { anybool => 1 },
+        name      => { _when => 'out' },
+    } },
     hidden     => { anybool => 1 },
     locked     => { anybool => 1 },
 
@@ -67,6 +73,7 @@ TUWF::get qr{/$RE{rrev}/(?<action>edit|copy)} => sub {
     to_extlinks $e;
 
     enrich_merge vid => 'SELECT id AS vid, title FROM vn WHERE id IN', $e->{vn};
+    enrich_merge pid => 'SELECT id AS pid, name FROM producers WHERE id IN', $e->{producers};
 
     my $title = ($copy ? 'Copy ' : 'Edit ').$e->{title};
     framework_ title => $title, type => 'r', dbobj => $e, tab => tuwf->capture('action'),
@@ -98,7 +105,12 @@ elm_api ReleaseEdit => $FORM_OUT, $FORM_IN, sub {
         $data->{hidden} = $e->{hidden}||0;
         $data->{locked} = $e->{locked}||0;
     }
+    $data->{doujin} = $data->{voiced} = $data->{ani_story} = $data->{ani_ero} = 0 if $data->{patch};
+    $data->{resolution} = 'unknown' if $data->{patch};
+    $data->{uncensored} = 0 if $data->{minage} != 18;
     $_->{qty} = $MEDIUM{$_->{medium}}{qty} ? $_->{qty}||1 : 0 for $data->{media}->@*;
+    $data->{notes} = bb_subst_links $data->{notes};
+    die "No VNs selected" if !$data->{vn}->@*;
 
     to_extlinks $e;
     $e->{rtype} = delete $e->{type};

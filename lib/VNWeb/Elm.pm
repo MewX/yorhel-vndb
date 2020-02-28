@@ -75,6 +75,11 @@ my %apis = (
         title    => {},
         original => { required => 0, default => '' },
     } } ],
+    ProducerResult => [ { aoh => { # Response to 'Producers'
+        id       => { id => 1 },
+        name     => {},
+        original => { required => 0, default => '' },
+    } } ],
 );
 
 
