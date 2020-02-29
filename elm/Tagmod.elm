@@ -111,7 +111,7 @@ update msg model =
                 if t.state == 1                                    then ([], "Can't add deleted tags")
                 else if not t.applicable                           then ([], "Tag is not applicable")
                 else if List.any (\it -> it.id == t.id) model.tags then ([], "Tag is already in the list")
-                else ([{ id = t.id, vote = 2, spoil = Nothing, overrule = False, notes = "", cat = "new", name = t.name, rating = 0, count = 0, spoiler = 0, overruled = False, othnotes = "" }], "")
+                else ([{ id = t.id, vote = 2, spoil = Nothing, overrule = False, notes = "", cat = "new", name = t.name, rating = 0, count = 0, spoiler = 0, overruled = False, othnotes = "", applicable = t.applicable }], "")
           in (changed { model | add = if ms == "" then A.clear nm "" else nm, tags = model.tags ++ nl, addMsg = ms }, c)
 
     Submit ->
@@ -138,7 +138,10 @@ viewTag t sel vid mod =
                         _       -> t.spoil
   in
     tr [] <|
-    [ td [ class "tc_tagname" ] [ a [ href <| "/g"++String.fromInt t.id ] [ text t.name ] ]
+    [ td [ class "tc_tagname" ]
+      [ a [ href <| "/g"++String.fromInt t.id, style "text-decoration" (if t.applicable then "none" else "line-through") ] [ text t.name ]
+      , if t.applicable then text "" else b [ class "standout" ] [ text " (not applicable)" ]
+      ]
     , td [ class "tc_myvote buts"  ]
       [ a [ href "#", onMouseOver (SetSel t.id (Vote -3)), onMouseOut (SetSel 0 NoSel), onClickD (SetVote t.id -3), classList [("ld", vote <  0)], title "Downvote"    ] []
       , a [ href "#", onMouseOver (SetSel t.id (Vote  0)), onMouseOut (SetSel 0 NoSel), onClickD (SetVote t.id  0), classList [("l0", vote == 0)], title "Remove vote" ] []
