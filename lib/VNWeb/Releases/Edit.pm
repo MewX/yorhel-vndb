@@ -94,10 +94,29 @@ TUWF::get qr{/$RE{vid}/add}, sub {
     my $v = tuwf->dbRowi('SELECT id, title, original FROM vn WHERE id =', \tuwf->capture('id'));
     return tuwf->resNotFound if !$v->{id};
 
-    # TODO: List deleted releases
+    my $delrel = tuwf->dbAlli('SELECT r.id, r.title, r.original FROM releases r JOIN releases_vn rv ON rv.id = r.id WHERE r.hidden AND rv.vid =', \$v->{id}, 'ORDER BY id');
+    enrich_flatten languages => id => id => 'SELECT id, lang FROM releases_lang WHERE id IN', $delrel;
+
     framework_ title => "Add release to $v->{title}",
     sub {
         editmsg_ r => undef, "Add release to $v->{title}";
+
+        div_ class => 'mainbox', sub {
+            h1_ 'Deleted releases';
+            div_ class => 'warning', sub {
+                p_ q{This visual novel has releases that have been deleted
+                    before. Please review this list to make sure you're not
+                    adding a release that has already been deleted.};
+                br_;
+                ul_ sub {
+                    li_ sub {
+                        txt_ '['.join(',', $_->{languages}->@*)."] r$_->{id}:";
+                        a_ href => "/r$_->{id}", title => $_->{original}||$_->{title}, $_->{title};
+                    } for @$delrel;
+                }
+            }
+        } if @$delrel;
+
         elm_ 'ReleaseEdit.New' => $FORM_NEW, {
             title    => $v->{title},
             original => $v->{original},
