@@ -287,7 +287,7 @@ update msg model =
         Just p  ->
           if List.any (\e -> e.pid == p.id) model.prod
           then ({ model | prodAdd = nm }, c)
-          else ({ model | prodAdd = A.clear nm "", prod = model.prod ++ [{ pid = p.id, name = p.name, developer = False, publisher = True}] }, c)
+          else ({ model | prodAdd = A.clear nm "", prod = model.prod ++ [{ pid = p.id, name = p.name, developer = True, publisher = True}] }, c)
 
     Notes m    -> let (nm, nc) = TP.update m model.notes in ({ model | notes = nm }, Cmd.map Notes nc)
     Editsum m  -> let (nm,nc) = Editsum.update m model.editsum in ({ model | editsum = nm }, Cmd.map Editsum nc)
