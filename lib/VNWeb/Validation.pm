@@ -7,6 +7,8 @@ use VNDB::Types;
 use VNDB::Config;
 use VNWeb::Auth;
 use VNWeb::DB;
+use VNDB::Func 'gtintype';
+use Time::Local 'timegm';
 use Carp 'croak';
 use Exporter 'import';
 
@@ -28,6 +30,8 @@ TUWF::set custom_validations => {
     username    => { regex => qr/^(?!-*[a-z][0-9]+-*$)[a-z0-9-]*$/, minlength => 2, maxlength => 15 },
     password    => { length => [ 4, 500 ] },
     language    => { enum => \%LANGUAGE },
+    gtin        => { uint => 1, func => sub { $_[0] eq 0 || gtintype($_[0]) } },
+    rdate       => { uint => 1, func => \&_validate_rdate },
     # Accepts a user-entered vote string (or '-' or empty) and converts that into a DB vote number (or undef) - opposite of fmtvote()
     vnvote      => { required => 0, default => undef, regex => qr/^(?:|-|[1-9]|10|[1-9]\.[0-9]|10\.0)$/, func => sub { $_[0] = $_[0] eq '-' ? undef : 10*$_[0]; 1 } },
     # Sort an array by the listed hash keys, using string comparison on each key
@@ -44,6 +48,22 @@ TUWF::set custom_validations => {
     # Sorted and unique array-of-hashes (default order is sort_keys on the sorted keys...)
     aoh         => sub { +{ type => 'array', unique => 1, sort_keys => [sort keys %{$_[0]}], values => { type => 'hash', keys => $_[0] } } },
 };
+
+sub _validate_rdate {
+    return 0 if $_[0] ne 0 && $_[0] !~ /^([0-9]{4})([0-9]{2})([0-9]{2})$/;
+    my($y, $m, $d) = $_[0] eq 0 ? (0,0,0) : ($1, $2, $3);
+
+    # Re-normalize
+    ($m, $d) = (0, 0) if $y == 0;
+    $m = 99 if $y == 9999;
+    $d = 99 if $m == 99;
+    $_[0] = $y*10000 + $m*100 + $d;
+
+    return 0 if $y && $y != 9999 && ($y < 1980 || $y > 2100);
+    return 0 if $y && $m != 99 && (!$m || $m > 12);
+    return 0 if $y && $d != 99 && !eval { timegm(0, 0, 0, $d, $m-1, $y) };
+    return 1;
+}
 
 
 sub is_insecurepass {

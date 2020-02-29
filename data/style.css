@@ -83,10 +83,10 @@ div.warning h2, div.notice h2 { font-size: 13px; font-weight: bold; margin: 0; }
 
 /* Elm dropdowns */
 .elm_dd > a { color: $maintext$; display: block; border: none; padding-right: 15px; position: relative }
-.elm_dd > a > span { position: absolute; right: 5px; top: 0; width: 16px; text-align: right; display: block }
-.elm_dd > a > span i { visibility: hidden; font-style: normal }
-.elm_dd > a:hover > span > i,
-.elm_dd > a:focus > span > i { visibility: visible }
+.elm_dd > a > span:last-child { position: absolute; right: 5px; top: 0; width: 16px; text-align: right; display: block }
+.elm_dd > a > span:last-child i { visibility: hidden; font-style: normal }
+.elm_dd > a:hover > span:last-child > i,
+.elm_dd > a:focus > span:last-child > i { visibility: visible }
 .elm_dd > div { position: relative; float: right; width: 0; height: 0 }
 .elm_dd > div > ul { position: absolute; right: -10px; top: 0; border: 1px solid $border$; background-color: $secbg$; z-index: 1000; list-style-type: none; margin: 0; padding: 0; max-width: 400px; overflow: hidden }
 .elm_dd.search > div { float: left }
@@ -170,8 +170,10 @@ td.label label           { display: block; }
 td.field label           { margin: 0 5px 0 5px; }
 table.formtable          { margin: 0 20px 20px 20px; }
 table.formtable td       { padding: 0; }
-table.formtable tr.newfield td { padding-top: 5px; }
+table.formtable tr.newfield > td { padding-top: 5px; }
 table.formtable tr.newpart td { padding-top: 20px; font-weight: bold; }
+table.formtable td table td { padding: 1px 15px 1px 0px }
+table.formtable td table    { margin-bottom: 5px }
 
 /* Format checkboxes and radio buttons as if they were normal links with unicode icons.
  * Usage:
@@ -216,6 +218,7 @@ fieldset.submit .textpreview { margin: 0 auto }
 /* .compact input elements are smaller and can be embedded in tables/inline text
  * .stealth input elements pretend to be just regular text, but turn into visibile input elements on mouse-over */
 .compact input.text, .compact select { margin: -2px -1px; padding: 1px 0 }
+.compact input.submit                { margin: -2px -1px; padding: 1px 3px }
 .stealth input, .stealth select { font: inherit; background: none; border: 1px solid transparent; -moz-appearance: none; -webkit-appearance: none; appearance: none }
 .stealth input:hover, .stealth input:focus,
 .stealth select:hover, .stealth select:focus { border: 1px solid $secborder$; background: $secbg$ }

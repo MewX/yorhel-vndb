@@ -17,6 +17,7 @@ use List::Util 'max';
 use VNDB::Config;
 use VNDB::Types;
 use VNDB::Func 'fmtrating';
+use VNDB::ExtLinks ();
 use VNWeb::Auth;
 
 our @EXPORT = qw/
@@ -68,6 +69,16 @@ my %apis = (
         searchable   => { anybool => 1 },
         applicable   => { anybool => 1 },
         state        => { int => 1 },
+    } } ],
+    VNResult       => [ { aoh => { # Response to 'VN'
+        id       => { id => 1 },
+        title    => {},
+        original => { required => 0, default => '' },
+    } } ],
+    ProducerResult => [ { aoh => { # Response to 'Producers'
+        id       => { id => 1 },
+        name     => {},
+        original => { required => 0, default => '' },
     } } ],
 );
 
@@ -191,7 +202,7 @@ sub write_module {
 #   elm_api FormName => $OUT_SCHEMA, $IN_SCHEMA, sub {
 #       my($data) = @_;
 #       elm_Success # Or any other elm_Response() function
-#   };
+#   }, %extra_schemas;
 #
 # That will create an endpoint at `POST /elm/FormName.json` that accepts JSON
 # data that must validate $IN_SCHEMA. The subroutine is given the validated
@@ -209,11 +220,12 @@ sub write_module {
 #   -- Command to send an API request to the endpoint and receive a response
 #   send : Send -> (Gen.Api.Response -> msg) -> Cmd msg
 #
+# Extra type aliases can be added using %extra_schemas.
 sub elm_api {
-    my($name, $out, $in, $sub) = @_;
+    my($name, $out, $in, $sub, %extra) = @_;
 
-    $in  = ref $in  eq 'HASH' ? tuwf->compile({ type => 'hash', keys => $in  }) : $in;
-    $out = ref $out eq 'HASH' ? tuwf->compile({ type => 'hash', keys => $out }) : $out;
+    my sub comp { ref $_[0] eq 'HASH' ? tuwf->compile({ type => 'hash', keys => $_[0] }) : $_[0] }
+    $in = comp $in;
 
     TUWF::post qr{/elm/\Q$name\E\.json} => sub {
         if(!auth->csrfcheck(tuwf->reqHeader('X-CSRF-Token')||'')) {
@@ -234,8 +246,9 @@ sub elm_api {
     if(tuwf->{elmgen}) {
         my $data = "import Gen.Api as GApi\n";
         $data .=   "import Lib.Api as Api\n";
-        $data .= def_type Recv => $out->analyze if $out;
+        $data .= def_type Recv => comp($out)->analyze if $out;
         $data .= def_type Send => $in->analyze;
+        $data .= def_type $_ => comp($extra{$_})->analyze for sort keys %extra;
         $data .= def_validation val => $in->analyze;
         $data .= encoder encode => 'Send', $in->analyze;
         $data .= "send : Send -> (GApi.Response -> msg) -> Cmd msg\n";
@@ -299,11 +312,68 @@ sub write_types {
     $data .= def languages  => 'List (String, String)' => list map tuple(string $_, string $LANGUAGE{$_}), sort { $LANGUAGE{$a} cmp $LANGUAGE{$b} } keys %LANGUAGE;
     $data .= def platforms  => 'List (String, String)' => list map tuple(string $_, string $PLATFORM{$_}), keys %PLATFORM;
     $data .= def releaseTypes => 'List (String, String)' => list map tuple(string $_, string $RELEASE_TYPE{$_}), keys %RELEASE_TYPE;
-    $data .= def rlistStatus => 'List (Int, String)' => list map tuple($_, string $RLIST_STATUS{$_}), keys %RLIST_STATUS;
+    $data .= def media      => 'List (String, String, Bool)' => list map tuple(string $_, string $MEDIUM{$_}{txt}, $MEDIUM{$_}{qty}?'True':'False'), keys %MEDIUM;
+    $data .= def rlistStatus=> 'List (Int, String)' => list map tuple($_, string $RLIST_STATUS{$_}), keys %RLIST_STATUS;
     $data .= def boardTypes => 'List (String, String)' => list map tuple(string $_, string $BOARD_TYPE{$_}{txt}), keys %BOARD_TYPE;
-    $data .= def ratings => 'List String' => list map string(fmtrating $_), 1..10;
+    $data .= def ratings    => 'List String' => list map string(fmtrating $_), 1..10;
+    $data .= def ageRatings => 'List (Int, String)' => list map tuple($_, string $AGE_RATING{$_}{txt}), keys %AGE_RATING;
+    $data .= def resolutions=> 'List (String, String)' => list map tuple(string $_, string +($RESOLUTION{$_}{cat}?"$RESOLUTION{$_}{cat} / ":'').$RESOLUTION{$_}{txt}), keys %RESOLUTION;
+    $data .= def voiced     => 'List (Int, String)' => list map tuple($_, string $VOICED{$_}{txt}), keys %VOICED;
+    $data .= def animated   => 'List (Int, String)' => list map tuple($_, string $ANIMATED{$_}{txt}), keys %ANIMATED;
+    $data .= def curYear    => Int => (gmtime)[5]+1900;
 
     write_module Types => $data;
+}
+
+
+sub write_extlinks {
+    my $data =<<~'_';
+        import Regex
+        import Gen.ReleaseEdit as GRE
+
+        type alias Site a =
+          { name  : String
+          , fmt   : String
+          , regex : Regex.Regex
+          , multi : Bool
+          , links : a -> List String
+          , del   : Int -> a -> a
+          , add   : String -> a -> a
+          }
+
+        reg r = Maybe.withDefault Regex.never (Regex.fromStringWith {caseInsensitive=True, multiline=False} r)
+        delidx n l = List.take n l ++ List.drop (n+1) l
+        toint v = Maybe.withDefault 0 (String.toInt v)
+
+        -- Link extraction functions for `Site.links`, i=integer, s=string, m=multi
+        li v = if v == 0 then [] else [String.fromInt v]
+        lim = List.map String.fromInt
+        ls v = if v == "" then [] else [v]
+        lsm v = v
+        _
+
+    my sub links {
+        my($name, $type, @links) = @_;
+        $data .= def $name.'Sites' => "List (Site $type)" => list map {
+            my $l = $_;
+            my $addval = $l->{int} ? 'toint v' : 'v';
+            '{ '.join("\n  , ",
+                'name  = '.string($l->{name}),
+                'fmt   = '.string($l->{fmt}),
+                'regex = reg '.string(TUWF::Validate::Interop::_re_compat($l->{regex})),
+                'multi = '.($l->{multi}?'True':'False'),
+                'links = '.sprintf('(\m -> l%s%s m.%s)', $l->{int}?'i':'s', $l->{multi}?'m':'', $l->{id}),
+                'del   = (\i m -> { m | '.$l->{id}.' = '.($l->{multi} ? "delidx i m.$l->{id}" : $l->{default}).' })',
+                'add   = (\v m -> { m | '.$l->{id}.' = '.($l->{multi} ? "m.$l->{id} ++ [$addval]" : $addval).' })'
+            )."\n  }";
+        } @links;
+
+        $data .= def $name.'New' => $type =>
+            "\n  { ".join("\n  , ", map sprintf('%-10s = %s', $_->{id}, $_->{default}), @links)."\n  }";
+    }
+    links release => 'GRE.RecvExtlinks' => VNDB::ExtLinks::extlinks_sites('r');
+
+    write_module ExtLinks => $data;
 }
 
 
@@ -311,6 +381,7 @@ if(tuwf->{elmgen}) {
     mkdir config->{root}.'/elm/Gen';
     write_api;
     write_types;
+    write_extlinks;
     open my $F, '>', config->{root}.'/elm/Gen/.generated';
     print $F scalar gmtime;
 }

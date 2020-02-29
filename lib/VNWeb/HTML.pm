@@ -815,8 +815,18 @@ sub editmsg_ {
                       txt_ " to see if we already have information about this $typename.";
                   }
               }
+              if($type eq 'r') {
+                  li_ sub {
+                      txt_ 'Fields marked with '; b_ class => 'standout', '(*)'; txt_ ' may cause other fields to become (un)available depending on the selection.';
+                  }
+              }
           }
       };
+      p_ class => 'center', sub {
+          txt_ "If you're having trouble using this new form, the ";
+          a_ href => '/old'.tuwf->reqPath().tuwf->reqQuery(), 'old form';
+          txt_ ' is still available.';
+      } if $type eq 'r' && tuwf->reqPath() !~ m{^/old/};
   }
 }
 

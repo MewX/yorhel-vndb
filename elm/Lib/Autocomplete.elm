@@ -1,10 +1,13 @@
 module Lib.Autocomplete exposing
   ( Config
+  , SearchSource(..)
   , SourceConfig
   , Model
   , Msg
   , boardSource
   , tagSource
+  , vnSource
+  , producerSource
   , init
   , clear
   , update
@@ -27,6 +30,8 @@ import Gen.Types exposing (boardTypes)
 import Gen.Api as GApi
 import Gen.Boards as GB
 import Gen.Tags as GT
+import Gen.VN as GV
+import Gen.Producers as GP
 
 
 type alias Config m a =
@@ -39,11 +44,16 @@ type alias Config m a =
   }
 
 
+type SearchSource m a
+    -- API endpoint to query for completion results + Function to decode results from the API
+  = Endpoint (String -> (GApi.Response -> m) -> Cmd m) (GApi.Response -> Maybe (List a))
+    -- Pure function for instant completion results
+  | Func (String -> List a)
+
+
 type alias SourceConfig m a =
-    -- API endpoint to query for completion results.
-  { endpoint : String -> (GApi.Response -> m) -> Cmd m
-    -- How to decode results from the API
-  , decode   : GApi.Response -> Maybe (List a)
+    -- Where to get completion results from
+  { source   : SearchSource m a
     -- How to display the decoded results
   , view     : a -> List (Html m)
     -- Unique ID of an item (must not be an empty string).
@@ -53,11 +63,10 @@ type alias SourceConfig m a =
   }
 
 
-
 boardSource : SourceConfig m GApi.ApiBoardResult
 boardSource =
-  { endpoint = \s -> GB.send { search = s }
-  , decode  = \x -> case x of
+  { source  = Endpoint (\s -> GB.send { search = s })
+    <| \x -> case x of
       GApi.BoardResult e -> Just e
       _ -> Nothing
   , view    = (\i ->
@@ -72,8 +81,8 @@ boardSource =
 
 tagSource : SourceConfig m GApi.ApiTagResult
 tagSource =
-  { endpoint = \s -> GT.send { search = s }
-  , decode  = \x -> case x of
+  { source  = Endpoint (\s -> GT.send { search = s })
+    <| \x -> case x of
       GApi.TagResult e -> Just e
       _ -> Nothing
   , view    = \i ->
@@ -90,32 +99,61 @@ tagSource =
   }
 
 
+vnSource : SourceConfig m GApi.ApiVNResult
+vnSource =
+  { source  = Endpoint (\s -> GV.send { search = s })
+    <| \x -> case x of
+      GApi.VNResult e -> Just e
+      _ -> Nothing
+  , view    = \i ->
+    [ b [ class "grayedout" ] [ text <| "v" ++ String.fromInt i.id ++ ": " ]
+    , text i.title ]
+  , key     = \i -> String.fromInt i.id
+  }
+
+
+producerSource : SourceConfig m GApi.ApiProducerResult
+producerSource =
+  { source  = Endpoint (\s -> GP.send { search = s })
+    <| \x -> case x of
+      GApi.ProducerResult e -> Just e
+      _ -> Nothing
+  , view    = \i ->
+    [ b [ class "grayedout" ] [ text <| "p" ++ String.fromInt i.id ++ ": " ]
+    , text i.name ]
+  , key     = \i -> String.fromInt i.id
+  }
+
+
 type alias Model a =
   { visible  : Bool
   , value    : String
   , results  : List a
   , sel      : String
+  , default  : String
   , loading  : Bool
   , wait     : Int
   }
 
 
-init : Model a
-init =
+init : String -> Model a
+init s =
   { visible  = False
-  , value    = ""
+  , value    = s
   , results  = []
   , sel      = ""
+  , default  = s
   , loading  = False
   , wait     = 0
   }
 
 
-clear : Model a -> Model a
-clear m = { m
-  | value    = ""
+clear : Model a -> String -> Model a
+clear m v = { m
+  | value    = v
   , results  = []
   , sel      = ""
+  , default  = v
   , loading  = False
   }
 
@@ -174,22 +212,26 @@ update cfg msg model =
 
     Input s ->
       if String.trim s == ""
-      then mod { model | value = s, loading = False, results = [] }
-      else   ( { model | value = s, loading = True,  wait = model.wait + 1 }
-             , Task.perform (always <| cfg.wrap <| Search <| model.wait + 1) (Process.sleep 500)
-             , Nothing )
+      then mod { model | value = s, default = "", loading = False, results = [] }
+      else case cfg.source.source of
+        Endpoint _ _ ->
+          ( { model | value = s, default = "", loading = True,  wait = model.wait + 1 }
+          , Task.perform (always <| cfg.wrap <| Search <| model.wait + 1) (Process.sleep 500)
+          , Nothing )
+        Func f -> mod { model | value = s, default = "", results = f s }
 
     Search i ->
       if model.value == "" || model.wait /= i
       then mod model
-      else ( model
-           , cfg.source.endpoint model.value (cfg.wrap << Results model.value)
-           , Nothing )
+      else case cfg.source.source of
+        Endpoint e _ -> (model, e model.value (cfg.wrap << Results model.value), Nothing)
+        Func _ -> mod model
 
     Results s r -> mod <|
-      if s == model.value
-      then { model | loading = False, results = cfg.source.decode r |> Maybe.withDefault [] }
-      else model -- Discard stale results
+      if s /= model.value then model -- Discard stale results
+      else case cfg.source.source of
+        Endpoint _ d -> { model | loading = False, results = d r |> Maybe.withDefault [] }
+        Func _ -> model
 
 
 view : Config m a -> Model a -> List (Attribute m) -> Html m
@@ -207,7 +249,7 @@ view cfg model attrs =
             ) <| JD.field "key" JD.string
         ] ++ attrs
 
-    visible = model.visible && model.value /= "" && not (model.loading && List.isEmpty model.results)
+    visible = model.visible && model.value /= model.default && not (model.loading && List.isEmpty model.results)
 
     msg = [("",
         if List.isEmpty model.results

@@ -51,8 +51,9 @@ view model =
         [ inputCheck "" model.locked Locked
         , text " Locked" ]
       , br [] []
-      , text "Note: edit summary of the last edit should indicate the reason for the deletion."
-      , br [] []
+      , if model.hidden
+        then span [] [ text "Note: edit summary of the last edit should indicate the reason for the deletion.", br [] [] ]
+        else text ""
       ]
   in fieldset [] <|
     (if model.authmod then lockhid else [])

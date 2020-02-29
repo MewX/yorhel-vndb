@@ -12,9 +12,9 @@ our @EXPORT = ('releaseExtLinks');
 
 
 TUWF::register(
-  qr{(v)([1-9]\d*)/add}            => \&edit,
+  qr{old/(v)([1-9]\d*)/add}        => \&edit,
   qr{r}                            => \&browse,
-  qr{r(?:([1-9]\d*)(?:\.([1-9]\d*))?/(edit|copy))}
+  qr{old/r(?:([1-9]\d*)(?:\.([1-9]\d*))?/(edit|copy))}
     => \&edit,
   qr{r/engines}                    => \&engines,
   qr{xml/releases.xml}             => \&relxml,
@@ -196,7 +196,7 @@ sub edit {
 sub _form {
   my($self, $r, $v, $frm, $copy) = @_;
 
-  $self->htmlForm({ frm => $frm, action => $r ? "/r$r->{id}/".($copy ? 'copy' : 'edit') : "/v$v->{id}/add", editsum => 1 },
+  $self->htmlForm({ frm => $frm, action => $r ? "/old/r$r->{id}/".($copy ? 'copy' : 'edit') : "/old/v$v->{id}/add", editsum => 1 },
   rel_geninfo => [ 'General info',
     [ select => short => 'type',      name => 'Type',
       options => [ map [ $_, $RELEASE_TYPE{$_} ], keys %RELEASE_TYPE ] ],

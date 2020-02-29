@@ -12,6 +12,8 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Date
+import Lib.Html exposing (..)
+import Gen.Types as GT
 
 
 type alias RDate = Int
@@ -66,3 +68,26 @@ display today d =
   let fmt = expand d |> format
       future = d > (fromDate today |> compact)
   in if future then b [ class "future" ] [ text fmt ] else text fmt
+
+
+-- Input widget.
+--
+-- BUG: Changing the month or year fields when day 30-31 is selected but no
+-- longer valid results in an invalid RDate. It also causes the "-day-" option
+-- to be selected (which is good), so I don't expect that many people will try
+-- to submit the form without changing it.
+view : RDate -> Bool -> (RDate -> msg) -> Html msg
+view ro permitUnknown msg =
+  let r = expand ro
+      range from to f = List.range from to |> List.map (\n -> (f n |> normalize |> compact, String.fromInt n))
+      yl = (if permitUnknown then [(0, "Unknown")] else [])
+           ++ [(99999999, "TBA")]
+           ++ List.reverse (range 1980 (GT.curYear + 5) (\n -> {r|y=n}))
+      ml = ({r|m=99} |> normalize |> compact, "- month -") :: range 1 12 (\n -> {r|m=n})
+      maxDay = Date.fromCalendarDate r.y (Date.numberToMonth r.m) 1 |> Date.add Date.Months 1 |> Date.add Date.Days -1 |> Date.day
+      dl = ({r|d=99} |> normalize |> compact, "- day -") :: range 1 maxDay (\n -> {r|d=n})
+  in div []
+    [ inputSelect "" ro msg [ style "width" "100px" ] yl
+    , if r.y == 0 || r.y == 9999 then text "" else inputSelect "" ro msg [ style "width" "90px" ] ml
+    , if r.m == 0 || r.m ==   99 then text "" else inputSelect "" ro msg [ style "width" "90px" ] dl
+    ]

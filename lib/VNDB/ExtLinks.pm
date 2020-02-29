@@ -3,9 +3,10 @@ package VNDB::ExtLinks;
 use v5.26;
 use warnings;
 use VNDB::Config;
+use VNDB::Schema;
 use Exporter 'import';
 
-our @EXPORT = ('enrich_extlinks', 'revision_extlinks');
+our @EXPORT = ('enrich_extlinks', 'revision_extlinks', 'validate_extlinks');
 
 
 # column name in wikidata table => \%info
@@ -54,6 +55,10 @@ our %WIKIDATA = (
 #   fmt2      How to generate a better url
 #             (printf-style string or subroutine, given a hashref of the DB entry and returning a new 'fmt' string)
 #             ("better" meaning proper store section, affiliate link)
+#   regex     Regex to detect a URL and extract the database value (the first non-empty placeholder).
+#             Excludes a leading qr{^https?://(www\.)?} match and is anchored on both sites, see full_regex() below.
+#             (A valid DB value must survive a 'fmt' -> 'regex' round trip)
+#             (Only set for links that should be autodetected in the edit form)
 our %LINKS = (
     v => {
         l_renai    => { label => 'Renai.us',         fmt => 'https://renai.us/game/%s' },
@@ -64,26 +69,62 @@ our %LINKS = (
     },
     r => {
         website    => { label => 'Official website', fmt => '%s' },
-        l_egs      => { label => 'ErogameScape',     fmt => 'https://erogamescape.dyndns.org/~ap2/ero/toukei_kaiseki/game.php?game=%d' },
-        l_erotrail => { label => 'ErogeTrailers',    fmt => 'http://erogetrailers.com/soft/%d' },
-        l_steam    => { label => 'Steam',            fmt => 'https://store.steampowered.com/app/%d/' },
-        l_dlsite   => { label => 'DLsite (jpn)',     fmt => 'https://www.dlsite.com/home/work/=/product_id/%s.html'
-                      , fmt2 => sub { sprintf config->{dlsite_url}, shift->{l_dlsite_shop}||'home' } },
-        l_dlsiteen => { label => 'DLsite (eng)',     fmt => 'https://www.dlsite.com/home/eng/=/product_id/%s.html'
-                      , fmt2 => sub { sprintf config->{dlsite_url}, shift->{l_dlsiteen_shop}||'eng' } },
-        l_gog      => { label => 'GOG',              fmt => 'https://www.gog.com/game/%s' },
-        l_itch     => { label => 'Itch.io',          fmt => 'https://%s' },
-        l_denpa    => { label => 'Denpasoft',        fmt => 'https://denpasoft.com/products/%s', fmt2 => config->{denpa_url} },
-        l_jlist    => { label => 'J-List',           fmt => 'https://www.jlist.com/%s', fmt2 => sub { config->{ shift->{l_jlist_jbox} ? 'jbox_url' : 'jlist_url' } } },
-        l_jastusa  => { label => 'JAST USA',         fmt => 'https://jastusa.com/%s' },
-        l_gyutto   => { label => 'Gyutto',           fmt => 'https://gyutto.com/i/item%d' },
-        l_digiket  => { label => 'Digiket',          fmt => 'https://www.digiket.com/work/show/_data/ID=ITM%07d/' },
-        l_melon    => { label => 'Melonbooks',       fmt => 'https://www.melonbooks.com/index.php?main_page=product_info&products_id=IT%010d' },
-        l_mg       => { label => 'MangaGamer',       fmt => 'https://www.mangagamer.com/r18/detail.php?product_code=%d'
-                      , fmt2 => sub { config->{ !defined($_[0]{l_mg_r18}) || $_[0]{l_mg_r18} ? 'mg_r18_url' : 'mg_main_url' } } },
-        l_getchu   => { label => 'Getchu',           fmt => 'http://www.getchu.com/soft.phtml?id=%d' },
-        l_getchudl => { label => 'DL.Getchu',        fmt => 'http://dl.getchu.com/i/item%d' },
-        l_dmm      => { label => 'DMM',              fmt => 'https://%s' },
+        l_egs      => { label => 'ErogameScape'
+                      , fmt   => 'https://erogamescape.dyndns.org/~ap2/ero/toukei_kaiseki/game.php?game=%d'
+                      , regex => qr{erogamescape\.dyndns\.org/~ap2/ero/toukei_kaiseki/game\.php\?(?:.*&)?game=([0-9]+)(?:&.*)?} },
+        l_erotrail => { label => 'ErogeTrailers'
+                      , fmt   => 'http://erogetrailers.com/soft/%d'
+                      , regex => qr{erogetrailers\.com/soft/([0-9]+)} },
+        l_steam    => { label => 'Steam'
+                      , fmt   => 'https://store.steampowered.com/app/%d/'
+                      , regex => qr{(?:store\.steampowered\.com/app/([0-9]+)(?:/.*)?|steamcommunity\.com/(?:app|games)/([0-9]+)(?:/.*)?|steamdb\.info/app/([0-9]+)(?:/.*)?)} },
+        l_dlsite   => { label => 'DLsite (jpn)'
+                      , fmt   => 'https://www.dlsite.com/home/work/=/product_id/%s.html'
+                      , fmt2  => sub { sprintf config->{dlsite_url}, shift->{l_dlsite_shop}||'home' }
+                      , regex => qr{dlsite\.com/.*/product_id/([VR]J[0-9]{6}).*} },
+        l_dlsiteen => { label => 'DLsite (eng)'
+                      , fmt   => 'https://www.dlsite.com/home/eng/=/product_id/%s.html'
+                      , fmt2  => sub { sprintf config->{dlsite_url}, shift->{l_dlsiteen_shop}||'eng' }
+                      , regex => qr{dlsite\.com/.*/product_id/([VR]E[0-9]{6}).*} },
+        l_gog      => { label => 'GOG'
+                      , fmt   => 'https://www.gog.com/game/%s'
+                      , regex => qr{gog\.com/game/([a-z0-9_]+).*} },
+        l_itch     => { label => 'Itch.io'
+                      , fmt   => 'https://%s'
+                      , regex => qr{([a-z0-9_-]+\.itch\.io/[a-z0-9_-]+)} },
+        l_denpa    => { label => 'Denpasoft'
+                      , fmt   => 'https://denpasoft.com/products/%s'
+                      , fmt2  => config->{denpa_url}
+                      , regex => qr{denpasoft\.com/products/([a-z0-9-]+).*} },
+        l_jlist    => { label => 'J-List'
+                      , fmt   => 'https://www.jlist.com/%s'
+                      , fmt2  => sub { config->{ shift->{l_jlist_jbox} ? 'jbox_url' : 'jlist_url' } }
+                      , regex => qr{(?:jlist|jbox)\.com/(?:.+/)?([a-z0-9-]*[0-9][a-z0-9-]*)} },
+        l_jastusa  => { label => 'JAST USA'
+                      , fmt   => 'https://jastusa.com/%s'
+                      , regex => qr{jastusa\.com/([a-z0-9-]+)} },
+        l_gyutto   => { label => 'Gyutto'
+                      , fmt   => 'https://gyutto.com/i/item%d'
+                      , regex => qr{gyutto\.com/i/item([0-9]+).*} },
+        l_digiket  => { label => 'Digiket'
+                      , fmt   => 'https://www.digiket.com/work/show/_data/ID=ITM%07d/'
+                      , regex => qr{digiket\.com/.*ITM([0-9]{7}).*} },
+        l_melon    => { label => 'Melonbooks'
+                      , fmt   => 'https://www.melonbooks.com/index.php?main_page=product_info&products_id=IT%010d'
+                      , regex => qr{melonbooks\.com/.*products_id=IT([0-9]{10}).*} },
+        l_mg       => { label => 'MangaGamer'
+                      , fmt   => 'https://www.mangagamer.com/r18/detail.php?product_code=%d'
+                      , fmt2  => sub { config->{ !defined($_[0]{l_mg_r18}) || $_[0]{l_mg_r18} ? 'mg_r18_url' : 'mg_main_url' } }
+                      , regex => qr{mangagamer\.com/.*product_code=([0-9]+).*} },
+        l_getchu   => { label => 'Getchu'
+                      , fmt   => 'http://www.getchu.com/soft.phtml?id=%d'
+                      , regex => qr{getchu\.com/soft\.html\?id=([0-9]+).*} },
+        l_getchudl => { label => 'DL.Getchu'
+                      , fmt   => 'http://dl.getchu.com/i/item%d'
+                      , regex => qr{dl\.getchu\.com/i/item([0-9]+).*} },
+        l_dmm      => { label => 'DMM'
+                      , fmt   => 'https://%s'
+                      , regex => qr{((?:dlsoft)?\.dmm\.(?:com|co\.jp)/[^\s]+)} },
     },
     s => {
         l_site     => { label => 'Official website', fmt => '%s' },
@@ -234,5 +275,46 @@ sub revision_extlinks {
     } sort keys $LINKS{$type}->%*
 }
 
+
+# Turn a 'regex' value in %LINKS into a full proper regex.
+sub full_regex { qr{^(?:https?://)?(?:www\.)?$_[0](?:\#.*)?$} }
+
+
+# Returns a TUWF::Validate schema for a hash with links for the given entry type.
+# Only includes links for which a 'regex' has been set.
+sub validate_extlinks {
+    my($type) = @_;
+    my($schema) = grep +($_->{dbentry_type}||'') eq $type, values VNDB::Schema::schema->%*;
+
+    +{ type => 'hash', keys => {
+        map {
+            my($f, $p) = ($_, $LINKS{$type}{$_});
+            my($s) = grep $_->{name} eq $f, $schema->{cols}->@*;
+
+            my %val;
+            $val{int} = 1 if $s->{type} =~ /^int/;
+            $val{func} = sub { $val{int} && !$_[0] ? 1 : sprintf($p->{fmt}, $_[0]) =~ full_regex $p->{regex} };
+            ($f, $s->{type} =~ /\[\]/
+                ? { type => 'array', values => \%val }
+                : { required => 0, default => $val{int} ? 0 : '', %val }
+            )
+        } sort grep $LINKS{$type}{$_}{regex}, keys $LINKS{$type}->%*
+    } }
+}
+
+
+# Returns a list of sites for use in VNWeb::Elm:
+# { id => $id, name => $label, fmt => $label, regex => $regex, int => $bool, multi => $bool, default => 0||'""'||'[]' }
+sub extlinks_sites {
+    my($type) = @_;
+    my($schema) = grep +($_->{dbentry_type}||'') eq $type, values VNDB::Schema::schema->%*;
+    map {
+        my($f, $p) = ($_, $LINKS{$type}{$_});
+        my($s) = grep $_->{name} eq $f, $schema->{cols}->@*;
+        +{ id => $_, name => $p->{label}, fmt => $p->{fmt}, regex => full_regex($p->{regex})
+         , int => $s->{type} =~ /^int/?1:0, multi => $s->{type} =~ /\[\]/?1:0
+         , default => $s->{type} =~ /\[\]/ ? '[]' : $s->{type} =~ /^int/ ? 0 : '""' }
+    } sort grep $LINKS{$type}{$_}{regex}, keys $LINKS{$type}->%*
+}
 
 1;
