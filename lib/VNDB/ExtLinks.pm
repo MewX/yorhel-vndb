@@ -109,7 +109,7 @@ our %LINKS = (
         l_digiket  => { label => 'Digiket'
                       , fmt   => 'https://www.digiket.com/work/show/_data/ID=ITM%07d/'
                       , regex => qr{digiket\.com/.*ITM([0-9]{7}).*} },
-        l_melon    => { label => 'Melonbooks'
+        l_melon    => { label => 'Melonbooks.com'
                       , fmt   => 'https://www.melonbooks.com/index.php?main_page=product_info&products_id=IT%010d'
                       , regex => qr{melonbooks\.com/.*products_id=IT([0-9]{10}).*} },
         l_mg       => { label => 'MangaGamer'
