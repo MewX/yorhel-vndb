@@ -120,7 +120,7 @@ sub _eq_deep {
 # ($b), using the normalization defined in $schema. The $schema must validate.
 sub form_changed {
     my($schema, $a, $b) = @_;
-    sub norm {
+    my sub norm {
         my $v = $schema->validate($_[0]);
         if($v->err) {
             require Data::Dumper;
