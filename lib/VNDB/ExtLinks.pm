@@ -118,7 +118,7 @@ our %LINKS = (
                       , regex => qr{mangagamer\.com/.*product_code=([0-9]+).*} },
         l_getchu   => { label => 'Getchu'
                       , fmt   => 'http://www.getchu.com/soft.phtml?id=%d'
-                      , regex => qr{getchu\.com/soft\.html\?id=([0-9]+).*} },
+                      , regex => qr{getchu\.com/soft\.phtml\?id=([0-9]+).*} },
         l_getchudl => { label => 'DL.Getchu'
                       , fmt   => 'http://dl.getchu.com/i/item%d'
                       , regex => qr{dl\.getchu\.com/i/item([0-9]+).*} },
