@@ -140,7 +140,7 @@ viewTag t sel vid mod =
     tr [] <|
     [ td [ class "tc_tagname" ]
       [ a [ href <| "/g"++String.fromInt t.id, style "text-decoration" (if t.applicable then "none" else "line-through") ] [ text t.name ]
-      , if t.applicable then text "" else b [ class "standout" ] [ text " (not applicable)" ]
+      , if t.applicable then text "" else b [ class "grayedout" ] [ text " (not applicable)" ]
       ]
     , td [ class "tc_myvote buts"  ]
       [ a [ href "#", onMouseOver (SetSel t.id (Vote -3)), onMouseOut (SetSel 0 NoSel), onClickD (SetVote t.id -3), classList [("ld", vote <  0)], title "Downvote"    ] []

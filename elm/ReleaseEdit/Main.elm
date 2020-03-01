@@ -320,8 +320,8 @@ viewGen model =
 
   , tr [ class "newpart" ] [ td [] [] ]
   , formField "rtype::Type" [ inputSelect "rtype" model.rtype RType [] GT.releaseTypes ]
-  , formField "minage::Age rating" [ inputSelect "minage" model.minage Minage [] GT.ageRatings, b [ class "standout" ] [ text " (*)" ] ]
-  , formField "" [ label [] [ inputCheck "" model.patch    Patch   , text " This release is a patch to another release.", b [ class "standout" ] [ text " (*)" ] ] ]
+  , formField "minage::Age rating" [ inputSelect "minage" model.minage Minage [] GT.ageRatings, text " (*)" ]
+  , formField "" [ label [] [ inputCheck "" model.patch    Patch   , text " This release is a patch to another release.", text " (*)" ] ]
   , formField "" [ label [] [ inputCheck "" model.freeware Freeware, text " Freeware (i.e. available at no cost)" ] ]
   , if model.patch then text "" else
     formField "" [ label [] [ inputCheck "" model.doujin   Doujin  , text " Doujin (self-published, not by a company)" ] ]
