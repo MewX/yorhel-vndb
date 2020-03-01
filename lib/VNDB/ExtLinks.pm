@@ -124,7 +124,7 @@ our %LINKS = (
                       , regex => qr{dl\.getchu\.com/i/item([0-9]+).*} },
         l_dmm      => { label => 'DMM'
                       , fmt   => 'https://%s'
-                      , regex => qr{((?:dlsoft)?\.dmm\.(?:com|co\.jp)/[^\s]+)} },
+                      , regex => qr{((?:dlsoft\.)?dmm\.(?:com|co\.jp)/[^\s]+)} },
     },
     s => {
         l_site     => { label => 'Official website', fmt => '%s' },
