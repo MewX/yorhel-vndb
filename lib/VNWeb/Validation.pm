@@ -120,12 +120,17 @@ sub _eq_deep {
 # ($b), using the normalization defined in $schema. The $schema must validate.
 sub form_changed {
     my($schema, $a, $b) = @_;
-    my $na = $schema->validate($a)->data;
-    my $nb = $schema->validate($b)->data;
-
-    #warn "a=".JSON::XS->new->pretty->canonical->encode($na);
-    #warn "b=".JSON::XS->new->pretty->canonical->encode($nb);
-    !_eq_deep $na, $nb;
+    sub norm {
+        my $v = $schema->validate($_[0]);
+        if($v->err) {
+            require Data::Dumper;
+            my $e = Data::Dumper->new([$v->err])->Terse(1)->Pair(':')->Indent(0)->Sortkeys(1)->Dump;
+            my $j = JSON::XS->new->pretty->encode($_[0]);
+            warn "form_changed() input did not validate according to the schema.\nError: $e\nInput: $j";
+        }
+        $v->unsafe_data;
+    }
+    !_eq_deep norm($a), norm($b);
 }
 
 
