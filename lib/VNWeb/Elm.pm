@@ -316,7 +316,7 @@ sub write_types {
     $data .= def rlistStatus=> 'List (Int, String)' => list map tuple($_, string $RLIST_STATUS{$_}), keys %RLIST_STATUS;
     $data .= def boardTypes => 'List (String, String)' => list map tuple(string $_, string $BOARD_TYPE{$_}{txt}), keys %BOARD_TYPE;
     $data .= def ratings    => 'List String' => list map string(fmtrating $_), 1..10;
-    $data .= def ageRatings => 'List (Int, String)' => list map tuple($_, string $AGE_RATING{$_}{txt}), keys %AGE_RATING;
+    $data .= def ageRatings => 'List (Int, String)' => list map tuple($_, string $AGE_RATING{$_}{txt}.($AGE_RATING{$_}{ex}?" ($AGE_RATING{$_}{ex})":'')), keys %AGE_RATING;
     $data .= def resolutions=> 'List (String, String)' => list map tuple(string $_, string +($RESOLUTION{$_}{cat}?"$RESOLUTION{$_}{cat} / ":'').$RESOLUTION{$_}{txt}), keys %RESOLUTION;
     $data .= def voiced     => 'List (Int, String)' => list map tuple($_, string $VOICED{$_}{txt}), keys %VOICED;
     $data .= def animated   => 'List (Int, String)' => list map tuple($_, string $ANIMATED{$_}{txt}), keys %ANIMATED;
