@@ -102,7 +102,7 @@ view model = Html.form [ onSubmit Enter ]
       (_, Unrecognized)   -> b [ class "standout" ] [ br [] [], text "Invalid or unrecognized URL." ]
       (_, Duplicate)      -> b [ class "standout" ] [ br [] [], text "URL is already listed." ]
       (_, Add (s, _)) -> span []
-        [ inputButton (if s.multi then "Add" else "Edit") Enter []
+        [ inputButton (if s.multi || List.isEmpty (s.links model.links) then "Add" else "Edit") Enter []
         , br [] [], text <| "URL recognized as: " ++ s.name
         ]
   ]
