@@ -46,6 +46,7 @@ type alias Model a =
   , sites : List (GEL.Site a)
   , input : String
   , rec   : Rec a
+  , lst   : Bool
   }
 
 
@@ -53,6 +54,7 @@ type Msg a
   = Del (Int -> a -> a) Int
   | Input String
   | Enter
+  | Expand
 
 
 new : a -> List (GEL.Site a) -> Model a
@@ -61,6 +63,7 @@ new l s =
   , sites = s
   , input = ""
   , rec   = Unrecognized
+  , lst   = False
   }
 
 
@@ -82,10 +85,14 @@ update msg model =
       case model.rec of
         Add (s, val) -> { model | input = "", rec = Unrecognized, links = s.add val model.links }
         _ -> model
+    Expand  -> { model | lst = not model.lst }
 
 
 view : Model a -> Html (Msg a)
-view model = Html.form [ onSubmit Enter ]
+view model =
+  let msg st s = span [] [ br [] [], b [ class "grayedout" ] [ text ">>> " ], if st then b [ class "standout" ] [ text s ] else text s ]
+  in
+  Html.form [ onSubmit Enter ]
   [ table [] <| List.concatMap (\s ->
       List.indexedMap (\i l ->
         let (pre, val, suf) = splitPrintf s.fmt l
@@ -98,11 +105,22 @@ view model = Html.form [ onSubmit Enter ]
     ) model.sites
   , inputText "" model.input Input [style "width" "500px", placeholder "Add URL..."]
   , case (model.input, model.rec) of
-      ("", _)             -> span []                [ br [] [], text <| "Recognized sites: " ++ String.join ", " (List.map (\s -> s.name) model.sites) ++ "." ]
-      (_, Unrecognized)   -> b [ class "standout" ] [ br [] [], text "Invalid or unrecognized URL." ]
-      (_, Duplicate)      -> b [ class "standout" ] [ br [] [], text "URL is already listed." ]
+      ("", _)             -> text ""
+      (_, Unrecognized)   -> msg True "Invalid or unrecognized URL."
+      (_, Duplicate)      -> msg True "URL is already listed."
       (_, Add (s, _)) -> span []
         [ inputButton (if s.multi || List.isEmpty (s.links model.links) then "Add" else "Edit") Enter []
-        , br [] [], text <| "URL recognized as: " ++ s.name
+        , msg False <| "URL recognized as: " ++ s.name
         ]
+  , div [ style "margin-top" "5px" ]
+    [ span [ onClickD Expand, style "cursor" "pointer" ] [ text <| if model.lst then "▾ " else "▸ ", text "Recognized sites: " ]
+    , if model.lst
+      then table [] <| List.map (\s ->
+        tr []
+           [ td [] [ text s.name ]
+           , td [] <| List.indexedMap (\i l -> if modBy 2 i == 0 then b [ class "grayedout" ] [ text l ] else text l) s.patt
+           ]
+        ) model.sites
+      else text <| String.join ", " (List.map (\s -> s.name) model.sites) ++ "."
+    ]
   ]

@@ -59,6 +59,7 @@ our %WIKIDATA = (
 #             Excludes a leading qr{^https?://(www\.)?} match and is anchored on both sites, see full_regex() below.
 #             (A valid DB value must survive a 'fmt' -> 'regex' round trip)
 #             (Only set for links that should be autodetected in the edit form)
+#   patt      Human-readable URL pattern that corresponds to 'fmt' and 'regex'; Automatically derived from 'fmt' if not set.
 our %LINKS = (
     v => {
         l_renai    => { label => 'Renai.us',         fmt => 'https://renai.us/game/%s' },
@@ -81,17 +82,20 @@ our %LINKS = (
         l_dlsite   => { label => 'DLsite (jpn)'
                       , fmt   => 'https://www.dlsite.com/home/work/=/product_id/%s.html'
                       , fmt2  => sub { sprintf config->{dlsite_url}, shift->{l_dlsite_shop}||'home' }
-                      , regex => qr{dlsite\.com/.*/product_id/([VR]J[0-9]{6}).*} },
+                      , regex => qr{dlsite\.com/.*/product_id/([VR]J[0-9]{6}).*}
+                      , patt  => 'https://www.dlsite.com/<store>/work/=/product_id/<VJ or RJ-code>' },
         l_dlsiteen => { label => 'DLsite (eng)'
                       , fmt   => 'https://www.dlsite.com/home/eng/=/product_id/%s.html'
                       , fmt2  => sub { sprintf config->{dlsite_url}, shift->{l_dlsiteen_shop}||'eng' }
-                      , regex => qr{dlsite\.com/.*/product_id/([VR]E[0-9]{6}).*} },
+                      , regex => qr{dlsite\.com/.*/product_id/([VR]E[0-9]{6}).*}
+                      , patt  => 'https://www.dlsite.com/<store>/work/=/product_id/<VE or RE-code>' },
         l_gog      => { label => 'GOG'
                       , fmt   => 'https://www.gog.com/game/%s'
                       , regex => qr{gog\.com/game/([a-z0-9_]+).*} },
         l_itch     => { label => 'Itch.io'
                       , fmt   => 'https://%s'
-                      , regex => qr{([a-z0-9_-]+\.itch\.io/[a-z0-9_-]+)} },
+                      , regex => qr{([a-z0-9_-]+\.itch\.io/[a-z0-9_-]+)}
+                      , patt  => 'https://<artist>.itch.io/<product>' },
         l_denpa    => { label => 'Denpasoft'
                       , fmt   => 'https://denpasoft.com/products/%s'
                       , fmt2  => config->{denpa_url}
@@ -124,7 +128,8 @@ our %LINKS = (
                       , regex => qr{dl\.getchu\.com/i/item([0-9]+).*} },
         l_dmm      => { label => 'DMM'
                       , fmt   => 'https://%s'
-                      , regex => qr{((?:dlsoft\.)?dmm\.(?:com|co\.jp)/[^\s]+)} },
+                      , regex => qr{((?:dlsoft\.)?dmm\.(?:com|co\.jp)/[^\s]+)}
+                      , patt  => 'https://<any link to dmm.com or dmm.co.jp>' }
     },
     s => {
         l_site     => { label => 'Official website', fmt => '%s' },
@@ -304,16 +309,18 @@ sub validate_extlinks {
 
 
 # Returns a list of sites for use in VNWeb::Elm:
-# { id => $id, name => $label, fmt => $label, regex => $regex, int => $bool, multi => $bool, default => 0||'""'||'[]' }
+# { id => $id, name => $label, fmt => $label, regex => $regex, int => $bool, multi => $bool, default => 0||'""'||'[]', pattern => [..] }
 sub extlinks_sites {
     my($type) = @_;
     my($schema) = grep +($_->{dbentry_type}||'') eq $type, values VNDB::Schema::schema->%*;
     map {
         my($f, $p) = ($_, $LINKS{$type}{$_});
         my($s) = grep $_->{name} eq $f, $schema->{cols}->@*;
-        +{ id => $_, name => $p->{label}, fmt => $p->{fmt}, regex => full_regex($p->{regex})
+        my $patt = $p->{patt} || ($p->{fmt} =~ s/%s/<code>/rg =~ s/%[0-9]*d/<number>/rg);
+        +{ id => $f, name => $p->{label}, fmt => $p->{fmt}, regex => full_regex($p->{regex})
          , int => $s->{type} =~ /^int/?1:0, multi => $s->{type} =~ /\[\]/?1:0
-         , default => $s->{type} =~ /\[\]/ ? '[]' : $s->{type} =~ /^int/ ? 0 : '""' }
+         , default => $s->{type} =~ /\[\]/ ? '[]' : $s->{type} =~ /^int/ ? 0 : '""'
+         , pattern => [ split /(<[^>]+>)/, $patt ] }
     } sort grep $LINKS{$type}{$_}{regex}, keys $LINKS{$type}->%*
 }
 

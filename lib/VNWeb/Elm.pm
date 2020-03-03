@@ -339,6 +339,7 @@ sub write_extlinks {
           , links : a -> List String
           , del   : Int -> a -> a
           , add   : String -> a -> a
+          , patt  : List String
           }
 
         reg r = Maybe.withDefault Regex.never (Regex.fromStringWith {caseInsensitive=True, multiline=False} r)
@@ -364,7 +365,8 @@ sub write_extlinks {
                 'multi = '.($l->{multi}?'True':'False'),
                 'links = '.sprintf('(\m -> l%s%s m.%s)', $l->{int}?'i':'s', $l->{multi}?'m':'', $l->{id}),
                 'del   = (\i m -> { m | '.$l->{id}.' = '.($l->{multi} ? "delidx i m.$l->{id}" : $l->{default}).' })',
-                'add   = (\v m -> { m | '.$l->{id}.' = '.($l->{multi} ? "m.$l->{id} ++ [$addval]" : $addval).' })'
+                'add   = (\v m -> { m | '.$l->{id}.' = '.($l->{multi} ? "m.$l->{id} ++ [$addval]" : $addval).' })',
+                'patt  = ['.join(', ', map string($_), $l->{pattern}->@*).']'
             )."\n  }";
         } @links;
 

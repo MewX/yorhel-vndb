@@ -139,7 +139,7 @@ define fix-js
 	mv $@~ $@
 endef
 
-elm/Gen/.generated: lib/VNWeb/*.pm lib/VNWeb/*/*.pm lib/VNDB/Types.pm lib/VNDB/Config.pm data/conf.pl
+elm/Gen/.generated: lib/VNWeb/*.pm lib/VNWeb/*/*.pm lib/VNDB/Types.pm lib/VNDB/ExtLinks.pm lib/VNDB/Config.pm data/conf.pl
 	util/vndb.pl elmgen
 
 static/f/v2rw.js: ${ELM_FILES} ${JS_FILES} elm/Gen/.generated | static/f
