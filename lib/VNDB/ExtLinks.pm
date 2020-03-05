@@ -72,7 +72,7 @@ our %LINKS = (
         website    => { label => 'Official website', fmt => '%s' },
         l_egs      => { label => 'ErogameScape'
                       , fmt   => 'https://erogamescape.dyndns.org/~ap2/ero/toukei_kaiseki/game.php?game=%d'
-                      , regex => qr{erogamescape\.dyndns\.org/~ap2/ero/toukei_kaiseki/game\.php\?(?:.*&)?game=([0-9]+)(?:&.*)?} },
+                      , regex => qr{erogamescape\.dyndns\.org/~ap2/ero/toukei_kaiseki/(?:before_)?game\.php\?(?:.*&)?game=([0-9]+)(?:&.*)?} },
         l_erotrail => { label => 'ErogeTrailers'
                       , fmt   => 'http://erogetrailers.com/soft/%d'
                       , regex => qr{erogetrailers\.com/soft/([0-9]+)} },
