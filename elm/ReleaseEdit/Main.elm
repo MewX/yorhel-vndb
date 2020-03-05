@@ -327,24 +327,20 @@ viewGen model =
     formField "" [ label [] [ inputCheck "" model.doujin   Doujin  , text " Doujin (self-published, not by a company)" ] ]
   , formField "Release date" [ D.view model.released False Released, text " Leave month or day blank if they are unknown." ]
 
-    -- XXX: Not entirely sure if this is a convenient way of handling lists,
-    -- the number of languages/platforms is a bit too large for comfortable
-    -- selection and it would be nice if a language could be removed directly
-    -- from the view rather than by finding it somewhere in the dropdown list.
   , tr [ class "newpart" ] [ td [ colspan 2 ] [ text "Format" ] ]
   , formField "Language(s)"
     [ div [ class "elm_dd_input", style "width" "500px" ] [ DD.view model.langDd Api.Normal
       (if Set.isEmpty model.lang
        then b [ class "standout" ] [ text "No language selected" ]
        else span [] <| List.intersperse (text ", ") <| List.map (\(l,t) -> span [ style "white-space" "nowrap" ] [ langIcon l, text t ]) <| List.filter (\(l,_) -> Set.member l model.lang) GT.languages)
-      <| \() -> [ ul [] <| List.map (\(l,t) -> li [] [ linkRadio (Set.member l model.lang) (Lang l) [ langIcon l, text t ] ]) GT.languages ]
+      <| \() -> [ ul [ style "columns" "2"] <| List.map (\(l,t) -> li [] [ linkRadio (Set.member l model.lang) (Lang l) [ langIcon l, text t ] ]) GT.languages ]
     ] ]
   , formField "Platform(s)"
     [ div [ class "elm_dd_input", style "width" "500px" ] [ DD.view model.platDd Api.Normal
       (if Set.isEmpty model.plat
        then text "No platform selected"
        else span [] <| List.intersperse (text ", ") <| List.map (\(p,t) -> span [ style "white-space" "nowrap" ] [ platformIcon p, text t ]) <| List.filter (\(p,_) -> Set.member p model.plat) GT.platforms)
-      <| \() -> [ ul [] <| List.map (\(p,t) -> li [] [ linkRadio (Set.member p model.plat) (Plat p) [ platformIcon p, text t ] ]) GT.platforms ]
+      <| \() -> [ ul [ style "columns" "2"] <| List.map (\(p,t) -> li [ classList [("separator", p == "web")] ] [ linkRadio (Set.member p model.plat) (Plat p) [ platformIcon p, text t ] ]) GT.platforms ]
     ] ]
   , formField "Media"
     [ table [] <| List.indexedMap (\i m ->

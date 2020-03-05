@@ -96,6 +96,7 @@ div.warning h2, div.notice h2 { font-size: 13px; font-weight: bold; margin: 0; }
 .elm_dd > div > ul li a.active,
 .elm_dd > div > ul li a:hover  { background: $boxbg$ }
 .elm_dd > div > ul li p { white-space: normal; padding: 3px 5px 3px 3px }
+.elm_dd > div > ul li.separator { margin-bottom: 22px }
 .maintabs .elm_dd > a { box-sizing: border-box; height: 21px; padding: 1px 15px 0 7px; border: 1px solid $border$; border-bottom: none; background-color: $tabbg$; color: $maintext$ }
 .elm_votedd .elm_dd > div > ul li { text-align: left }
 .elm_dd_input .elm_dd > a { background-color: $secbg$; color: $maintext$; border: 1px solid $secborder$; font: 14px "Tahoma", "Arial", sans-serif; padding: 1px 15px 1px 2px; margin: -1px }
