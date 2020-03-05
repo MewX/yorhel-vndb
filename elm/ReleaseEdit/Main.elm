@@ -209,7 +209,6 @@ type Msg
   | MediaType Int String
   | MediaQty Int Int
   | MediaDel Int
-  | MediaAdd
   | Gtin String
   | Catalog String
   | Released D.RDate
@@ -246,10 +245,9 @@ update msg model =
     LangOpen b -> ({ model | langDd   = DD.toggle model.langDd b }, Cmd.none)
     Plat s b   -> ({ model | plat     = if b then Set.insert s model.plat else Set.remove s model.plat }, Cmd.none)
     PlatOpen b -> ({ model | platDd   = DD.toggle model.platDd b }, Cmd.none)
-    MediaType n s -> ({ model | media = modidx n (\m -> { m | medium = s }) model.media }, Cmd.none)
+    MediaType n s -> ({ model | media = if s /= "unk" && n == List.length model.media then model.media ++ [{medium = s, qty = 1}] else modidx n (\m -> { m | medium = s }) model.media }, Cmd.none)
     MediaQty n i  -> ({ model | media = modidx n (\m -> { m | qty    = i }) model.media }, Cmd.none)
     MediaDel i -> ({ model | media = delidx i model.media }, Cmd.none)
-    MediaAdd   -> ({ model | media = model.media ++ [{ medium = "in", qty = 1 }] }, Cmd.none)
     Gtin s     -> ({ model | gtinInput = s, gtin = validateGtin s }, Cmd.none)
     Catalog s  -> ({ model | catalog = s }, Cmd.none)
     Released d -> ({ model | released = d }, Cmd.none)
@@ -344,19 +342,16 @@ viewGen model =
     ] ]
   , formField "Media"
     [ table [] <| List.indexedMap (\i m ->
-        case List.filter (\(s,_,_) -> m.medium == s) GT.media |> List.head of
-          Nothing -> text ""
-          Just (_,t,q) ->
-            tr []
-            [ td [] [ inputSelect "" m.medium (MediaType i) [] <| List.map (\(a,b,_) -> (a,b)) GT.media ]
+        let q = List.filter (\(s,_,_) -> m.medium == s) GT.media |> List.head |> Maybe.map (\(_,_,x) -> x) |> Maybe.withDefault False
+        in tr []
+            [ td [] [ inputSelect "" m.medium (MediaType i) [] <| (if m.medium == "unk" then [("unk", "- Add medium -")] else []) ++ List.map (\(a,b,_) -> (a,b)) GT.media ]
             , td [] [ if q then inputSelect "" m.qty (MediaQty i) [ style "width" "100px" ] <| List.map (\a -> (a,String.fromInt a)) <| List.range 1 20 else text "" ]
-            , td [] [ inputButton "remove" (MediaDel i) [] ]
+            , td [] [ if m.medium == "unk" then text "" else inputButton "remove" (MediaDel i) [] ]
             ]
-      ) model.media
+      ) <| model.media ++ [{medium = "unk", qty = 0}]
     , if hasDuplicates (List.map (\m -> (m.medium, m.qty)) model.media)
       then b [ class "standout" ] [ text "List contains duplicates", br [] [] ]
       else text ""
-    , a [ href "#", onClickD MediaAdd ] [ text "Add medium" ]
     ]
 
   , if model.patch then text "" else
