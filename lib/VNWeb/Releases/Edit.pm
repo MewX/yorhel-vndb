@@ -80,6 +80,12 @@ TUWF::get qr{/$RE{rrev}/(?<action>edit|copy)} => sub {
     enrich_merge vid => 'SELECT id AS vid, title FROM vn WHERE id IN', $e->{vn};
     enrich_merge pid => 'SELECT id AS pid, name FROM producers WHERE id IN', $e->{producers};
 
+    if($copy) {
+        $e->{gtin} = 0;
+        $e->{catalog} = 0;
+        $e->{extlinks} = empty_extlinks 'r';
+    }
+
     my $title = ($copy ? 'Copy ' : 'Edit ').$e->{title};
     framework_ title => $title, type => 'r', dbobj => $e, tab => tuwf->capture('action'),
     sub {
