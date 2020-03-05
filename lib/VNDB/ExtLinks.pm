@@ -82,12 +82,12 @@ our %LINKS = (
         l_dlsite   => { label => 'DLsite (jpn)'
                       , fmt   => 'https://www.dlsite.com/home/work/=/product_id/%s.html'
                       , fmt2  => sub { sprintf config->{dlsite_url}, shift->{l_dlsite_shop}||'home' }
-                      , regex => qr{dlsite\.com/.*/product_id/([VR]J[0-9]{6}).*}
+                      , regex => qr{dlsite\.com/.*/work/=/product_id/([VR]J[0-9]{6}).*}
                       , patt  => 'https://www.dlsite.com/<store>/work/=/product_id/<VJ or RJ-code>' },
         l_dlsiteen => { label => 'DLsite (eng)'
-                      , fmt   => 'https://www.dlsite.com/home/eng/=/product_id/%s.html'
+                      , fmt   => 'https://www.dlsite.com/eng/work/=/product_id/%s.html'
                       , fmt2  => sub { sprintf config->{dlsite_url}, shift->{l_dlsiteen_shop}||'eng' }
-                      , regex => qr{dlsite\.com/.*/product_id/([VR]E[0-9]{6}).*}
+                      , regex => qr{dlsite\.com/.*/work/=/product_id/([VR]E[0-9]{6}).*}
                       , patt  => 'https://www.dlsite.com/<store>/work/=/product_id/<VE or RE-code>' },
         l_gog      => { label => 'GOG'
                       , fmt   => 'https://www.gog.com/game/%s'
