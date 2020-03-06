@@ -82,7 +82,7 @@ TUWF::get qr{/$RE{rrev}/(?<action>edit|copy)} => sub {
 
     if($copy) {
         $e->{gtin} = 0;
-        $e->{catalog} = 0;
+        $e->{catalog} = '';
         $e->{extlinks} = empty_extlinks 'r';
     }
 
