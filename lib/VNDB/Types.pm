@@ -63,13 +63,13 @@ hash LANGUAGE =>
 # The 'unk' platform is used to mean "Unknown" in various places (not in the DB).
 hash PLATFORM =>
     win => 'Windows',
-    dos => 'DOS',
     lin => 'Linux',
     mac => 'Mac OS',
     web => 'Website',
     ios => 'Apple iProduct',
     and => 'Android',
     bdp => 'Blu-ray Player',
+    dos => 'DOS',
     dvd => 'DVD Player',
     drc => 'Dreamcast',
     nes => 'Famicon',
