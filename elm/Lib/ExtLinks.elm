@@ -80,7 +80,7 @@ update msg model =
 
   in case msg of
     Del f i -> { model | links = f i model.links }
-    Input i -> { model | input = i, rec = find i }
+    Input i -> { model | input = i, rec = find (String.trim i) }
     Enter   ->
       case model.rec of
         Add (s, val) -> { model | input = "", rec = Unrecognized, links = s.add val model.links }
