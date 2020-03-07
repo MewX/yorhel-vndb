@@ -109,7 +109,7 @@ our %LINKS = (
                       , regex => qr{jastusa\.com/([a-z0-9-]+)} },
         l_gyutto   => { label => 'Gyutto'
                       , fmt   => 'https://gyutto.com/i/item%d'
-                      , regex => qr{gyutto\.com/i/item([0-9]+).*} },
+                      , regex => qr{gyutto\.com/(?:.+\/)?i/item([0-9]+).*} },
         l_digiket  => { label => 'Digiket'
                       , fmt   => 'https://www.digiket.com/work/show/_data/ID=ITM%07d/'
                       , regex => qr{digiket\.com/.*ITM([0-9]{7}).*} },
@@ -125,7 +125,7 @@ our %LINKS = (
                       , regex => qr{getchu\.com/soft\.phtml\?id=([0-9]+).*} },
         l_getchudl => { label => 'DL.Getchu'
                       , fmt   => 'http://dl.getchu.com/i/item%d'
-                      , regex => qr{dl\.getchu\.com/i/item([0-9]+).*} },
+                      , regex => qr{(?:dl|order)\.getchu\.com/i/item([0-9]+).*} },
         l_dmm      => { label => 'DMM'
                       , fmt   => 'https://%s'
                       , regex => qr{((?:dlsoft\.)?dmm\.(?:com|co\.jp)/[^\s]+)}
