@@ -21,7 +21,7 @@ use VNDB::ExtLinks ();
 use VNWeb::Auth;
 
 our @EXPORT = qw/
-    elm_api
+    elm_api elm_empty
 /;
 
 
@@ -258,6 +258,27 @@ sub elm_api {
 }
 
 
+# Return a new, empty value that conforms to the given schema and can be parsed
+# by the generated Elm/json decoder for the same schema.  It may not actually
+# validate according to the schema (e.g. required fields may be left empty).
+# Values are initialized as follows:
+# - If a 'default' has been set in the schema, that will be used.
+# - Nullable fields are initialized to undef
+# - Integers are initialized to 0
+# - Strings are initialized to ""
+# - Arrays are initialized to []
+sub elm_empty {
+    my($schema) = @_;
+    $schema = $schema->analyze if ref $schema eq 'TUWF::Validate';
+    return $schema->{default} if exists $schema->{default};
+    return undef if !$schema->{required};
+    return [] if $schema->{type} eq 'array';
+    return '' if $schema->{type} eq 'bool' || $schema->{type} eq 'scalar';
+    return 0  if $schema->{type} eq 'num'  || $schema->{type} eq 'int';
+    return +{ map +($_, elm_empty($schema->{keys}{$_})), $schema->{keys} ? $schema->{keys}->%* : () } if $schema->{type} eq 'hash';
+    die "Unable to initialize required value of type '$schema->{type}' without a default";
+}
+
 
 # Generate the Gen.Api module with the Response type and decoder.
 sub write_api {
@@ -369,9 +390,6 @@ sub write_extlinks {
                 'patt  = ['.join(', ', map string($_), $l->{pattern}->@*).']'
             )."\n  }";
         } @links;
-
-        $data .= def $name.'New' => $type =>
-            "\n  { ".join("\n  , ", map sprintf('%-10s = %s', $_->{id}, $_->{default}), @links)."\n  }";
     }
     links release => 'GRE.RecvExtlinks' => VNDB::ExtLinks::extlinks_sites('r');
 

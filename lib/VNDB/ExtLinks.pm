@@ -6,7 +6,7 @@ use VNDB::Config;
 use VNDB::Schema;
 use Exporter 'import';
 
-our @EXPORT = ('enrich_extlinks', 'revision_extlinks', 'validate_extlinks', 'empty_extlinks');
+our @EXPORT = ('enrich_extlinks', 'revision_extlinks', 'validate_extlinks');
 
 
 # column name in wikidata table => \%info
@@ -305,20 +305,6 @@ sub validate_extlinks {
             )
         } sort grep $LINKS{$type}{$_}{regex}, keys $LINKS{$type}->%*
     } }
-}
-
-
-# Generate a struct with empty/default values according to the structure defined in validate_extlinks().
-sub empty_extlinks {
-    my($type) = @_;
-    my($schema) = grep +($_->{dbentry_type}||'') eq $type, values VNDB::Schema::schema->%*;
-    +{
-        map {
-            my($f, $p) = ($_, $LINKS{$type}{$_});
-            my($s) = grep $_->{name} eq $f, $schema->{cols}->@*;
-            ($f, $s->{type} =~ /\[\]/ ? [] : $s->{type} =~ /^int/ ? 0 : '')
-        } grep $LINKS{$type}{$_}{regex}, keys $LINKS{$type}->%*
-    }
 }
 
 

@@ -4,46 +4,46 @@ use VNWeb::Prelude;
 
 
 my $FORM = {
-    id         => { _when => 'cmp in out', required => 0, id => 1 },
-    title      => { _when => 'cmp in out new', maxlength => 250 },
-    original   => { _when => 'cmp in out new', required => 0, default => '', maxlength => 250 },
-    rtype      => { _when => 'cmp in out', enum => \%RELEASE_TYPE },
-    patch      => { _when => 'cmp in out', anybool => 1 },
-    freeware   => { _when => 'cmp in out', anybool => 1 },
-    doujin     => { _when => 'cmp in out', anybool => 1 },
-    lang       => { _when => 'cmp in out', aoh => { lang => { enum => \%LANGUAGE } } },
-    platforms  => { _when => 'cmp in out', aoh => { platform => { enum => \%PLATFORM } } },
-    media      => { _when => 'cmp in out', aoh => {
+    id         => { required => 0, id => 1 },
+    title      => { maxlength => 250 },
+    original   => { required => 0, default => '', maxlength => 250 },
+    rtype      => { default => 'complete', enum => \%RELEASE_TYPE },
+    patch      => { anybool => 1 },
+    freeware   => { anybool => 1 },
+    doujin     => { anybool => 1 },
+    lang       => { aoh => { lang => { enum => \%LANGUAGE } } },
+    platforms  => { aoh => { platform => { enum => \%PLATFORM } } },
+    media      => { aoh => {
         medium    => { enum => \%MEDIUM },
         qty       => { uint => 1, range => [0,20] },
     } },
-    gtin       => { _when => 'cmp in out', gtin => 1 },
-    catalog    => { _when => 'cmp in out', required => 0, default => '', maxlength => 50 },
-    released   => { _when => 'cmp in out', min => 1, rdate => 1 },
-    minage     => { _when => 'cmp in out', int => 1, enum => \%AGE_RATING },
-    uncensored => { _when => 'cmp in out', anybool => 1 },
-    resolution => { _when => 'cmp in out', enum => \%RESOLUTION },
-    voiced     => { _when => 'cmp in out', uint => 1, enum => \%VOICED },
-    ani_story  => { _when => 'cmp in out', uint => 1, enum => \%ANIMATED },
-    ani_ero    => { _when => 'cmp in out', uint => 1, enum => \%ANIMATED },
-    website    => { _when => 'cmp in out', required => 0, default => '', weburl => 1 },
-    engine     => { _when => 'cmp in out', required => 0, default => '', maxlength => 50 },
-    extlinks   => { _when => 'cmp in out', validate_extlinks('r')->%* },
-    notes      => { _when => 'cmp in out', required => 0, default => '', maxlength => 10240 },
-    vn         => { _when => 'cmp in out new', sort_keys => 'vid', aoh => {
+    gtin       => { gtin => 1 },
+    catalog    => { required => 0, default => '', maxlength => 50 },
+    released   => { default => 99999999, min => 1, rdate => 1 },
+    minage     => { int => 1, enum => \%AGE_RATING },
+    uncensored => { anybool => 1 },
+    resolution => { default => 'unknown', enum => \%RESOLUTION },
+    voiced     => { uint => 1, enum => \%VOICED },
+    ani_story  => { uint => 1, enum => \%ANIMATED },
+    ani_ero    => { uint => 1, enum => \%ANIMATED },
+    website    => { required => 0, default => '', weburl => 1 },
+    engine     => { required => 0, default => '', maxlength => 50 },
+    extlinks   => validate_extlinks('r'),
+    notes      => { required => 0, default => '', maxlength => 10240 },
+    vn         => { sort_keys => 'vid', aoh => {
         vid    => { id => 1 },
-        title  => { _when => 'out new' },
+        title  => { _when => 'out' },
     } },
-    producers  => { _when => 'cmp in out', sort_keys => 'pid', aoh => {
+    producers  => { sort_keys => 'pid', aoh => {
         pid       => { id => 1 },
         developer => { anybool => 1 },
         publisher => { anybool => 1 },
         name      => { _when => 'out' },
     } },
-    hidden     => { _when => 'cmp in out', anybool => 1 },
-    locked     => { _when => 'cmp in out', anybool => 1 },
+    hidden     => { anybool => 1 },
+    locked     => { anybool => 1 },
 
-    engines    => { _when => 'out new', aoh => {
+    engines    => { _when => 'out', aoh => {
         engine => {},
         count  => { uint => 1 },
     } },
@@ -53,7 +53,6 @@ my $FORM = {
 
 my $FORM_OUT = form_compile out => $FORM;
 my $FORM_IN  = form_compile in  => $FORM;
-my $FORM_NEW = form_compile new => $FORM;
 my $FORM_CMP = form_compile cmp => $FORM;
 
 sub to_extlinks { $_[0]{extlinks} = { map +($_, delete $_[0]{$_}), grep /^l_/, keys $_[0]->%* } }
@@ -80,17 +79,13 @@ TUWF::get qr{/$RE{rrev}/(?<action>edit|copy)} => sub {
     enrich_merge vid => 'SELECT id AS vid, title FROM vn WHERE id IN', $e->{vn};
     enrich_merge pid => 'SELECT id AS pid, name FROM producers WHERE id IN', $e->{producers};
 
-    if($copy) {
-        $e->{gtin} = 0;
-        $e->{catalog} = '';
-        $e->{extlinks} = empty_extlinks 'r';
-    }
+    $e->@{qw/gtin catalog extlinks/} = elm_empty($FORM_OUT)->@{qw/gtin catalog extlinks/} if $copy;
 
     my $title = ($copy ? 'Copy ' : 'Edit ').$e->{title};
     framework_ title => $title, type => 'r', dbobj => $e, tab => tuwf->capture('action'),
     sub {
         editmsg_ r => $e, $title, $copy;
-        elm_ 'ReleaseEdit.Main' => $FORM_OUT, $copy ? {%$e, id=>undef} : $e;
+        elm_ ReleaseEdit => $FORM_OUT, $copy ? {%$e, id=>undef} : $e;
     };
 };
 
@@ -123,7 +118,8 @@ TUWF::get qr{/$RE{vid}/add}, sub {
             }
         } if @$delrel;
 
-        elm_ 'ReleaseEdit.New' => $FORM_NEW, {
+        elm_ ReleaseEdit => $FORM_OUT, {
+            elm_empty($FORM_OUT)->%*,
             title    => $v->{title},
             original => $v->{original},
             engines  => engines(),
@@ -162,7 +158,7 @@ elm_api ReleaseEdit => $FORM_OUT, $FORM_IN, sub {
 
     my($id,undef,$rev) = db_edit r => $e->{id}, $data;
     elm_Redirect "/r$id.$rev";
-}, New => $FORM_NEW;
+};
 
 
 1;

@@ -1,4 +1,4 @@
-module ReleaseEdit.Main exposing (Model, Msg, main, new, view, update, sub)
+module ReleaseEdit exposing (main)
 
 import Html exposing (..)
 import Html.Events exposing (..)
@@ -113,44 +113,6 @@ init d =
   , notes      = TP.bbcode d.notes
   , editsum    = { authmod = d.authmod, editsum = TP.bbcode d.editsum, locked = d.locked, hidden = d.hidden }
   , id         = d.id
-  }
-
-
-new : GRE.New -> Model
-new d =
-  { state      = Api.Normal
-  , title      = d.title
-  , original   = d.original
-  , rtype      = "complete"
-  , patch      = False
-  , freeware   = False
-  , doujin     = False
-  , lang       = Set.empty
-  , langDd     = DD.init "lang" LangOpen
-  , plat       = Set.empty
-  , platDd     = DD.init "platforms" PlatOpen
-  , media      = []
-  , gtinInput  = formatGtin 0
-  , gtin       = 0
-  , catalog    = ""
-  , released   = 99999999 -- TODO: Would be nice to set this to 'unknown' and force the user to change it
-  , minage     = -1
-  , uncensored = False
-  , resolution = "unknown"
-  , voiced     = 0
-  , ani_story  = 0
-  , ani_ero    = 0
-  , website    = ""
-  , engineConf = engineConf d.engines
-  , engine     = A.init ""
-  , extlinks   = EL.new GEL.releaseNew GEL.releaseSites
-  , vn         = d.vn
-  , vnAdd      = A.init ""
-  , prod       = []
-  , prodAdd    = A.init ""
-  , notes      = TP.bbcode ""
-  , editsum    = Editsum.new
-  , id         = Nothing
   }
 
 
