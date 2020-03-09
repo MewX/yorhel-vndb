@@ -77,13 +77,20 @@ update msg model =
       case List.concatMap (\s -> List.map (match s) (Regex.find s.regex i)) model.sites |> List.head of
         Nothing -> Unrecognized
         Just (s, val) -> if dup s val then Duplicate else Add (s, val)
+    add s val = { model | input = "", rec = Unrecognized, links = s.add val model.links }
 
   in case msg of
     Del f i -> { model | links = f i model.links }
-    Input i -> { model | input = i, rec = find (String.trim i) }
+    Input i ->
+      case find (String.trim i) of
+        Add (s, val) ->
+          if s.multi || List.isEmpty (s.links model.links)
+          then add s val
+          else { model | input = i, rec = Add (s, val) }
+        x ->   { model | input = i, rec = x }
     Enter   ->
       case model.rec of
-        Add (s, val) -> { model | input = "", rec = Unrecognized, links = s.add val model.links }
+        Add (s, val) -> add s val
         _ -> model
     Expand  -> { model | lst = not model.lst }
 
@@ -105,13 +112,10 @@ view model =
     ) model.sites
   , inputText "" model.input Input [style "width" "500px", placeholder "Add URL..."]
   , case (model.input, model.rec) of
-      ("", _)             -> text ""
-      (_, Unrecognized)   -> msg True "Invalid or unrecognized URL."
-      (_, Duplicate)      -> msg True "URL is already listed."
-      (_, Add (s, _)) -> span []
-        [ inputButton (if s.multi || List.isEmpty (s.links model.links) then "Add" else "Edit") Enter []
-        , msg False <| "URL recognized as: " ++ s.name
-        ]
+      ("", _)           -> text ""
+      (_, Unrecognized) -> msg True "Invalid or unrecognized URL."
+      (_, Duplicate)    -> msg True "URL is already listed."
+      (_, Add (s, _))   -> span [] [ inputButton "Edit" Enter [], msg False <| "URL recognized as: " ++ s.name ]
   , div [ style "margin-top" "5px" ]
     [ span [ onClickD Expand, style "cursor" "pointer" ] [ text <| if model.lst then "▾ " else "▸ ", text "Recognized sites: " ]
     , if model.lst
