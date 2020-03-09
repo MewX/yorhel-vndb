@@ -13,8 +13,8 @@ my $FORM = {
         inuse     => { anybool => 1, _when => 'out' },
     } },
     desc       => { required => 0, default => '', maxlength => 5000 },
-    gender     => { required => 0, default => 'unknown', enum => [qw[unknown m f]] },
-    lang       => { language => 1 },
+    gender     => { default => 'unknown', enum => [qw[unknown m f]] },
+    lang       => { default => 'ja', language => 1 },
     l_site     => { required => 0, default => '', weburl => 1 },
     l_wikidata => { required => 0, id => 1 },
     l_twitter  => { required => 0, default => '', regex => qr/^\S+$/, maxlength => 16 },
@@ -48,7 +48,7 @@ TUWF::get qr{/$RE{srev}/edit} => sub {
     framework_ title => "Edit $name", type => 's', dbobj => $e, tab => 'edit',
     sub {
         editmsg_ s => $e, "Edit $name";
-        elm_ 'StaffEdit.Main' => $FORM_OUT, $e;
+        elm_ StaffEdit => $FORM_OUT, $e;
     };
 };
 
@@ -58,7 +58,11 @@ TUWF::get qr{/s/new}, sub {
     framework_ title => 'Add staff member',
     sub {
         editmsg_ s => undef, 'Add staff member';
-        elm_ 'StaffEdit.New';
+        elm_ StaffEdit => $FORM_OUT, {
+            elm_empty($FORM_OUT)->%*,
+            alias => [ { aid => -1, name => '', original => '', inuse => 0 } ],
+            aid => -1
+        };
     };
 };
 

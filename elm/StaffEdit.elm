@@ -1,4 +1,4 @@
-module StaffEdit.Main exposing (Model, Msg, main, new, view, update)
+module StaffEdit exposing (main)
 
 import Html exposing (..)
 import Html.Events exposing (..)
@@ -58,25 +58,6 @@ init d =
   , l_anidb     = d.l_anidb
   , l_pixiv     = d.l_pixiv
   , id          = d.id
-  }
-
-
-new : Model
-new =
-  { state       = Api.Normal
-  , editsum     = Editsum.new
-  , alias       = [ { aid = -1, name = "", original = "", inuse = False } ]
-  , aliasDup    = False
-  , aid         = -1
-  , desc        = TP.bbcode ""
-  , gender      = "unknown"
-  , lang        = "ja"
-  , l_site      = ""
-  , l_wikidata  = Nothing
-  , l_twitter   = ""
-  , l_anidb     = Nothing
-  , l_pixiv     = 0
-  , id          = Nothing
   }
 
 
