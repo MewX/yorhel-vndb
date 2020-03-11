@@ -232,6 +232,7 @@ TUWF::get qr{/$RE{crev}} => sub {
     my $max_spoil = max(
         $inst_maxspoil||0,
         (map $_->{spoil}, $c->{traits}->@*),
+        (map $_->{spoil}, $c->{vns}->@*),
         $c->{desc} =~ /\[spoiler\]/i ? 2 : 0, # crude
     );
     # Only display the sexual traits toggle when there are sexual traits within the current spoiler level.
