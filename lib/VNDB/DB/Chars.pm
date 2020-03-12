@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Exporter 'import';
 
-our @EXPORT = qw|dbCharFilters dbCharGet dbCharGetRev dbCharRevisionInsert dbCharImageId|;
+our @EXPORT = qw|dbCharFilters dbCharGet dbCharGetRev dbCharRevisionInsert|;
 
 
 # Character filters shared by dbCharGet and dbVNGet
@@ -191,12 +191,6 @@ sub dbCharRevisionInsert {
     $self->dbExec('DELETE FROM edit_chars_vns');
     $self->dbExec('INSERT INTO edit_chars_vns (vid, rid, spoil, role) VALUES(!l)', $_) for (@{$o->{vns}});
   }
-}
-
-
-# fetches an ID for a new image
-sub dbCharImageId {
-  return shift->dbRow(q|INSERT INTO images (id) VALUES (ROW('ch', nextval('charimg_seq'))::image_id) RETURNING (id).id|)->{id};
 }
 
 

@@ -244,7 +244,7 @@ sub _uploadimage {
   $im->Set(quality => 90);
 
   # Get ID and save
-  my $imgid = $self->dbVNImageId;
+  my $imgid = $self->dbImageAdd(cv => $nw, $nh);
   my $fn = imgpath(cv => $imgid);
   $im->Write($fn);
   chmod 0666, $fn;
@@ -517,7 +517,7 @@ sub scrxml {
     $im->Set(quality => 90);
     ($ow, $oh) = ($im->Get('width'), $im->Get('height'));
 
-    $id = $self->dbScreenshotAdd($ow, $oh);
+    $id = $self->dbImageAdd(sf => $ow, $oh);
     my $fn = imgpath(sf => $id);
     $im->Write($fn);
     chmod 0666, $fn;

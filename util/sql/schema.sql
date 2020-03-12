@@ -207,8 +207,8 @@ CREATE TABLE docs_hist (
 -- images
 CREATE TABLE images (
   id       image_id NOT NULL PRIMARY KEY, -- [pub]
-  width    smallint, -- [pub] dimensions are only set for the 'sf' type (for now)
-  height   smallint -- [pub]
+  width    smallint NOT NULL, -- [pub]
+  height   smallint NOT NULL -- [pub]
 );
 
 -- login_throttle

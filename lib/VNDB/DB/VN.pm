@@ -8,7 +8,7 @@ use POSIX 'strftime';
 use Exporter 'import';
 use VNDB::Func 'normalize_query', 'gtintype';
 
-our @EXPORT = qw|dbVNGet dbVNGetRev dbVNRevisionInsert dbVNImageId dbScreenshotAdd dbScreenshotGet dbScreenshotRandom|;
+our @EXPORT = qw|dbVNGet dbVNGetRev dbVNRevisionInsert dbScreenshotGet dbScreenshotRandom|;
 
 
 # Options: id, char, search, gtin, length, lang, olang, plat, tag_inc, tag_exc, tagspoil,
@@ -315,19 +315,6 @@ sub dbVNRevisionInsert {
     my @val = map +($_->{aid}, $_->{cid}, $_->{note}), @{$o->{seiyuu}};
     $self->dbExec("INSERT INTO edit_vn_seiyuu (aid, cid, note) VALUES $q", @val) if @val;
   }
-}
-
-
-# fetches an ID for a new image
-sub dbVNImageId {
-  return shift->dbRow(q|INSERT INTO images (id) VALUES (ROW('cv', nextval('covers_seq'))::image_id) RETURNING (id).id|)->{id};
-}
-
-
-# insert a new screenshot and return it's ID
-sub dbScreenshotAdd {
-  my($s, $width, $height) = @_;
-  return $s->dbRow(q|INSERT INTO images (id, width, height) VALUES (ROW('sf', nextval('screenshots_seq'))::image_id, ?, ?) RETURNING (id).id|, $width, $height)->{id};
 }
 
 
