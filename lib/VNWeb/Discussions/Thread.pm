@@ -169,6 +169,7 @@ TUWF::get qr{/$RE{tid}(?:/$RE{num})?}, sub {
           WHERE tp.tid =', \$id, '
           ORDER BY tp.num'
     );
+    return tuwf->resNotFound if !@$posts;
 
     my $poll_options = $t->{poll_question} && tuwf->dbAlli(
         'SELECT tpo.id, tpo.option, count(u.id) as votes, tpm.optid IS NOT NULL as my
