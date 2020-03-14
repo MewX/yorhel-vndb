@@ -239,7 +239,8 @@ view cfg model attrs =
   let
     input =
       inputText cfg.id model.value (cfg.wrap << Input) <|
-        [ onFocus <| cfg.wrap Focus
+        [ autocomplete False
+        , onFocus <| cfg.wrap Focus
         , onBlur  <| cfg.wrap Blur
         , style "width" "270px"
         , custom "keydown" <| JD.map (\c ->
