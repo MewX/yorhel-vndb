@@ -6,7 +6,7 @@ use warnings;
 use Exporter 'import';
 
 our @EXPORT = qw|
-  dbStats dbItemEdit dbRevisionGet dbWikidata
+  dbStats dbItemEdit dbRevisionGet dbWikidata dbImageAdd
 |;
 
 
@@ -112,6 +112,14 @@ sub dbRevisionGet {
 # Returns a row from wikidata
 sub dbWikidata {
   return $_[0]->dbRow('SELECT * FROM wikidata WHERE id = ?', $_[1]);
+}
+
+
+# insert a new image and return its ID
+sub dbImageAdd {
+  my($s, $type, $width, $height) = @_;
+  my $seq = {qw/sf screenshots_seq cv covers_seq ch charimg_seq/}->{$type}||die;
+  return $s->dbRow(q|INSERT INTO images (id, width, height) VALUES (ROW(?, nextval(?))::image_id, ?, ?) RETURNING (id).id|, $type, $seq, $width, $height)->{id};
 }
 
 

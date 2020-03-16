@@ -442,27 +442,6 @@ p => [ 0, 0, sub {
   };
 }],
 
-scr => [ 0, 0, sub {
-  my($nick, $chan, $q) = @_;
-  return $irc->send_msg(PRIVMSG => $chan,
-     q|Sorry, I failed to comprehend which screenshot you'd like me to lookup for you,|
-    .q| please understand that Yorhel was not willing to supply me with mind reading capabilities.|)
-    if !$q || $q !~ /([0-9]+)\.jpg/;
-  $q = $1;
-  pg_cmd q{
-    SELECT 'v'::text AS type, v.id, v.title
-      FROM changes c
-      JOIN vn_screenshots_hist vsh ON vsh.chid = c.id
-      JOIN vn v ON v.id = c.itemid
-     WHERE vsh.scr = $1 LIMIT 1
-  }, [ $q ], sub {
-    my $res = shift;
-    return if pg_expect $res, 1;
-    return $irc->send_msg(PRIVMSG => $chan, "Couldn't find a VN with that screenshot ID.") if !$res->nRows;
-    formatid([$res->rowsAsHashes()], $chan, 0);
-  };
-}],
-
 die => [ 1, 1, sub {
   kill 'TERM', 0;
 }],

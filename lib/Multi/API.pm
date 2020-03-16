@@ -417,7 +417,7 @@ my %GET_VN = (
       },
     },
     details => {
-      select => 'v.image, v.img_nsfw, v.alias AS aliases, v.length, v.desc AS description, v.l_wp, v.l_encubed, v.l_renai, l_wikidata',
+      select => '(v.image).id as image, v.img_nsfw, v.alias AS aliases, v.length, v.desc AS description, v.l_wp, v.l_encubed, v.l_renai, l_wikidata',
       proc   => sub {
         $_[0]{aliases}     ||= undef;
         $_[0]{length}      *= 1;
@@ -490,8 +490,8 @@ my %GET_VN = (
       ]],
     },
     screens => {
-      fetch => [[ 'id', 'SELECT vs.id AS vid, vs.scr AS image, vs.rid, vs.nsfw, s.width, s.height
-                      FROM vn_screenshots vs JOIN screenshots s ON s.id = vs.scr WHERE vs.id IN(%s)',
+      fetch => [[ 'id', 'SELECT vs.id AS vid, (vs.scr).id AS image, vs.rid, vs.nsfw, s.width, s.height
+                      FROM vn_screenshots vs JOIN images s ON s.id = vs.scr WHERE vs.id IN(%s)',
         sub { my($r, $n) = @_;
           for my $i (@$r) {
             $i->{screens} = [ grep $i->{id} == $_->{vid}, @$n ];
@@ -817,7 +817,7 @@ my %GET_CHARACTER = (
       },
     },
     details => {
-      select => 'c.alias AS aliases, c.image, c."desc" AS description',
+      select => 'c.alias AS aliases, (c.image).id as image, c."desc" AS description',
       proc => sub {
         $_[0]{aliases}     ||= undef;
         $_[0]{image}       = $_[0]{image} ? sprintf '%s/ch/%02d/%d.jpg', config->{url_static}, $_[0]{image}%100, $_[0]{image} : undef;

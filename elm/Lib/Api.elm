@@ -47,6 +47,7 @@ showResponse res =
     TagResult _                     -> unexp
     VNResult _                      -> unexp
     ProducerResult _                -> unexp
+    ImageResult _                   -> unexp
 
 
 expectResponse : (Response -> msg) -> Http.Expect msg

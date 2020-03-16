@@ -426,7 +426,7 @@ sub _uploadimage {
   $im->Set(magick => 'JPEG', quality => 90);
 
   # Get ID and save
-  my $imgid = $self->dbCharImageId;
+  my $imgid = $self->dbImageAdd(ch => $nw, $nh);
   my $fn = imgpath(ch => $imgid);
   $im->Write($fn);
   chmod 0666, $fn;

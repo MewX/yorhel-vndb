@@ -74,6 +74,9 @@ my %dailies = (
   # takes about 4 seconds, OK
   vnstats => 'SELECT update_vnvotestats()',
 
+  # takes a few seconds, need more data and measurements. This query /should/ not be necessary.
+  imagecache => 'SELECT update_images_cache(NULL)',
+
   # should be pretty fast
   cleangraphs => q|
     DELETE FROM relgraphs vg

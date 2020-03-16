@@ -24,9 +24,17 @@ my %dir = (cv => \%cv, ch => \%ch, sf => \%scr, st => \%scr);
 
 sub cleandb {
   my $cnt = $db->do(q{
-    DELETE FROM screenshots s
-     WHERE NOT EXISTS(SELECT 1 FROM vn_screenshots_hist WHERE scr = s.id)
-       AND NOT EXISTS(SELECT 1 FROM vn_screenshots WHERE scr = s.id)
+    DELETE FROM images WHERE id IN(
+      SELECT id FROM images EXCEPT
+      SELECT * FROM (
+              SELECT scr   FROM vn_screenshots
+        UNION SELECT scr   FROM vn_screenshots_hist
+        UNION SELECT image FROM vn           WHERE image IS NOT NULL
+        UNION SELECT image FROM vn_hist      WHERE image IS NOT NULL
+        UNION SELECT image FROM chars        WHERE image IS NOT NULL
+        UNION SELECT image FROM chars_hist   WHERE image IS NOT NULL
+      ) x
+    )
   });
   print "# Deleted unreferenced screenshots: $cnt\n";
 }
@@ -50,17 +58,16 @@ sub addtxtsql {
   print "# References in $name... $count\n";
 }
 
-sub addnumsql {
-  my($name, $tbl, $query) = @_;
-  $count = 0;
-  my $st = $db->prepare($query);
+sub addimagessql {
+  my $st = $db->prepare('SELECT (id).itype, (id).id FROM images');
   $st->execute();
+  $count = 0;
   while((my $num = $st->fetch())) {
-    $tbl->{$num->[0]} = 1;
+    $dir{$num->[0]}{$num->[1]} = 1;
     $count++;
   }
-  print "# Items in $name... $count\n";
-}
+  print "# Items in `images'... $count\n";
+};
 
 sub findunused {
   my $size = 0;
@@ -100,7 +107,5 @@ addtxtsql 'Tag descriptions',       'SELECT description FROM tags';
 addtxtsql 'Trait descriptions',     'SELECT description FROM traits';
 addtxtsql 'Change summaries',       'SELECT comments FROM changes';
 addtxtsql 'Posts',                  'SELECT msg FROM threads_posts';
-addnumsql 'Screenshots', \%scr,     'SELECT id FROM screenshots';
-addnumsql 'VN images', \%cv,        'SELECT image FROM vn    UNION ALL SELECT image from vn_hist';
-addnumsql 'Character images', \%ch, 'SELECT image FROM chars UNION ALL SELECT image from chars_hist';
+addimagessql;
 findunused;
