@@ -56,7 +56,7 @@ our %WIKIDATA = (
 #             (printf-style string or subroutine, given a hashref of the DB entry and returning a new 'fmt' string)
 #             ("better" meaning proper store section, affiliate link)
 #   regex     Regex to detect a URL and extract the database value (the first non-empty placeholder).
-#             Excludes a leading qr{^https?://(www\.)?} match and is anchored on both sites, see full_regex() below.
+#             Excludes a leading qr{^https?://} match and is anchored on both sites, see full_regex() below.
 #             (A valid DB value must survive a 'fmt' -> 'regex' round trip)
 #             (Only set for links that should be autodetected in the edit form)
 #   patt      Human-readable URL pattern that corresponds to 'fmt' and 'regex'; Automatically derived from 'fmt' if not set.
@@ -75,23 +75,23 @@ our %LINKS = (
                       , regex => qr{erogamescape\.dyndns\.org/~ap2/ero/toukei_kaiseki/(?:before_)?game\.php\?(?:.*&)?game=([0-9]+)(?:&.*)?} },
         l_erotrail => { label => 'ErogeTrailers'
                       , fmt   => 'http://erogetrailers.com/soft/%d'
-                      , regex => qr{erogetrailers\.com/soft/([0-9]+)} },
+                      , regex => qr{(?:www\.)?erogetrailers\.com/soft/([0-9]+)} },
         l_steam    => { label => 'Steam'
                       , fmt   => 'https://store.steampowered.com/app/%d/'
-                      , regex => qr{(?:store\.steampowered\.com/app/([0-9]+)(?:/.*)?|steamcommunity\.com/(?:app|games)/([0-9]+)(?:/.*)?|steamdb\.info/app/([0-9]+)(?:/.*)?)} },
+                      , regex => qr{(?:www\.)?(?:store\.steampowered\.com/app/([0-9]+)(?:/.*)?|steamcommunity\.com/(?:app|games)/([0-9]+)(?:/.*)?|steamdb\.info/app/([0-9]+)(?:/.*)?)} },
         l_dlsite   => { label => 'DLsite (jpn)'
                       , fmt   => 'https://www.dlsite.com/home/work/=/product_id/%s.html'
                       , fmt2  => sub { sprintf config->{dlsite_url}, shift->{l_dlsite_shop}||'home' }
-                      , regex => qr{dlsite\.com/.*/work/=/product_id/([VR]J[0-9]{6}).*}
+                      , regex => qr{(?:www\.)?dlsite\.com/.*/work/=/product_id/([VR]J[0-9]{6}).*}
                       , patt  => 'https://www.dlsite.com/<store>/work/=/product_id/<VJ or RJ-code>' },
         l_dlsiteen => { label => 'DLsite (eng)'
                       , fmt   => 'https://www.dlsite.com/eng/work/=/product_id/%s.html'
                       , fmt2  => sub { sprintf config->{dlsite_url}, shift->{l_dlsiteen_shop}||'eng' }
-                      , regex => qr{dlsite\.com/.*/work/=/product_id/([VR]E[0-9]{6}).*}
+                      , regex => qr{(?:www\.)?dlsite\.com/.*/work/=/product_id/([VR]E[0-9]{6}).*}
                       , patt  => 'https://www.dlsite.com/<store>/work/=/product_id/<VE or RE-code>' },
         l_gog      => { label => 'GOG'
                       , fmt   => 'https://www.gog.com/game/%s'
-                      , regex => qr{gog\.com/game/([a-z0-9_]+).*} },
+                      , regex => qr{(?:www\.)?gog\.com/game/([a-z0-9_]+).*} },
         l_itch     => { label => 'Itch.io'
                       , fmt   => 'https://%s'
                       , regex => qr{([a-z0-9_-]+\.itch\.io/[a-z0-9_-]+)}
@@ -99,36 +99,36 @@ our %LINKS = (
         l_denpa    => { label => 'Denpasoft'
                       , fmt   => 'https://denpasoft.com/products/%s'
                       , fmt2  => config->{denpa_url}
-                      , regex => qr{denpasoft\.com/products/([a-z0-9-]+).*} },
+                      , regex => qr{(?:www\.)?denpasoft\.com/products/([a-z0-9-]+).*} },
         l_jlist    => { label => 'J-List'
                       , fmt   => 'https://www.jlist.com/%s'
                       , fmt2  => sub { config->{ shift->{l_jlist_jbox} ? 'jbox_url' : 'jlist_url' } }
-                      , regex => qr{(?:jlist|jbox)\.com/(?:.+/)?([a-z0-9-]*[0-9][a-z0-9-]*)} },
+                      , regex => qr{(?:www\.)?(?:jlist|jbox)\.com/(?:.+/)?([a-z0-9-]*[0-9][a-z0-9-]*)} },
         l_jastusa  => { label => 'JAST USA'
                       , fmt   => 'https://jastusa.com/%s'
-                      , regex => qr{jastusa\.com/([a-z0-9-]+)} },
+                      , regex => qr{(?:www\.)?jastusa\.com/([a-z0-9-]+)} },
         l_gyutto   => { label => 'Gyutto'
                       , fmt   => 'https://gyutto.com/i/item%d'
-                      , regex => qr{gyutto\.com/(?:.+\/)?i/item([0-9]+).*} },
+                      , regex => qr{(?:www\.)?gyutto\.com/(?:.+\/)?i/item([0-9]+).*} },
         l_digiket  => { label => 'Digiket'
                       , fmt   => 'https://www.digiket.com/work/show/_data/ID=ITM%07d/'
-                      , regex => qr{digiket\.com/.*ITM([0-9]{7}).*} },
+                      , regex => qr{(?:www\.)?digiket\.com/.*ITM([0-9]{7}).*} },
         l_melon    => { label => 'Melonbooks.com'
                       , fmt   => 'https://www.melonbooks.com/index.php?main_page=product_info&products_id=IT%010d'
-                      , regex => qr{melonbooks\.com/.*products_id=IT([0-9]{10}).*} },
+                      , regex => qr{(?:www\.)?melonbooks\.com/.*products_id=IT([0-9]{10}).*} },
         l_mg       => { label => 'MangaGamer'
                       , fmt   => 'https://www.mangagamer.com/r18/detail.php?product_code=%d'
                       , fmt2  => sub { config->{ !defined($_[0]{l_mg_r18}) || $_[0]{l_mg_r18} ? 'mg_r18_url' : 'mg_main_url' } }
-                      , regex => qr{mangagamer\.com/.*product_code=([0-9]+).*} },
+                      , regex => qr{(?:www\.)?mangagamer\.com/.*product_code=([0-9]+).*} },
         l_getchu   => { label => 'Getchu'
                       , fmt   => 'http://www.getchu.com/soft.phtml?id=%d'
-                      , regex => qr{getchu\.com/soft\.phtml\?id=([0-9]+).*} },
+                      , regex => qr{(?:www\.)?getchu\.com/soft\.phtml\?id=([0-9]+).*} },
         l_getchudl => { label => 'DL.Getchu'
                       , fmt   => 'http://dl.getchu.com/i/item%d'
                       , regex => qr{(?:dl|order)\.getchu\.com/i/item([0-9]+).*} },
         l_dmm      => { label => 'DMM'
                       , fmt   => 'https://%s'
-                      , regex => qr{((?:dlsoft\.)?dmm\.(?:com|co\.jp)/[^\s]+)}
+                      , regex => qr{((?:www\.|dlsoft\.)?dmm\.(?:com|co\.jp)/[^\s]+)}
                       , patt  => 'https://<any link to dmm.com or dmm.co.jp>' }
     },
     s => {
@@ -282,7 +282,7 @@ sub revision_extlinks {
 
 
 # Turn a 'regex' value in %LINKS into a full proper regex.
-sub full_regex { qr{^(?:https?://)?(?:www\.)?$_[0](?:\#.*)?$} }
+sub full_regex { qr{^(?:https?://)?$_[0](?:\#.*)?$} }
 
 
 # Returns a TUWF::Validate schema for a hash with links for the given entry type.
