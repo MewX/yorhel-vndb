@@ -1077,17 +1077,26 @@ p.filselect i { font-style: normal }
 
 /****** Image flagging *******/
 
+/* divs:
+ *   1: header
+ *   2: image
+ *   3: metadata
+ *   4: vote box */
 .imageflag { width: 810px; margin: auto }
-.imageflag div:nth-child(1) { display: flex; justify-content: space-between; height: 20px }
-.imageflag div:nth-child(1) span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0px 20px }
-.imageflag div:nth-child(2) { border: 1px solid $border$; padding: 5px; display: flex; justify-content: center; align-items: center; background: #000 }
-.imageflag div:nth-child(2) a { border: none; display: inline-block; width: 100%; height: 100%; background-repeat: no-repeat; background-position: center }
-.imageflag div:nth-child(3) { display: flex; justify-content: space-between; }
-.imageflag ul.imgvoteopt { display: flex; align-items: center; list-style-type: none; margin: 5px 0 }
-.imageflag ul.imgvoteopt span { font-weight: bold; padding-right: 5px }
-.imageflag ul.imgvoteopt li:nth-child(4) { flex-grow: 1 }
-.imageflag ul.imgvoteopt li     label { display: inline-block; border: 1px solid $secborder$; padding: 4px 5px; min-width: 90px; white-space: nowrap; margin: 2px }
-.imageflag ul.imgvoteopt li.sel label { background-color: $secbg$ }
+.imageflag > div:nth-child(1) { display: flex; justify-content: space-between; height: 20px }
+.imageflag > div:nth-child(1) span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0px 20px }
+.imageflag > div:nth-child(2) { border: 1px solid $border$; padding: 5px; display: flex; justify-content: center; align-items: center; background: #000 }
+.imageflag > div:nth-child(2) a { border: none; display: inline-block; width: 100%; height: 100%; background-repeat: no-repeat; background-position: center }
+.imageflag > div:nth-child(3) { display: flex; justify-content: space-between; }
+.imageflag > div:nth-child(4) { display: flex }
+.imageflag > div:nth-child(4) > div { flex-grow: 1 }
+.imageflag > div:nth-child(4) ul { display: flex; align-items: center; list-style-type: none; margin: 5px 0 }
+.imageflag > div:nth-child(4) > div:nth-child(2) ul { justify-content: right }
+.imageflag > div:nth-child(4) ul span { font-weight: bold; padding-right: 5px }
+.imageflag > div:nth-child(4) ul li     label { display: inline-block; border: 1px solid $secborder$; padding: 4px 5px; min-width: 90px; white-space: nowrap; margin: 2px }
+.imageflag > div:nth-child(4) ul li.sel label,
+.imageflag > div:nth-child(4) ul li     label:hover { background-color: $secbg$ }
+.imageflag > div:nth-child(4) p { height: 80px; padding-left: 20px }
 
 
 /****** Icons *******/

@@ -32,6 +32,7 @@ type alias Model =
   { warn      : Bool
   , images    : Array.Array GApi.ApiImageResult
   , index     : Int
+  , desc      : (Maybe Int, Maybe Int)
   , changes   : Dict.Dict String GIV.SendVotes
   , saved     : Bool
   , saveTimer : Bool
@@ -44,6 +45,7 @@ init _ =
   { warn      = True
   , images    = Array.empty
   , index     = 0
+  , desc      = (Nothing, Nothing)
   , changes   = Dict.empty
   , saved     = False
   , saveTimer = False
@@ -54,6 +56,7 @@ init _ =
 
 type Msg
   = SkipWarn
+  | Desc (Maybe Int) (Maybe Int)
   | Load GApi.Response
   | Vote (Maybe Int) (Maybe Int) Bool
   | Save
@@ -79,9 +82,13 @@ update msg model =
         if not m.saveTimer && not (Dict.isEmpty m.changes) && m.saveState /= Api.Loading
         then ({ m | saveTimer = True }, Cmd.batch [ c, Task.perform (always Save) (Process.sleep 5000) ])
         else (m,c)
+      -- Set desc to current image
+      desc (m,c) =
+        ({ m | desc = Maybe.withDefault (Nothing,Nothing) <| Maybe.map (\i -> (i.my_sexual, i.my_violence)) <| Array.get m.index m.images}, c)
   in
   case msg of
     SkipWarn -> load ({ model | warn = False }, Cmd.none)
+    Desc s v -> ({ model | desc = (s,v) }, Cmd.none)
 
     Load (GApi.ImageResult l) ->
       let nm = { model | loadState = Api.Normal, images = Array.append model.images (Array.fromList l) }
@@ -97,7 +104,7 @@ update msg model =
           let m = { model | saved = False, images = Array.set model.index { i | my_sexual = s, my_violence = v } model.images }
           in case (s,v) of
               -- Complete vote, mark it as a change and go to next image
-              (Just xs, Just xv) -> save <| load
+              (Just xs, Just xv) -> desc <| save <| load
                 ({ m | index   = m.index + (if isLast model then 1 else 0)
                      , changes = Dict.insert i.id { id = i.id, sexual = xs, violence = xv } m.changes
                  }, Cmd.none)
@@ -107,8 +114,8 @@ update msg model =
     Save -> ({ model | saveTimer = False, saveState = Api.Loading, changes = Dict.empty }, GIV.send { votes = Dict.values model.changes } Saved)
     Saved r -> save ({ model | saved = True, saveState = if r == GApi.Success then Api.Normal else Api.Error r }, Cmd.none)
 
-    Prev -> ({ model | saved = False, index = model.index - (if model.index == 0 then 0 else 1) }, Cmd.none)
-    Next -> ({ model | saved = False, index = model.index + (if isLast model then 0 else 1) }, Cmd.none)
+    Prev -> desc ({ model | saved = False, index = model.index - (if model.index == 0 then 0 else 1) }, Cmd.none)
+    Next -> desc ({ model | saved = False, index = model.index + (if isLast model then 0 else 1) }, Cmd.none)
 
 
 view : Model -> Html Msg
@@ -122,6 +129,12 @@ view model =
       case (avg, stddev) of
         (Just a, Just s) -> Ffi.fmtFloat a 2 ++ " σ " ++ Ffi.fmtFloat s 2
         _ -> "-"
+
+    but i name s v lbl =
+      let sel = i.my_sexual == s && i.my_violence == v
+      in li [ classList [("sel", sel)] ]
+         [ label [ onMouseOver (Desc s v), onMouseOut (Desc i.my_sexual i.my_violence) ] [ inputRadio name sel (Vote s v), text lbl ]
+         ]
 
     imgView i =
       let entry = i.entry_type ++ String.fromInt i.entry_id
@@ -160,16 +173,51 @@ view model =
           , a [ href i.url ] [ text <| String.fromInt i.width ++ "x" ++ String.fromInt i.height ]
           ]
         ]
-        -- TODO: Mouse-over quick explanations
-      , ul [ class "imgvoteopt" ]
-        [ li [] [ span [] [ text "Sexual" ] ]
-        , li [ classList [("sel", i.my_sexual == Just 0)] ] [ label [] [ inputRadio "sexual" (i.my_sexual == Just 0) (Vote (Just 0) i.my_violence), text " Safe" ] ]
-        , li [ classList [("sel", i.my_sexual == Just 1)] ] [ label [] [ inputRadio "sexual" (i.my_sexual == Just 1) (Vote (Just 1) i.my_violence), text " Suggestive" ] ]
-        , li [ classList [("sel", i.my_sexual == Just 2)] ] [ label [] [ inputRadio "sexual" (i.my_sexual == Just 2) (Vote (Just 2) i.my_violence), text " Explicit" ] ]
-        , li [] [ span [] [ text "Violence" ] ]
-        , li [ classList [("sel", i.my_violence == Just 0)] ] [ label [] [ inputRadio "violence" (i.my_violence == Just 0) (Vote i.my_sexual (Just 0)), text " Tame" ] ]
-        , li [ classList [("sel", i.my_violence == Just 1)] ] [ label [] [ inputRadio "violence" (i.my_violence == Just 1) (Vote i.my_sexual (Just 1)), text " Violent" ] ]
-        , li [ classList [("sel", i.my_violence == Just 2)] ] [ label [] [ inputRadio "violence" (i.my_violence == Just 2) (Vote i.my_sexual (Just 2)), text " Brutal" ] ]
+      , div []
+        [ div []
+          [ ul []
+            [ li [] [ span [] [ text "Sexual" ] ]
+            , but i "sexual" (Just 0) i.my_violence " Safe"
+            , but i "sexual" (Just 1) i.my_violence " Suggestive"
+            , but i "sexual" (Just 2) i.my_violence " Explicit"
+            ]
+          , p [] <|
+            case Tuple.first model.desc of
+              Just 0 -> [ text "- No nudity", br [] []
+                        , text "- No (implied) sexual actions", br [] []
+                        , text "- No suggestive clothing or visible underwear", br [] []
+                        , text "- No sex toys" ]
+              Just 1 -> [ text "- Visible underwear or skimpy clothing", br [] []
+                        , text "- Erotic posing", br [] []
+                        , text "- Sex toys (but not visibly being used)", br [] []
+                        , text "- No visible genitals or female nipples" ]
+              Just 2 -> [ text "- Visible genitals or female nipples", br [] []
+                        , text "- Penetrative sex (regardless of clothing)", br [] []
+                        , text "- Visible use of sex toys" ]
+              _ -> []
+          ]
+        , div []
+          [ ul []
+            [ li [] [ span [] [ text "Violence" ] ]
+            , but i "violence" i.my_sexual (Just 0) " Tame"
+            , but i "violence" i.my_sexual (Just 1) " Violent"
+            , but i "violence" i.my_sexual (Just 2) " Brutal"
+            ]
+          , p [] <|
+            case Tuple.second model.desc of
+              Just 0 -> [ text "- No visible violence", br [] []
+                        , text "- Tame slapstick comedy", br [] []
+                        , text "- Weapons, but not used to harm anyone", br [] []
+                        , text "- Only very minor visible blood or bruises", br [] [] ]
+              Just 1 -> [ text "- Visible blood", br [] []
+                        , text "- Non-comedic fight scenes", br [] []
+                        , text "- Physically harmful activities" ]
+              Just 2 -> [ text "- Excessive amounts of blood", br [] []
+                        , text "- Cut off limbs", br [] []
+                        , text "- Sliced-open bodies", br [] []
+                        , text "- Harmful activities leading to death" ]
+              _ -> []
+          ]
         ]
       -- TODO: list of users who voted on this image
       ]
