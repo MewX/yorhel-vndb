@@ -6,6 +6,7 @@ import Html.Events exposing (..)
 import Array
 import Dict
 import Browser
+import Browser.Events as EV
 import Task
 import Process
 import Json.Decode as JD
@@ -18,13 +19,12 @@ import Gen.Images as GI
 import Gen.ImageVote as GIV
 
 
--- TODO: Keyboard shortcuts
 main : Program () Model Msg
 main = Browser.element
   { init   = \e -> (init e, Cmd.none)
   , view   = view
   , update = update
-  , subscriptions = always Sub.none
+  , subscriptions = \m -> if m.warn then Sub.none else EV.onKeyDown (keymap m)
   }
 
 
@@ -52,6 +52,33 @@ init _ =
   , saveState = Api.Normal
   , loadState = Api.Normal
   }
+
+
+-- TODO: Document keyboard shortcuts somewhere
+keymap : Model -> JD.Decoder Msg
+keymap model =
+  let (s,v) = Maybe.withDefault (Nothing,Nothing) <| Maybe.map (\i -> (i.my_sexual, i.my_violence)) <| Array.get model.index model.images
+  in JD.andThen (\k ->
+    case k of
+      "ArrowLeft"  -> JD.succeed Prev
+      "ArrowRight" -> JD.succeed Next
+      "1" -> JD.succeed (Vote (Just 0) (Just 0) True)
+      "2" -> JD.succeed (Vote (Just 1) (Just 0) True)
+      "3" -> JD.succeed (Vote (Just 2) (Just 0) True)
+      "4" -> JD.succeed (Vote (Just 0) (Just 1) True)
+      "5" -> JD.succeed (Vote (Just 1) (Just 1) True)
+      "6" -> JD.succeed (Vote (Just 2) (Just 1) True)
+      "7" -> JD.succeed (Vote (Just 0) (Just 2) True)
+      "8" -> JD.succeed (Vote (Just 1) (Just 2) True)
+      "9" -> JD.succeed (Vote (Just 2) (Just 2) True)
+      "s" -> JD.succeed (Vote (Just 0) v True)
+      "d" -> JD.succeed (Vote (Just 1) v True)
+      "f" -> JD.succeed (Vote (Just 2) v True)
+      "j" -> JD.succeed (Vote s (Just 0) True)
+      "k" -> JD.succeed (Vote s (Just 1) True)
+      "l" -> JD.succeed (Vote s (Just 2) True)
+      _ -> JD.fail ""
+  ) (JD.field "key" JD.string)
 
 
 type Msg
@@ -130,10 +157,10 @@ view model =
         (Just a, Just s) -> Ffi.fmtFloat a 2 ++ " σ " ++ Ffi.fmtFloat s 2
         _ -> "-"
 
-    but i name s v lbl =
+    but i s v lbl =
       let sel = i.my_sexual == s && i.my_violence == v
       in li [ classList [("sel", sel)] ]
-         [ label [ onMouseOver (Desc s v), onMouseOut (Desc i.my_sexual i.my_violence) ] [ inputRadio name sel (Vote s v), text lbl ]
+         [ label [ onMouseOver (Desc s v), onMouseOut (Desc i.my_sexual i.my_violence) ] [ inputRadio "" sel (Vote s v), text lbl ]
          ]
 
     imgView i =
@@ -177,9 +204,9 @@ view model =
         [ div []
           [ ul []
             [ li [] [ span [] [ text "Sexual" ] ]
-            , but i "sexual" (Just 0) i.my_violence " Safe"
-            , but i "sexual" (Just 1) i.my_violence " Suggestive"
-            , but i "sexual" (Just 2) i.my_violence " Explicit"
+            , but i (Just 0) i.my_violence " Safe"
+            , but i (Just 1) i.my_violence " Suggestive"
+            , but i (Just 2) i.my_violence " Explicit"
             ]
           , p [] <|
             case Tuple.first model.desc of
@@ -199,9 +226,9 @@ view model =
         , div []
           [ ul []
             [ li [] [ span [] [ text "Violence" ] ]
-            , but i "violence" i.my_sexual (Just 0) " Tame"
-            , but i "violence" i.my_sexual (Just 1) " Violent"
-            , but i "violence" i.my_sexual (Just 2) " Brutal"
+            , but i i.my_sexual (Just 0) " Tame"
+            , but i i.my_sexual (Just 1) " Violent"
+            , but i i.my_sexual (Just 2) " Brutal"
             ]
           , p [] <|
             case Tuple.second model.desc of
