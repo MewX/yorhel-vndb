@@ -71,19 +71,19 @@ sub token { shift->{token} }
 
 # The 'perm' field is a bit field, with the following bits.
 # The 'usermod' flag is hardcoded in sql/func.sql for the user_* functions.
-# Flag 8 was used for 'staffedit', but is now free for re-use.
 # Flag 256 was used for 'affiliates', now also free.
 my %perms = qw{
     board        1
     boardmod     2
     edit         4
+    imgvote      8
     tag         16
     dbmod       32
     tagmod      64
     usermod    128
 };
 
-sub defaultPerms { $perms{board} + $perms{edit} + $perms{tag} }
+sub defaultPerms { $perms{board} + $perms{edit} + $perms{tag} + $perms{imgvote} }
 sub allPerms     { my $i = 0; $i |= $_ for values %perms; $i }
 sub listPerms    { \%perms }
 

@@ -5,7 +5,7 @@ use VNWeb::Prelude;
 # TODO: /img/<imageid> endpoint to open the imageflagging UI for a particular image.
 
 TUWF::get qr{/img/vote}, sub {
-    return tuwf->resDenied if !auth->permEdit; # TODO: permImg?
+    return tuwf->resDenied if !auth->permImgvote;
     framework_ title => 'Image flagging', sub {
         # TODO: Include recent votes
         elm_ 'ImageFlagging';
@@ -15,7 +15,7 @@ TUWF::get qr{/img/vote}, sub {
 
 # Fetch a list of images for the user to vote on.
 elm_api Images => undef, {}, sub {
-    return elm_Unauth if !auth->permEdit; # XXX
+    return elm_Unauth if !auth->permImgvote;
 
     # TODO: Return nothing when the user has voted on >90% of the images?
 
@@ -65,7 +65,7 @@ elm_api ImageVote => undef, {
     } },
 }, sub {
     my($data) = @_;
-    return elm_Unauth if !auth->permEdit; # XXX
+    return elm_Unauth if !auth->permImgvote;
     $_->{uid} = auth->uid for $data->{votes}->@*;
     tuwf->dbExeci('INSERT INTO image_votes', $_, 'ON CONFLICT (id, uid) DO UPDATE SET', $_, ', date = now()') for $data->{votes}->@*;
     elm_Success
