@@ -19,7 +19,7 @@ import Gen.Images as GI
 import Gen.ImageVote as GIV
 
 
-main : Program () Model Msg
+main : Program GI.Recv Model Msg
 main = Browser.element
   { init   = \e -> (init e, Cmd.none)
   , view   = view
@@ -43,11 +43,11 @@ type alias Model =
   , saveState : Api.State
   }
 
-init : () -> Model
-init _ =
+init : GI.Recv -> Model
+init d =
   { warn      = True
-  , images    = Array.empty
-  , index     = 0
+  , images    = Array.fromList d.history
+  , index     = List.length d.history
   , desc      = (Nothing, Nothing)
   , changes   = Dict.empty
   , saved     = False

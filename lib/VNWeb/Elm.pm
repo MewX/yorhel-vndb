@@ -31,7 +31,7 @@ our @EXPORT = qw/
 #   elm_Changed $id, $revision;
 #
 # These API responses are available in Elm in the `Gen.Api.Response` union type.
-my %apis = (
+our %apis = (
     Unauth         => [], # Not authorized
     Unchanged      => [], # No changes
     Success        => [],
