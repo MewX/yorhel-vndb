@@ -1,4 +1,4 @@
-module ImageFlagging exposing (main)
+port module ImageFlagging exposing (main)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -26,6 +26,9 @@ main = Browser.element
   , update = update
   , subscriptions = \m -> if m.warn then Sub.none else EV.onKeyDown (keymap m)
   }
+
+
+port preload : String -> Cmd msg
 
 
 type alias Model =
@@ -92,7 +95,6 @@ type Msg
   | Next
 
 
--- TODO: preload next image
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   let -- Load more images if we're about to run out
@@ -108,6 +110,11 @@ update msg model =
       -- Set desc to current image
       desc (m,c) =
         ({ m | desc = Maybe.withDefault (Nothing,Nothing) <| Maybe.map (\i -> (i.my_sexual, i.my_violence)) <| Array.get m.index m.images}, c)
+      -- Preload next image
+      pre (m, c) =
+        case Array.get (m.index+1) m.images of
+          Just i  -> (m, Cmd.batch [ c, preload i.url ])
+          Nothing -> (m, Cmd.none)
   in
   case msg of
     SkipWarn -> load ({ model | warn = False }, Cmd.none)
@@ -117,7 +124,7 @@ update msg model =
       let nm = { model | loadState = Api.Normal, images = Array.append model.images (Array.fromList l) }
           nc = if nm.index < 1000 then nm
                else { nm | index = nm.index - 100, images = Array.slice 100 (Array.length nm.images) nm.images }
-      in (nc, Cmd.none)
+      in pre (nc, Cmd.none)
     Load e -> ({ model | loadState = Api.Error e }, Cmd.none)
 
     Vote s v _ ->
@@ -127,7 +134,7 @@ update msg model =
           let m = { model | saved = False, images = Array.set model.index { i | my_sexual = s, my_violence = v } model.images }
           in case (s,v) of
               -- Complete vote, mark it as a change and go to next image
-              (Just xs, Just xv) -> desc <| save <| load
+              (Just xs, Just xv) -> desc <| pre <| save <| load
                 ({ m | index   = m.index + (if i.my_sexual == Nothing || i.my_violence == Nothing then 1 else 0)
                      , changes = Dict.insert i.id { id = i.id, sexual = xs, violence = xv } m.changes
                  }, Cmd.none)
@@ -138,7 +145,7 @@ update msg model =
     Saved r -> save ({ model | saved = True, saveState = if r == GApi.Success then Api.Normal else Api.Error r }, Cmd.none)
 
     Prev -> desc ({ model | saved = False, index = model.index - (if model.index == 0 then 0 else 1) }, Cmd.none)
-    Next -> desc <| load ({ model | saved = False, index = model.index + 1 }, Cmd.none)
+    Next -> desc <| pre <| load ({ model | saved = False, index = model.index + 1 }, Cmd.none)
 
 
 view : Model -> Html Msg
