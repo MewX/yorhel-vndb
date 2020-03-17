@@ -92,10 +92,6 @@ type Msg
   | Next
 
 
-isLast : Model -> Bool
-isLast model = Array.get model.index model.images |> Maybe.map (\i -> i.my_sexual == Nothing || i.my_violence == Nothing) |> Maybe.withDefault True
-
-
 -- TODO: preload next image
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -119,7 +115,7 @@ update msg model =
 
     Load (GApi.ImageResult l) ->
       let nm = { model | loadState = Api.Normal, images = Array.append model.images (Array.fromList l) }
-          nc = if nm.index < 200 then nm
+          nc = if nm.index < 1000 then nm
                else { nm | index = nm.index - 100, images = Array.slice 100 (Array.length nm.images) nm.images }
       in (nc, Cmd.none)
     Load e -> ({ model | loadState = Api.Error e }, Cmd.none)
@@ -132,7 +128,7 @@ update msg model =
           in case (s,v) of
               -- Complete vote, mark it as a change and go to next image
               (Just xs, Just xv) -> desc <| save <| load
-                ({ m | index   = m.index + (if isLast model then 1 else 0)
+                ({ m | index   = m.index + (if i.my_sexual == Nothing || i.my_violence == Nothing then 1 else 0)
                      , changes = Dict.insert i.id { id = i.id, sexual = xs, violence = xv } m.changes
                  }, Cmd.none)
               -- Otherwise just save it internally
@@ -142,7 +138,7 @@ update msg model =
     Saved r -> save ({ model | saved = True, saveState = if r == GApi.Success then Api.Normal else Api.Error r }, Cmd.none)
 
     Prev -> desc ({ model | saved = False, index = model.index - (if model.index == 0 then 0 else 1) }, Cmd.none)
-    Next -> desc ({ model | saved = False, index = model.index + (if isLast model then 0 else 1) }, Cmd.none)
+    Next -> desc <| load ({ model | saved = False, index = model.index + 1 }, Cmd.none)
 
 
 view : Model -> Html Msg
@@ -167,12 +163,12 @@ view model =
       let entry = i.entry_type ++ String.fromInt i.entry_id
       in
       [ div []
-        [ a [ href "#", onClickD Prev, classList [("invisible", model.index == 0)] ] [ text "««" ]
+        [ inputButton "««" Prev [ classList [("invisible", model.index == 0)] ]
         , span []
           [ b [ class "grayedout" ] [ text (entry ++ ":") ]
           , a [ href ("/" ++ entry) ] [ text i.entry_title ]
           ]
-        , a [ href "#", onClickD Next, classList [("invisible", isLast model)] ] [ text "»»" ]
+        , inputButton "»»" Next []
         ]
       , div [ style "width" (px boxwidth), style "height" (px boxheight) ] <|
         -- Don't use an <img> here, changing the src= causes the old image to be displayed with the wrong dimensions while the new image is being loaded.
@@ -255,8 +251,9 @@ view model =
     if model.warn
     then [ ul []
            [ li [] [ text "Make sure you are familiar with the ", a [ href "/d19" ] [ text "image flagging guidelines" ], text "." ]
-           , li [] [ b [ class "standout" ] [ text "WARNING: " ], text "Images shown may be highly offensive and/or depictions of explicit sexual acts." ]
+           , li [] [ b [ class "standout" ] [ text "WARNING: " ], text "Images shown may include spoilers, be highly offensive and/or contain very explicit depictions of sexual acts." ]
            ]
+         , br [] []
          , inputButton "I understand, continue" SkipWarn []
          ]
     else case (Array.get model.index model.images, model.loadState) of
