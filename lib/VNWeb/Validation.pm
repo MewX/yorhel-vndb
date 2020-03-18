@@ -1,7 +1,7 @@
 package VNWeb::Validation;
 
 use v5.26;
-use TUWF;
+use TUWF 'uri_escape';
 use PWLookup;
 use VNDB::Types;
 use VNDB::Config;
@@ -226,5 +226,27 @@ sub viewset {
     my %s = (viewget->%*, @_);
     $s{spoilers}.($s{traits_sexual}?'s':'S')
 }
+
+
+# The ?view= parameter may only be applied when the link originates from VNDB
+# itself. We don't want people linking directly to spoilers or sexual content.
+# If we do get such a request, redirect to the same page without the ?view=
+# parameter.
+#
+# This makes use of a cookie with SameSite=Strict rather than the Referer
+# header, as the latter is much less reliable nowadays. Though the cookie
+# approach is unfortunately a bit uglier.
+TUWF::hook before => sub {
+    my $samesite = tuwf->reqCookie('samesite');
+    if(!$samesite) {
+        tuwf->resCookie(samesite => 1, httponly => 1, samesite => 'Strict');
+        if(tuwf->reqGet('view')) {
+            warn "Outside link with ?view= parameter. Referer: ".(tuwf->reqHeader('Referer')||'-')."\n";
+            my $qs = join '&', map { my $k=$_; my @l=tuwf->reqGets($k); map uri_escape($k).'='.uri_escape($_), @l } grep $_ ne 'view', tuwf->reqGets();
+            tuwf->resRedirect(tuwf->reqPath().($qs?"?$qs":''), 'temp');
+            tuwf->done;
+        }
+    }
+};
 
 1;
