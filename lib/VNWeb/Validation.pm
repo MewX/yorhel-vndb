@@ -240,8 +240,7 @@ TUWF::hook before => sub {
     my $samesite = tuwf->reqCookie('samesite');
     if(!$samesite) {
         tuwf->resCookie(samesite => 1, httponly => 1, samesite => 'Strict');
-        if(tuwf->reqGet('view')) {
-            warn "Outside link with ?view= parameter. Referer: ".(tuwf->reqHeader('Referer')||'-')."\n";
+        if(length tuwf->reqGet('view')) {
             my $qs = join '&', map { my $k=$_; my @l=tuwf->reqGets($k); map uri_escape($k).'='.uri_escape($_), @l } grep $_ ne 'view', tuwf->reqGets();
             tuwf->resRedirect(tuwf->reqPath().($qs?"?$qs":''), 'temp');
             tuwf->done;
