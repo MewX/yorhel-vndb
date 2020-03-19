@@ -11,8 +11,9 @@ elm_api Producers => undef, { search => {} }, sub {
            FROM (',
 			sql_join('UNION ALL',
                 $q =~ /^$RE{pid}$/ ? sql('SELECT 1, id FROM producers WHERE id =', \"$+{id}") : (),
-                sql('SELECT  1+substr_score(lower(name),'    , \$qs, '), id FROM producers WHERE name     ILIKE', \"$qs%"),
-                sql('SELECT 10+substr_score(lower(original),', \$qs, '), id FROM producers WHERE original ILIKE', \"$qs%"),
+                sql('SELECT  1+substr_score(lower(name),'    , \$qs, '), id FROM producers WHERE name     ILIKE', \"%$qs%"),
+                sql('SELECT 10+substr_score(lower(original),', \$qs, '), id FROM producers WHERE original ILIKE', \"%$qs%"),
+                sql('SELECT 100, id FROM producers WHERE alias ILIKE', \"%$qs%"),
             ), ') x(prio, id)
            JOIN producers p ON p.id = x.id
           WHERE NOT p.hidden
