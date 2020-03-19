@@ -7,17 +7,25 @@ use VNWeb::Prelude;
 
 sub enrich_image {
     my($l) = @_;
-    enrich_merge id => sql('
+    # XXX: Can't use "IN($image_ids)" here because of an odd PostgreSQL
+    #   limitation regarding input of composite types. "IN('(ch,1)')" throws an
+    #   error, though IN(..) with multiple values works just fine.
+    enrich_merge id => sub { sql q{
       SELECT i.id, i.width, i.height, i.c_votecount AS votecount
            , i.c_sexual_avg AS sexual_avg, i.c_sexual_stddev AS sexual_stddev
            , i.c_violence_avg AS violence_avg, i.c_violence_stddev AS violence_stddev
            , iv.sexual AS my_sexual, iv.violence AS my_violence
+           , CASE WHEN v.title IS NOT NULL THEN 'v' WHEN c.name IS NOT NULL THEN 'c' ELSE 'v' END AS entry_type
+           , COALESCE(v.id, c.id, vsv.id) AS entry_id
+           , COALESCE(v.title, c.name, vsv.title) AS entry_title
         FROM images i
-        LEFT JOIN image_votes iv ON iv.id = i.id AND iv.uid =', \auth->uid, '
-       WHERE i.id IN'), $l;
-    enrich_merge id => q{SELECT image  AS id, 'v' AS entry_type, id   AS entry_id, title   AS entry_title FROM vn WHERE image IN}, grep $_->{id} =~ /cv/, @$l;
-    enrich_merge id => q{SELECT vs.scr AS id, 'v' AS entry_type, v.id AS entry_id, v.title AS entry_title FROM vn_screenshots vs JOIN vn v ON v.id = vs.id AND vs.scr IN}, grep $_->{id} =~ /sf/, @$l;
-    enrich_merge id => q{SELECT image  AS id, 'c' AS entry_type, id   AS entry_id, name    AS entry_title FROM chars WHERE image IN}, grep $_->{id} =~ /ch/, @$l;
+        LEFT JOIN image_votes iv ON iv.id = i.id AND iv.uid =}, \auth->uid, q{
+        LEFT JOIN vn v ON (i.id).itype = 'cv' AND v.image = i.id
+        LEFT JOIN chars c ON (i.id).itype = 'ch' AND c.image = i.id
+        LEFT JOIN vn_screenshots vs ON (i.id).itype = 'sf' AND vs.scr = i.id
+        LEFT JOIN vn vsv ON (i.id).itype = 'sf' AND vsv.id = vs.id
+       WHERE i.id = ANY(ARRAY}, $_, '::image_id[])'
+    }, $l;
     $_->{url} = tuwf->imgurl($_->{id}) for @$l;
 }
 
@@ -85,8 +93,9 @@ elm_api ImageVote => undef, {
 TUWF::get qr{/img/vote}, sub {
     return tuwf->resDenied if !auth->permImgvote;
 
-    my $recent = [ reverse tuwf->dbAlli('SELECT id FROM image_votes WHERE uid =', \auth->uid, 'ORDER BY date DESC LIMIT', \30)->@* ];
+    my $recent = tuwf->dbAlli('SELECT id FROM image_votes WHERE uid =', \auth->uid, 'ORDER BY date DESC LIMIT', \30);
     enrich_image $recent;
+    $recent = [ reverse grep $_->{entry_id}, @$recent ];
 
     framework_ title => 'Image flagging', sub {
         elm_ 'ImageFlagging', $SEND, { history => $recent };
