@@ -88,7 +88,8 @@ my %tables = (
     ulist_vns_labels    => { where => 'vid IN(SELECT id FROM vn WHERE NOT hidden)'
                                 .' AND EXISTS(SELECT 1 FROM ulist_labels ul WHERE ul.uid = ulist_vns_labels.uid AND id = lbl AND NOT ul.private)' },
     users               => { where => 'id IN(SELECT DISTINCT uvl.uid FROM ulist_vns_labels uvl JOIN ulist_labels ul ON ul.uid = uvl.uid AND ul.id = uvl.lbl WHERE NOT ul.private)'
-                                 .' OR id IN(SELECT DISTINCT uid FROM tags_vn)' },
+                                 .' OR id IN(SELECT DISTINCT uid FROM tags_vn)'
+                                 .' OR id IN(SELECT DISTINCT uid FROM image_votes)' },
     vn                  => { where => 'NOT hidden' },
     vn_anime            => { where => 'id IN(SELECT id FROM vn WHERE NOT hidden)' },
     vn_relations        => { where => 'id IN(SELECT id FROM vn WHERE NOT hidden)' },
