@@ -232,20 +232,11 @@ sub viewset {
 # itself. We don't want people linking directly to spoilers or sexual content.
 # If we do get such a request, redirect to the same page without the ?view=
 # parameter.
-#
-# This makes use of a cookie with SameSite=Strict rather than the Referer
-# header, as the latter is much less reliable nowadays. Though the cookie
-# approach is unfortunately a bit uglier.
 TUWF::hook before => sub {
-    my $samesite = tuwf->reqCookie('samesite');
-    if(!$samesite) {
-        tuwf->resCookie(samesite => 1, httponly => 1, samesite => 'Strict');
-        if(length tuwf->reqGet('view')) {
-            my $qs = join '&', map { my $k=$_; my @l=tuwf->reqGets($k); map uri_escape($k).'='.uri_escape($_), @l } grep $_ ne 'view', tuwf->reqGets();
-            tuwf->resRedirect(tuwf->reqPath().($qs?"?$qs":''), 'temp');
-            tuwf->done;
-        }
-    }
+    return if tuwf->samesite || !length tuwf->reqGet('view');
+    my $qs = join '&', map { my $k=$_; my @l=tuwf->reqGets($k); map uri_escape($k).'='.uri_escape($_), @l } grep $_ ne 'view', tuwf->reqGets();
+    tuwf->resRedirect(tuwf->reqPath().($qs?"?$qs":''), 'temp');
+    tuwf->done;
 };
 
 1;

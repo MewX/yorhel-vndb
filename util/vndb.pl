@@ -50,6 +50,9 @@ sub TUWF::Object::imgpath { _path $ROOT, $_[1], $_[2] }
 # tuwf->imgurl($image_id, $thumb)
 sub TUWF::Object::imgurl { _path $_[0]{url_static}, $_[1], $_[2] }
 
+# tuwf->samesite() - returns true if this request originated from the same site, i.e. not an external referer.
+sub TUWF::Object::samesite { !!tuwf->reqCookie('samesite') }
+
 
 TUWF::hook before => sub {
     # If we're running standalone, serve www/ and static/ too.
@@ -59,6 +62,10 @@ TUWF::hook before => sub {
             tuwf->done;
         }
     }
+
+    # Use a 'SameSite=Strict' cookie to determine whether this page was loaded from internal or external.
+    # Ought to be more reliable than checking the Referer header, but it's unfortunately a bit uglier.
+    tuwf->resCookie(samesite => 1, httponly => 1, samesite => 'Strict') if !tuwf->samesite;
 
     # load some stats (used for about all pageviews, anyway)
     tuwf->{stats} = tuwf->dbStats;
