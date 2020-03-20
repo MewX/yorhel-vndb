@@ -24,7 +24,7 @@ main = Browser.element
   { init   = \e -> (init e, Cmd.none)
   , view   = view
   , update = update
-  , subscriptions = \m -> if m.warn then Sub.none else EV.onKeyDown (keymap m)
+  , subscriptions = \m -> if m.warn then Sub.none else Sub.batch [ EV.onKeyDown (keydown m), EV.onKeyUp (keyup m) ]
   }
 
 
@@ -60,29 +60,37 @@ init d =
 
 
 -- TODO: Document keyboard shortcuts somewhere
-keymap : Model -> JD.Decoder Msg
-keymap model =
+keyToVote : Model -> String -> Maybe (Maybe Int, Maybe Int)
+keyToVote model k =
   let (s,v) = Maybe.withDefault (Nothing,Nothing) <| Maybe.map (\i -> (i.my_sexual, i.my_violence)) <| Array.get model.index model.images
-  in JD.andThen (\k ->
+  in case k of
+      "1" -> Just (Just 0, Just 0)
+      "2" -> Just (Just 1, Just 0)
+      "3" -> Just (Just 2, Just 0)
+      "4" -> Just (Just 0, Just 1)
+      "5" -> Just (Just 1, Just 1)
+      "6" -> Just (Just 2, Just 1)
+      "7" -> Just (Just 0, Just 2)
+      "8" -> Just (Just 1, Just 2)
+      "9" -> Just (Just 2, Just 2)
+      "s" -> Just (Just 0, v)
+      "d" -> Just (Just 1, v)
+      "f" -> Just (Just 2, v)
+      "j" -> Just (s, Just 0)
+      "k" -> Just (s, Just 1)
+      "l" -> Just (s, Just 2)
+      _   -> Nothing
+
+keydown : Model -> JD.Decoder Msg
+keydown model = JD.andThen (\k -> keyToVote model k |> Maybe.map (\(s,v) -> JD.succeed (Desc s v)) |> Maybe.withDefault (JD.fail "")) (JD.field "key" JD.string)
+
+keyup : Model -> JD.Decoder Msg
+keyup model =
+  JD.andThen (\k ->
     case k of
       "ArrowLeft"  -> JD.succeed Prev
       "ArrowRight" -> JD.succeed Next
-      "1" -> JD.succeed (Vote (Just 0) (Just 0) True)
-      "2" -> JD.succeed (Vote (Just 1) (Just 0) True)
-      "3" -> JD.succeed (Vote (Just 2) (Just 0) True)
-      "4" -> JD.succeed (Vote (Just 0) (Just 1) True)
-      "5" -> JD.succeed (Vote (Just 1) (Just 1) True)
-      "6" -> JD.succeed (Vote (Just 2) (Just 1) True)
-      "7" -> JD.succeed (Vote (Just 0) (Just 2) True)
-      "8" -> JD.succeed (Vote (Just 1) (Just 2) True)
-      "9" -> JD.succeed (Vote (Just 2) (Just 2) True)
-      "s" -> JD.succeed (Vote (Just 0) v True)
-      "d" -> JD.succeed (Vote (Just 1) v True)
-      "f" -> JD.succeed (Vote (Just 2) v True)
-      "j" -> JD.succeed (Vote s (Just 0) True)
-      "k" -> JD.succeed (Vote s (Just 1) True)
-      "l" -> JD.succeed (Vote s (Just 2) True)
-      _ -> JD.fail ""
+      _            -> keyToVote model k |> Maybe.map (\(s,v) -> JD.succeed (Vote s v True)) |> Maybe.withDefault (JD.fail "")
   ) (JD.field "key" JD.string)
 
 
@@ -166,7 +174,7 @@ view model =
 
     but i s v lbl =
       let sel = i.my_sexual == s && i.my_violence == v
-      in li [ classList [("sel", sel)] ]
+      in li [ classList [("sel", sel || (s /= i.my_sexual && Tuple.first model.desc == s) || (v /= i.my_violence && Tuple.second model.desc == v))] ]
          [ label [ onMouseOver (Desc s v), onMouseOut (Desc i.my_sexual i.my_violence) ] [ inputRadio "" sel (Vote s v), text lbl ]
          ]
 
