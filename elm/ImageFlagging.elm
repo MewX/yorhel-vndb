@@ -33,6 +33,7 @@ port preload : String -> Cmd msg
 
 type alias Model =
   { warn      : Bool
+  , single    : Bool
   , images    : Array.Array GApi.ApiImageResult
   , index     : Int
   , desc      : (Maybe Int, Maybe Int)
@@ -45,9 +46,10 @@ type alias Model =
 
 init : GI.Recv -> Model
 init d =
-  { warn      = True
-  , images    = Array.fromList d.history
-  , index     = List.length d.history
+  { warn      = d.warn
+  , single    = d.single
+  , images    = Array.fromList d.images
+  , index     = if d.single then 0 else List.length d.images
   , desc      = (Nothing, Nothing)
   , changes   = Dict.empty
   , saved     = False
@@ -99,13 +101,13 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   let -- Load more images if we're about to run out
       load (m,c) =
-        if m.loadState /= Api.Loading && Array.length m.images - m.index <= 3
+        if not m.single && m.loadState /= Api.Loading && Array.length m.images - m.index <= 3
         then ({ m | loadState = Api.Loading }, Cmd.batch [ c, GI.send {} Load ])
         else (m,c)
       -- Start a timer to save changes
       save (m,c) =
         if not m.saveTimer && not (Dict.isEmpty m.changes) && m.saveState /= Api.Loading
-        then ({ m | saveTimer = True }, Cmd.batch [ c, Task.perform (always Save) (Process.sleep 5000) ])
+        then ({ m | saveTimer = True }, Cmd.batch [ c, Task.perform (always Save) (Process.sleep (if m.single then 500 else 5000)) ])
         else (m,c)
       -- Set desc to current image
       desc (m,c) =
@@ -114,7 +116,7 @@ update msg model =
       pre (m, c) =
         case Array.get (m.index+1) m.images of
           Just i  -> (m, Cmd.batch [ c, preload i.url ])
-          Nothing -> (m, Cmd.none)
+          Nothing -> (m, c)
   in
   case msg of
     SkipWarn -> load ({ model | warn = False }, Cmd.none)
@@ -132,10 +134,12 @@ update msg model =
         Nothing -> (model, Cmd.none)
         Just i ->
           let m = { model | saved = False, images = Array.set model.index { i | my_sexual = s, my_violence = v } model.images }
-          in case (s,v) of
+          in case (i.id,s,v) of
+              -- Empty id, user is not allowed to vote on this image
+              ("", _, _) -> (model, Cmd.none)
               -- Complete vote, mark it as a change and go to next image
-              (Just xs, Just xv) -> desc <| pre <| save <| load
-                ({ m | index   = m.index + (if i.my_sexual == Nothing || i.my_violence == Nothing then 1 else 0)
+              (_, Just xs, Just xv) -> desc <| pre <| save <| load
+                ({ m | index   = m.index + (if not m.single && (i.my_sexual == Nothing || i.my_violence == Nothing) then 1 else 0)
                      , changes = Dict.insert i.id { id = i.id, sexual = xs, violence = xv } m.changes
                  }, Cmd.none)
               -- Otherwise just save it internally
@@ -145,7 +149,7 @@ update msg model =
     Saved r -> save ({ model | saved = True, saveState = if r == GApi.Success then Api.Normal else Api.Error r }, Cmd.none)
 
     Prev -> desc ({ model | saved = False, index = model.index - (if model.index == 0 then 0 else 1) }, Cmd.none)
-    Next -> desc <| pre <| load ({ model | saved = False, index = model.index + 1 }, Cmd.none)
+    Next -> desc <| pre <| load ({ model | saved = False, index = model.index + (if model.single then 0 else 1) }, Cmd.none)
 
 
 view : Model -> Html Msg
@@ -176,7 +180,7 @@ view model =
               [ b [ class "grayedout" ] [ text (e.id ++ ":") ]
               , a [ href ("/" ++ e.id) ] [ text e.title ]
               ]
-        , inputButton "»»" Next []
+        , inputButton "»»" Next [ classList [("invisible", model.single)] ]
         ]
       , div [ style "width" (px boxwidth), style "height" (px boxheight) ] <|
         -- Don't use an <img> here, changing the src= causes the old image to be displayed with the wrong dimensions while the new image is being loaded.
@@ -204,7 +208,7 @@ view model =
           , a [ href i.url ] [ text <| String.fromInt i.width ++ "x" ++ String.fromInt i.height ]
           ]
         ]
-      , div []
+      , div [] <| if i.id == "" then [] else
         [ p [] <|
           case Tuple.first model.desc of
             Just 0 -> [ b [] [ text "Safe" ], br [] []

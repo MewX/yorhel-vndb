@@ -2,8 +2,6 @@ package Misc::ImageFlagging;
 
 use VNWeb::Prelude;
 
-# TODO: /img/<imageid> endpoint to open the imageflagging UI for a particular image.
-
 
 # DB image_id value, e.g. '(ch,99)'
 my $ID_RE = qr/\((?:ch|cv|sf),[1-9][0-9]*\)/;
@@ -67,7 +65,9 @@ sub enrich_image {
 
 
 my $SEND = form_compile any => {
-    history => $VNWeb::Elm::apis{ImageResult}[0]
+    images => $VNWeb::Elm::apis{ImageResult}[0],
+    single => { anybool => 1 },
+    warn   => { anybool => 1 },
 };
 
 # Fetch a list of images for the user to vote on.
@@ -134,7 +134,22 @@ TUWF::get qr{/img/vote}, sub {
     enrich_token 1, $recent;
 
     framework_ title => 'Image flagging', sub {
-        elm_ 'ImageFlagging', $SEND, { history => [ reverse @$recent ] };
+        elm_ 'ImageFlagging', $SEND, { images => [ reverse @$recent ], single => 0, warn => 1 };
+    };
+};
+
+
+TUWF::get qr{/img/(ch|cv|sf)([1-9][0-9]*)}, sub {
+    my($itype, $id) = (tuwf->capture(1), tuwf->capture(2));
+
+    my $l = [{ id => "($itype,$id)" }];
+    enrich_image $l;
+    return tuwf->resNotFound if !defined $l->[0]{width};
+
+    enrich_token defined($l->[0]{my_sexual}) || auth->permDbmod(), $l; # XXX: permImgmod?
+
+    framework_ title => "Image flagging for $itype$id", sub {
+        elm_ 'ImageFlagging', $SEND, { images => $l, single => 1, warn => !tuwf->reqCookie('samesite') };
     };
 };
 
