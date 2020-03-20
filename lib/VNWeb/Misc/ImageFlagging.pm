@@ -5,6 +5,37 @@ use VNWeb::Prelude;
 # TODO: /img/<imageid> endpoint to open the imageflagging UI for a particular image.
 
 
+# DB image_id value, e.g. '(ch,99)'
+my $ID_RE = qr/\((?:ch|cv|sf),[1-9][0-9]*\)/;
+
+
+# Enrich the 'id' field with signed tokens - indicating that the current user
+# is permitted to vote on these images. These tokens ensure that non-moderators
+# can only vote on images that they have been randomly assigned, thus
+# preventing possible abuse when a single person uses multiple accounts to
+# influence the rating of a single image.
+sub enrich_token {
+    my($canvote, $l) = @_;
+    $_->{id} = $canvote ? $_->{id}.auth->csrftoken(0, "imgvote-$_->{id}") : '' for @$l;
+}
+
+
+# Does the reverse of enrich_token. Returns true if all tokens validated.
+sub validate_token {
+    my($l) = @_;
+    my $ok = 1;
+    for (@$l) {
+        if(!$_->{id} || $_->{id} !~ /^($ID_RE)([0-9a-f]+)$/) {
+            $ok = 0;
+            next;
+        }
+        $_->{id} = $1;
+        $ok = 0 if !auth->csrfcheck($2, "imgvote-$1");
+    }
+    $ok;
+}
+
+
 sub enrich_image {
     my($l) = @_;
     # XXX: Can't use "IN($image_ids)" here because of an odd PostgreSQL
@@ -64,25 +95,25 @@ elm_api Images => $SEND, {}, sub {
          WHERE c_weight > 0
            AND NOT EXISTS(SELECT 1 FROM image_votes iv WHERE iv.id = i.id AND iv.uid =', \auth->uid, ')
          ORDER BY random() ^ (1.0/c_weight) DESC
-         LIMIT 100'
+         LIMIT', \30
     );
-    warn sprintf 'Weighted random image sampling query returned %d < 100 rows for u%d', scalar @$l, auth->uid if @$l < 100;
+    warn sprintf 'Weighted random image sampling query returned %d < 30 rows for u%d', scalar @$l, auth->uid if @$l < 30;
     enrich_image $l;
+    enrich_token 1, $l;
     elm_ImageResult $l;
 };
 
 
-# TODO: This permits anyone to vote on any image; Might want to restrict that
-# to images that have been randomly selected for the user to avoid abuse.
 elm_api ImageVote => undef, {
     votes => { sort_keys => 'id', aoh => {
-        id       => { regex => qr/^\((ch|cv|sf),[1-9][0-9]*\)$/ },
+        id       => { regex => qr/^(?:$ID_RE)[0-9a-f]+$/ },
         sexual   => { uint => 1, range => [0,2] },
         violence => { uint => 1, range => [0,2] },
     } },
 }, sub {
     my($data) = @_;
     return elm_Unauth if !auth->permImgvote;
+    return elm_CSRF if !validate_token $data->{votes};
     $_->{uid} = auth->uid for $data->{votes}->@*;
     tuwf->dbExeci('INSERT INTO image_votes', $_, 'ON CONFLICT (id, uid) DO UPDATE SET', $_, ', date = now()') for $data->{votes}->@*;
     elm_Success
@@ -95,6 +126,7 @@ TUWF::get qr{/img/vote}, sub {
 
     my $recent = tuwf->dbAlli('SELECT id FROM image_votes WHERE uid =', \auth->uid, 'ORDER BY date DESC LIMIT', \30);
     enrich_image $recent;
+    enrich_token 1, $recent;
     $recent = [ reverse grep $_->{entry_id}, @$recent ];
 
     framework_ title => 'Image flagging', sub {
