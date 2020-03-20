@@ -90,11 +90,12 @@ our %apis = (
         sexual_stddev   => { num => 1, required => 0 },
         violence_avg    => { num => 1, required => 0 },
         violence_stddev => { num => 1, required => 0 },
-        entry_type      => {},
-        entry_id        => { id => 1 },
-        entry_title     => {},
         my_sexual       => { uint => 1, required => 0 },
         my_violence     => { uint => 1, required => 0 },
+        entry           => { required => 0, type => 'hash', keys => {
+            id       => {},
+            title    => {},
+        } },
     } } ],
 );
 

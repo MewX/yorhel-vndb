@@ -46,8 +46,7 @@ sub enrich_image {
            , i.c_sexual_avg AS sexual_avg, i.c_sexual_stddev AS sexual_stddev
            , i.c_violence_avg AS violence_avg, i.c_violence_stddev AS violence_stddev
            , iv.sexual AS my_sexual, iv.violence AS my_violence
-           , CASE WHEN v.title IS NOT NULL THEN 'v' WHEN c.name IS NOT NULL THEN 'c' ELSE 'v' END AS entry_type
-           , COALESCE(v.id, c.id, vsv.id) AS entry_id
+           , COALESCE('v'||v.id, 'c'||c.id, 'v'||vsv.id) AS entry_id
            , COALESCE(v.title, c.name, vsv.title) AS entry_title
         FROM images i
         LEFT JOIN image_votes iv ON iv.id = i.id AND iv.uid =}, \auth->uid, q{
@@ -57,7 +56,13 @@ sub enrich_image {
         LEFT JOIN vn vsv ON (i.id).itype = 'sf' AND vsv.id = vs.id
        WHERE i.id = ANY(ARRAY}, $_, '::image_id[])'
     }, $l;
-    $_->{url} = tuwf->imgurl($_->{id}) for @$l;
+
+    for(@$l) {
+        $_->{url} = tuwf->imgurl($_->{id});
+        $_->{entry} = $_->{entry_id} ? { id => $_->{entry_id}, title => $_->{entry_title} } : undef;
+        delete $_->{entry_id};
+        delete $_->{entry_title};
+    }
 }
 
 
@@ -127,10 +132,9 @@ TUWF::get qr{/img/vote}, sub {
     my $recent = tuwf->dbAlli('SELECT id FROM image_votes WHERE uid =', \auth->uid, 'ORDER BY date DESC LIMIT', \30);
     enrich_image $recent;
     enrich_token 1, $recent;
-    $recent = [ reverse grep $_->{entry_id}, @$recent ];
 
     framework_ title => 'Image flagging', sub {
-        elm_ 'ImageFlagging', $SEND, { history => $recent };
+        elm_ 'ImageFlagging', $SEND, { history => [ reverse @$recent ] };
     };
 };
 

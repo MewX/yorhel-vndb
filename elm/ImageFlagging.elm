@@ -167,14 +167,15 @@ view model =
          ]
 
     imgView i =
-      let entry = i.entry_type ++ String.fromInt i.entry_id
-      in
       [ div []
         [ inputButton "««" Prev [ classList [("invisible", model.index == 0)] ]
-        , span []
-          [ b [ class "grayedout" ] [ text (entry ++ ":") ]
-          , a [ href ("/" ++ entry) ] [ text i.entry_title ]
-          ]
+        , span [] <|
+          case i.entry of
+            Nothing -> []
+            Just e ->
+              [ b [ class "grayedout" ] [ text (e.id ++ ":") ]
+              , a [ href ("/" ++ e.id) ] [ text e.title ]
+              ]
         , inputButton "»»" Next []
         ]
       , div [ style "width" (px boxwidth), style "height" (px boxheight) ] <|
