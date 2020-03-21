@@ -55,7 +55,8 @@ TUWF::hook after => sub { $auth = __PACKAGE__->new() };
 # have a lot of influence in this)
 TUWF::set log_format => sub {
     my(undef, $uri, $msg) = @_;
-    sprintf "[%s] %s %s: %s\n", scalar localtime(), $uri, auth ? 'u'.auth->uid : '-', $msg;
+    my $uid = auth ? auth->uid : (tuwf->reqCookie('auth')||'') =~ /\.(\d+)$/ && $1;
+    sprintf "[%s] %s %s: %s\n", scalar localtime(), $uri, $uid ? 'u'.$uid : '-', $msg;
 };
 
 
