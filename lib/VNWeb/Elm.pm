@@ -82,6 +82,7 @@ our %apis = (
     } } ],
     ImageResult => [ { aoh => { # Response to 'Images'
         id              => { }, # image id...
+        token           => { required => 0 },
         url             => { },
         width           => { uint => 1 },
         height          => { uint => 1 },

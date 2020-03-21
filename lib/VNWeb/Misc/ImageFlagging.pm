@@ -3,18 +3,14 @@ package Misc::ImageFlagging;
 use VNWeb::Prelude;
 
 
-# DB image_id value, e.g. '(ch,99)'
-my $ID_RE = qr/\((?:ch|cv|sf),[1-9][0-9]*\)/;
-
-
-# Enrich the 'id' field with signed tokens - indicating that the current user
-# is permitted to vote on these images. These tokens ensure that non-moderators
+# Add signed tokens to the image ist - indicating that the current user is
+# permitted to vote on these images. These tokens ensure that non-moderators
 # can only vote on images that they have been randomly assigned, thus
 # preventing possible abuse when a single person uses multiple accounts to
 # influence the rating of a single image.
 sub enrich_token {
     my($canvote, $l) = @_;
-    $_->{id} = $canvote ? $_->{id}.auth->csrftoken(0, "imgvote-$_->{id}") : '' for @$l;
+    $_->{token} = $canvote ? auth->csrftoken(0, "imgvote-$_->{id}") : undef for @$l;
 }
 
 
@@ -22,14 +18,7 @@ sub enrich_token {
 sub validate_token {
     my($l) = @_;
     my $ok = 1;
-    for (@$l) {
-        if(!$_->{id} || $_->{id} !~ /^($ID_RE)([0-9a-f]+)$/) {
-            $ok = 0;
-            next;
-        }
-        $_->{id} = $1;
-        $ok = 0 if !auth->csrfcheck($2, "imgvote-$1");
-    }
+    $ok &&= $_->{token} && auth->csrfcheck($_->{token}, "imgvote-$_->{id}") for @$l;
     $ok;
 }
 
@@ -111,7 +100,8 @@ elm_api Images => $SEND, {}, sub {
 
 elm_api ImageVote => undef, {
     votes => { sort_keys => 'id', aoh => {
-        id       => { regex => qr/^(?:$ID_RE)[0-9a-f]+$/ },
+        id       => { regex => qr/^\((?:ch|cv|sf),[1-9][0-9]*\)$/ },
+        token    => {},
         sexual   => { uint => 1, range => [0,2] },
         violence => { uint => 1, range => [0,2] },
     } },
@@ -119,8 +109,11 @@ elm_api ImageVote => undef, {
     my($data) = @_;
     return elm_Unauth if !auth->permImgvote;
     return elm_CSRF if !validate_token $data->{votes};
-    $_->{uid} = auth->uid for $data->{votes}->@*;
-    tuwf->dbExeci('INSERT INTO image_votes', $_, 'ON CONFLICT (id, uid) DO UPDATE SET', $_, ', date = now()') for $data->{votes}->@*;
+    for($data->{votes}->@*) {
+        $_->{uid} = auth->uid ;
+        delete $_->{token};
+        tuwf->dbExeci('INSERT INTO image_votes', $_, 'ON CONFLICT (id, uid) DO UPDATE SET', $_, ', date = now()');
+    }
     elm_Success
 };
 

@@ -29,6 +29,7 @@ main = Browser.element
 
 
 port preload : String -> Cmd msg
+port updateUrl : String -> Cmd msg
 
 
 type alias Model =
@@ -125,6 +126,11 @@ update msg model =
         case Array.get (m.index+1) m.images of
           Just i  -> (m, Cmd.batch [ c, preload i.url ])
           Nothing -> (m, c)
+      -- Update page URL to current image
+      url (m,c) =
+        case Array.get m.index m.images of
+          Just i  -> (m, Cmd.batch [ c, updateUrl i.id ])
+          Nothing -> (m, c)
   in
   case msg of
     SkipWarn -> load ({ model | warn = False }, Cmd.none)
@@ -142,13 +148,11 @@ update msg model =
         Nothing -> (model, Cmd.none)
         Just i ->
           let m = { model | saved = False, images = Array.set model.index { i | my_sexual = s, my_violence = v } model.images }
-          in case (i.id,s,v) of
-              -- Empty id, user is not allowed to vote on this image
-              ("", _, _) -> (model, Cmd.none)
+          in case (i.token,s,v) of
               -- Complete vote, mark it as a change and go to next image
-              (_, Just xs, Just xv) -> desc <| pre <| save <| load
+              (Just token, Just xs, Just xv) -> url <| desc <| pre <| save <| load
                 ({ m | index   = m.index + (if not m.single && (i.my_sexual == Nothing || i.my_violence == Nothing) then 1 else 0)
-                     , changes = Dict.insert i.id { id = i.id, sexual = xs, violence = xv } m.changes
+                     , changes = Dict.insert i.id { id = i.id, token = token, sexual = xs, violence = xv } m.changes
                  }, Cmd.none)
               -- Otherwise just save it internally
               _ -> (m, Cmd.none)
@@ -156,8 +160,8 @@ update msg model =
     Save -> ({ model | saveTimer = False, saveState = Api.Loading, changes = Dict.empty }, GIV.send { votes = Dict.values model.changes } Saved)
     Saved r -> save ({ model | saved = True, saveState = if r == GApi.Success then Api.Normal else Api.Error r }, Cmd.none)
 
-    Prev -> desc ({ model | saved = False, index = model.index - (if model.index == 0 then 0 else 1) }, Cmd.none)
-    Next -> desc <| pre <| load ({ model | saved = False, index = model.index + (if model.single then 0 else 1) }, Cmd.none)
+    Prev -> url <| desc ({ model | saved = False, index = model.index - (if model.index == 0 then 0 else 1) }, Cmd.none)
+    Next -> url <| desc <| pre <| load ({ model | saved = False, index = model.index + (if model.single then 0 else 1) }, Cmd.none)
 
 
 view : Model -> Html Msg
@@ -216,7 +220,7 @@ view model =
           , a [ href i.url ] [ text <| String.fromInt i.width ++ "x" ++ String.fromInt i.height ]
           ]
         ]
-      , div [] <| if i.id == "" then [] else
+      , div [] <| if i.token == Nothing then [] else
         [ p [] <|
           case Tuple.first model.desc of
             Just 0 -> [ b [] [ text "Safe" ], br [] []
