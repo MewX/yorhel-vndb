@@ -27,6 +27,7 @@ my $FORM = {
     hidden      => { anybool => 1 }, # When can_mod
     private     => { anybool => 1 }, # When can_private && (num = 1 || tid = undef)
     nolastmod   => { anybool => 1, _when => 'in' }, # When can_mod
+    delete      => { anybool => 1 }, # When can_mod
 
     msg         => { maxlength => 32768 },
 };
@@ -48,6 +49,26 @@ elm_api DiscussionsEdit => $FORM_OUT, $FORM_IN, sub {
           'AND', sql_visible_threads());
     return tuwf->resNotFound if $tid && !$t->{id};
     return elm_Unauth if !can_edit t => $t;
+
+    if($data->{delete} && auth->permBoardmod) {
+        warn "AUDIT: Delete t$tid.$num\n";
+        # BUG: Doesn't cause stats_cache to be updated. But who cares about that.
+        if($num == 1) {
+            # (This could be a single query if there were proper ON DELETE CASCADE in the DB, though that's hard for notifications...)
+            tuwf->dbExeci('DELETE FROM threads_posts WHERE tid =', \$tid);
+            tuwf->dbExeci('DELETE FROM threads_boards WHERE tid =', \$tid);
+            tuwf->dbExeci('DELETE FROM threads WHERE id =', \$tid);
+            tuwf->dbExeci(q{DELETE FROM notifications WHERE ltype = 't' AND iid =}, \$tid);
+            return elm_Redirect '/t';
+        } else {
+            tuwf->dbExeci('DELETE FROM threads_posts WHERE tid =', \$tid, 'AND num =', \$num);
+            tuwf->dbExeci('UPDATE threads_posts SET num = num - 1 WHERE tid =', \$tid, 'AND num >', \$num);
+            tuwf->dbExeci('UPDATE threads SET count = count - 1 WHERE id =', \$tid);
+            tuwf->dbExeci(q{DELETE FROM notifications WHERE ltype = 't' AND iid =}, \$tid, 'AND subid =', \$num);
+            tuwf->dbExeci(q{UPDATE notifications SET subid = subid - 1 WHERE ltype = 't' AND iid =}, \$tid, 'AND subid >', \$num);
+            return elm_Redirect "/t$tid";
+        }
+    }
 
     my $pollchanged = !$data->{tid} && $data->{poll};
     if($num == 1) {
@@ -152,6 +173,7 @@ TUWF::get qr{(?:/t/(?<board>$BOARD_RE)/new|/$RE{postid}/edit)}, sub {
     $t->{num}     //= undef;
     $t->{private} //= 0;
     $t->{locked}  //= 0;
+    $t->{delete}  =   0;
 
     framework_ title => $tid ? 'Edit post' : 'Create new thread', sub {
         elm_ 'Discussions.Edit' => $FORM_OUT, $t;

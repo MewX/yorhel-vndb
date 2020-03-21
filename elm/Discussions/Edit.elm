@@ -33,6 +33,7 @@ type alias Model =
   , hidden      : Bool
   , private     : Bool
   , nolastmod   : Bool
+  , delete      : Bool
   , title       : Maybe String
   , boards      : Maybe (List GDE.SendBoards)
   , boardAdd    : A.Model GApi.ApiBoardResult
@@ -54,6 +55,7 @@ init d =
   , hidden      = d.hidden
   , private     = d.private
   , nolastmod   = False
+  , delete      = False
   , title       = d.title
   , boards      = d.boards
   , boardAdd    = A.init ""
@@ -76,6 +78,7 @@ encode m =
   , hidden    = m.hidden
   , private   = m.private
   , nolastmod = m.nolastmod
+  , delete    = m.delete
   , boards    = m.boards
   , poll      = if m.pollEnabled then m.poll else Nothing
   , title     = m.title
@@ -98,6 +101,7 @@ type Msg
   | Hidden Bool
   | Private Bool
   | Nolastmod Bool
+  | Delete Bool
   | Content TP.Msg
   | Title String
   | BoardDel Int
@@ -119,6 +123,7 @@ update msg model =
     Hidden  b     -> ({ model | hidden  = b }, Cmd.none)
     Private b     -> ({ model | private = b }, Cmd.none)
     Nolastmod b   -> ({ model | nolastmod=b }, Cmd.none)
+    Delete  b     -> ({ model | delete  = b }, Cmd.none)
     Content m     -> let (nm,nc) = TP.update m model.msg in ({ model | msg = nm }, Cmd.map Content nc)
     Title   s     -> ({ model | title   = Just s }, Cmd.none)
     PollEnabled b -> ({ model | pollEnabled = b, poll = if model.poll == Nothing then Just { question = "", max_options = 1, options = ["",""] } else model.poll }, Cmd.none)
@@ -233,7 +238,17 @@ view model =
           , a [ href "/d9#3" ] [ text "Formatting" ]
           ]
         ]
-      ] ++ if thread then poll () else []
+      ]
+      ++ (if thread then poll () else [])
+      ++ (if not model.can_mod then [] else
+      [ tr [ class "newpart" ] [ td [ colspan 2 ] [ text "DANGER ZONE" ] ]
+      , formField ""
+        [ inputCheck "" model.delete Delete
+        , text <| " Permanently delete this " ++ if thread then "thread and all replies." else "post."
+        , text <| if thread then "" else " This causes all replies after this one to be renumbered."
+        , text <| " This action can not be reverted, only do this with obvious spam!"
+        ]
+      ])
     ]
   , div [ class "mainbox" ]
     [ fieldset [ class "submit" ] [ submitButton "Submit" model.state (isValid model) ] ]
