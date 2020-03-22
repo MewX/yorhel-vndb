@@ -39,11 +39,6 @@ VARS = /*VARS*/;
 //include vnstaff.js
 //include vncast.js
 
-// Release editing (/r+/edit)
-//include relmedia.js
-//include relvns.js
-//include relprod.js
-
 // Producer editing (/p+/edit)
 //include prodrel.js
 
