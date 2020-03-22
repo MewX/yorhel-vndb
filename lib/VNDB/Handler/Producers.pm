@@ -90,7 +90,9 @@ sub page {
    h1 $p->{name};
    h2 class => 'alttitle', lang => $p->{lang}, $p->{original} if $p->{original};
    p class => 'center';
-    txt "$LANGUAGE{$p->{lang}} $PRODUCER_TYPE{$p->{type}}";
+    txt $PRODUCER_TYPE{$p->{type}};
+    br;
+    txt "Primary language: $LANGUAGE{$p->{lang}}";
     if($p->{alias}) {
       (my $alias = $p->{alias}) =~ s/\n/, /g;
       br;
