@@ -339,7 +339,11 @@ CREATE TABLE releases ( -- dbentry_type=r
   l_itch     text NOT NULL DEFAULT '', -- [pub]
   l_jastusa  text NOT NULL DEFAULT '', -- [pub]
   l_egs      integer NOT NULL DEFAULT 0, -- [pub]
-  l_erotrail integer NOT NULL DEFAULT 0 -- [pub]
+  l_erotrail integer NOT NULL DEFAULT 0, -- [pub]
+  l_toranoana bigint NOT NULL DEFAULT 0, -- [pub]
+  l_melonjp  integer NOT NULL DEFAULT 0, -- [pub]
+  l_gamejolt integer NOT NULL DEFAULT 0, -- [pub]
+  l_nutaku   text NOT NULL DEFAULT '' -- [pub]
 );
 
 -- releases_hist
@@ -379,7 +383,11 @@ CREATE TABLE releases_hist (
   l_itch     text NOT NULL DEFAULT '',
   l_jastusa  text NOT NULL DEFAULT '',
   l_egs      integer NOT NULL DEFAULT 0,
-  l_erotrail integer NOT NULL DEFAULT 0
+  l_erotrail integer NOT NULL DEFAULT 0,
+  l_toranoana bigint NOT NULL DEFAULT 0,
+  l_melonjp  integer NOT NULL DEFAULT 0,
+  l_gamejolt integer NOT NULL DEFAULT 0,
+  l_nutaku   text NOT NULL DEFAULT ''
 );
 
 -- releases_lang

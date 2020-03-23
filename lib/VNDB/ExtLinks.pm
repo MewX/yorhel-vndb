@@ -116,6 +116,9 @@ our %LINKS = (
         l_melon    => { label => 'Melonbooks.com'
                       , fmt   => 'https://www.melonbooks.com/index.php?main_page=product_info&products_id=IT%010d'
                       , regex => qr{(?:www\.)?melonbooks\.com/.*products_id=IT([0-9]{10}).*} },
+        l_melonjp  => { label => 'Melonbooks.co.jp'
+                      , fmt   => 'https://www.melonbooks.co.jp/detail/detail.php?product_id=%d',
+                      , regex => qr{(?:www\.)?melonbooks\.co\.jp/detail/detail\.php\?product_id=([0-9]+)(&:?.*)?} },
         l_mg       => { label => 'MangaGamer'
                       , fmt   => 'https://www.mangagamer.com/r18/detail.php?product_code=%d'
                       , fmt2  => sub { config->{ !defined($_[0]{l_mg_r18}) || $_[0]{l_mg_r18} ? 'mg_r18_url' : 'mg_main_url' } }
@@ -129,7 +132,17 @@ our %LINKS = (
         l_dmm      => { label => 'DMM'
                       , fmt   => 'https://%s'
                       , regex => qr{((?:www\.|dlsoft\.)?dmm\.(?:com|co\.jp)/[^\s]+)}
-                      , patt  => 'https://<any link to dmm.com or dmm.co.jp>' }
+                      , patt  => 'https://<any link to dmm.com or dmm.co.jp>' },
+        l_toranoana=> { label => 'Toranoana'
+                      , fmt   => 'https://ec.toranoana.shop/tora/ec/item/%012d/'
+                      , regex => qr{(?:www\.)?ec\.toranoana\.(?:shop|jp)/(?:aqua/ec|(?:tora|joshi)(?:/ec|_r/ec|_d/digi|_rd/digi)?)/item/([0-9]{12}).*}
+                      , patt  => 'https://ec.toranoana.<com or jp>/<shop>/item/<number>/' },
+        l_gamejolt => { label => 'Game Jolt'
+                      , fmt   => 'https://gamejolt.com/games/vn/%d', # /vn/ should be the game title, but it doesn't matter
+                      , regex => qr{(?:www\.)?gamejolt\.com/games/(?:[^/]+)/([0-9]+)(?:/.*)?} },
+        l_nutaku   => { label => 'Nutaku'
+                      , fmt   => 'https://www.nutaku.net/games/%s/'
+                      , regex => qr{(?:www\.)?nutaku\.net/games/(?:mobile/|download/|app/)?([a-z0-9-]+)/?} }, # The section part does sometimes link to different pages, but it's the same game and the non-section link always works.
     },
     s => {
         l_site     => { label => 'Official website', fmt => '%s' },
@@ -297,7 +310,7 @@ sub validate_extlinks {
             my($s) = grep $_->{name} eq $f, $schema->{cols}->@*;
 
             my %val;
-            $val{int} = 1 if $s->{type} =~ /^int/;
+            $val{int} = 1 if $s->{type} =~ /^(big)?int/;
             $val{func} = sub { $val{int} && !$_[0] ? 1 : sprintf($p->{fmt}, $_[0]) =~ full_regex $p->{regex} };
             ($f, $s->{type} =~ /\[\]/
                 ? { type => 'array', values => \%val }
@@ -318,8 +331,8 @@ sub extlinks_sites {
         my($s) = grep $_->{name} eq $f, $schema->{cols}->@*;
         my $patt = $p->{patt} || ($p->{fmt} =~ s/%s/<code>/rg =~ s/%[0-9]*d/<number>/rg);
         +{ id => $f, name => $p->{label}, fmt => $p->{fmt}, regex => full_regex($p->{regex})
-         , int => $s->{type} =~ /^int/?1:0, multi => $s->{type} =~ /\[\]/?1:0
-         , default => $s->{type} =~ /\[\]/ ? '[]' : $s->{type} =~ /^int/ ? 0 : '""'
+         , int => $s->{type} =~ /^(big)?int/?1:0, multi => $s->{type} =~ /\[\]/?1:0
+         , default => $s->{type} =~ /\[\]/ ? '[]' : $s->{type} =~ /^(big)?int/ ? 0 : '""'
          , pattern => [ split /(<[^>]+>)/, $patt ] }
     } sort grep $LINKS{$type}{$_}{regex}, keys $LINKS{$type}->%*
 }
