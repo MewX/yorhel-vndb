@@ -246,16 +246,20 @@ sub enrich_extlinks {
             l 'l_dlsiteen', $obj->{l_dlsiteen_price};
             l 'l_gog';
             l 'l_itch';
+            l 'l_gamejolt';
             l 'l_denpa', $obj->{l_denpa_price};
             l 'l_jlist', $obj->{l_jlist_price};
             l 'l_jastusa';
             l 'l_gyutto';
             l 'l_digiket';
             l 'l_melon';
+            l 'l_melonjp';
             l 'l_mg', $obj->{l_mg_price};
+            l 'l_nutaku';
             l 'l_getchu';
             l 'l_getchudl';
             l 'l_dmm';
+            l 'l_toranoana';
             push @links, map [ 'PlayAsia', $_->{url}, $_->{price} ], @{$obj->{l_playasia}} if $obj->{l_playasia};
         }
 
