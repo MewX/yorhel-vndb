@@ -91,7 +91,7 @@ sub dbReleaseGet {
     | : (),
     $o{pid} ? ('rp.developer', 'rp.publisher') : (),
     $o{what} =~ /links/ ? qw|
-        r.gtin r.l_steam r.l_gog r.l_gyutto r.l_digiket r.l_melon r.l_getchu r.l_getchudl r.l_dmm r.l_itch r.l_jastusa r.l_egs r.l_erotrail r.l_mg r.l_denpa r.l_jlist r.l_dlsite r.l_dlsiteen
+        r.gtin r.l_steam r.l_gog r.l_gyutto r.l_digiket r.l_melon r.l_getchu r.l_getchudl r.l_dmm r.l_itch r.l_jastusa r.l_egs r.l_erotrail r.l_mg r.l_denpa r.l_jlist r.l_dlsite r.l_dlsiteen r.l_melonjp r.l_toranoana r.l_gamejolt r.l_nutaku
     | : ()
   );
 
@@ -132,7 +132,7 @@ sub dbReleaseGetRev {
   $select .= ', r.notes, r.catalog, r.gtin, r.resolution, r.voiced, r.freeware, r.doujin, r.uncensored, r.ani_story, r.ani_ero, r.engine, ro.hidden, ro.locked' if $o{what} =~ /extended/;
   $select .= ', extract(\'epoch\' from c.added) as added, c.comments, c.rev, c.ihid, c.ilock, '.VNWeb::DB::sql_user();
   $select .= ', c.id AS cid, NOT EXISTS(SELECT 1 FROM changes c2 WHERE c2.type = c.type AND c2.itemid = c.itemid AND c2.rev = c.rev+1) AS lastrev';
-  $select .= ', r.gtin, r.l_steam, r.l_gog, r.l_gyutto, r.l_digiket, r.l_melon, r.l_getchu, r.l_getchudl, r.l_dmm, r.l_itch, r.l_jastusa, r.l_egs, r.l_erotrail, r.l_mg, r.l_denpa, r.l_jlist, r.l_dlsite, r.l_dlsiteen' if $o{what} =~ /links/;
+  $select .= ', r.gtin, r.l_steam, r.l_gog, r.l_gyutto, r.l_digiket, r.l_melon, r.l_getchu, r.l_getchudl, r.l_dmm, r.l_itch, r.l_jastusa, r.l_egs, r.l_erotrail, r.l_mg, r.l_denpa, r.l_jlist, r.l_dlsite, r.l_dlsiteen, r.l_melonjp, r.l_toranoana, r.l_gamejolt, r.l_nutaku' if $o{what} =~ /links/;
 
   my $r = $self->dbAll(q|
     SELECT !s
