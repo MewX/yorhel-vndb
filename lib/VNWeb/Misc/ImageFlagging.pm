@@ -44,11 +44,24 @@ sub enrich_image {
        WHERE i.id = ANY(ARRAY}, $_, '::image_id[])'
     }, $l;
 
+    enrich votes => id => id => sub { sql '
+        SELECT iv.id, iv.sexual, iv.violence, ', sql_user(), '
+          FROM image_votes iv
+          LEFT JOIN users u ON u.id = iv.uid
+         WHERE iv.id = ANY(ARRAY', $_, '::image_id[])',
+               auth ? ('AND iv.uid <> ', \auth->uid) : (), '
+         ORDER BY u.username'
+    }, $l;
+
     for(@$l) {
         $_->{url} = tuwf->imgurl($_->{id});
         $_->{entry} = $_->{entry_id} ? { id => $_->{entry_id}, title => $_->{entry_title} } : undef;
         delete $_->{entry_id};
         delete $_->{entry_title};
+        for my $v ($_->{votes}->@*) {
+            $v->{user} = xml_string sub { user_ $v }; # Easier than duplicating user_() in Elm
+            delete $v->{$_} for grep /^user_/, keys %$v;
+        }
     }
 }
 

@@ -51,7 +51,7 @@ init d =
   , single    = d.single
   , images    = Array.fromList d.images
   , index     = if d.single then 0 else List.length d.images
-  , desc      = (Nothing, Nothing)
+  , desc      = Maybe.withDefault (Nothing,Nothing) <| Maybe.map (\i -> (i.my_sexual, i.my_violence)) <| if d.single then List.head d.images else Nothing
   , changes   = Dict.empty
   , saved     = False
   , saveTimer = False
@@ -269,7 +269,16 @@ view model =
             _ -> []
         ]
       , p [ class "center" ] [ text "Not sure? Read the ", a [ href "/d19" ] [ text "full guidelines" ], text " for more detailed guidance." ]
-      -- TODO: list of users who voted on this image
+      , if List.isEmpty i.votes then text "" else
+        table [] <|
+        [ thead [] [ tr [] [ td [ colspan 3 ] [ text "Other users" ] ] ] ]
+        ++ List.map (\v ->
+          tr []
+          [ td [ Ffi.innerHtml v.user ] []
+          , td [] [ text <| if v.sexual   == 0 then "Safe" else if v.sexual   == 1 then "Suggestive" else "Explicit" ]
+          , td [] [ text <| if v.violence == 0 then "Tame" else if v.violence == 1 then "Violent"    else "Brutal" ]
+          ]
+        ) i.votes
       ]
 
   in div [ class "mainbox" ]

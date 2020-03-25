@@ -97,6 +97,11 @@ our %apis = (
             id       => {},
             title    => {},
         } },
+        votes           => { aoh => {
+            user     => {},
+            sexual   => { uint => 1 },
+            violence => { uint => 1 },
+        } },
     } } ],
 );
 
