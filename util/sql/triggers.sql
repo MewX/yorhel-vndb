@@ -1,4 +1,5 @@
--- keep the c_tags and c_changes columns in the users table up to date
+-- keep the c_tags, c_changes and c_imgvotes columns in the users table up to date
+-- Assumption: The column referencing the user is never modified.
 
 CREATE OR REPLACE FUNCTION update_users_cache() RETURNS trigger AS $$
 BEGIN
@@ -14,13 +15,20 @@ BEGIN
     ELSE
       UPDATE users SET c_tags = c_tags - 1 WHERE id = OLD.uid;
     END IF;
+  ELSIF TG_TABLE_NAME = 'image_votes' THEN
+    IF TG_OP = 'INSERT' THEN
+      UPDATE users SET c_imgvotes = c_imgvotes + 1 WHERE id = NEW.uid;
+    ELSE
+      UPDATE users SET c_imgvotes = c_imgvotes - 1 WHERE id = OLD.uid;
+    END IF;
   END IF;
   RETURN NULL;
 END;
 $$ LANGUAGE 'plpgsql';
 
-CREATE TRIGGER users_changes_update AFTER INSERT OR DELETE ON changes FOR EACH ROW EXECUTE PROCEDURE update_users_cache();
-CREATE TRIGGER users_tags_update    AFTER INSERT OR DELETE ON tags_vn FOR EACH ROW EXECUTE PROCEDURE update_users_cache();
+CREATE TRIGGER users_changes_update  AFTER INSERT OR DELETE ON changes     FOR EACH ROW EXECUTE PROCEDURE update_users_cache();
+CREATE TRIGGER users_tags_update     AFTER INSERT OR DELETE ON tags_vn     FOR EACH ROW EXECUTE PROCEDURE update_users_cache();
+CREATE TRIGGER users_imgvotes_update AFTER INSERT OR DELETE ON image_votes FOR EACH ROW EXECUTE PROCEDURE update_users_cache();
 
 
 

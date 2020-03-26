@@ -76,35 +76,39 @@ my $SEND = form_compile any => {
 elm_api Images => $SEND, {}, sub {
     return elm_Unauth if !auth->permImgvote;
 
-    # TODO: Return nothing when the user has voted on >90% of the images?
+    state $stats = tuwf->dbRowi('SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE c_weight > 0) AS referenced FROM images');
 
-    # This query is kind of slow, but there's a few ways to improve:
-    # - create index .. on images (id) include (c_weight) where c_weight > 0;
-    #   (Probably won't work with TABLESAMPLE)
-    # - Add a 'images.c_uids integer[]' cache to filter out rows faster.
-    #   (Ought to work wonderfully well with TABLESAMPLE, probably gets rid of a few sorts, too)
-    # - Distribute images in a fixed number of buckets and choose a random bucket up front.
-    #   (This is similar to how TABLESAMPLE works, but (hopefully) avoids an extra sort
-    #    in the query plan and allows for the same sampling algorithm to be used on image_votes)
+    # Return an empty set when the user has voted on >90% of the (referenced) images.
+    # Limiting the number of images a user can vote on has two effects:
+    # - When the user has voted on everything, they'd be able to immediately
+    #   vote on newly added images, meaning they can be used to influence votes
+    #   from multiple accounts.
+    # - When a user has voted on a lot of images, the algorithm to select new
+    #   images to vote on will become too slow (need to sample everything to
+    #   find an unvoted image) or may randomly not return images (depending on
+    #   the initial table sample).
+    # (Note: c_imgvotes also counts votes on unreferenced images, so this limit may be a little too strict)
+    return elm_ImageResult [] if tuwf->dbVali('SELECT c_imgvotes FROM users WHERE id =', \auth->uid) > $stats->{referenced}*0.90;
 
-    # This query uses a 2% TABLESAMPLE to speed things up:
-    # - With ~220k images, a 2% sample gives ~4.4k images to work with
-    # - 80% of all images have c_weight > 0, so that leaves ~3.5k images
-    # - To actually fetch 100 rows on average, the user should not have voted on more than ~97% of the images.
-    #   ^ But TABLESAMPLE SYSTEM isn't perfectly uniform, so we need some headroom for outliers.
-    #   ^ Doing a regular CLUSTER on a random value may help with getting a more uniform sampling.
+    # Performing a proper weighted sampling on the entire images table is way
+    # too slow, so we do a TABLESAMPLE to first randomly select a number of
+    # rows and then get a weighted sampling from that. The TABLESAMPLE fraction
+    # is adjusted so that we get approximately 5000 rows to work with. This is
+    # hopefully enough to get a good (weighted) sample and should have a good
+    # chance at selecting images even when the user has voted on 90%.
     #
-    # This probably won't give (many?) rows on the dev database; A nicer solution
-    # would calculate an appropriate sampling percentage based on actual data.
+    # Performance can be further improved by adding a 'images.c_uids integer[]'
+    # cache to filter out already voted images faster.
+    my $tablesample = 100 * min 1, (5000 / $stats->{referenced}) * ($stats->{total} / $stats->{referenced});
     my $l = tuwf->dbAlli('
         SELECT id
-          FROM images i TABLESAMPLE SYSTEM (1+1)
+          FROM images i TABLESAMPLE SYSTEM (', \$tablesample, ')
          WHERE c_weight > 0
            AND NOT EXISTS(SELECT 1 FROM image_votes iv WHERE iv.id = i.id AND iv.uid =', \auth->uid, ')
          ORDER BY random() ^ (1.0/c_weight) DESC
          LIMIT', \30
     );
-    warn sprintf 'Weighted random image sampling query returned %d < 30 rows for u%d', scalar @$l, auth->uid if @$l < 30;
+    warn sprintf 'Weighted random image sampling query returned %d < 30 rows for u%d with a sample fraction of %f', scalar @$l, auth->uid(), $tablesample if @$l < 30;
     enrich_image $l;
     enrich_token 1, $l;
     elm_ImageResult $l;

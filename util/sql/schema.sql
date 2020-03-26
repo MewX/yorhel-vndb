@@ -814,7 +814,8 @@ CREATE TABLE users (
   c_wish          integer NOT NULL DEFAULT 0,
   ulist_votes     jsonb,
   ulist_vnlist    jsonb,
-  ulist_wish      jsonb
+  ulist_wish      jsonb,
+  c_imgvotes      integer NOT NULL DEFAULT 0
 );
 
 -- vn
