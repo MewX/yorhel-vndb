@@ -15,6 +15,7 @@ import Lib.Util exposing (..)
 import Lib.Api as Api
 import Lib.Ffi as Ffi
 import Gen.Api as GApi
+import Gen.Types exposing (urlStatic)
 import Gen.Images as GI
 import Gen.ImageVote as GIV
 
@@ -24,7 +25,7 @@ main = Browser.element
   { init   = \e -> (init e, Cmd.none)
   , view   = view
   , update = update
-  , subscriptions = \m -> if m.warn then Sub.none else Sub.batch [ EV.onKeyDown (keydown m), EV.onKeyUp (keyup m) ]
+  , subscriptions = \m -> if m.warn || m.myVotes < 100 then Sub.none else Sub.batch [ EV.onKeyDown (keydown m), EV.onKeyUp (keyup m) ]
   }
 
 
@@ -35,6 +36,7 @@ port updateUrl : String -> Cmd msg
 type alias Model =
   { warn      : Bool
   , single    : Bool
+  , myVotes   : Int
   , images    : Array.Array GApi.ApiImageResult
   , index     : Int
   , desc      : (Maybe Int, Maybe Int)
@@ -49,6 +51,7 @@ init : GI.Recv -> Model
 init d =
   { warn      = d.warn
   , single    = d.single
+  , myVotes   = d.my_votes
   , images    = Array.fromList d.images
   , index     = if d.single then 0 else List.length d.images
   , desc      = Maybe.withDefault (Nothing,Nothing) <| Maybe.map (\i -> (i.my_sexual, i.my_violence)) <| if d.single then List.head d.images else Nothing
@@ -60,7 +63,6 @@ init d =
   }
 
 
--- TODO: Document keyboard shortcuts somewhere
 keyToVote : Model -> String -> Maybe (Maybe Int, Maybe Int)
 keyToVote model k =
   let (s,v) = Maybe.withDefault (Nothing,Nothing) <| Maybe.map (\i -> (i.my_sexual, i.my_violence)) <| Array.get model.index model.images
@@ -148,10 +150,12 @@ update msg model =
         Nothing -> (model, Cmd.none)
         Just i ->
           let m = { model | saved = False, images = Array.set model.index { i | my_sexual = s, my_violence = v } model.images }
+              adv = if not m.single && (i.my_sexual == Nothing || i.my_violence == Nothing) then 1 else 0
           in case (i.token,s,v) of
               -- Complete vote, mark it as a change and go to next image
               (Just token, Just xs, Just xv) -> url <| desc <| pre <| save <| load
-                ({ m | index   = m.index + (if not m.single && (i.my_sexual == Nothing || i.my_violence == Nothing) then 1 else 0)
+                ({ m | index   = m.index + adv
+                     , myVotes = m.myVotes + adv
                      , changes = Dict.insert i.id { id = i.id, token = token, sexual = xs, violence = xv } m.changes
                  }, Cmd.none)
               -- Otherwise just save it internally
@@ -268,7 +272,11 @@ view model =
                       , text "- Harmful activities leading to death" ]
             _ -> []
         ]
-      , p [ class "center" ] [ text "Not sure? Read the ", a [ href "/d19" ] [ text "full guidelines" ], text " for more detailed guidance." ]
+      , p [ class "center" ]
+        [ text "Not sure? Read the ", a [ href "/d19" ] [ text "full guidelines" ], text " for more detailed guidance."
+        , if model.myVotes < 100 then text "" else
+          span [] [ text " (", a [ href <| urlStatic ++ "/f/imgvote-keybindings.svg" ] [ text "keyboard shortcuts" ], text ")" ]
+        ]
       , if List.isEmpty i.votes then text "" else
         table [] <|
         [ thead [] [ tr [] [ td [ colspan 3 ] [ text "Other users" ] ] ] ]

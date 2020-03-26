@@ -66,10 +66,16 @@ sub enrich_image {
 }
 
 
+sub my_votes {
+    auth ? tuwf->dbVali('SELECT c_imgvotes FROM users WHERE id =', \auth->uid) : 0
+}
+
+
 my $SEND = form_compile any => {
-    images => $VNWeb::Elm::apis{ImageResult}[0],
-    single => { anybool => 1 },
-    warn   => { anybool => 1 },
+    images   => $VNWeb::Elm::apis{ImageResult}[0],
+    single   => { anybool => 1 },
+    warn     => { anybool => 1 },
+    my_votes => { uint => 1 },
 };
 
 # Fetch a list of images for the user to vote on.
@@ -88,7 +94,7 @@ elm_api Images => $SEND, {}, sub {
     #   find an unvoted image) or may randomly not return images (depending on
     #   the initial table sample).
     # (Note: c_imgvotes also counts votes on unreferenced images, so this limit may be a little too strict)
-    return elm_ImageResult [] if tuwf->dbVali('SELECT c_imgvotes FROM users WHERE id =', \auth->uid) > $stats->{referenced}*0.90;
+    return elm_ImageResult [] if my_votes() > $stats->{referenced}*0.90;
 
     # Performing a proper weighted sampling on the entire images table is way
     # too slow, so we do a TABLESAMPLE to first randomly select a number of
@@ -144,7 +150,7 @@ TUWF::get qr{/img/vote}, sub {
     enrich_token 1, $recent;
 
     framework_ title => 'Image flagging', sub {
-        elm_ 'ImageFlagging', $SEND, { images => [ reverse @$recent ], single => 0, warn => 1 };
+        elm_ 'ImageFlagging', $SEND, { images => [ reverse @$recent ], single => 0, warn => 1, my_votes => my_votes() };
     };
 };
 
@@ -159,7 +165,7 @@ TUWF::get qr{/img/(ch|cv|sf)([1-9][0-9]*)}, sub {
     enrich_token defined($l->[0]{my_sexual}) || auth->permDbmod(), $l; # XXX: permImgmod?
 
     framework_ title => "Image flagging for $itype$id", sub {
-        elm_ 'ImageFlagging', $SEND, { images => $l, single => 1, warn => !tuwf->samesite() };
+        elm_ 'ImageFlagging', $SEND, { images => $l, single => 1, warn => !tuwf->samesite(), my_votes => my_votes() };
     };
 };
 
