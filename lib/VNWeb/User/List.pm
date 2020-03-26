@@ -19,6 +19,7 @@ sub listing_ {
                 td_ class => 'tc5', sub { txt_ 'Wishlist';   sortable_ 'wish',       $opt, \&url };
                 td_ class => 'tc6', sub { txt_ 'Edits';      sortable_ 'changes',    $opt, \&url };
                 td_ class => 'tc7', sub { txt_ 'Tags';       sortable_ 'tags',       $opt, \&url };
+                td_ class => 'tc8', sub { txt_ 'Images';     sortable_ 'images',     $opt, \&url };
             } };
             tr_ sub {
                 my $l = $_;
@@ -44,6 +45,7 @@ sub listing_ {
                     txt_ '-' if !$l->{c_tags};
                     a_ href => "/g/links?u=$l->{user_id}", $l->{c_tags} if $l->{c_tags};
                 };
+                td_ class => 'tc8', $l->{c_imgvotes}||'-';
             } for @$list;
         };
     };
@@ -56,7 +58,7 @@ TUWF::get qr{/u/(?<char>[0a-z]|all)}, sub {
 
     my $opt = tuwf->validate(get =>
         p => { upage => 1 },
-        s => { onerror => 'registered', enum => [qw[username registered vns votes wish changes tags]] },
+        s => { onerror => 'registered', enum => [qw[username registered vns votes wish changes tags images]] },
         o => { onerror => 'd',          enum => [qw[a d]] },
         q => { onerror => '' },
     )->data;
@@ -70,7 +72,7 @@ TUWF::get qr{/u/(?<char>[0a-z]|all)}, sub {
     );
 
     my $list = tuwf->dbPagei({ results => 50, page => $opt->{p} },
-        'SELECT', sql_user(), ',', sql_totime('registered'), 'as registered, c_vns, c_votes, c_wish, c_changes, c_tags
+        'SELECT', sql_user(), ',', sql_totime('registered'), 'as registered, c_vns, c_votes, c_wish, c_changes, c_tags, c_imgvotes
            FROM users u
           WHERE', sql_and('id > 0', @where),
          'ORDER BY', {
@@ -80,7 +82,8 @@ TUWF::get qr{/u/(?<char>[0a-z]|all)}, sub {
                   votes      => 'c_votes',
                   wish       => 'c_wish',
                   changes    => 'c_changes',
-                  tags       => 'c_tags'
+                  tags       => 'c_tags',
+                  images     => 'c_imgvotes',
                 }->{$opt->{s}}, $opt->{o} eq 'd' ? 'DESC' : 'ASC'
     );
     my $count = @where ? tuwf->dbVali('SELECT count(*) FROM users WHERE', sql_and @where) : tuwf->{stats}{users};

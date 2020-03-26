@@ -233,6 +233,9 @@ sub _menu_ {
             a_ href => "$uid/hist", 'My Recent Changes'; br_;
             a_ href => '/g/links?u='.auth->uid, 'My Tags'; br_;
             br_;
+            if(auth->permImgvote) {
+                a_ href => '/img/vote', 'Image Flagging'; br_;
+            }
             if(auth->permEdit) {
                 a_ href => '/v/add', 'Add Visual Novel'; br_;
                 a_ href => '/p/add', 'Add Producer'; br_;

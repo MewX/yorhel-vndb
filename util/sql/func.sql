@@ -151,13 +151,16 @@ $$ LANGUAGE SQL;
 --
 --   votes_weight = max(0, 10 - c_votecount)/10   -> linear weight between 0..1, 0 being OK and 1 being BAD
 --   *_stddev_weight = *_stddev/1.5               -> ^
---   weight = 1 + votes_weight*100 + sexual_stddev_weight*100 + violence_stddev_weight*100
+--   weight = min(1, votes_weight*100 + sexual_stddev_weight*100 + violence_stddev_weight*100)
 --
---   Extremes: 1 .. 301, easier to tune and reason about, but still linear
+--   Extremes: 1 .. 300, easier to tune and reason about, but still linear
 --
 -- Neither of those solutions are grounded in theory, I've no clue how
 -- statistics work. I suspect confidence intervals/levels are more appropriate
 -- for this use case.
+--
+-- Non-'ch' image weights are currently reduced to 20% in order to prioritize
+-- character images.
 CREATE OR REPLACE FUNCTION update_images_cache(image_id) RETURNS void AS $$
 BEGIN
   -- Have to dynamically construct the query here, a
@@ -169,7 +172,10 @@ BEGIN
     FROM (
       SELECT s.*,
              CASE WHEN x.id IS NULL THEN 0
-             ELSE 1 + (greatest(0, 10.0 - s.votecount)/10)*100 + coalesce(s.sexual_stddev/1.5, 0)*100 + coalesce(s.violence_stddev/1.5, 0)*100
+             ELSE greatest(1,
+                    ((greatest(0, 10.0 - s.votecount)/10)*100 + coalesce(s.sexual_stddev/1.5, 0)*100 + coalesce(s.violence_stddev/1.5, 0)*100)
+                    * (CASE WHEN (x.id).itype = 'ch' THEN 1 ELSE 0.2 END)
+                  )
              END AS weight
         FROM (
             SELECT i.id, count(iv.id) AS votecount

@@ -77,6 +77,10 @@ sub _info_table_ {
         };
     };
     tr_ sub {
+        td_ 'Images';
+        td_ sprintf '%d images flagged.', $u->{c_imgvotes};
+    } if $u->{c_imgvotes};
+    tr_ sub {
         my $stats = tuwf->dbRowi('SELECT COUNT(*) AS posts, COUNT(*) FILTER (WHERE num = 1) AS threads FROM threads_posts WHERE uid =', \$u->{id});
         td_ 'Forum stats';
         td_ !$stats->{posts} ? '-' : sub {
@@ -140,7 +144,7 @@ sub _votestats_ {
 
 TUWF::get qr{/$RE{uid}}, sub {
     my $u = tuwf->dbRowi(q{
-        SELECT id, c_changes, c_votes, c_tags
+        SELECT id, c_changes, c_votes, c_tags, c_imgvotes
              ,}, sql_totime('registered'), q{ AS registered
              ,}, sql_user(), q{
           FROM users u
