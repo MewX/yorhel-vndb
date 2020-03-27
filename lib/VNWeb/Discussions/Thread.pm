@@ -73,6 +73,7 @@ sub metabox_ {
         h1_ $t->{title};
         h2_ 'Hidden' if $t->{hidden};
         h2_ 'Private' if $t->{private};
+        h2_ 'Locked' if $t->{locked};
         h2_ 'Posted in';
         ul_ sub {
             li_ sub {
