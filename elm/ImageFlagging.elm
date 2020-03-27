@@ -30,7 +30,6 @@ main = Browser.element
 
 
 port preload : String -> Cmd msg
-port updateUrl : String -> Cmd msg
 
 
 type alias Model =
@@ -128,11 +127,6 @@ update msg model =
         case Array.get (m.index+1) m.images of
           Just i  -> (m, Cmd.batch [ c, preload i.url ])
           Nothing -> (m, c)
-      -- Update page URL to current image
-      url (m,c) =
-        case Array.get m.index m.images of
-          Just i  -> (m, Cmd.batch [ c, updateUrl i.id ])
-          Nothing -> (m, c)
   in
   case msg of
     SkipWarn -> load ({ model | warn = False }, Cmd.none)
@@ -153,7 +147,7 @@ update msg model =
               adv = if not m.single && (i.my_sexual == Nothing || i.my_violence == Nothing) then 1 else 0
           in case (i.token,s,v) of
               -- Complete vote, mark it as a change and go to next image
-              (Just token, Just xs, Just xv) -> url <| desc <| pre <| save <| load
+              (Just token, Just xs, Just xv) -> desc <| pre <| save <| load
                 ({ m | index   = m.index + adv
                      , myVotes = m.myVotes + adv
                      , changes = Dict.insert i.id { id = i.id, token = token, sexual = xs, violence = xv } m.changes
@@ -164,8 +158,8 @@ update msg model =
     Save -> ({ model | saveTimer = False, saveState = Api.Loading, changes = Dict.empty }, GIV.send { votes = Dict.values model.changes } Saved)
     Saved r -> save ({ model | saved = True, saveState = if r == GApi.Success then Api.Normal else Api.Error r }, Cmd.none)
 
-    Prev -> url <| desc ({ model | saved = False, index = model.index - (if model.index == 0 then 0 else 1) }, Cmd.none)
-    Next -> url <| desc <| pre <| load ({ model | saved = False, index = model.index + (if model.single then 0 else 1) }, Cmd.none)
+    Prev -> desc ({ model | saved = False, index = model.index - (if model.index == 0 then 0 else 1) }, Cmd.none)
+    Next -> desc <| pre <| load ({ model | saved = False, index = model.index + (if model.single then 0 else 1) }, Cmd.none)
 
 
 view : Model -> Html Msg
@@ -220,6 +214,8 @@ view model =
           , text <| "sexual: " ++ stat i.sexual_avg i.sexual_stddev
           , b [ class "grayedout" ] [ text " / " ]
           , text <| "violence: " ++ stat i.violence_avg i.violence_stddev
+          , b [ class "grayedout" ] [ text " / " ]
+          , a [ href <| "/img/" ++ String.filter Char.isAlphaNum i.id ] [ text <| String.filter Char.isAlphaNum i.id ]
           , b [ class "grayedout" ] [ text " / " ]
           , a [ href i.url ] [ text <| String.fromInt i.width ++ "x" ++ String.fromInt i.height ]
           ]
