@@ -1063,7 +1063,7 @@ p.filselect i { font-style: normal }
  *   2: image
  *   3: metadata
  *   4: vote box */
-.imageflag { width: 810px; margin: auto }
+.imageflag { margin: auto }
 .imageflag > div:nth-child(1) { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2px }
 .imageflag > div:nth-child(1) span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0px 20px }
 .imageflag > div:nth-child(2) { border: 1px solid $border$; padding: 5px; display: flex; justify-content: center; align-items: center; background: #000 }

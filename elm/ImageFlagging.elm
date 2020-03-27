@@ -7,6 +7,7 @@ import Array
 import Dict
 import Browser
 import Browser.Events as EV
+import Browser.Dom as DOM
 import Task
 import Process
 import Json.Decode as JD
@@ -22,10 +23,10 @@ import Gen.ImageVote as GIV
 
 main : Program GI.Recv Model Msg
 main = Browser.element
-  { init   = \e -> (init e, Cmd.none)
+  { init   = \e -> (init e, Task.perform Viewport DOM.getViewport)
   , view   = view
   , update = update
-  , subscriptions = \m -> if m.warn || m.myVotes < 100 then Sub.none else Sub.batch [ EV.onKeyDown (keydown m), EV.onKeyUp (keyup m) ]
+  , subscriptions = \m -> Sub.batch <| EV.onResize Resize :: if m.warn || m.myVotes < 100 then [] else [ EV.onKeyDown (keydown m), EV.onKeyUp (keyup m) ]
   }
 
 
@@ -44,6 +45,8 @@ type alias Model =
   , saveTimer : Bool
   , loadState : Api.State
   , saveState : Api.State
+  , pWidth    : Int
+  , pHeight   : Int
   }
 
 init : GI.Recv -> Model
@@ -59,6 +62,8 @@ init d =
   , saveTimer = False
   , saveState = Api.Normal
   , loadState = Api.Normal
+  , pWidth    = 0
+  , pHeight   = 0
   }
 
 
@@ -105,6 +110,8 @@ type Msg
   | Saved GApi.Response
   | Prev
   | Next
+  | Viewport DOM.Viewport
+  | Resize Int Int
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -161,14 +168,17 @@ update msg model =
     Prev -> desc ({ model | saved = False, index = model.index - (if model.index == 0 then 0 else 1) }, Cmd.none)
     Next -> desc <| pre <| load ({ model | saved = False, index = model.index + (if model.single then 0 else 1) }, Cmd.none)
 
+    Resize width height -> ({ model | pWidth = width,                  pHeight = height                  }, Cmd.none)
+    Viewport v          -> ({ model | pWidth = round v.viewport.width, pHeight = round v.viewport.height }, Cmd.none)
+
+
 
 view : Model -> Html Msg
 view model =
   let
-    -- TODO: Dynamic box size depending on available space?
-    boxwidth = 800
-    boxheight = 600
-    px n = String.fromInt (floor n) ++ "px"
+    boxwidth = clamp 600 1200 <| model.pWidth - 300
+    boxheight = clamp 300 800 <| model.pHeight - clamp 200 300 (model.pHeight - 500)
+    px n = String.fromInt n ++ "px"
     stat avg stddev =
       case (avg, stddev) of
         (Just a, Just s) -> Ffi.fmtFloat a 2 ++ " σ " ++ Ffi.fmtFloat s 2
@@ -287,7 +297,7 @@ view model =
 
   in div [ class "mainbox" ]
   [ h1 [] [ text "Image flagging" ]
-  , div [ class "imageflag" ] <|
+  , div [ class "imageflag", style "width" (px (boxwidth + 10)) ] <|
     if model.warn
     then [ ul []
            [ li [] [ text "Make sure you are familiar with the ", a [ href "/d19" ] [ text "image flagging guidelines" ], text "." ]
