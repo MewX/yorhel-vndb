@@ -177,7 +177,7 @@ view : Model -> Html Msg
 view model =
   let
     boxwidth = clamp 600 1200 <| model.pWidth - 300
-    boxheight = clamp 300 800 <| model.pHeight - clamp 200 300 (model.pHeight - 500)
+    boxheight = clamp 300 700 <| model.pHeight - clamp 200 350 (model.pHeight - 500)
     px n = String.fromInt n ++ "px"
     stat avg stddev =
       case (avg, stddev) of
