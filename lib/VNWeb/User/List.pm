@@ -9,7 +9,7 @@ sub listing_ {
     my sub url { '?'.query_encode %$opt, @_ }
 
     paginate_ \&url, $opt->{p}, [$count, 50], 't';
-    div_ class => 'mainbox browse', sub {
+    div_ class => 'mainbox browse userlist', sub {
         table_ class => 'stripe', sub {
             thead_ sub { tr_ sub {
                 td_ class => 'tc1', sub { txt_ 'Username';   sortable_ 'username',   $opt, \&url };

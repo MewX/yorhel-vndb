@@ -874,6 +874,14 @@ div.votelist td.tc2 { width: 50px; text-align: right; padding-right: 10px }
 .browse.notifies tfoot td     { padding: 0 0 0 25px }
 
 
+/***** User list *****/
+.browse.userlist .tc3,
+.browse.userlist .tc4,
+.browse.userlist .tc5,
+.browse.userlist .tc6,
+.browse.userlist .tc7,
+.browse.userlist .tc8 { text-align: right; padding-right: 10px; padding-left: 0 }
+
 
 /***** Userpage *****/
 
