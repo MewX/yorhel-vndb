@@ -52,6 +52,7 @@ Global requirements:
 **Perl modules** (core modules are not listed):
 
 General:
+- AnyEvent
 - Crypt::ScryptKDF
 - Crypt::URandom
 - DBD::Pg
@@ -59,6 +60,7 @@ General:
 - Image::Magick
 - JSON::XS
 - PerlIO::gzip
+- graphviz (/usr/bin/dot is used by default)
 
 util/vndb.pl (the web backend):
 - Algorithm::Diff::XS
@@ -68,12 +70,10 @@ util/vndb.pl (the web backend):
 - HTTP::Server::Simple
 
 util/multi.pl (application server, optional):
-- AnyEvent
 - AnyEvent::HTTP
 - AnyEvent::IRC
 - AnyEvent::Pg
 - XML::Parser
-- graphviz (/usr/bin/dot is used by default)
 
 
 ## Manual setup

@@ -26,6 +26,7 @@ my $config = {
     login_throttle    => [ 24*3600/10, 24*3600 ], # interval between attempts, max burst (10 a day)
     board_edit_time   => 7*24*3600, # Time after which posts become immutable
     poll_options      => 20, # max number of options in discussion board polls
+    graphviz_path     => '/usr/bin/dot',
 
     engines => [ grep $_, split /\s*\n\s*/, q{
         BGI/Ethornell

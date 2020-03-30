@@ -3,6 +3,11 @@
 #  Multi::RG  -  Relation graph generator
 #
 
+# XXX: The producer graphs generated here are not used at the moment, that's
+# now done on demand in VNWeb::Producers::Graph. If that's successful, the same
+# approach will be applied to VN graphs and this module can be removed
+# entirely.
+
 package Multi::RG;
 
 use strict;

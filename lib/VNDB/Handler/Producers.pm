@@ -10,7 +10,6 @@ use VNDB::ExtLinks;
 
 
 TUWF::register(
-  qr{p([1-9]\d*)/rg}               => \&rg,
   qr{p([1-9]\d*)(?:\.([1-9]\d*))?} => \&page,
   qr{p/add}                        => \&addform,
   qr{p(?:([1-9]\d*)(?:\.([1-9]\d*))?/edit|/new)}
@@ -18,27 +17,6 @@ TUWF::register(
   qr{p/([a-z0]|all)}               => \&list,
   qr{xml/producers\.xml}           => \&pxml,
 );
-
-
-sub rg {
-  my($self, $pid) = @_;
-
-  my $p = $self->dbProducerGet(id => $pid, what => 'relgraph')->[0];
-  return $self->resNotFound if !$p->{id} || !$p->{rgraph};
-
-  my $title = "Relation graph for $p->{name}";
-  return if $self->htmlRGHeader($title, 'p', $p);
-
-  $p->{svg} =~ s/id="node_p$pid"/id="graph_current"/;
-
-  div class => 'mainbox';
-   h1 $title;
-   p class => 'center';
-    lit $p->{svg};
-   end;
-  end;
-  $self->htmlFooter;
-}
 
 
 sub page {
