@@ -118,15 +118,16 @@ hash VN_RELATION =>
 
 
 # SQL: ENUM producer_relation
+# "Pref" relations are considered the "preferred" relation to show (as opposed to their reverse)
 hash PRODUCER_RELATION =>
-    old => { reverse => 'new', txt => 'Formerly'        },
-    new => { reverse => 'old', txt => 'Succeeded by'    },
-    spa => { reverse => 'ori', txt => 'Spawned'         },
-    ori => { reverse => 'spa', txt => 'Originated from' },
-    sub => { reverse => 'par', txt => 'Subsidiary'      },
-    par => { reverse => 'sub', txt => 'Parent producer' },
-    imp => { reverse => 'ipa', txt => 'Imprint'         },
-    ipa => { reverse => 'imp', txt => 'Parent brand'    };
+    old => { reverse => 'new', pref => 0, txt => 'Formerly'        },
+    new => { reverse => 'old', pref => 1, txt => 'Succeeded by'    },
+    spa => { reverse => 'ori', pref => 1, txt => 'Spawned'         },
+    ori => { reverse => 'spa', pref => 0, txt => 'Originated from' },
+    sub => { reverse => 'par', pref => 1, txt => 'Subsidiary'      },
+    par => { reverse => 'sub', pref => 0, txt => 'Parent producer' },
+    imp => { reverse => 'ipa', pref => 1, txt => 'Imprint'         },
+    ipa => { reverse => 'imp', pref => 0, txt => 'Parent brand'    };
 
 
 

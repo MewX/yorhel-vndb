@@ -19,19 +19,14 @@ sub gen_nodes {
     push $rels{$_->{id0}}->@*, $_->{id1} for @$rel;
 
     my %nodes;
-    my sub add {
-        my($n, $dist) = @_;
-        if(!$nodes{$n}) {
-            $nodes{$n} = { id => $n, rels => $rels{$n}, distance => $dist };
-            $num--;
-        }
-    }
-
-    my @q = ([$id,0]);
-    while(@q && ($num > 0 || $q[0][1] <= 1)) {
-        my($n, $dist) = shift(@q)->@*;
-        add $n, $dist++;
-        push @q, map [$_, $dist], sort { $rels{$a}->@* <=> $rels{$b}->@* } grep !$nodes{$_}, $rels{$n}->@*;
+    my @q = ({ id => $id, distance => 0 });
+    while(my $n = shift @q) {
+        next if $nodes{$n->{id}};
+        last if $num <= 0 && $n->{distance} > 1;
+        $num--;
+        $n->{rels} = $rels{$n->{id}};
+        $nodes{$n->{id}} = $n;
+        push @q, map +{ id => $_, distance => $n->{distance}+1 }, sort { $rels{$a}->@* <=> $rels{$b}->@* } grep !$nodes{$_}, $n->{rels}->@*;
     }
 
     \%nodes;
@@ -79,7 +74,6 @@ sub gen_dot {
     my $dot =
         qq|graph rgraph {\n|.
         qq|\trankdir=$rankdir\n|.
-        qq|\tnodesep=0.1\n|.
         qq|\tnode [ fontname = "Arial", shape = "plaintext", fontsize = 8, color = "#111111" ]\n|.
         qq|\tedge [ labeldistance = 2.5, labelangle = -20, labeljust = 1, minlen = 2, dir = "both",|.
         qq| fontname = "Arial", fontsize = 7, arrowsize = 0.7, color = "#111111" ]\n|;
@@ -103,9 +97,15 @@ sub gen_dot {
     }
 
     for (grep $_->{id0} < $_->{id1} && $nodes->{$_->{id0}} && $nodes->{$_->{id1}}, @$rel) {
-        my $lbl1 = $PRODUCER_RELATION{$_->{relation}}{txt};
-        my $lbl2 = $PRODUCER_RELATION{ $PRODUCER_RELATION{$_->{relation}}{reverse} }{txt};
-        $dot .= "\tn$_->{id0} -- n$_->{id1} [".($lbl1 eq $lbl2 ? qq{label="$lbl1"} : qq{headlabel="$lbl1", taillabel="$lbl2"})."]\n";
+        my $r1 = $PRODUCER_RELATION{$_->{relation}};
+        my $r2 = $PRODUCER_RELATION{ $r1->{reverse} };
+        $dot .=
+            qq|\tn$_->{id0} -- n$_->{id1} [|.(
+            $r1 == $r2  ? qq|label="$r1->{txt}"| :
+            $r1->{pref} ? qq|headlabel="$r1->{txt}", dir = "forward"| :
+            $r2->{pref} ? qq|taillabel="$r2->{txt}", dir = "back"| :
+                          qq|headlabel="$r1->{txt}", taillabel="$r2->{txt}"|
+            )."]\n";
     }
 
     $dot .= "}\n";
