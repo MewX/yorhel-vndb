@@ -110,6 +110,7 @@ type Msg
   | Saved GApi.Response
   | Prev
   | Next
+  | Focus String
   | Viewport DOM.Viewport
   | Resize Int Int
 
@@ -168,6 +169,9 @@ update msg model =
     Prev -> desc ({ model | saved = False, index = model.index - (if model.index == 0 then 0 else 1) }, Cmd.none)
     Next -> desc <| pre <| load ({ model | saved = False, index = model.index + (if model.single then 0 else 1) }, Cmd.none)
 
+    -- Unfocus a vote radio button when it is focussed in order to prevent arrow keys from changing selection.
+    Focus s -> (model, Task.attempt (always SkipWarn) (DOM.blur s))
+
     Resize width height -> ({ model | pWidth = width,                  pHeight = height                  }, Cmd.none)
     Viewport v          -> ({ model | pWidth = round v.viewport.width, pHeight = round v.viewport.height }, Cmd.none)
 
@@ -184,10 +188,11 @@ view model =
         (Just a, Just s) -> Ffi.fmtFloat a 2 ++ " σ " ++ Ffi.fmtFloat s 2
         _ -> "-"
 
-    but i s v lbl =
+    but i s v lid lbl =
       let sel = i.my_sexual == s && i.my_violence == v
       in li [ classList [("sel", sel || (s /= i.my_sexual && Tuple.first model.desc == s) || (v /= i.my_violence && Tuple.second model.desc == v))] ]
-         [ label [ onMouseOver (Desc s v), onMouseOut (Desc i.my_sexual i.my_violence) ] [ inputRadio "" sel (Vote s v), text lbl ]
+         [ label [ onMouseOver (Desc s v), onMouseOut (Desc i.my_sexual i.my_violence) ]
+           [ input [ type_ "radio", onCheck (Vote s v), checked sel, onFocus (Focus lid), id lid ] [], text lbl ]
          ]
 
     imgView i =
@@ -250,15 +255,15 @@ view model =
             _ -> []
         , ul []
           [ li [] [ b [] [ text "Sexual" ] ]
-          , but i (Just 0) i.my_violence " Safe"
-          , but i (Just 1) i.my_violence " Suggestive"
-          , but i (Just 2) i.my_violence " Explicit"
+          , but i (Just 0) i.my_violence "vio0" " Safe"
+          , but i (Just 1) i.my_violence "vio1" " Suggestive"
+          , but i (Just 2) i.my_violence "vio2" " Explicit"
           ]
         , ul []
           [ li [] [ b [] [ text "Violence" ] ]
-          , but i i.my_sexual (Just 0) " Tame"
-          , but i i.my_sexual (Just 1) " Violent"
-          , but i i.my_sexual (Just 2) " Brutal"
+          , but i i.my_sexual (Just 0) "sex0" " Tame"
+          , but i i.my_sexual (Just 1) "sex1" " Violent"
+          , but i i.my_sexual (Just 2) "sex2" " Brutal"
           ]
         , p [] <|
           case Tuple.second model.desc of
