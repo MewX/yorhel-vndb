@@ -28,28 +28,6 @@ my $config = {
     poll_options      => 20, # max number of options in discussion board polls
     graphviz_path     => '/usr/bin/dot',
 
-    engines => [ grep $_, split /\s*\n\s*/, q{
-        BGI/Ethornell
-        CatSystem2
-        codeX RScript
-        EntisGLS
-        Flash Player
-        Ikura GDL
-        KiriKiri
-        LiveMaker
-        Majiro
-        NScripter
-        QLIE
-        RPG Maker
-        RealLive
-        Ren'Py
-        Shiina Rio
-        SiglusEngine
-        TyranoScript
-        Unity
-        YU-RIS
-    }],
-
     dlsite_url   => 'https://www.dlsite.com/%s/work/=/product_id/%%s.html',
     denpa_url    => 'https://denpasoft.com/products/%s',
     jlist_url    => 'https://www.jlist.com/%s',
