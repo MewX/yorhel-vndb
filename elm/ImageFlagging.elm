@@ -283,21 +283,22 @@ view model =
                       , text "- Harmful activities leading to death" ]
             _ -> []
         ]
-      , p [ class "center" ]
+      , p [ class "center" ] <| if i.token == Nothing then [] else
         [ text "Not sure? Read the ", a [ href "/d19" ] [ text "full guidelines" ], text " for more detailed guidance."
         , if model.myVotes < 100 then text "" else
           span [] [ text " (", a [ href <| urlStatic ++ "/f/imgvote-keybindings.svg" ] [ text "keyboard shortcuts" ], text ")" ]
         ]
-      , if List.isEmpty i.votes then text "" else
-        table [] <|
-        [ thead [] [ tr [] [ td [ colspan 3 ] [ text "Other users" ] ] ] ]
-        ++ List.map (\v ->
-          tr []
-          [ td [ Ffi.innerHtml v.user ] []
-          , td [] [ text <| if v.sexual   == 0 then "Safe" else if v.sexual   == 1 then "Suggestive" else "Explicit" ]
-          , td [] [ text <| if v.violence == 0 then "Tame" else if v.violence == 1 then "Violent"    else "Brutal" ]
-          ]
-        ) i.votes
+      , div [] <| if List.isEmpty i.votes then [] else
+        [ table [] <|
+          [ thead [] [ tr [] [ td [ colspan 3 ] [ text "Other users" ] ] ] ]
+          ++ List.map (\v ->
+            tr []
+            [ td [ Ffi.innerHtml v.user ] []
+            , td [] [ text <| if v.sexual   == 0 then "Safe" else if v.sexual   == 1 then "Suggestive" else "Explicit" ]
+            , td [] [ text <| if v.violence == 0 then "Tame" else if v.violence == 1 then "Violent"    else "Brutal" ]
+            ]
+          ) i.votes
+        ]
       ]
 
   in div [ class "mainbox" ]
