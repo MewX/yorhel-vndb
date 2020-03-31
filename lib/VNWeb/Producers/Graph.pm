@@ -138,10 +138,11 @@ TUWF::get qr{/$RE{pid}/rg}, sub {
 
     framework_ title => "Relations for $p->{name}", type => 'p', dbobj => $p, tab => 'rg',
     sub {
-        div_ class => 'mainbox', sub {
+        div_ class => 'mainbox', style => 'float: left; min-width: 100%', sub {
             h1_ "Relations for $p->{name}";
             p_ sub {
                 txt_ sprintf "Displaying %d out of %d related producers.", $visible_nodes, $total_nodes;
+                debug_ +{ nodes => $nodes, rel => $rel };
                 br_;
                 txt_ "Adjust graph size: ";
                 join_ ', ', sub {
@@ -154,8 +155,8 @@ TUWF::get qr{/$RE{pid}/rg}, sub {
                 txt_ '.';
             } if $total_nodes > 10;
             p_ class => 'center', sub { lit_ dot2svg gen_dot $rel, $nodes, $num == 15 ? '' : "?num=$num" };
-            debug_ +{ nodes => $nodes, rel => $rel };
-        }
+        };
+        clearfloat_;
     };
 };
 
