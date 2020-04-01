@@ -13,7 +13,6 @@ use POSIX 'strftime';
 
 TUWF::register(
   qr{v/rand}                        => \&rand,
-  qr{v([1-9]\d*)/rg}                => \&rg,
   qr{v([1-9]\d*)/releases}          => \&releases,
   qr{v([1-9]\d*)/(chars)}           => \&page,
   qr{v([1-9]\d*)/staff}             => sub { $_[0]->resRedirect("/v$_[1]#staff") },
@@ -24,28 +23,6 @@ TUWF::register(
 sub rand {
   my $self = shift;
   $self->resRedirect('/v'.$self->filFetchDB(vn => undef, undef, {results => 1, sort => 'rand'})->[0]{id}, 'temp');
-}
-
-
-sub rg {
-  my($self, $vid) = @_;
-
-  my $v = $self->dbVNGet(id => $vid, what => 'relgraph')->[0];
-  return $self->resNotFound if !$v->{id} || !$v->{rgraph};
-
-  my $title = "Relation graph for $v->{title}";
-  return if $self->htmlRGHeader($title, 'v', $v);
-
-  $v->{svg} =~ s/id="node_v$vid"/id="graph_current"/;
-
-  div class => 'mainbox';
-   h1 $title;
-   p 'Note: Unofficial relations are excluded if the graph would otherwise be too large.';
-   p class => 'center';
-    lit $v->{svg};
-   end;
-  end;
-  $self->htmlFooter;
 }
 
 

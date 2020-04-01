@@ -1,116 +1,7 @@
 package VNWeb::Producers::Graph;
 
 use VNWeb::Prelude;
-use AnyEvent::Util;
-use TUWF::XML 'xml_escape';
-use Encode 'encode_utf8', 'decode_utf8';
-
-
-# Given a starting ID, an array of {id0,id1} relation hashes and a number of
-# nodes to be included, returns a hash of (id=>{id, distance, rels}) nodes.
-#
-# This is basically a breath-first search that prioritizes nodes with fewer
-# relations.  Direct relations with the starting node are always included,
-# regardless of $num.
-sub gen_nodes {
-    my($id, $rel, $num) = @_;
-
-    my %rels;
-    push $rels{$_->{id0}}->@*, $_->{id1} for @$rel;
-
-    my %nodes;
-    my @q = ({ id => $id, distance => 0 });
-    while(my $n = shift @q) {
-        next if $nodes{$n->{id}};
-        last if $num <= 0 && $n->{distance} > 1;
-        $num--;
-        $n->{rels} = $rels{$n->{id}};
-        $nodes{$n->{id}} = $n;
-        push @q, map +{ id => $_, distance => $n->{distance}+1 }, sort { $rels{$a}->@* <=> $rels{$b}->@* } grep !$nodes{$_}, $n->{rels}->@*;
-    }
-
-    \%nodes;
-}
-
-
-sub dot2svg {
-    my($dot) = @_;
-
-    $dot = encode_utf8 $dot;
-    local $SIG{CHLD} = undef; # Fixed in TUWF 4d8a59cc1dfb5f919298ee495b8865f7872f6cbb
-    my $e = run_cmd([config->{graphviz_path},'-Tsvg'], '<', \$dot, '>', \my $out, '2>', \my $err)->recv;
-    warn "graphviz STDERR: $err\n" if chomp $err;
-    $e and die "Failed to run graphviz";
-
-    # - Remove <?xml> declaration and <!DOCTYPE> (not compatible with embedding in HTML5)
-    # - Remove comments (unused)
-    # - Remove <title> elements (unused)
-    # - Remove first <polygon> element (emulates a background color)
-    # - Replace stroke and fill attributes with classes (so that coloring is done in CSS)
-    # (I used to have an implementation based on XML::Parser, but regexes are so much faster...)
-    decode_utf8($out)
-        =~ s/<\?xml.+?\?>//r
-        =~ s/<!DOCTYPE[^>]*>//r
-        =~ s/<!--.*?-->//srg
-        =~ s/<title>.+?<\/title>//gr
-        =~ s/<polygon.+?\/>//r
-        =~ s/(?:stroke|fill)="([^"]+)"/$1 eq '#111111' ? 'class="border"' : $1 eq '#222222' ? 'class="nodebg"' : ''/egr;
-}
-
-
-sub gen_dot {
-    my($rel, $nodes, $params) = @_;
-
-    # Attempt to figure out a good 'rankdir' to minimize the width of the
-    # graph. Ideally we'd just generate two graphs and pick the least wide one,
-    # but that's way too slow. Graphviz tends to put adjacent nodes next to
-    # each other, so going for the LR (left-right) rank order tends to work
-    # better with large fan-out, while TB (top-bottom) often results in less
-    # wide graphs for large depths.
-    #my $max_distance = max map $_->{distance}, values %$nodes;
-    my $max_fanout = max map scalar grep($nodes->{$_}, $_->{rels}->@*), values %$nodes;
-    my $rankdir = $max_fanout > 6 ? 'LR' : 'TB';
-
-    my $dot =
-        qq|graph rgraph {\n|.
-        qq|\trankdir=$rankdir\n|.
-        qq|\tnode [ fontname = "Arial", shape = "plaintext", fontsize = 8, color = "#111111" ]\n|.
-        qq|\tedge [ labeldistance = 2.5, labelangle = -20, labeljust = 1, minlen = 2, dir = "both",|.
-        qq| fontname = "Arial", fontsize = 7, arrowsize = 0.7, color = "#111111" ]\n|;
-
-    for my $n (sort { $a->{id} <=> $b->{id} } values %$nodes) {
-        my $name = xml_escape shorten $n->{name}, 27;
-        my $tooltip = $n->{name} =~ s/\\/\\\\/rg =~ s/"/\\"/rg =~ s/&/&amp;/rg;
-        my $nodeid = $n->{distance} == 0 ? 'id = "graph_current", ' : '';
-        $dot .=
-            qq|\tn$n->{id} [ $nodeid URL = "/p$n->{id}", tooltip = "$tooltip", label=<|.
-            qq|<TABLE CELLSPACING="0" CELLPADDING="2" BORDER="0" CELLBORDER="1" BGCOLOR="#222222">|.
-            qq|<TR><TD COLSPAN="2" ALIGN="CENTER" CELLPADDING="3"><FONT POINT-SIZE="9">  $name  </FONT></TD></TR>|.
-            qq|<TR><TD ALIGN="CENTER"> $LANGUAGE{$n->{lang}} </TD><TD ALIGN="CENTER"> $PRODUCER_TYPE{$n->{type}} </TD></TR>|.
-            qq|</TABLE>> ]\n|;
-
-        my $notshown = grep !$nodes->{$_}, $n->{rels}->@*;
-        $dot .=
-            qq|\tns$n->{id} [ URL = "/p$n->{id}/rg$params", label="$notshown more..." ]\n|.
-            qq|\tn$n->{id} -- ns$n->{id} [ dir = "forward", style = "dashed" ]\n|
-            if $notshown;
-    }
-
-    for (grep $_->{id0} < $_->{id1} && $nodes->{$_->{id0}} && $nodes->{$_->{id1}}, @$rel) {
-        my $r1 = $PRODUCER_RELATION{$_->{relation}};
-        my $r2 = $PRODUCER_RELATION{ $r1->{reverse} };
-        $dot .=
-            qq|\tn$_->{id0} -- n$_->{id1} [|.(
-            $r1 == $r2  ? qq|label="$r1->{txt}"| :
-            $r1->{pref} ? qq|headlabel="$r1->{txt}", dir = "forward"| :
-            $r2->{pref} ? qq|taillabel="$r2->{txt}", dir = "back"| :
-                          qq|headlabel="$r1->{txt}", taillabel="$r2->{txt}"|
-            )."]\n";
-    }
-
-    $dot .= "}\n";
-    $dot
-}
+use VNWeb::Graph;
 
 
 TUWF::get qr{/$RE{pid}/rg}, sub {
@@ -136,6 +27,25 @@ TUWF::get qr{/$RE{pid}/rg}, sub {
     my $total_nodes = keys { map +($_->{id0},1), @$rel }->%*;
     my $visible_nodes = keys %$nodes;
 
+    my @lines;
+    my $params = $num == 15 ? '' : "?num=$num";
+    for my $n (sort { $a->{id} <=> $b->{id} } values %$nodes) {
+        my $name = xml_escape shorten $n->{name}, 27;
+        my $tooltip = val_escape $n->{name};
+        my $nodeid = $n->{distance} == 0 ? 'id = "graph_current", ' : '';
+        push @lines,
+            qq|n$n->{id} [ $nodeid URL = "/p$n->{id}", tooltip = "$tooltip", label=<|.
+            qq|<TABLE CELLSPACING="0" CELLPADDING="2" BORDER="0" CELLBORDER="1" BGCOLOR="#222222">|.
+            qq|<TR><TD COLSPAN="2" ALIGN="CENTER" CELLPADDING="3"><FONT POINT-SIZE="9">  $name  </FONT></TD></TR>|.
+            qq|<TR><TD ALIGN="CENTER"> $LANGUAGE{$n->{lang}} </TD><TD ALIGN="CENTER"> $PRODUCER_TYPE{$n->{type}} </TD></TR>|.
+            qq|</TABLE>> ]|;
+
+        push @lines, node_more $n->{id}, "/p$n->{id}/rg$params", scalar grep !$nodes->{$_}, $n->{rels}->@*;
+    }
+
+    $rel = [ grep $nodes->{$_->{id0}} && $nodes->{$_->{id1}}, @$rel ];
+    my $dot = gen_dot \@lines, $nodes, $rel, \%PRODUCER_RELATION;
+
     framework_ title => "Relations for $p->{name}", type => 'p', dbobj => $p, tab => 'rg',
     sub {
         div_ class => 'mainbox', style => 'float: left; min-width: 100%', sub {
@@ -154,7 +64,7 @@ TUWF::get qr{/$RE{pid}/rg}, sub {
                 }, grep($_ < $total_nodes, 10, 15, 25, 50, 75, 100, 150, 250, 500, 750, 1000), $total_nodes;
                 txt_ '.';
             } if $total_nodes > 10;
-            p_ class => 'center', sub { lit_ dot2svg gen_dot $rel, $nodes, $num == 15 ? '' : "?num=$num" };
+            p_ class => 'center', sub { lit_ dot2svg $dot };
         };
         clearfloat_;
     };

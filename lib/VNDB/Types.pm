@@ -104,16 +104,16 @@ hash PLATFORM =>
 
 # SQL: ENUM vn_relation
 hash VN_RELATION =>
-    seq  => { reverse => 'preq', txt => 'Sequel'              },
-    preq => { reverse => 'seq',  txt => 'Prequel'             },
-    set  => { reverse => 'set',  txt => 'Same setting'        },
-    alt  => { reverse => 'alt',  txt => 'Alternative version' },
-    char => { reverse => 'char', txt => 'Shares characters'   },
-    side => { reverse => 'par',  txt => 'Side story'          },
-    par  => { reverse => 'side', txt => 'Parent story'        },
-    ser  => { reverse => 'ser',  txt => 'Same series'         },
-    fan  => { reverse => 'orig', txt => 'Fandisc'             },
-    orig => { reverse => 'fan',  txt => 'Original game'       };
+    seq  => { reverse => 'preq', pref => 1, txt => 'Sequel'              },
+    preq => { reverse => 'seq',  pref => 0, txt => 'Prequel'             },
+    set  => { reverse => 'set',  pref => 0, txt => 'Same setting'        },
+    alt  => { reverse => 'alt',  pref => 0, txt => 'Alternative version' },
+    char => { reverse => 'char', pref => 0, txt => 'Shares characters'   },
+    side => { reverse => 'par',  pref => 1, txt => 'Side story'          },
+    par  => { reverse => 'side', pref => 0, txt => 'Parent story'        },
+    ser  => { reverse => 'ser',  pref => 0, txt => 'Same series'         },
+    fan  => { reverse => 'orig', pref => 1, txt => 'Fandisc'             },
+    orig => { reverse => 'fan',  pref => 0, txt => 'Original game'       };
 
 
 

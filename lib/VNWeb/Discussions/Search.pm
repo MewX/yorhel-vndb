@@ -107,7 +107,7 @@ sub posts_ {
                 td_ class => 'tc4', sub {
                     div_ class => 'title', sub { a_ href => $link, $l->{title} };
                     div_ class => 'thread', sub { lit_(
-                        TUWF::XML::xml_escape($l->{headline})
+                        xml_escape($l->{headline})
                             =~ s/\[raw\]/<b class="standout">/gr
                             =~ s/\[\/raw\]/<\/b>/gr
                             =~ s/\[code\]/<b class="grayedout">...<\/b><br \/>/gr

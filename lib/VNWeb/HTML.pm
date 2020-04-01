@@ -23,7 +23,7 @@ our @EXPORT = qw/
     debug_
     join_
     user_ user_displayname
-    rdate_
+    rdate rdate_
     elm_
     framework_
     revision_
@@ -95,19 +95,20 @@ sub user_displayname {
 }
 
 
+# Format a release date as a string.
+sub rdate {
+    my($y, $m, $d) = ($1, $2, $3) if sprintf('%08d', shift||0) =~ /^([0-9]{4})([0-9]{2})([0-9]{2})$/;
+    $y ==    0 ? 'unknown' :
+    $y == 9999 ? 'TBA' :
+    $m ==   99 ? sprintf('%04d', $y) :
+    $d ==   99 ? sprintf('%04d-%02d', $y, $m) :
+                 sprintf('%04d-%02d-%02d', $y, $m, $d);
+}
+
 # Display a release date.
 sub rdate_ {
-    my $date = sprintf '%08d', shift||0;
-    my $future = $date > strftime '%Y%m%d', gmtime;
-    my($y, $m, $d) = ($1, $2, $3) if $date =~ /^([0-9]{4})([0-9]{2})([0-9]{2})$/;
-
-    my $str = $y ==    0 ? 'unknown' :
-              $y == 9999 ? 'TBA' :
-              $m ==   99 ? sprintf('%04d', $y) :
-              $d ==   99 ? sprintf('%04d-%02d', $y, $m) :
-                           sprintf('%04d-%02d-%02d', $y, $m, $d);
-
-    $future ? b_ class => 'future', $str : txt_ $str
+    my $str = rdate $_[0];
+    $_[0] > strftime '%Y%m%d', gmtime ? b_ class => 'future', $str : txt_ $str;
 }
 
 

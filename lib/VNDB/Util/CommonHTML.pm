@@ -12,7 +12,7 @@ use POSIX 'ceil';
 
 our @EXPORT = qw|
   htmlMainTabs htmlDenied htmlHiddenMessage htmlRevision
-  htmlEditMessage htmlItemMessage htmlVoteStats htmlSearchBox htmlRGHeader
+  htmlEditMessage htmlItemMessage htmlVoteStats htmlSearchBox
 |;
 
 
@@ -298,29 +298,6 @@ sub htmlVoteStats {
 
 sub htmlSearchBox {
   shift; VNWeb::HTML::searchbox_(@_);
-}
-
-
-sub htmlRGHeader {
-  my($self, $title, $type, $obj) = @_;
-
-  # This used to be a good test for inline SVG support, but I'm not sure it is nowadays.
-  if(($self->reqHeader('Accept')||'') !~ /application\/xhtml\+xml/) {
-    $self->htmlHeader(title => $title);
-    $self->htmlMainTabs($type, $obj, 'rg');
-    div class => 'mainbox';
-     h1 $title;
-     div class => 'warning';
-      h2 'Not supported';
-      p 'Your browser sucks, it doesn\'t have the functionality to render our nice relation graphs.';
-     end;
-    end;
-    $self->htmlFooter;
-    return 1;
-  }
-  $self->htmlHeader(title => $title);
-  $self->htmlMainTabs($type, $obj, 'rg');
-  return 0;
 }
 
 
