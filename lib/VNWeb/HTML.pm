@@ -108,7 +108,7 @@ sub rdate {
 # Display a release date.
 sub rdate_ {
     my $str = rdate $_[0];
-    $_[0] > strftime '%Y%m%d', gmtime ? b_ class => 'future', $str : txt_ $str;
+    $_[0] > strftime('%Y%m%d', gmtime) ? b_ class => 'future', $str : txt_ $str;
 }
 
 
