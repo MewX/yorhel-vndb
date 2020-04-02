@@ -5,7 +5,7 @@ use VNWeb::Prelude;
 
 my $FORM = {
     id         => { required => 0, id => 1 },
-    title      => { maxlength => 250 },
+    title      => { maxlength => 300 },
     original   => { required => 0, default => '', maxlength => 250 },
     rtype      => { default => 'complete', enum => \%RELEASE_TYPE },
     patch      => { anybool => 1 },

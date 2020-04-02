@@ -305,7 +305,7 @@ CREATE TABLE releases ( -- dbentry_type=r
   id         SERIAL PRIMARY KEY, -- [pub]
   locked     boolean NOT NULL DEFAULT FALSE,
   hidden     boolean NOT NULL DEFAULT FALSE,
-  title      varchar(250) NOT NULL DEFAULT '', -- [pub]
+  title      varchar(300) NOT NULL DEFAULT '', -- [pub]
   original   varchar(250) NOT NULL DEFAULT '', -- [pub]
   type       release_type NOT NULL DEFAULT 'complete', -- [pub]
   website    varchar(250) NOT NULL DEFAULT '', -- [pub]
@@ -349,7 +349,7 @@ CREATE TABLE releases ( -- dbentry_type=r
 -- releases_hist
 CREATE TABLE releases_hist (
   chid       integer NOT NULL PRIMARY KEY,
-  title      varchar(250) NOT NULL DEFAULT '',
+  title      varchar(300) NOT NULL DEFAULT '',
   original   varchar(250) NOT NULL DEFAULT '',
   type       release_type NOT NULL DEFAULT 'complete',
   website    varchar(250) NOT NULL DEFAULT '',
