@@ -36,6 +36,7 @@ port preload : String -> Cmd msg
 type alias Model =
   { warn      : Bool
   , single    : Bool
+  , showVotes : Bool
   , myVotes   : Int
   , images    : Array.Array GApi.ApiImageResult
   , index     : Int
@@ -53,6 +54,7 @@ init : GI.Recv -> Model
 init d =
   { warn      = d.warn
   , single    = d.single
+  , showVotes = d.single
   , myVotes   = d.my_votes
   , images    = Array.fromList d.images
   , index     = if d.single then 0 else List.length d.images
@@ -103,6 +105,7 @@ keyup model =
 
 type Msg
   = SkipWarn
+  | ShowVotes
   | Desc (Maybe Int) (Maybe Int)
   | Load GApi.Response
   | Vote (Maybe Int) (Maybe Int) Bool
@@ -127,9 +130,10 @@ update msg model =
         if not m.saveTimer && not (Dict.isEmpty m.changes) && m.saveState /= Api.Loading
         then ({ m | saveTimer = True }, Cmd.batch [ c, Task.perform (always Save) (Process.sleep (if m.single then 500 else 5000)) ])
         else (m,c)
-      -- Set desc to current image
+      -- Set desc and showVotes to current image
       desc (m,c) =
-        ({ m | desc = Maybe.withDefault (Nothing,Nothing) <| Maybe.map (\i -> (i.my_sexual, i.my_violence)) <| Array.get m.index m.images}, c)
+        let v = Maybe.withDefault (Nothing,Nothing) <| Maybe.map (\i -> (i.my_sexual, i.my_violence)) <| Array.get m.index m.images
+        in ({ m | desc = v, showVotes = m.single || (Tuple.first v /= Nothing && Tuple.second v /= Nothing)}, c)
       -- Preload next image
       pre (m, c) =
         case Array.get (m.index+1) m.images of
@@ -138,6 +142,7 @@ update msg model =
   in
   case msg of
     SkipWarn -> load ({ model | warn = False }, Cmd.none)
+    ShowVotes -> ({ model | showVotes = not model.showVotes }, Cmd.none)
     Desc s v -> ({ model | desc = (s,v) }, Cmd.none)
 
     Load (GApi.ImageResult l) ->
@@ -156,9 +161,9 @@ update msg model =
           in case (i.token,s,v) of
               -- Complete vote, mark it as a change and go to next image
               (Just token, Just xs, Just xv) -> desc <| pre <| save <| load
-                ({ m | index   = m.index + adv
-                     , myVotes = m.myVotes + adv
-                     , changes = Dict.insert i.id { id = i.id, token = token, sexual = xs, violence = xv } m.changes
+                ({ m | index     = m.index + adv
+                     , myVotes   = m.myVotes + adv
+                     , changes   = Dict.insert i.id { id = i.id, token = token, sexual = xs, violence = xv } m.changes
                  }, Cmd.none)
               -- Otherwise just save it internally
               _ -> (m, Cmd.none)
@@ -195,6 +200,29 @@ view model =
            [ input [ type_ "radio", onCheck (Vote s v), checked sel, onFocus (Focus lid), id lid ] [], text lbl ]
          ]
 
+    votestats i =
+      let num = String.fromInt i.votecount ++ (if i.votecount == 1 then " vote" else " votes")
+      in div [] <|
+      if List.isEmpty i.votes
+      then [ p [ class "center" ] [ text "No other votes on this image yet." ] ]
+      else if not model.showVotes
+      then [ p [ class "center" ] [ text num, text ", ", a [ href "#", onClickD ShowVotes ] [ text "show »" ] ] ]
+      else
+      [ p [ class "center" ]
+        [ text num
+        , b [ class "grayedout" ] [ text " / " ], text <| "sexual: "   ++ stat i.sexual_avg i.sexual_stddev
+        , b [ class "grayedout" ] [ text " / " ], text <| "violence: " ++ stat i.violence_avg i.violence_stddev
+        ]
+      , table [] <|
+        List.map (\v ->
+          tr []
+          [ td [ Ffi.innerHtml v.user ] []
+          , td [] [ text <| if v.sexual   == 0 then "Safe" else if v.sexual   == 1 then "Suggestive" else "Explicit" ]
+          , td [] [ text <| if v.violence == 0 then "Tame" else if v.violence == 1 then "Violent"    else "Brutal" ]
+          ]
+        ) i.votes
+      ]
+
     imgView i =
       [ div []
         [ inputButton "««" Prev [ classList [("invisible", model.index == 0)] ]
@@ -224,13 +252,7 @@ view model =
                 else if model.saved then "Saved!" else "" ]
               ]
         , span []
-          [ text <| String.fromInt i.votecount ++ (if i.votecount == 1 then " vote" else " votes")
-          , b [ class "grayedout" ] [ text " / " ]
-          , text <| "sexual: " ++ stat i.sexual_avg i.sexual_stddev
-          , b [ class "grayedout" ] [ text " / " ]
-          , text <| "violence: " ++ stat i.violence_avg i.violence_stddev
-          , b [ class "grayedout" ] [ text " / " ]
-          , a [ href <| "/img/" ++ String.filter Char.isAlphaNum i.id ] [ text <| String.filter Char.isAlphaNum i.id ]
+          [ a [ href <| "/img/" ++ String.filter Char.isAlphaNum i.id ] [ text <| String.filter Char.isAlphaNum i.id ]
           , b [ class "grayedout" ] [ text " / " ]
           , a [ href i.url ] [ text <| String.fromInt i.width ++ "x" ++ String.fromInt i.height ]
           ]
@@ -288,17 +310,7 @@ view model =
         , if model.myVotes < 100 then text "" else
           span [] [ text " (", a [ href <| urlStatic ++ "/f/imgvote-keybindings.svg" ] [ text "keyboard shortcuts" ], text ")" ]
         ]
-      , div [] <| if List.isEmpty i.votes then [] else
-        [ table [] <|
-          [ thead [] [ tr [] [ td [ colspan 3 ] [ text "Other users" ] ] ] ]
-          ++ List.map (\v ->
-            tr []
-            [ td [ Ffi.innerHtml v.user ] []
-            , td [] [ text <| if v.sexual   == 0 then "Safe" else if v.sexual   == 1 then "Suggestive" else "Explicit" ]
-            , td [] [ text <| if v.violence == 0 then "Tame" else if v.violence == 1 then "Violent"    else "Brutal" ]
-            ]
-          ) i.votes
-        ]
+      , votestats i
       ]
 
   in div [ class "mainbox" ]
