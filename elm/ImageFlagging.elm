@@ -23,7 +23,7 @@ import Gen.ImageVote as GIV
 
 main : Program GI.Recv Model Msg
 main = Browser.element
-  { init   = \e -> (init e, Task.perform Viewport DOM.getViewport)
+  { init   = \e -> (init e, Cmd.none)
   , view   = view
   , update = update
   , subscriptions = \m -> Sub.batch <| EV.onResize Resize :: if m.warn || m.myVotes < 100 then [] else [ EV.onKeyDown (keydown m), EV.onKeyUp (keyup m) ]
@@ -64,8 +64,8 @@ init d =
   , saveTimer = False
   , saveState = Api.Normal
   , loadState = Api.Normal
-  , pWidth    = 0
-  , pHeight   = 0
+  , pWidth    = d.pWidth
+  , pHeight   = d.pHeight
   }
 
 
@@ -114,7 +114,6 @@ type Msg
   | Prev
   | Next
   | Focus String
-  | Viewport DOM.Viewport
   | Resize Int Int
 
 
@@ -177,8 +176,7 @@ update msg model =
     -- Unfocus a vote radio button when it is focussed in order to prevent arrow keys from changing selection.
     Focus s -> (model, Task.attempt (always SkipWarn) (DOM.blur s))
 
-    Resize width height -> ({ model | pWidth = width,                  pHeight = height                  }, Cmd.none)
-    Viewport v          -> ({ model | pWidth = round v.viewport.width, pHeight = round v.viewport.height }, Cmd.none)
+    Resize width height -> ({ model | pWidth = width, pHeight = height }, Cmd.none)
 
 
 

@@ -76,6 +76,8 @@ my $SEND = form_compile any => {
     single   => { anybool => 1 },
     warn     => { anybool => 1 },
     my_votes => { uint => 1 },
+    pWidth   => { uint => 1 }, # Set by JS
+    pHeight  => { uint => 1 }, # ^
 };
 
 # Fetch a list of images for the user to vote on.
