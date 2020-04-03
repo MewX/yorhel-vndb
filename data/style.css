@@ -1090,6 +1090,17 @@ p.filselect i { font-style: normal }
 .imageflag > div:nth-child(6) table td { min-width: 50px }
 
 
+/****** Image browser (/img/browse) ******/
+
+div.imagebrowse { padding: 0; display: flex; flex-wrap: wrap }
+.imagebrowse .imagecard { padding: 2px; width: 350px; display: flex }
+.imagebrowse .imagecard:hover { background-color: $secbg$ }
+.imagebrowse .imagecard > a { display: block; width: 150px; height: 120px; background-size: contain; background-repeat: no-repeat; background-position: top right; border: none }
+.imagebrowse .imagecard > div { padding: 0 0 0 4px }
+.imagebrowse .imagecard dl dt { clear: left; float: left; width: 50px }
+.imagebrowse .imagecard dl dd { float: left; font-family: monospace }
+
+
 /****** Icons *******/
 
 .icons {

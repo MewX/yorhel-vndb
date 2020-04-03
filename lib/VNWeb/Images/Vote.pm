@@ -1,4 +1,4 @@
-package Misc::ImageFlagging;
+package VNWeb::Images::Vote;
 
 use VNWeb::Prelude;
 
