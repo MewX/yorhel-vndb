@@ -65,8 +65,8 @@ pg_start() {
     [ -f dump.sql ] && echo "  Or e to import the existing dump.sql."
     read -p "Choice: " opt
 
-    make util/sql/editfunc.sql
-    psql postgres -f util/sql/superuser_init.sql
+    make sql/editfunc.sql
+    psql postgres -f sql/superuser_init.sql
     echo "ALTER ROLE vndb       LOGIN" | psql postgres
     echo "ALTER ROLE vndb_site  LOGIN" | psql postgres
     echo "ALTER ROLE vndb_multi LOGIN" | psql postgres
@@ -80,7 +80,7 @@ pg_start() {
         psql -U vndb -f dump.sql
         rm dump.sql
     else
-        psql -U vndb -f util/sql/all.sql
+        psql -U vndb -f sql/all.sql
     fi
 
     touch data/docker-pg/vndb-init-done

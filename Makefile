@@ -32,7 +32,7 @@ ALL_CLEAN=\
 	static/f/vndb.js \
 	static/f/v2rw.js \
 	data/icons/icons.css \
-	util/sql/editfunc.sql \
+	sql/editfunc.sql \
 	$(shell ls static/s | sed -e 's/\(.\+\)/static\/s\/\1\/style.css/g')
 
 PROD=\
@@ -54,7 +54,7 @@ clean:
 cleaner: clean
 	rm -rf elm/elm-stuff
 
-util/sql/editfunc.sql: util/sqleditfunc.pl util/sql/schema.sql
+sql/editfunc.sql: util/sqleditfunc.pl sql/schema.sql
 	util/sqleditfunc.pl
 
 static/ch static/cv static/sf static/st:

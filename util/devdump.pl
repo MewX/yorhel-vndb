@@ -93,12 +93,12 @@ sub copy_entry {
     open my $OUT, '>:utf8', 'dump.sql';
     select $OUT;
 
-    print "-- This file replaces 'util/sql/all.sql'.\n";
+    print "-- This file replaces 'sql/all.sql'.\n";
     print "\\set ON_ERROR_STOP 1\n";
-    print "\\i util/sql/schema.sql\n";
-    print "\\i util/sql/data.sql\n";
-    print "\\i util/sql/func.sql\n";
-    print "\\i util/sql/editfunc.sql\n";
+    print "\\i sql/schema.sql\n";
+    print "\\i sql/data.sql\n";
+    print "\\i sql/func.sql\n";
+    print "\\i sql/editfunc.sql\n";
 
     # Copy over all sequence values
     my @seq = sort @{ $db->selectcol_arrayref(
@@ -171,8 +171,8 @@ sub copy_entry {
     # Releases
     copy_entry r => [qw/releases releases_lang releases_media releases_platforms releases_producers releases_vn/], $releases;
 
-    print "\\i util/sql/tableattrs.sql\n";
-    print "\\i util/sql/triggers.sql\n";
+    print "\\i sql/tableattrs.sql\n";
+    print "\\i sql/triggers.sql\n";
 
     # Update some caches
     print "SELECT tag_vn_calc(NULL);\n";
@@ -185,7 +185,7 @@ sub copy_entry {
     print "UPDATE users u SET c_changes = (SELECT COUNT(*) FROM changes c WHERE c.requester = u.id);\n";
 
     print "\\set ON_ERROR_STOP 0\n";
-    print "\\i util/sql/perms.sql\n";
+    print "\\i sql/perms.sql\n";
 
     select STDOUT;
     close $OUT;

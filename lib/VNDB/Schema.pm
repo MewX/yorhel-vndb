@@ -1,4 +1,4 @@
-# Utility functions to parse the files in util/sql/ and extract information and
+# Utility functions to parse the files in sql/ and extract information and
 # perform a few simple sanity checks.
 #
 # This is not a full-blown SQL parser. The code makes all kinds of assumptions
@@ -31,7 +31,7 @@ my $ROOT = $INC{'VNDB/Schema.pm'} =~ s{/lib/VNDB/Schema\.pm}{}r;
 sub schema {
     my %schema;
     my $table;
-    open my $F, '<', "$ROOT/util/sql/schema.sql" or die "schema.sql: $!";
+    open my $F, '<', "$ROOT/sql/schema.sql" or die "schema.sql: $!";
     while(<$F>) {
         chomp;
         next if /^\s*--/ || /^\s*$/;
@@ -86,7 +86,7 @@ sub schema {
 # }
 sub types {
     my %types;
-    open my $F, '<', "$ROOT/util/sql/schema.sql" or die "schema.sql: $!";
+    open my $F, '<', "$ROOT/sql/schema.sql" or die "schema.sql: $!";
     while(<$F>) {
         chomp;
         if(/^CREATE TYPE ([^ ]+)/) {
@@ -110,7 +110,7 @@ sub types {
 # ]
 sub references {
     my @ref;
-    open my $F, '<', "$ROOT/util/sql/tableattrs.sql" or die "tableattrs.sql: $!";
+    open my $F, '<', "$ROOT/sql/tableattrs.sql" or die "tableattrs.sql: $!";
     while(<$F>) {
         chomp;
         next if !/^\s*ALTER\s+TABLE\s+([^ ]+)\s+ADD\s+CONSTRAINT\s+([^ ]+)\s+FOREIGN\s+KEY\s+\(([^\)]+)\)\s*REFERENCES\s+([^ ]+)\s*\(([^\)]+)\)/;

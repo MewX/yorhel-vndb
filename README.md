@@ -92,7 +92,7 @@ util/multi.pl (application server, optional):
 
 ```
   # Create the database & roles
-  psql -U postgres -f util/sql/superuser_init.sql
+  psql -U postgres -f sql/superuser_init.sql
 
   # Set a password for each database role:
   echo "ALTER ROLE vndb       LOGIN PASSWORD 'pwd1'" | psql -U postgres
@@ -100,7 +100,7 @@ util/multi.pl (application server, optional):
   echo "ALTER ROLE vndb_multi LOGIN PASSWORD 'pwd3'" | psql -U postgres
 
   # OPTION 1: Create an empty database:
-  psql -U vndb -f util/sql/all.sql
+  psql -U vndb -f sql/all.sql
 
   # OPTION 2: Import the development database (https://vndb.org/d8#3):
   curl -L https://dl.vndb.org/dump/vndb-dev-latest.tar.gz | tar -xzf-
