@@ -138,43 +138,29 @@ $$ LANGUAGE SQL;
 
 -- c_weight = if not_referenced then 0 else lower(c_votecount) -> higher(c_weight) && higher(*_stddev) -> higher(c_weight)
 --
--- One solution:
---
---   1                           # Minimum weight for referenced images
---   * max(1, 10 - c_votecount)  # 0 votes -> 10x more likely to be selected, 9+ votes -> 1x. Something non-linear may be nicer...
---   * (1+c_sexual_stddev*6)     # stddev is 0..1.5, upscaled to 1x..9x more likely to be selected. Any stddev>0.8 (=4.8x more likely) is probably worth looking at
---   * (1+c_violence_stddev*6)
---
---   Extremes: 1 .. 810
---
--- Alternative solution (currently implemented):
+-- Current algorithm:
 --
 --   votes_weight = max(0, 10 - c_votecount)/10   -> linear weight between 0..1, 0 being OK and 1 being BAD
---   *_stddev_weight = *_stddev/1.5               -> ^
---   weight = min(1, votes_weight*100 + sexual_stddev_weight*100 + violence_stddev_weight*100)
+--   weight = min(1, votes_weight*100 + sexual_stddev*100 + violence_stddev*100)
 --
 --   Extremes: 1 .. 300, easier to tune and reason about, but still linear
 --
--- Neither of those solutions are grounded in theory, I've no clue how
--- statistics work. I suspect confidence intervals/levels are more appropriate
--- for this use case.
+-- This isn't very grounded in theory, I've no clue how statistics work. I
+-- suspect confidence intervals/levels are more appropriate for this use case.
 --
 -- Non-'ch' image weights are currently reduced to 20% in order to prioritize
 -- character images.
 CREATE OR REPLACE FUNCTION update_images_cache(vndbid) RETURNS void AS $$
 BEGIN
-  -- Have to dynamically construct the query here, a
-  --   WHERE ($1 IS NULL OR s.id = $1)
-  -- causes the planner to miss a bunch of optimizations.
-  EXECUTE $sql$UPDATE images
+  UPDATE images
      SET c_votecount = votecount, c_sexual_avg = sexual_avg, c_sexual_stddev = sexual_stddev
        , c_violence_avg = violence_avg, c_violence_stddev = violence_stddev, c_weight = weight
     FROM (
       SELECT s.*,
-             CASE WHEN x.id IS NULL THEN 0
+             CASE WHEN COALESCE(v1.id,v2.id,c.id) IS NULL THEN 0
              ELSE greatest(1,
-                    ((greatest(0, 10.0 - s.votecount)/10)*100 + coalesce(s.sexual_stddev/1.5, 0)*100 + coalesce(s.violence_stddev/1.5, 0)*100)
-                    * (CASE WHEN vndbid_type(x.id) = 'ch' THEN 1 ELSE 0.2 END)
+                    ((greatest(0, 10.0 - s.votecount)/10)*100 + coalesce(s.sexual_stddev, 0)*100 + coalesce(s.violence_stddev, 0)*100)
+                    * (CASE WHEN vndbid_type(s.id) = 'ch' THEN 1 ELSE 0.2 END)
                   )
              END AS weight
         FROM (
@@ -183,17 +169,15 @@ BEGIN
                  , avg(violence) AS violence_avg, stddev_pop(violence) AS violence_stddev
               FROM images i
               LEFT JOIN image_votes iv ON iv.id = i.id
+             WHERE ($1 IS NULL OR i.id = $1)
              GROUP BY i.id
         ) s
-        LEFT JOIN (
-                    SELECT image FROM vn WHERE NOT hidden AND image IS NOT NULL
-          UNION ALL SELECT scr   FROM vn_screenshots vs JOIN vn v ON v.id = vs.id WHERE NOT v.hidden
-          UNION ALL SELECT image FROM chars WHERE NOT hidden AND image IS NOT NULL
-        ) x(id) ON s.id = x.id
-        $sql$ || (CASE WHEN $1 IS NULL THEN '' ELSE 'WHERE s.id = '||quote_literal($1) END) || $sql$
+        LEFT JOIN vn v1 ON NOT v1.hidden AND v1.image = s.id
+        LEFT JOIN vn_screenshots vs ON vs.scr = s.id
+        LEFT JOIN vn v2 ON NOT v2.hidden AND vs.id = v2.id
+        LEFT JOIN chars c ON NOT c.hidden AND c.image = s.id
     ) weights
-   WHERE weights.id = images.id
-  $sql$;
+   WHERE weights.id = images.id;
 END; $$ LANGUAGE plpgsql;
 
 
