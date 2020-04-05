@@ -118,7 +118,7 @@ sub dbWikidata {
 sub dbImageAdd {
   my($s, $type, $width, $height) = @_;
   my $seq = {qw/sf screenshots_seq cv covers_seq ch charimg_seq/}->{$type}||die;
-  return $s->dbRow(q|INSERT INTO images (id, width, height) VALUES (ROW(?, nextval(?))::image_id, ?, ?) RETURNING (id).id|, $type, $seq, $width, $height)->{id};
+  return $s->dbRow(q|INSERT INTO images (id, width, height) VALUES (vndbid(?, nextval(?)::int), ?, ?) RETURNING vndbid_num(id) as id|, $type, $seq, $width, $height)->{id};
 }
 
 

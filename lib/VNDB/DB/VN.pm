@@ -111,7 +111,7 @@ sub dbVNGet {
   my @select = ( # see https://rt.cpan.org/Ticket/Display.html?id=54224 for the cast on c_languages and c_platforms
     qw|v.id v.locked v.hidden v.c_released v.c_languages::text[] v.c_olang::text[] v.c_platforms::text[] v.title v.original v.rgraph|,
     $o{what} =~ /extended/ ? (
-      qw|v.alias v.img_nsfw v.length v.desc v.l_wp v.l_encubed v.l_renai v.l_wikidata|, 'coalesce((v.image).id,0) as image' ) : (),
+      qw|v.alias v.img_nsfw v.length v.desc v.l_wp v.l_encubed v.l_renai v.l_wikidata|, 'coalesce(vndbid_num(v.image),0) as image' ) : (),
     $o{what} =~ /relgraph/ ? 'vg.svg' : (),
     $o{what} =~ /rating/ ? (qw|v.c_popularity v.c_rating v.c_votecount|) : (),
     $o{what} =~ /ranking/ ? (
@@ -160,7 +160,7 @@ sub dbVNGetRev {
   my $select = 'c.itemid AS id, vo.c_released, vo.c_languages::text[], vo.c_olang::text[], vo.c_platforms::text[], v.title, v.original, vo.rgraph';
   $select .= ', extract(\'epoch\' from c.added) as added, c.comments, c.rev, c.ihid, c.ilock, '.VNWeb::DB::sql_user();
   $select .= ', c.id AS cid, NOT EXISTS(SELECT 1 FROM changes c2 WHERE c2.type = c.type AND c2.itemid = c.itemid AND c2.rev = c.rev+1) AS lastrev';
-  $select .= ', v.alias, coalesce((v.image).id, 0) as image, v.img_nsfw, v.length, v.desc, v.l_wp, v.l_encubed, v.l_renai, v.l_wikidata, vo.hidden, vo.locked' if $o{what} =~ /extended/;
+  $select .= ', v.alias, coalesce(vndbid_num(v.image), 0) as image, v.img_nsfw, v.length, v.desc, v.l_wp, v.l_encubed, v.l_renai, v.l_wikidata, vo.hidden, vo.locked' if $o{what} =~ /extended/;
   $select .= ', vo.c_popularity, vo.c_rating, vo.c_votecount' if $o{what} =~ /rating/;
   $select .= ', (SELECT COUNT(*)+1 FROM vn iv WHERE iv.hidden = false AND iv.c_popularity > COALESCE(vo.c_popularity, 0.0)) AS p_ranking'
             .', (SELECT COUNT(*)+1 FROM vn iv WHERE iv.hidden = false AND iv.c_rating > COALESCE(vo.c_rating, 0.0)) AS r_ranking' if $o{what} =~ /ranking/;
@@ -245,7 +245,7 @@ sub _enrich {
 
     if($what =~ /screenshots/) {
       push(@{$r->[$r{ delete $_->{xid} }]{screenshots}}, $_) for (@{$self->dbAll("
-        SELECT vs.$colname AS xid, (s.id).id as id, vs.nsfw, vs.rid, s.width, s.height
+        SELECT vs.$colname AS xid, vndbid_num(s.id) as id, vs.nsfw, vs.rid, s.width, s.height
           FROM vn_screenshots$hist vs
           JOIN images s ON vs.scr = s.id
           WHERE vs.$colname IN(!l)
@@ -278,13 +278,12 @@ sub dbVNRevisionInsert {
   $o->{img_nsfw} = $o->{img_nsfw}?1:0 if exists $o->{img_nsfw};
   my %set = map exists($o->{$_}) ? (qq|"$_" = ?| => $o->{$_}) : (),
     qw|title original desc alias img_nsfw length l_wp l_encubed l_renai l_wikidata|;
-  $set{'image = ROW(\'cv\',?)::image_id'} = $o->{image} if $o->{image};
-  $set{'image = NULL'} = 1 if exists $o->{image} && !$o->{image};
+  $set{'image = vndbid(\'cv\',?)'} = $o->{image}||undef if exists $o->{image};
   $self->dbExec('UPDATE edit_vn !H', \%set) if keys %set;
 
   if($o->{screenshots}) {
     $self->dbExec('DELETE FROM edit_vn_screenshots');
-    my $q = join ',', map '(ROW(\'sf\', ?)::image_id, ?, ?)', @{$o->{screenshots}};
+    my $q = join ',', map '(vndbid(\'sf\', ?), ?, ?)', @{$o->{screenshots}};
     my @val = map +($_->{id}, $_->{nsfw}?1:0, $_->{rid}), @{$o->{screenshots}};
     $self->dbExec("INSERT INTO edit_vn_screenshots (scr, nsfw, rid) VALUES $q", @val) if @val;
   }
@@ -320,7 +319,7 @@ sub dbVNRevisionInsert {
 
 # arrayref of screenshot IDs as argument
 sub dbScreenshotGet {
-  return shift->dbAll(q|SELECT (id).id, width, height FROM images WHERE id IN(SELECT ROW('sf', n::integer)::image_id FROM unnest(ARRAY[!l]) x(n))|, shift);
+  return shift->dbAll(q|SELECT vndbid_num(id) AS id, width, height FROM images WHERE id IN(SELECT vndbid('sf', n::integer) FROM unnest(ARRAY[!l]) x(n))|, shift);
 }
 
 
@@ -328,15 +327,15 @@ sub dbScreenshotGet {
 # if any arguments are given, it will return one random screenshot for each VN
 sub dbScreenshotRandom {
   my($self, @vids) = @_;
-  # Assumption: id.id for screenshots doesn't have ~too~ many gaps (less than, say, 80%)
+  # Assumption: vndbid_num(id) for screenshots doesn't have ~too~ many gaps (less than, say, 80%)
   return $self->dbAll(q|
-    SELECT (s.id).id AS scr, s.width, s.height, v.id AS vid, v.title
+    SELECT vndbid_num(s.id) AS scr, s.width, s.height, v.id AS vid, v.title
       FROM images s
       JOIN vn_screenshots vs ON vs.scr = s.id
       JOIN vn v ON v.id = vs.id
      WHERE NOT v.hidden AND NOT vs.nsfw
        AND s.id IN(
-         SELECT ROW('sf', floor(random() * (select last_value from screenshots_seq)))::image_id
+         SELECT vndbid('sf', floor(random() * (select last_value from screenshots_seq))::int)
            FROM generate_series(1,20)
           LIMIT 20
        )
@@ -345,7 +344,7 @@ sub dbScreenshotRandom {
 
   # this query is faster than it looks
   return $self->dbAll(join(' UNION ALL ', map
-    q|SELECT (s.id).id AS scr, s.width, s.height, v.id AS vid, v.title, RANDOM() AS position
+    q|SELECT vndbid_num(s.id) AS scr, s.width, s.height, v.id AS vid, v.title, RANDOM() AS position
         FROM (
          SELECT vs2.id, vs2.scr FROM vn_screenshots vs2
           WHERE vs2.id = ? AND NOT vs2.nsfw

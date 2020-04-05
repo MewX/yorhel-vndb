@@ -134,7 +134,7 @@ sub copy_entry {
     # Image metadata
     my $image_ids = join ',', map "'$_'", @$images;
     copy images => "SELECT * FROM images WHERE id IN($image_ids)";
-    copy image_votes => "SELECT * FROM image_votes WHERE id IN($image_ids)", { uid => 'user' };
+    copy image_votes => "SELECT DISTINCT ON (id,uid%10) * FROM image_votes WHERE id IN($image_ids)", { uid => 'user' };
 
     # Threads (announcements)
     my $threads = join ',', @{ $db->selectcol_arrayref("SELECT tid FROM threads_boards b WHERE b.type = 'an'") };
@@ -181,6 +181,7 @@ sub copy_entry {
     print "SELECT update_stats_cache_full();\n";
     print "SELECT update_vnvotestats();\n";
     print "SELECT update_users_ulist_stats(NULL);\n";
+    print "SELECT update_images_cache(NULL);\n";
     print "UPDATE users u SET c_tags = (SELECT COUNT(*) FROM tags_vn v WHERE v.uid = u.id);\n";
     print "UPDATE users u SET c_changes = (SELECT COUNT(*) FROM changes c WHERE c.requester = u.id);\n";
 
@@ -196,7 +197,7 @@ sub copy_entry {
 
 # Now figure out which images we need, and throw everything in a tarball
 sub img { sprintf 'static/%s/%02d/%d.jpg', $_[0], $_[1]%100, $_[1] }
-my @imgpaths = sort map { my($t,$id) = /\((.+),(.+)\)/; (img($t, $id), $t eq 'sf' ? img('st', $id) : ()) } @$images;
+my @imgpaths = sort map { my($t,$id) = /([a-z]+)([0-9]+)/; (img($t, $id), $t eq 'sf' ? img('st', $id) : ()) } @$images;
 
 system("tar -czf devdump.tar.gz dump.sql ".join ' ', @imgpaths);
 unlink 'dump.sql';

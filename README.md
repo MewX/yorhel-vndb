@@ -45,7 +45,8 @@ can stop the container and run:
 Global requirements:
 
 - Linux, or an OS that resembles Linux. Chances are VNDB won't run on Windows.
-- PostgreSQL 10 (older versions may work)
+- A standard C build system (make/gcc/etc)
+- PostgreSQL 10+ (including development files)
 - Perl 5.26+
 - Elm 0.19.1
 
@@ -88,11 +89,21 @@ util/multi.pl (application server, optional):
 ```
 
 - Setup a PostgreSQL server and make sure you can login with some admin user
+- Build the *vndbfuncs* PostgreSQL library:
+
+```
+  make -C sql/c
+```
+
+- Copy `sql/c/vndbfuncs.so` to the appropriate directory (either run
+  `sudo make -C sql/c install` or see `pg_config --pkglibdir` or
+  `SHOW dynamic_library_path`)
 - Initialize the VNDB database (assuming 'postgres' is a superuser):
 
 ```
   # Create the database & roles
   psql -U postgres -f sql/superuser_init.sql
+  psql -U postgres vndb -f sql/vndbid.sql
 
   # Set a password for each database role:
   echo "ALTER ROLE vndb       LOGIN PASSWORD 'pwd1'" | psql -U postgres

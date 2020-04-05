@@ -250,7 +250,7 @@ view model =
                 else if model.saved then "Saved!" else "" ]
               ]
         , span []
-          [ a [ href <| "/img/" ++ String.filter Char.isAlphaNum i.id ] [ text <| String.filter Char.isAlphaNum i.id ]
+          [ a [ href <| "/img/" ++ i.id ] [ text i.id ]
           , b [ class "grayedout" ] [ text " / " ]
           , a [ href i.url ] [ text <| String.fromInt i.width ++ "x" ++ String.fromInt i.height ]
           ]

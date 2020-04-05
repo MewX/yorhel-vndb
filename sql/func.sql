@@ -161,7 +161,7 @@ $$ LANGUAGE SQL;
 --
 -- Non-'ch' image weights are currently reduced to 20% in order to prioritize
 -- character images.
-CREATE OR REPLACE FUNCTION update_images_cache(image_id) RETURNS void AS $$
+CREATE OR REPLACE FUNCTION update_images_cache(vndbid) RETURNS void AS $$
 BEGIN
   -- Have to dynamically construct the query here, a
   --   WHERE ($1 IS NULL OR s.id = $1)
@@ -174,7 +174,7 @@ BEGIN
              CASE WHEN x.id IS NULL THEN 0
              ELSE greatest(1,
                     ((greatest(0, 10.0 - s.votecount)/10)*100 + coalesce(s.sexual_stddev/1.5, 0)*100 + coalesce(s.violence_stddev/1.5, 0)*100)
-                    * (CASE WHEN (x.id).itype = 'ch' THEN 1 ELSE 0.2 END)
+                    * (CASE WHEN vndbid_type(x.id) = 'ch' THEN 1 ELSE 0.2 END)
                   )
              END AS weight
         FROM (
@@ -190,7 +190,7 @@ BEGIN
           UNION ALL SELECT scr   FROM vn_screenshots vs JOIN vn v ON v.id = vs.id WHERE NOT v.hidden
           UNION ALL SELECT image FROM chars WHERE NOT hidden AND image IS NOT NULL
         ) x(id) ON s.id = x.id
-        $sql$ || (CASE WHEN $1 IS NULL THEN '' ELSE 'WHERE s.id = '||quote_literal($1)||'::image_id' END) || $sql$
+        $sql$ || (CASE WHEN $1 IS NULL THEN '' ELSE 'WHERE s.id = '||quote_literal($1) END) || $sql$
     ) weights
    WHERE weights.id = images.id
   $sql$;

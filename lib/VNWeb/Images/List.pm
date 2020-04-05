@@ -15,10 +15,9 @@ sub listing_ {
     paginate_ $url, $opt->{p}, $np, 't';
     div_ class => 'mainbox imagebrowse', sub {
         div_ class => 'imagecard', sub {
-            my $id = $_->{id} =~ s/[^a-z0-9]+//gr;
-            a_ href => "/img/$id", style => 'background-image: url('.tuwf->imgurl($_->{id}, 1).')', '';
+            a_ href => "/img/$_->{id}", style => 'background-image: url('.tuwf->imgurl($_->{id}, 1).')', '';
             div_ sub {
-                a_ href => "/img/$id", $id;
+                a_ href => "/img/$_->{id}", $_->{id};
                 txt_ ' / ';
                 a_ href => tuwf->imgurl($_->{id}), "$_->{width}x$_->{height}";
                 br_;
@@ -64,7 +63,7 @@ sub opts_ {
     };
 
     form_ sub {
-        input_ type => 'hidden', class => 'hidden', name => 'u', value => $opt->{u};
+        input_ type => 'hidden', class => 'hidden', name => 'u', value => $opt->{u} if $opt->{u};
         input_ type => 'hidden', class => 'hidden', name => 'u2', value => $opt->{u2} if $opt->{u2} != auth->uid;
         p_ class => 'center', sub {
             span_ class => 'linkradio', sub {
@@ -122,7 +121,7 @@ TUWF::get qr{/img/list}, sub {
     return tuwf->resNotFound if $opt->{u} && !$u->{user_id};
 
     my $where = sql_and
-        $opt->{t}->@* ? sql('(i.id).itype IN', $opt->{t}) : (),
+        $opt->{t}->@* ? sql_or(map sql('i.id BETWEEN vndbid(',\"$_",',1) AND vndbid_max(',\"$_",')'), $opt->{t}->@*) : (),
         $opt->{m} ? sql('i.c_votecount >', \$opt->{m}) : ();
 
     my($lst, $np) = tuwf->dbPagei({ results => 100, page => $opt->{p} }, '

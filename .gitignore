@@ -29,3 +29,6 @@
 /sql/editfunc.sql
 /www/
 *.swp
+*.o
+*.so
+*.dll

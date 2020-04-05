@@ -168,10 +168,15 @@ sub export_import_script {
     -- Uncomment to import the schema and data into a separate namespace:
     --CREATE SCHEMA vndb;
     --SET search_path TO vndb;
+
+    -- 'vndbid' is a custom base type used in the VNDB codebase, but it's safe to treat
+    -- it as just text. If you want to use the proper type, load sql/vndbid.sql from
+    -- the VNDB source code into your database and comment out the following line.
+    -- (or ignore the error message about 'vndbid' already existing)
+    CREATE DOMAIN vndbid AS text;
     _
 
     print $F "\n\n";
-    print $F "$types->{image_type}{decl}\n";
     my %types = map +($_->{type}, 1), grep $_->{pub}, map @{$schema->{$_->{name}}{cols}}, @tables;
     print $F "$types->{$_}{decl}\n" for (sort grep $types->{$_}, keys %types);
 
@@ -179,7 +184,7 @@ sub export_import_script {
         my $schema = $schema->{$table->{name}};
         print $F "\n";
         print $F "CREATE TABLE \"$table->{name}\" (\n";
-        print $F join ",\n", map "  $_->{decl}" =~ s/" serial/" integer/ir, grep $_->{pub}, @{$schema->{cols}};
+        print $F join ",\n", map "  $_->{decl}" =~ s/" serial/" integer/ir =~ s/ +(?:check|constraint) +.*//ir, grep $_->{pub}, @{$schema->{cols}};
         print $F ",\n  PRIMARY KEY(".join(', ', map "\"$_\"", @{$schema->{primary}}).")" if $schema->{primary};
         print $F "\n);\n";
     }
@@ -250,9 +255,9 @@ sub export_img {
 
     my %scr;
     my %dir = (ch => {}, cv => {}, sf => \%scr, st => \%scr);
-    $dir{sf}{$_->[0]} = 1 for $db->selectall_array("SELECT (scr).id FROM vn_screenshots WHERE $tables{vn_screenshots}{where}");
-    $dir{cv}{$_->[0]} = 1 for $db->selectall_array("SELECT (image).id FROM vn WHERE image IS NOT NULL AND $tables{vn}{where}");
-    $dir{ch}{$_->[0]} = 1 for $db->selectall_array("SELECT (image).id FROM chars WHERE image IS NOT NULL AND $tables{chars}{where}");
+    $dir{sf}{$_->[0]} = 1 for $db->selectall_array("SELECT vndbid_num(scr) FROM vn_screenshots WHERE $tables{vn_screenshots}{where}");
+    $dir{cv}{$_->[0]} = 1 for $db->selectall_array("SELECT vndbid_num(image) FROM vn WHERE image IS NOT NULL AND $tables{vn}{where}");
+    $dir{ch}{$_->[0]} = 1 for $db->selectall_array("SELECT vndbid_num(image) FROM chars WHERE image IS NOT NULL AND $tables{chars}{where}");
     $db->rollback;
     undef $db;
 

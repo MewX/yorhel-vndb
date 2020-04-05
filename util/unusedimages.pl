@@ -36,7 +36,7 @@ sub cleandb {
       ) x
     )
   });
-  print "# Deleted unreferenced screenshots: $cnt\n";
+  print "# Deleted unreferenced images: $cnt\n";
 }
 
 sub addtxt {
@@ -59,7 +59,7 @@ sub addtxtsql {
 }
 
 sub addimagessql {
-  my $st = $db->prepare('SELECT (id).itype, (id).id FROM images');
+  my $st = $db->prepare('SELECT vndbid_type(id), vndbid_num(id) FROM images');
   $st->execute();
   $count = 0;
   while((my $num = $st->fetch())) {

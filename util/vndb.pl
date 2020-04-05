@@ -39,7 +39,7 @@ tuwf->{elmgen} = $ARGV[0] && $ARGV[0] eq 'elmgen';
 
 
 sub _path {
-    my($t, $id) = $_[1] =~ /\(([a-z]+),([0-9]+)\)/;
+    my($t, $id) = $_[1] =~ /([a-z]+)([0-9]+)/;
     $t = 'st' if $t eq 'sf' && $_[2];
     sprintf '%s/%s/%02d/%d.jpg', $_[0], $t, $id%100, $id;
 }

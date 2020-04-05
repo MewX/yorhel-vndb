@@ -25,9 +25,6 @@ sub validate_token {
 
 sub enrich_image {
     my($l) = @_;
-    # XXX: Can't use "IN($image_ids)" here because of an odd PostgreSQL
-    #   limitation regarding input of composite types. "IN('(ch,1)')" throws an
-    #   error, though IN(..) with multiple values works just fine.
     enrich_merge id => sub { sql q{
       SELECT i.id, i.width, i.height, i.c_votecount AS votecount
            , i.c_sexual_avg AS sexual_avg, i.c_sexual_stddev AS sexual_stddev
@@ -37,18 +34,18 @@ sub enrich_image {
            , COALESCE(v.title, c.name, vsv.title) AS entry_title
         FROM images i
         LEFT JOIN image_votes iv ON iv.id = i.id AND iv.uid =}, \auth->uid, q{
-        LEFT JOIN vn v ON (i.id).itype = 'cv' AND v.image = i.id
-        LEFT JOIN chars c ON (i.id).itype = 'ch' AND c.image = i.id
-        LEFT JOIN vn_screenshots vs ON (i.id).itype = 'sf' AND vs.scr = i.id
-        LEFT JOIN vn vsv ON (i.id).itype = 'sf' AND vsv.id = vs.id
-       WHERE i.id = ANY(ARRAY}, $_, '::image_id[])'
+        LEFT JOIN vn v ON i.id BETWEEN 'cv1' AND vndbid_max('cv') AND v.image = i.id
+        LEFT JOIN chars c ON i.id BETWEEN 'ch1' AND vndbid_max('ch') AND c.image = i.id
+        LEFT JOIN vn_screenshots vs ON i.id BETWEEN 'sf1' AND vndbid_max('sf') AND vs.scr = i.id
+        LEFT JOIN vn vsv ON i.id BETWEEN 'sf1' AND vndbid_max('sf') AND vsv.id = vs.id
+       WHERE i.id IN}, $_
     }, $l;
 
     enrich votes => id => id => sub { sql '
         SELECT iv.id, iv.sexual, iv.violence, ', sql_user(), '
           FROM image_votes iv
           LEFT JOIN users u ON u.id = iv.uid
-         WHERE iv.id = ANY(ARRAY', $_, '::image_id[])',
+         WHERE iv.id IN', $_,
                auth ? ('AND iv.uid <> ', \auth->uid) : (), '
          ORDER BY u.username'
     }, $l;
@@ -125,7 +122,7 @@ elm_api Images => $SEND, {}, sub {
 
 elm_api ImageVote => undef, {
     votes => { sort_keys => 'id', aoh => {
-        id       => { regex => qr/^\((?:ch|cv|sf),[1-9][0-9]*\)$/ },
+        id       => { regex => qr/^(?:ch|cv|sf)[1-9][0-9]*$/ },
         token    => {},
         sexual   => { uint => 1, range => [0,2] },
         violence => { uint => 1, range => [0,2] },
@@ -160,7 +157,7 @@ TUWF::get qr{/img/vote}, sub {
 TUWF::get qr{/img/(ch|cv|sf)([1-9][0-9]*)}, sub {
     my($itype, $id) = (tuwf->capture(1), tuwf->capture(2));
 
-    my $l = [{ id => "($itype,$id)" }];
+    my $l = [{ id => "$itype$id" }];
     enrich_image $l;
     return tuwf->resNotFound if !defined $l->[0]{width};
 

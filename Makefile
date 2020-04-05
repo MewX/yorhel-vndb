@@ -50,6 +50,7 @@ clean:
 	rm -f static/f/icons.png
 	rm -rf elm/Gen/
 	rm -rf elm/elm-stuff/build-artifacts
+	$(MAKE) -C sql/c clean
 
 cleaner: clean
 	rm -rf elm/elm-stuff

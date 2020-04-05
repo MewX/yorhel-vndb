@@ -68,9 +68,6 @@ CREATE TYPE vn_relation       AS ENUM ('seq', 'preq', 'set', 'alt', 'char', 'sid
 CREATE TYPE resolution        AS ENUM ('unknown', 'nonstandard', '640x480', '800x600', '1024x768', '1280x960', '1600x1200', '640x400', '960x600', '960x640', '1024x576', '1024x600', '1024x640', '1280x720', '1280x800', '1366x768', '1600x900', '1920x1080');
 CREATE TYPE session_type      AS ENUM ('web', 'pass', 'mail');
 
-CREATE TYPE image_type        AS ENUM ('ch', 'cv', 'sf');
-CREATE TYPE image_id          AS (itype image_type, id int);
-
 -- Sequences used for ID generation of items not in the DB
 CREATE SEQUENCE covers_seq;
 CREATE SEQUENCE charimg_seq;
@@ -112,7 +109,7 @@ CREATE TABLE chars ( -- dbentry_type=c
   name       varchar(250) NOT NULL DEFAULT '', -- [pub]
   original   varchar(250) NOT NULL DEFAULT '', -- [pub]
   alias      varchar(500) NOT NULL DEFAULT '', -- [pub]
-  image      image_id CONSTRAINT chars_image_check CHECK((image).itype = 'ch'), -- [pub]
+  image      vndbid CONSTRAINT chars_image_check CHECK(vndbid_type(image) = 'ch'), -- [pub]
   "desc"     text     NOT NULL DEFAULT '', -- [pub]
   gender     gender NOT NULL DEFAULT 'unknown', -- [pub]
   s_bust     smallint NOT NULL DEFAULT 0, -- [pub]
@@ -135,7 +132,7 @@ CREATE TABLE chars_hist (
   name       varchar(250) NOT NULL DEFAULT '',
   original   varchar(250) NOT NULL DEFAULT '',
   alias      varchar(500) NOT NULL DEFAULT '',
-  image      image_id CONSTRAINT chars_hist_image_check CHECK((image).itype = 'ch'),
+  image      vndbid CONSTRAINT chars_hist_image_check CHECK(vndbid_type(image) = 'ch'),
   "desc"     text     NOT NULL DEFAULT '',
   gender     gender NOT NULL DEFAULT 'unknown',
   s_bust     smallint NOT NULL DEFAULT 0,
@@ -206,7 +203,7 @@ CREATE TABLE docs_hist (
 
 -- images
 CREATE TABLE images (
-  id                image_id NOT NULL PRIMARY KEY, -- [pub]
+  id                vndbid NOT NULL PRIMARY KEY CONSTRAINT images_id_check CHECK(vndbid_type(id) IN('ch', 'cv', 'sf')), -- [pub]
   width             smallint NOT NULL, -- [pub]
   height            smallint NOT NULL, -- [pub]
   c_votecount       integer  NOT NULL DEFAULT 0, -- [pub] (cached columns are marked [pub] for easy querying...)
@@ -219,7 +216,7 @@ CREATE TABLE images (
 
 -- image_votes
 CREATE TABLE image_votes (
-  id       image_id NOT NULL, -- [pub]
+  id       vndbid NOT NULL, -- [pub]
   uid      integer, -- [pub]
   sexual   smallint NOT NULL CHECK(sexual >= 0 AND sexual <= 2), -- [pub]
   violence smallint NOT NULL CHECK(violence >= 0 AND violence <= 2), -- [pub]
@@ -828,7 +825,7 @@ CREATE TABLE vn ( -- dbentry_type=v
   alias      varchar(500) NOT NULL DEFAULT '', -- [pub]
   length     smallint NOT NULL DEFAULT 0, -- [pub]
   img_nsfw   boolean NOT NULL DEFAULT FALSE, -- [pub]
-  image      image_id CONSTRAINT vn_image_check CHECK((image).itype = 'cv'), -- [pub]
+  image      vndbid CONSTRAINT vn_image_check CHECK(vndbid_type(image) = 'cv'), -- [pub]
   "desc"     text NOT NULL DEFAULT '', -- [pub]
   l_wp       varchar(150) NOT NULL DEFAULT '', -- [pub] (deprecated)
   l_encubed  varchar(100) NOT NULL DEFAULT '', -- [pub] (deprecated)
@@ -853,7 +850,7 @@ CREATE TABLE vn_hist (
   alias      varchar(500) NOT NULL DEFAULT '',
   length     smallint NOT NULL DEFAULT 0,
   img_nsfw   boolean NOT NULL DEFAULT FALSE,
-  image      image_id CONSTRAINT vn_hist_image_check CHECK((image).itype = 'cv'),
+  image      vndbid CONSTRAINT vn_hist_image_check CHECK(vndbid_type(image) = 'cv'),
   "desc"     text NOT NULL DEFAULT '',
   l_wp       varchar(150) NOT NULL DEFAULT '',
   l_encubed  varchar(100) NOT NULL DEFAULT '',
@@ -896,7 +893,7 @@ CREATE TABLE vn_relations_hist (
 -- vn_screenshots
 CREATE TABLE vn_screenshots (
   id         integer NOT NULL, -- [pub]
-  scr        image_id NOT NULL CONSTRAINT vn_screenshots_scr_check CHECK((scr).itype = 'sf'), -- [pub] images.id
+  scr        vndbid NOT NULL CONSTRAINT vn_screenshots_scr_check CHECK(vndbid_type(scr) = 'sf'), -- [pub] images.id
   rid        integer,          -- [pub] releases.id (only NULL for old revisions, nowadays not allowed anymore)
   nsfw       boolean NOT NULL DEFAULT FALSE, -- [pub]
   PRIMARY KEY(id, scr)
@@ -905,7 +902,7 @@ CREATE TABLE vn_screenshots (
 -- vn_screenshots_hist
 CREATE TABLE vn_screenshots_hist (
   chid       integer NOT NULL,
-  scr        image_id NOT NULL CONSTRAINT vn_screenshots_hist_scr_check CHECK((scr).itype = 'sf'),
+  scr        vndbid NOT NULL CONSTRAINT vn_screenshots_hist_scr_check CHECK(vndbid_type(scr) = 'sf'),
   rid        integer,
   nsfw       boolean NOT NULL DEFAULT FALSE,
   PRIMARY KEY(chid, scr)

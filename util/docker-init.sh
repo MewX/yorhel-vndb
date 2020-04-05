@@ -37,6 +37,12 @@ mkdevuser() {
 }
 
 
+# Should run as root
+installvndbid() {
+    make -C /var/www/sql/c install || exit
+}
+
+
 # Should run as devuser
 pg_start() {
     if [ ! -d /var/www/data/docker-pg/12 ]; then
@@ -67,6 +73,7 @@ pg_start() {
 
     make sql/editfunc.sql
     psql postgres -f sql/superuser_init.sql
+    psql -U devuser vndb -f sql/vndbid.sql
     echo "ALTER ROLE vndb       LOGIN" | psql postgres
     echo "ALTER ROLE vndb_site  LOGIN" | psql postgres
     echo "ALTER ROLE vndb_multi LOGIN" | psql postgres
@@ -102,6 +109,7 @@ devshell() {
 case "$1" in
     '')
         mkdevuser
+        installvndbid
         su devuser -c '/var/www/util/docker-init.sh pg_start'
         exec su devuser -c '/var/www/util/docker-init.sh devshell'
         ;;

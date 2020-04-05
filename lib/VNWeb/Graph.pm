@@ -44,7 +44,6 @@ sub dot2svg {
     my($dot) = @_;
 
     $dot = encode_utf8 $dot;
-    local $SIG{CHLD} = undef; # Fixed in TUWF 4d8a59cc1dfb5f919298ee495b8865f7872f6cbb
     my $e = run_cmd([config->{graphviz_path},'-Tsvg'], '<', \$dot, '>', \my $out, '2>', \my $err)->recv;
     warn "graphviz STDERR: $err\n" if chomp $err;
     $e and die "Failed to run graphviz";
