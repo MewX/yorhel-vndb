@@ -335,7 +335,7 @@ sub dbScreenshotRandom {
       JOIN vn v ON v.id = vs.id
      WHERE NOT v.hidden AND NOT vs.nsfw
        AND s.id IN(
-         SELECT vndbid('sf', floor(random() * (select last_value from screenshots_seq))::int)
+         SELECT vndbid('sf', floor(1 + random() * (select last_value from screenshots_seq))::int)
            FROM generate_series(1,20)
           LIMIT 20
        )
