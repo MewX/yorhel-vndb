@@ -43,8 +43,8 @@ type alias Model =
   , plat       : Set.Set String
   , platDd     : DD.Config Msg
   , media      : List GRE.RecvMedia
-  , gtinInput  : String
-  , gtin       : Int
+  , gtin       : String
+  , gtinValid  : Bool
   , catalog    : String
   , released   : D.RDate
   , minage     : Int
@@ -92,8 +92,8 @@ init d =
   , plat       = Set.fromList <| List.map (\e -> e.platform) d.platforms
   , platDd     = DD.init "platforms" PlatOpen
   , media      = List.map (\m -> { m | qty = if m.qty == 0 then 1 else m.qty }) d.media
-  , gtinInput  = formatGtin d.gtin
-  , gtin       = d.gtin
+  , gtin       = String.padLeft 12 '0' d.gtin
+  , gtinValid  = True
   , catalog    = d.catalog
   , released   = d.released
   , minage     = d.minage
@@ -210,7 +210,7 @@ update msg model =
     MediaType n s -> ({ model | media = if s /= "unk" && n == List.length model.media then model.media ++ [{medium = s, qty = 1}] else modidx n (\m -> { m | medium = s }) model.media }, Cmd.none)
     MediaQty n i  -> ({ model | media = modidx n (\m -> { m | qty    = i }) model.media }, Cmd.none)
     MediaDel i -> ({ model | media = delidx i model.media }, Cmd.none)
-    Gtin s     -> ({ model | gtinInput = s, gtin = validateGtin s }, Cmd.none)
+    Gtin s     -> ({ model | gtin = s, gtinValid = s == "" || validateGtin s }, Cmd.none)
     Catalog s  -> ({ model | catalog = s }, Cmd.none)
     Released d -> ({ model | released = d }, Cmd.none)
     Minage i   -> ({ model | minage = i }, Cmd.none)
@@ -262,7 +262,7 @@ isValid model = not
   (  model.title == model.original
   || Set.isEmpty model.lang
   || hasDuplicates (List.map (\m -> (m.medium, m.qty)) model.media)
-  || (model.gtinInput /= "" && model.gtin == 0)
+  || not model.gtinValid
   || List.isEmpty model.vn
   )
 
@@ -333,8 +333,8 @@ viewGen model =
 
   , tr [ class "newpart" ] [ td [ colspan 2 ] [ text "External identifiers & links" ] ]
   , formField "gtin::JAN/UPC/EAN"
-    [ inputText "gtin" model.gtinInput Gtin [pattern "[0-9]+"]
-    , if model.gtinInput /= "" && model.gtin == 0 then b [ class "standout" ] [ text "Invalid GTIN code" ] else text ""
+    [ inputText "gtin" model.gtin Gtin [pattern "[0-9]+"]
+    , if not model.gtinValid then b [ class "standout" ] [ text "Invalid GTIN code" ] else text ""
     ]
   , formField "catalog::Catalog number" [ inputText "catalog" model.catalog Catalog GRE.valCatalog ]
   , formField "website::Website" [ inputText "website" model.website Website (style "width" "500px" :: GRE.valWebsite) ]

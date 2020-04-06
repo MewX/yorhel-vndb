@@ -23,6 +23,7 @@ sub shorten {
 # Also 'normalizes' the first argument in place
 sub gtintype {
   $_[0] =~ s/[^\d]+//g;
+  $_[0] =~ s/^0+//;
   return undef if $_[0] !~ /^[0-9]{10,13}$/; # I've yet to see a UPC code shorter than 10 digits assigned to a game
   $_[0] = ('0'x(12-length $_[0])) . $_[0] if length($_[0]) < 12; # pad with zeros to GTIN-12
   my $c = shift;

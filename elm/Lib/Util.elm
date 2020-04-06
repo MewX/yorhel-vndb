@@ -42,12 +42,8 @@ selfCmd : msg -> Cmd msg
 selfCmd m = Task.perform (always m) (Task.succeed True)
 
 
-formatGtin : Int -> String
-formatGtin n = if n == 0 then "" else String.fromInt n |> String.padLeft 12 '0'
-
-
 -- Based on VNDBUtil::gtintype()
-validateGtin : String -> Int
+validateGtin : String -> Bool
 validateGtin =
   let check = String.fromInt
         >> String.reverse
@@ -60,4 +56,4 @@ validateGtin =
         || (n >= 2000000000000 && n < 3000000000000)
         ||  n >= 9770000000000
         || modBy 10 (check n) /= 0
-  in String.filter Char.isDigit >> String.toInt >> Maybe.andThen (\n -> if inval n then Nothing else Just n) >> Maybe.withDefault 0
+  in String.filter Char.isDigit >> String.toInt >> Maybe.map (not << inval) >> Maybe.withDefault False
