@@ -256,7 +256,6 @@ CREATE TABLE producers ( -- dbentry_type=p
   "desc"     text NOT NULL DEFAULT '', -- [pub]
   alias      varchar(500) NOT NULL DEFAULT '', -- [pub]
   l_wp       varchar(150), -- [pub] (deprecated)
-  rgraph     integer, -- relgraphs.id
   l_wikidata integer -- [pub]
 );
 
@@ -463,12 +462,6 @@ CREATE TABLE releases_vn_hist (
   chid       integer NOT NULL,
   vid        integer NOT NULL, -- vn.id
   PRIMARY KEY(chid, vid)
-);
-
--- relgraphs
-CREATE TABLE relgraphs (
-  id SERIAL PRIMARY KEY,
-  svg xml NOT NULL
 );
 
 -- rlists
@@ -830,7 +823,6 @@ CREATE TABLE vn ( -- dbentry_type=v
   l_wp       varchar(150) NOT NULL DEFAULT '', -- [pub] (deprecated)
   l_encubed  varchar(100) NOT NULL DEFAULT '', -- [pub] (deprecated)
   l_renai    varchar(100) NOT NULL DEFAULT '', -- [pub]
-  rgraph     integer, -- relgraphs.id
   c_released integer NOT NULL DEFAULT 0,
   c_languages language[] NOT NULL DEFAULT '{}',
   c_olang    language[] NOT NULL DEFAULT '{}',

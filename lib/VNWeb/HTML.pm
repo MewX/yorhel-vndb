@@ -339,8 +339,7 @@ sub _maintabs_ {
             t '' => "/$id", $id;
 
             t rg => "/$id/rg", 'relations'
-                if $t =~ /[vp]/ && (exists $o->{rgraph} ? $o->{rgraph}
-                    : tuwf->dbVali('SELECT rgraph FROM', $t eq 'v' ? 'vn' : 'producers', 'WHERE id =', \$o->{id}));
+                if $t =~ /[vp]/ && tuwf->dbVali('SELECT 1 FROM', $t eq 'v' ? 'vn_relations' : 'producers_relations', 'WHERE id =', \$o->{id}, 'LIMIT 1');
 
             t releases => "/$id/releases", 'releases' if $t eq 'v';
             t edit => "/$id/edit", 'edit' if can_edit $t, $o;

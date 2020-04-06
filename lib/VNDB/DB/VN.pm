@@ -14,7 +14,7 @@ our @EXPORT = qw|dbVNGet dbVNGetRev dbVNRevisionInsert dbScreenshotGet dbScreens
 # Options: id, char, search, gtin, length, lang, olang, plat, tag_inc, tag_exc, tagspoil,
 #   hasani, hasshot, ul_notblack, ul_onwish, results, page, what, sort,
 #   reverse, inc_hidden, date_before, date_after, released, release, character
-# What: extended anime staff seiyuu relations screenshots relgraph rating ranking vnlist
+# What: extended anime staff seiyuu relations screenshots rating ranking vnlist
 #  Note: vnlist is ignored (no db search) unless a user is logged in
 # Sort: id rel pop rating title tagscore rand
 sub dbVNGet {
@@ -96,7 +96,6 @@ sub dbVNGet {
   }
 
   my @join = (
-    $o{what} =~ /relgraph/ ? 'JOIN relgraphs vg ON vg.id = v.rgraph' : (),
     $uid && $o{what} =~ /vnlist/ ? ("LEFT JOIN (
        SELECT irv.vid, COUNT(*) AS userlist_all,
               SUM(CASE WHEN irl.status = 2 THEN 1 ELSE 0 END) AS userlist_obtained
@@ -109,10 +108,9 @@ sub dbVNGet {
 
   my $tag_ids = $o{tag_inc} && join ',', ref $o{tag_inc} ? @{$o{tag_inc}} : $o{tag_inc};
   my @select = ( # see https://rt.cpan.org/Ticket/Display.html?id=54224 for the cast on c_languages and c_platforms
-    qw|v.id v.locked v.hidden v.c_released v.c_languages::text[] v.c_olang::text[] v.c_platforms::text[] v.title v.original v.rgraph|,
+    qw|v.id v.locked v.hidden v.c_released v.c_languages::text[] v.c_olang::text[] v.c_platforms::text[] v.title v.original|,
     $o{what} =~ /extended/ ? (
       qw|v.alias v.img_nsfw v.length v.desc v.l_wp v.l_encubed v.l_renai v.l_wikidata|, 'coalesce(vndbid_num(v.image),0) as image' ) : (),
-    $o{what} =~ /relgraph/ ? 'vg.svg' : (),
     $o{what} =~ /rating/ ? (qw|v.c_popularity v.c_rating v.c_votecount|) : (),
     $o{what} =~ /ranking/ ? (
       '(SELECT COUNT(*)+1 FROM vn iv WHERE iv.hidden = false AND iv.c_popularity > COALESCE(v.c_popularity, 0.0)) AS p_ranking',
@@ -157,7 +155,7 @@ sub dbVNGetRev {
   # XXX: Too much duplication with code in dbVNGet() here. Can we combine some code here?
   my $uid = $self->authInfo->{id};
 
-  my $select = 'c.itemid AS id, vo.c_released, vo.c_languages::text[], vo.c_olang::text[], vo.c_platforms::text[], v.title, v.original, vo.rgraph';
+  my $select = 'c.itemid AS id, vo.c_released, vo.c_languages::text[], vo.c_olang::text[], vo.c_platforms::text[], v.title, v.original';
   $select .= ', extract(\'epoch\' from c.added) as added, c.comments, c.rev, c.ihid, c.ilock, '.VNWeb::DB::sql_user();
   $select .= ', c.id AS cid, NOT EXISTS(SELECT 1 FROM changes c2 WHERE c2.type = c.type AND c2.itemid = c.itemid AND c2.rev = c.rev+1) AS lastrev';
   $select .= ', v.alias, coalesce(vndbid_num(v.image), 0) as image, v.img_nsfw, v.length, v.desc, v.l_wp, v.l_encubed, v.l_renai, v.l_wikidata, vo.hidden, vo.locked' if $o{what} =~ /extended/;

@@ -39,7 +39,6 @@ my $config = {
         Core        => {},
         Feed        => {},
         Maintenance => {},
-        RG          => {},
     },
 };
 

@@ -9,7 +9,7 @@ our @EXPORT = qw|dbProducerGet dbProducerGetRev dbProducerRevisionInsert|;
 
 
 # options: results, page, id, search, char, sort, inc_hidden
-# what: extended relations relgraph
+# what: extended relations
 sub dbProducerGet {
   my $self = shift;
   my %o = (
@@ -34,11 +34,8 @@ sub dbProducerGet {
       '(ASCII(p.name) < 97 OR ASCII(p.name) > 122) AND (ASCII(p.name) < 65 OR ASCII(p.name) > 90)' => 1 ) : (),
   );
 
-  my $join = $o{what} =~ /relgraph/ ? 'JOIN relgraphs pg ON pg.id = p.rgraph' : '';
-
-  my $select = 'p.id, p.type, p.name, p.original, p.lang, p.rgraph';
+  my $select = 'p.id, p.type, p.name, p.original, p.lang';
   $select .= ', p.desc, p.alias, p.website, p.l_wp, p.l_wikidata, p.hidden, p.locked' if $o{what} =~ /extended/;
-  $select .= ', pg.svg' if $o{what} =~ /relgraph/;
 
   my($order, @order) = ('p.name');
   if($o{sort} && $o{sort} eq 'search') {
@@ -49,10 +46,9 @@ sub dbProducerGet {
   my($r, $np) = $self->dbPage(\%o, qq|
     SELECT !s
       FROM producers p
-      !s
       !W
       ORDER BY $order|,
-    $select, $join, \%where, @order
+    $select, \%where, @order
   );
 
   return _enrich($self, $r, $np, 0, $o{what});
@@ -67,7 +63,7 @@ sub dbProducerGetRev {
 
   $o{rev} ||= $self->dbRow('SELECT MAX(rev) AS rev FROM changes WHERE type = \'p\' AND itemid = ?', $o{id})->{rev};
 
-  my $select = 'c.itemid AS id, p.type, p.name, p.original, p.lang, po.rgraph';
+  my $select = 'c.itemid AS id, p.type, p.name, p.original, p.lang';
   $select .= ', extract(\'epoch\' from c.added) as added, c.comments, c.rev, c.ihid, c.ilock, '.VNWeb::DB::sql_user();
   $select .= ', c.id AS cid, NOT EXISTS(SELECT 1 FROM changes c2 WHERE c2.type = c.type AND c2.itemid = c.itemid AND c2.rev = c.rev+1) AS lastrev';
   $select .= ', p.desc, p.alias, p.website, p.l_wp, p.l_wikidata, po.hidden, po.locked' if $o{what} =~ /extended/;

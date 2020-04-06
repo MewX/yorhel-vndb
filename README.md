@@ -74,7 +74,6 @@ util/multi.pl (application server, optional):
 - AnyEvent::HTTP
 - AnyEvent::IRC
 - AnyEvent::Pg
-- XML::Parser
 
 
 ## Manual setup

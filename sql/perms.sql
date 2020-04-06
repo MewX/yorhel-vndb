@@ -36,7 +36,6 @@ GRANT SELECT, INSERT,         DELETE ON releases_producers       TO vndb_site;
 GRANT SELECT, INSERT                 ON releases_producers_hist  TO vndb_site;
 GRANT SELECT, INSERT,         DELETE ON releases_vn              TO vndb_site;
 GRANT SELECT, INSERT                 ON releases_vn_hist         TO vndb_site;
-GRANT SELECT                         ON relgraphs                TO vndb_site;
 GRANT SELECT, INSERT, UPDATE, DELETE ON rlists                   TO vndb_site;
 -- No access to the 'sessions' table, managed by the user_* functions.
 GRANT SELECT                         ON shop_denpa               TO vndb_site;
@@ -120,7 +119,6 @@ GRANT SELECT                         ON releases_media           TO vndb_multi;
 GRANT SELECT                         ON releases_platforms       TO vndb_multi;
 GRANT SELECT                         ON releases_producers       TO vndb_multi;
 GRANT SELECT                         ON releases_vn              TO vndb_multi;
-GRANT SELECT, INSERT, UPDATE, DELETE ON relgraphs                TO vndb_multi;
 GRANT SELECT, INSERT, UPDATE, DELETE ON rlists                   TO vndb_multi;
 GRANT SELECT (expires)               ON sessions                 TO vndb_multi;
 GRANT                         DELETE ON sessions                 TO vndb_multi;

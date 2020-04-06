@@ -77,12 +77,6 @@ my %dailies = (
   # takes a few seconds, need more data and measurements. This query /should/ not be necessary.
   imagecache => 'SELECT update_images_cache(NULL)',
 
-  # should be pretty fast
-  cleangraphs => q|
-    DELETE FROM relgraphs vg
-     WHERE NOT EXISTS(SELECT 1 FROM vn WHERE rgraph = vg.id)
-       AND NOT EXISTS(SELECT 1 FROM producers WHERE rgraph = vg.id)|,
-
   cleansessions      => q|DELETE FROM sessions       WHERE expires    < NOW()|,
   cleannotifications => q|DELETE FROM notifications  WHERE read       < NOW()-'1 month'::interval|,
   cleannotifications2=> q|DELETE FROM notifications  WHERE id IN (

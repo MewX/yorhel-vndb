@@ -149,7 +149,6 @@ sub copy_entry {
     copy_entry s => [qw/staff staff_alias/], $staff;
 
     # Producers (TODO: Relations)
-    copy 'relgraphs', "SELECT DISTINCT ON (r.id) r.* FROM relgraphs r JOIN producers p ON p.rgraph = r.id WHERE p.id IN(".join(',', @$producers).")", {};
     copy_entry p => [qw/producers/], $producers;
 
     # Characters
@@ -157,7 +156,6 @@ sub copy_entry {
 
     # Visual novels
     copy anime       => "SELECT DISTINCT a.* FROM anime a JOIN vn_anime_hist v ON v.aid = a.id JOIN changes c ON c.id = v.chid WHERE c.type = 'v' AND c.itemid IN($vids)";
-    copy relgraphs   => "SELECT DISTINCT ON (r.id) r.* FROM relgraphs r JOIN vn v ON v.rgraph = r.id WHERE v.id IN($vids)", {};
     copy_entry v     => [qw/vn vn_anime vn_seiyuu vn_staff vn_relations vn_screenshots/], \@vids;
 
     # VN-related niceties

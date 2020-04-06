@@ -17,7 +17,6 @@ RUN apk add --no-cache \
         perl-dev \
         perl-json-xs \
         perl-module-build \
-        perl-xml-parser \
         postgresql \
         postgresql-dev \
         zlib-dev \

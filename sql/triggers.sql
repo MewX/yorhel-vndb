@@ -215,48 +215,6 @@ CREATE TRIGGER ulist_voted_label AFTER INSERT OR UPDATE ON ulist_vns FOR EACH RO
 
 
 
--- 1. Send a notify when vn.rgraph is set to NULL, and there are related entries in vn_relations
--- 2. Set rgraph to NULL when c_languages or c_released has changed
-
-CREATE OR REPLACE FUNCTION vn_relgraph_notify() RETURNS trigger AS $$
-BEGIN
-  IF EXISTS(SELECT 1 FROM vn_relations WHERE id = NEW.id) THEN
-    -- 1.
-    IF NEW.rgraph IS NULL THEN
-      NOTIFY relgraph;
-    -- 2.
-    ELSE
-      UPDATE vn SET rgraph = NULL WHERE id = NEW.id;
-    END IF;
-  END IF;
-  RETURN NULL;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER vn_relgraph_notify AFTER UPDATE ON vn FOR EACH ROW
-  WHEN ((OLD.rgraph IS NOT NULL AND NEW.rgraph IS NULL)
-     OR (NEW.rgraph IS NOT NULL AND (OLD.c_released IS DISTINCT FROM NEW.c_released OR OLD.c_languages IS DISTINCT FROM NEW.c_languages))
-  ) EXECUTE PROCEDURE vn_relgraph_notify();
-
-
-
-
--- Send a notify when producers.rgraph is set to NULL and there are related entries in producers_relations
-
-CREATE OR REPLACE FUNCTION producer_relgraph_notify() RETURNS trigger AS $$
-BEGIN
-  IF EXISTS(SELECT 1 FROM producers_relations WHERE id = NEW.id) THEN
-    NOTIFY relgraph;
-  END IF;
-  RETURN NULL;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER producer_relgraph_notify AFTER UPDATE ON producers FOR EACH ROW WHEN (OLD.rgraph IS NOT NULL AND NEW.rgraph IS NULL) EXECUTE PROCEDURE producer_relgraph_notify();
-
-
-
-
 -- NOTIFY on insert into changes/posts/tags/trait
 
 CREATE OR REPLACE FUNCTION insert_notify() RETURNS trigger AS $$
