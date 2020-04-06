@@ -92,7 +92,7 @@ init d =
   , plat       = Set.fromList <| List.map (\e -> e.platform) d.platforms
   , platDd     = DD.init "platforms" PlatOpen
   , media      = List.map (\m -> { m | qty = if m.qty == 0 then 1 else m.qty }) d.media
-  , gtin       = String.padLeft 12 '0' d.gtin
+  , gtin       = if d.gtin == "0" then "" else String.padLeft 12 '0' d.gtin
   , gtinValid  = True
   , catalog    = d.catalog
   , released   = d.released
