@@ -157,12 +157,16 @@ BEGIN
        , c_violence_avg = violence_avg, c_violence_stddev = violence_stddev, c_weight = weight
     FROM (
       SELECT s.*,
-             CASE WHEN COALESCE(v1.id,v2.id,c.id) IS NULL THEN 0
-             ELSE greatest(1,
+             CASE WHEN EXISTS(
+                          SELECT 1 FROM vn v                                        WHERE s.id BETWEEN 'cv1' AND vndbid_max('cv') AND NOT v.hidden AND v.image = s.id
+                UNION ALL SELECT 1 FROM vn_screenshots vs JOIN vn v ON v.id = vs.id WHERE s.id BETWEEN 'sf1' AND vndbid_max('sf') AND NOT v.hidden AND vs.scr = s.id
+                UNION ALL SELECT 1 FROM chars c                                     WHERE s.id BETWEEN 'ch1' AND vndbid_max('ch') AND NOT c.hidden AND c.image = s.id
+             )
+             THEN greatest(1,
                     ((greatest(0, 10.0 - s.votecount)/10)*100 + coalesce(s.sexual_stddev, 0)*100 + coalesce(s.violence_stddev, 0)*100)
                     * (CASE WHEN vndbid_type(s.id) = 'ch' THEN 1 ELSE 0.2 END)
                   )
-             END AS weight
+             ELSE 0 END AS weight
         FROM (
             SELECT i.id, count(iv.id) AS votecount
                  , avg(sexual)   AS sexual_avg,   stddev_pop(sexual)   AS sexual_stddev
@@ -172,10 +176,6 @@ BEGIN
              WHERE ($1 IS NULL OR i.id = $1)
              GROUP BY i.id
         ) s
-        LEFT JOIN vn v1 ON NOT v1.hidden AND v1.image = s.id
-        LEFT JOIN vn_screenshots vs ON vs.scr = s.id
-        LEFT JOIN vn v2 ON NOT v2.hidden AND vs.id = v2.id
-        LEFT JOIN chars c ON NOT c.hidden AND c.image = s.id
     ) weights
    WHERE weights.id = images.id;
 END; $$ LANGUAGE plpgsql;
