@@ -2,15 +2,49 @@ package VNWeb::Images::List;
 
 use VNWeb::Prelude;
 
-sub listing_ {
-    my($lst, $np, $opt, $url) = @_;
 
-    sub rednum_ {
-        my $d = sprintf $_[1]||'%4.2f', $_[0];
-        $_[0] >= 0.5 || $_[0] <= -0.5 ? b_ class => 'standout', $d : $_[0] == 0 ? b_ class => 'grayedout', $d : txt_ $d;
+sub graph_ {
+    my($i, $opt) = @_;
+    my($gw, $go) = (150, 40); # histogram width, x offset
+
+    sub clamp { $_[0] > $_[2] ? $_[0] : $_[1] < $_[2] ? $_[1] : $_[2] }
+
+    my $y;
+    my sub line_ {
+        my($lbl, $left, $mid, $right) = @_;
+        tag_ 'text', x => 0, y => $y+9, $lbl;
+        tag_ 'line', class => 'errorbar', x1 => $go+clamp(0, $gw, $left*$gw/2), y1 => $y+5, x2 => $go+clamp(0, $gw, $right*$gw/2), y2 => $y+5, undef;
+        tag_ 'rect', width => 5, height => 10, x => $go+clamp(0, $gw-5, $mid*$gw/2-2), y => $y, undef;
+        $y += 12;
     }
 
-    # TODO: Display a histogram or something rather than all those numbers.
+    my sub subgraph_ {
+        my($left, $right, $avg, $stddev, $my, $user) = @_;
+        tag_ 'text', x => $go-2,   y => 10, $left;
+        tag_ 'text', x => $go+$gw, y => 10, 'text-anchor' => 'end', $right;
+        tag_ 'line', class => 'ruler', x1 => $go,       y1 => 12, x2 => $go,       y2 => 46, undef;
+        tag_ 'line', class => 'ruler', x1 => $go+$gw/2, y1 => 12, x2 => $go+$gw/2, y2 => 46, undef;
+        tag_ 'line', class => 'ruler', x1 => $go+$gw-2, y1 => 12, x2 => $go+$gw-2, y2 => 46, undef;
+
+        $y = 13;
+        line_ 'Avg', $avg-$stddev, $avg, $avg+$stddev if defined $avg;
+        line_ 'User', $user, $user, $avg if defined $user;
+        line_ 'My', $my, $my, $avg if defined $my && $opt->{u} != $opt->{u2};
+    }
+
+    tag_ 'svg', width => '190px', height => '100px', viewBox => '0 0 190 100', sub {
+        tag_ 'g', sub {
+            subgraph_ 'Safe', 'Explicit', $i->{c_sexual_avg}, $i->{c_sexual_stddev}, $i->{my_sexual}, $i->{user_sexual}
+        };
+        tag_ 'g', transform => 'translate(0,51)', sub {
+            subgraph_ 'Tame', 'Brutal', $i->{c_violence_avg}, $i->{c_violence_stddev}, $i->{my_violence}, $i->{user_violence}
+        };
+    };
+}
+
+
+sub listing_ {
+    my($lst, $np, $opt, $url) = @_;
 
     paginate_ $url, $opt->{p}, $np, 't';
     div_ class => 'mainbox imagebrowse', sub {
@@ -18,33 +52,10 @@ sub listing_ {
             a_ href => "/img/$_->{id}", style => 'background-image: url('.tuwf->imgurl($_->{id}, 1).')', '';
             div_ sub {
                 a_ href => "/img/$_->{id}", $_->{id};
-                txt_ ' / ';
-                a_ href => tuwf->imgurl($_->{id}), "$_->{width}x$_->{height}";
+                txt_ sprintf ' / %d', $_->{c_votecount},;
+                b_ class => 'grayedout', sprintf ' / w%.1f', $_->{c_weight};
                 br_;
-                txt_ sprintf '#%d', $_->{c_votecount},;
-                b_ class => 'grayedout', sprintf ' w%.1f', $_->{c_weight};
-                dl_ sub {
-                    if(defined $_->{c_sexual_avg}) {
-                        dt_ 'S:';
-                        dd_ sub { txt_ sprintf '%4.2f σ ', $_->{c_sexual_avg}; rednum_ $_->{c_sexual_stddev} };
-                        dt_ 'V:';
-                        dd_ sub { txt_ sprintf '%4.2f σ ', $_->{c_violence_avg}; rednum_ $_->{c_violence_stddev} };
-                    }
-                    if(defined $_->{user_sexual}) {
-                        dt_ 'User:';
-                        dd_ sub {
-                            txt_ sprintf 'S%d', $_->{user_sexual}; rednum_ $_->{user_sexual}-$_->{c_sexual_avg}, '%+4.2f';
-                            txt_ sprintf ' V%d', $_->{user_violence}; rednum_ $_->{user_violence}-$_->{c_violence_avg}, '%+4.2f';
-                        }
-                    }
-                    if(defined $_->{my_sexual} && $opt->{u} != $opt->{u2}) {
-                        dt_ 'My';
-                        dd_ sub {
-                            txt_ sprintf 'S%d', $_->{my_sexual}; rednum_ $_->{my_sexual}-$_->{c_sexual_avg}, '%+4.2f';
-                            txt_ sprintf ' V%d', $_->{my_violence}; rednum_ $_->{my_violence}-$_->{c_violence_avg}, '%+4.2f';
-                        }
-                    }
-                }
+                graph_ $_, $opt;
             };
         } for @$lst;
     };
@@ -122,7 +133,7 @@ TUWF::get qr{/img/list}, sub {
 
     my $where = sql_and
         $opt->{t}->@* ? sql_or(map sql('i.id BETWEEN vndbid(',\"$_",',1) AND vndbid_max(',\"$_",')'), $opt->{t}->@*) : (),
-        $opt->{m} ? sql('i.c_votecount >', \$opt->{m}) : ();
+        $opt->{m} ? sql('i.c_votecount >=', \$opt->{m}) : ();
 
     my($lst, $np) = tuwf->dbPagei({ results => 100, page => $opt->{p} }, '
         SELECT i.id, i.width, i.height, i.c_votecount, i.c_weight

@@ -1093,12 +1093,14 @@ p.filselect i { font-style: normal }
 /****** Image browser (/img/browse) ******/
 
 div.imagebrowse { padding: 0; display: flex; flex-wrap: wrap }
-.imagebrowse .imagecard { padding: 2px; width: 350px; display: flex }
+.imagebrowse .imagecard { padding: 2px; display: flex; flex: 1 }
 .imagebrowse .imagecard:hover { background-color: $secbg$ }
-.imagebrowse .imagecard > a { display: block; width: 150px; height: 120px; background-size: contain; background-repeat: no-repeat; background-position: top right; border: none }
+.imagebrowse .imagecard > a { flex-shrink: 0; display: block; width: 150px; height: 120px; background-size: contain; background-repeat: no-repeat; background-position: top right; border: none }
 .imagebrowse .imagecard > div { padding: 0 0 0 4px }
-.imagebrowse .imagecard dl dt { clear: left; float: left; width: 50px }
-.imagebrowse .imagecard dl dd { float: left; font-family: monospace }
+.imagebrowse .imagecard > div svg { font-size: 11px }
+.imagebrowse .imagecard > div svg .errorbar { stroke: $standout$; stroke-width: 2 }
+.imagebrowse .imagecard > div svg .ruler { stroke: $border$; stroke-width: 1; stroke-dasharray: 3 }
+.imagebrowse .imagecard > div svg rect { fill: $maintext$ }
 
 
 /****** Icons *******/
