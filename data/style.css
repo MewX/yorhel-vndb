@@ -1085,7 +1085,7 @@ p.filselect i { font-style: normal }
 .imageflag > div:nth-child(4) ul li     label { display: inline-block; border: 1px solid $secborder$; padding: 7px; width: 100px; white-space: nowrap; margin: 2px 0; cursor: pointer }
 .imageflag > div:nth-child(4) ul li.sel label,
 .imageflag > div:nth-child(4) ul li     label:hover { background-color: $secbg$ }
-.imageflag > div:nth-child(6) { height: 200px; padding: 15px 0 }
+.imageflag > div:nth-child(6) { min-height: 200px; padding: 15px 0 }
 .imageflag > div:nth-child(6) table { margin: 0 auto }
 .imageflag > div:nth-child(6) table td { min-width: 50px }
 
