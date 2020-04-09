@@ -86,7 +86,8 @@ TUWF::get qr{/u/(?<char>[0a-z]|all)}, sub {
                   images     => 'c_imgvotes',
                 }->{$opt->{s}}, $opt->{o} eq 'd' ? 'DESC' : 'ASC'
     );
-    my $count = @where ? tuwf->dbVali('SELECT count(*) FROM users WHERE', sql_and @where) : tuwf->{stats}{users};
+    state $totalusers = tuwf->dbVal('SELECT count(*) FROM users');
+    my $count = @where ? tuwf->dbVali('SELECT count(*) FROM users WHERE', sql_and @where) : $totalusers;
 
     framework_ title => 'Browse users', sub {
         div_ class => 'mainbox', sub {

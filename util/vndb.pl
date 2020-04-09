@@ -66,9 +66,6 @@ TUWF::hook before => sub {
     # Use a 'SameSite=Strict' cookie to determine whether this page was loaded from internal or external.
     # Ought to be more reliable than checking the Referer header, but it's unfortunately a bit uglier.
     tuwf->resCookie(samesite => 1, httponly => 1, samesite => 'Strict') if !tuwf->samesite;
-
-    # load some stats (used for about all pageviews, anyway)
-    tuwf->{stats} = tuwf->dbStats;
 };
 
 

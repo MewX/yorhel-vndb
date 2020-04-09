@@ -337,8 +337,7 @@ sub dbstats {
 
   cpg $c, 'SELECT section, count FROM stats_cache', undef, sub {
     my $res = shift;
-    cres $c, [ dbstats => { map {
-      $_->{section} =~ s/^threads_//;
+    cres $c, [ dbstats => { users => 0, threads => 0, posts => 0, map {
       ($_->{section}, 1*$_->{count})
     } $res->rowsAsHashes } ], 'dbstats';
   };

@@ -41,17 +41,7 @@ DECLARE
   hidden boolean;
 BEGIN
   IF TG_OP = 'INSERT' THEN
-    IF TG_TABLE_NAME = 'users' THEN
-      UPDATE stats_cache SET count = count+1 WHERE section = TG_TABLE_NAME;
-    ELSE
-      IF TG_TABLE_NAME = 'threads_posts' THEN
-        IF EXISTS(SELECT 1 FROM threads WHERE id = NEW.tid AND threads.hidden = FALSE) THEN
-          UPDATE stats_cache SET count = count+1 WHERE section = TG_TABLE_NAME;
-        END IF;
-      ELSE
-        UPDATE stats_cache SET count = count+1 WHERE section = TG_TABLE_NAME;
-      END IF;
-    END IF;
+    UPDATE stats_cache SET count = count+1 WHERE section = TG_TABLE_NAME;
 
   ELSIF TG_OP = 'UPDATE' THEN
     IF TG_TABLE_NAME IN('tags', 'traits') THEN
@@ -59,22 +49,13 @@ BEGIN
       hidden := OLD.state = 2 AND NEW.state <> 2;
     ELSE
       unhidden := OLD.hidden AND NOT NEW.hidden;
-      hidden := NOT unhidden;
+      hidden := NEW.hidden AND NOT OLD.hidden;
     END IF;
     IF unhidden THEN
-      IF TG_TABLE_NAME = 'threads' THEN
-        UPDATE stats_cache SET count = count+NEW.count WHERE section = 'threads_posts';
-      END IF;
       UPDATE stats_cache SET count = count+1 WHERE section = TG_TABLE_NAME;
     ELSIF hidden THEN
-      IF TG_TABLE_NAME = 'threads' THEN
-        UPDATE stats_cache SET count = count-NEW.count WHERE section = 'threads_posts';
-      END IF;
       UPDATE stats_cache SET count = count-1 WHERE section = TG_TABLE_NAME;
     END IF;
-
-  ELSIF TG_OP = 'DELETE' AND TG_TABLE_NAME = 'users' THEN
-    UPDATE stats_cache SET count = count-1 WHERE section = TG_TABLE_NAME;
   END IF;
   RETURN NULL;
 END;
@@ -94,11 +75,6 @@ CREATE TRIGGER stats_cache_new  AFTER  INSERT           ON tags          FOR EAC
 CREATE TRIGGER stats_cache_edit AFTER  UPDATE           ON tags          FOR EACH ROW WHEN (OLD.state IS DISTINCT FROM NEW.state)   EXECUTE PROCEDURE update_stats_cache();
 CREATE TRIGGER stats_cache_new  AFTER  INSERT           ON traits        FOR EACH ROW WHEN (NEW.state = 2)                          EXECUTE PROCEDURE update_stats_cache();
 CREATE TRIGGER stats_cache_edit AFTER  UPDATE           ON traits        FOR EACH ROW WHEN (OLD.state IS DISTINCT FROM NEW.state)   EXECUTE PROCEDURE update_stats_cache();
-CREATE TRIGGER stats_cache_new  AFTER  INSERT           ON threads       FOR EACH ROW WHEN (NEW.hidden = FALSE)                     EXECUTE PROCEDURE update_stats_cache();
-CREATE TRIGGER stats_cache_edit AFTER  UPDATE           ON threads       FOR EACH ROW WHEN (OLD.hidden IS DISTINCT FROM NEW.hidden) EXECUTE PROCEDURE update_stats_cache();
-CREATE TRIGGER stats_cache_new  AFTER  INSERT           ON threads_posts FOR EACH ROW WHEN (NEW.hidden = FALSE)                     EXECUTE PROCEDURE update_stats_cache();
-CREATE TRIGGER stats_cache_edit AFTER  UPDATE           ON threads_posts FOR EACH ROW WHEN (OLD.hidden IS DISTINCT FROM NEW.hidden) EXECUTE PROCEDURE update_stats_cache();
-CREATE TRIGGER stats_cache      AFTER  INSERT OR DELETE ON users         FOR EACH ROW                                               EXECUTE PROCEDURE update_stats_cache();
 
 
 

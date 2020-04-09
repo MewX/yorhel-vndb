@@ -52,7 +52,6 @@ elm_api DiscussionsEdit => $FORM_OUT, $FORM_IN, sub {
 
     if($data->{delete} && auth->permBoardmod) {
         warn "AUDIT: Delete t$tid.$num\n";
-        # BUG: Doesn't cause stats_cache to be updated. But who cares about that.
         if($num == 1) {
             # (This could be a single query if there were proper ON DELETE CASCADE in the DB, though that's hard for notifications...)
             tuwf->dbExeci('DELETE FROM threads_posts WHERE tid =', \$tid);

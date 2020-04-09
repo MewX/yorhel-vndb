@@ -265,15 +265,16 @@ sub _menu_ {
         h2_ 'Database Statistics';
         div_ sub {
             dl_ sub {
-                dt_ 'Visual Novels'; dd_ tuwf->{stats}{vn};
+                my %stats = map +($_->{section}, $_->{count}), tuwf->dbAll('SELECT * FROM stats_cache')->@*;
+                dt_ 'Visual Novels'; dd_ $stats{vn};
                 dt_ sub { b_ class => 'grayedout', '> '; lit_ 'Tags' };
-                                     dd_ tuwf->{stats}{tags};
-                dt_ 'Releases';      dd_ tuwf->{stats}{releases};
-                dt_ 'Producers';     dd_ tuwf->{stats}{producers};
-                dt_ 'Staff';         dd_ tuwf->{stats}{staff};
-                dt_ 'Characters';    dd_ tuwf->{stats}{chars};
+                                     dd_ $stats{tags};
+                dt_ 'Releases';      dd_ $stats{releases};
+                dt_ 'Producers';     dd_ $stats{producers};
+                dt_ 'Staff';         dd_ $stats{staff};
+                dt_ 'Characters';    dd_ $stats{chars};
                 dt_ sub { b_ class => 'grayedout', '> '; lit_ 'Traits' };
-                                     dd_ tuwf->{stats}{traits};
+                                     dd_ $stats{traits};
             };
             clearfloat_;
         }

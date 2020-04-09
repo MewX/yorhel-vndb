@@ -3,13 +3,10 @@ INSERT INTO users (id, username, mail, perm, notify_dbedit) VALUES (1, 'multi', 
 SELECT setval('users_id_seq', 2);
 
 INSERT INTO stats_cache (section, count) VALUES
-  ('users',         1),
   ('vn',            0),
   ('producers',     0),
   ('releases',      0),
   ('chars',         0),
   ('staff',         0),
   ('tags',          0),
-  ('traits',        0),
-  ('threads',       0),
-  ('threads_posts', 0);
+  ('traits',        0);

@@ -6,18 +6,8 @@ use warnings;
 use Exporter 'import';
 
 our @EXPORT = qw|
-  dbStats dbItemEdit dbRevisionGet dbWikidata dbImageAdd
+  dbItemEdit dbRevisionGet dbWikidata dbImageAdd
 |;
-
-
-# Returns: hashref, key = section, value = number of (visible) entries
-# Sections: vn, producers, releases, users, threads, posts
-sub dbStats {
-  my $s = shift;
-  return { map {
-    $_->{section} eq 'threads_posts' ? 'posts' : $_->{section}, $_->{count}
-  } @{$s->dbAll('SELECT * FROM stats_cache')}};
-}
 
 
 # Inserts a new revision into the database
