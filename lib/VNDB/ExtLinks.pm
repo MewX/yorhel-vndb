@@ -6,7 +6,7 @@ use VNDB::Config;
 use VNDB::Schema;
 use Exporter 'import';
 
-our @EXPORT = ('enrich_extlinks', 'revision_extlinks', 'validate_extlinks');
+our @EXPORT = ('sql_extlinks', 'enrich_extlinks', 'revision_extlinks', 'validate_extlinks');
 
 
 # column name in wikidata table => \%info
@@ -162,6 +162,15 @@ our %LINKS = (
 );
 
 
+# Return a list of columns to fetch all external links for a database entry.
+sub sql_extlinks {
+    my($type, $prefix) = @_;
+    $prefix ||= '';
+    my $l = $LINKS{$type} || die "DB entry type $type has no links";
+    VNWeb::DB::sql_comma(map $prefix.$_, sort keys %$l)
+}
+
+
 # Fetch a list of links to display at the given database entries, adds the
 # following field to each object:
 #
@@ -213,7 +222,7 @@ sub enrich_extlinks {
         }
         my sub l {
             my($f, $price) = @_;
-            my($v, $fmt, $fmt2, $label) = ($obj->{$f}, @{$l->{$f}}{'fmt', 'fmt2', 'label'});
+            my($v, $fmt, $fmt2, $label) = ($obj->{$f}, $l->{$f} ? @{$l->{$f}}{'fmt', 'fmt2', 'label'} : ());
             push @links, map [ $label, sprintf(ref $fmt2 ? $fmt2->($obj) : $fmt2 || $fmt, $_), $price ], ref $v ? @$v : $v ? $v : ()
         }
 

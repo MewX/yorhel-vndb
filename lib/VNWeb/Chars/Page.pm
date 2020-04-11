@@ -30,12 +30,14 @@ sub enrich_item {
 
 
 # Fetch multiple character entries with a format suitable for chartable_()
+# Also used by VN::Page
 sub fetch_chars {
     my($vid, $where) = @_;
     my $l = tuwf->dbAlli('
         SELECT id, name, original, alias, "desc", gender, b_month, b_day, s_bust, s_waist, s_hip, height, weight, bloodt, cup_size, age, image
-          FROM chars WHERE NOT hidden AND (', $where, ')'
-    );
+          FROM chars WHERE NOT hidden AND (', $where, ')
+         ORDER BY name
+    ');
 
     enrich vns => id => id => sub { sql '
         SELECT cv.id, cv.vid, cv.rid, cv.spoil, cv.role, v.title, v.original, r.title AS rtitle, r.original AS roriginal
@@ -99,9 +101,7 @@ sub _rev_ {
 }
 
 
-# TODO: Also to be used by the character listing on VN pages; But it's not
-# currently compatible with VNDB::Handler::VNPage because that uses a different
-# spoiler hiding mechanism.
+# Also used by VN::Page
 sub chartable_ {
     my($c, $link, $sep, $vn) = @_;
     my $view = viewget;
@@ -177,7 +177,7 @@ sub chartable_ {
                             br_ if !$vn;
                             join_ \&br_, sub {
                                 b_ class => 'grayedout', '> ';
-                                txt_ $CHAR_ROLE{$v->{role}}{txt}.' - ';
+                                txt_ $CHAR_ROLE{$_->{role}}{txt}.' - ';
                                 if($_->{rid}) {
                                     b_ class => 'grayedout', "r$_->{rid}:";
                                     a_ href => "/r$_->{rid}", title => $_->{roriginal}||$_->{rtitle}, $_->{rtitle};

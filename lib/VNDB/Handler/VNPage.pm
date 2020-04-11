@@ -14,7 +14,6 @@ use POSIX 'strftime';
 TUWF::register(
   qr{v/rand}                        => \&rand,
   qr{v([1-9]\d*)/releases}          => \&releases,
-  qr{v([1-9]\d*)/(chars)}           => \&page,
   qr{v([1-9]\d*)/staff}             => sub { $_[0]->resRedirect("/v$_[1]#staff") },
   qr{v([1-9]\d*)(?:\.([1-9]\d*))?}  => \&page,
 );
@@ -306,7 +305,7 @@ sub _releases_table {
 sub page {
   my($self, $vid, $rev) = @_;
 
-  my $char = $rev && $rev eq 'chars';
+  my $char = $rev && $rev eq 'chars'; # XXX: Not used anymore; implemented in VNWeb::VN::Page.
   $rev = undef if $char;
 
   my $method = $rev ? 'dbVNGetRev' : 'dbVNGet';
@@ -500,7 +499,7 @@ sub page {
   }
 
   if($char) {
-    _chars($self, $chars, $v);
+      #_chars($self, $chars, $v);
   } else {
     _releases($self, $v, $r);
     _staff($self, $v);
@@ -945,27 +944,6 @@ sub _charspoillvl {
   $minspoil = $_->{vid} == $vid && $_->{spoil} < $minspoil ? $_->{spoil} : $minspoil
     for(@{$c->{vns}});
   return $minspoil;
-}
-
-
-sub _chars {
-  my($self, $l, $v) = @_;
-  return if !@$l;
-  my %done;
-  my %rol;
-  for my $r (keys %CHAR_ROLE) {
-    $rol{$r} = [ grep grep($_->{role} eq $r, @{$_->{vns}}) && !$done{$_->{id}}++, @$l ];
-  }
-  div class => 'charops', id => 'charops';
-   $self->charOps(1, 'chars');
-   for my $r (keys %CHAR_ROLE) {
-     next if !@{$rol{$r}};
-     div class => 'mainbox';
-      h1 $CHAR_ROLE{$r}{ @{$rol{$r}} > 1 ? 'plural' : 'txt' };
-      $self->charTable($_, 1, $_ != $rol{$r}[0], 1, _charspoillvl $v->{id}, $_) for (@{$rol{$r}});
-     end;
-   }
-  end;
 }
 
 
