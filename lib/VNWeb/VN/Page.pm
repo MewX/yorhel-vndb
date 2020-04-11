@@ -30,7 +30,7 @@ sub og {
     +{
         description => bb2text($v->{desc}),
         image => $v->{image} && !$v->{img_nsfw} ? tuwf->imgurl($v->{image}) :
-                 (map $_->{nsfw}?():(tuwf->imgurl($_->{scr})), $v->{screenshots}->@*)[0]
+                 [map $_->{nsfw}?():(tuwf->imgurl($_->{scr})), $v->{screenshots}->@*]->[0]
     }
 }
 
