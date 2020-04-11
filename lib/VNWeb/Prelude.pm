@@ -75,7 +75,7 @@ sub import {
 
 
 # Regular expressions for use in path registration
-my $num = qr{[1-9][0-9]{0,8}};
+my $num = qr{[1-9][0-9]{0,6}}; # Allow up to 10 mil, SQL vndbid type can't handle more than 2^26-1 (~ 67 mil).
 my $id = qr{(?<id>$num)};
 my $rev = qr{(?:\.(?<rev>$num))};
 our %RE = (
@@ -90,6 +90,7 @@ our %RE = (
     did  => qr{d$id},
     tid  => qr{t$id},
     gid  => qr{g$id},
+    imgid=> qr{(?<id>(?:ch|cv|sf)$num)},
     vrev => qr{v$id$rev?},
     rrev => qr{r$id$rev?},
     prev => qr{p$id$rev?},

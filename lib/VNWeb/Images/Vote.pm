@@ -154,16 +154,16 @@ TUWF::get qr{/img/vote}, sub {
 };
 
 
-TUWF::get qr{/img/(ch|cv|sf)([1-9][0-9]*)}, sub {
-    my($itype, $id) = (tuwf->capture(1), tuwf->capture(2));
+TUWF::get qr{/img/$RE{imgid}}, sub {
+    my $id = tuwf->capture('id');
 
-    my $l = [{ id => "$itype$id" }];
+    my $l = [{ id => $id }];
     enrich_image $l;
     return tuwf->resNotFound if !defined $l->[0]{width};
 
     enrich_token defined($l->[0]{my_sexual}) || auth->permDbmod(), $l; # XXX: permImgmod?
 
-    framework_ title => "Image flagging for $itype$id", sub {
+    framework_ title => "Image flagging for $id", sub {
         elm_ 'ImageFlagging', $SEND, { images => $l, single => 1, warn => !tuwf->samesite(), my_votes => my_votes() };
     };
 };

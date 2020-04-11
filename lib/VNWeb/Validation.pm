@@ -23,7 +23,7 @@ our @EXPORT = qw/
 
 
 TUWF::set custom_validations => {
-    id          => { uint => 1, max => 1<<40 },
+    id          => { uint => 1, max => 1<<26-1 },
     editsum     => { required => 1, length => [ 2, 5000 ] },
     page        => { uint => 1, min => 1, max => 1000, required => 0, default => 1, onerror => 1 },
     upage       => { uint => 1, min => 1, required => 0, default => 1, onerror => 1 }, # pagination without a maximum
