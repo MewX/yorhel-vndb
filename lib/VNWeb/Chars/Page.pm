@@ -101,6 +101,12 @@ sub _rev_ {
 }
 
 
+sub spoil_ {
+    sup_ title => 'Minor spoiler', class => 'grayedout', 'S' if $_[0] == 1;
+    sup_ title => 'Major spoiler', 'S' if $_[0] == 2;
+}
+
+
 # Also used by VN::Page
 sub chartable_ {
     my($c, $link, $sep, $vn) = @_;
@@ -153,7 +159,7 @@ sub chartable_ {
             }
             tr_ sub {
                 td_ class => 'key', sub { a_ href => "/i$_->{group}", $_->{groupname} };
-                td_ sub { join_ ', ', sub { a_ href => "/i$_->{tid}", $_->{name} }, $_->{traits}->@* };
+                td_ sub { join_ ', ', sub { a_ href => "/i$_->{tid}", $_->{name}; spoil_ $_->{spoil} }, $_->{traits}->@* };
             } for @groups;
 
             my @visvns = grep $_->{spoil} <= $view->{spoilers}, $c->{vns}->@*;
@@ -171,6 +177,7 @@ sub chartable_ {
                         if(!$vn && $v->{rels}->@* == 1 && !$v->{rels}[0]{rid}) {
                             txt_ $CHAR_ROLE{$v->{role}}{txt}.' - ';
                             a_ href => "/v$v->{vid}", title => $v->{original}||$v->{title}, $v->{title};
+                            spoil_ $v->{spoil};
                         # With releases
                         } else {
                             a_ href => "/v$v->{vid}", title => $v->{original}||$v->{title}, $v->{title} if !$vn;
@@ -184,6 +191,7 @@ sub chartable_ {
                                 } else {
                                     txt_ 'All other releases';
                                 }
+                                spoil_ $_->{spoil};
                             }, $v->{rels}->@*;
                         }
                     }, @vns;

@@ -107,8 +107,9 @@ div.warning h2, div.notice h2 { font-size: 13px; font-weight: bold; margin: 0; }
 
 ul, ol        { margin-left: 35px; }
 p.locked      { float: right; color: $standout$; font-style: italic; margin: 0!important; }
-b.grayedout   { font-weight: normal; color: $grayedout$ }
-i.grayedout   { font-style: normal; color: $grayedout$ }
+.grayedout    { color: $grayedout$ }
+b.grayedout   { font-weight: normal }
+i.grayedout   { font-style: normal }
 #maincontent h2 b { font: 13px "Tahoma", "Arial", sans-serif; font-weight: normal; }
 p.description { margin: 10px 100px!important; }
 b.done        { font-weight: normal; color: $statok$ }
