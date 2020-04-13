@@ -140,10 +140,9 @@ $$ LANGUAGE SQL;
 --
 -- Current algorithm:
 --
---   votes_weight = max(0, 10 - c_votecount)/10   -> linear weight between 0..1, 0 being OK and 1 being BAD
---   weight = min(1, votes_weight*100 + sexual_stddev*100 + violence_stddev*100)
---
---   Extremes: 1 .. 300, easier to tune and reason about, but still linear
+--   votes_weight = 2 ^ max(0, 14 - c_votecount)   -> exponential weight between 1 and 2^13 (~16k)
+--   (sexual|violence)_weight = (stddev/max_stddev)^2 * 100
+--   weight = votes_weight + sexual_weight + violence_weight
 --
 -- This isn't very grounded in theory, I've no clue how statistics work. I
 -- suspect confidence intervals/levels are more appropriate for this use case.
@@ -162,10 +161,8 @@ BEGIN
                 UNION ALL SELECT 1 FROM vn_screenshots vs JOIN vn v ON v.id = vs.id WHERE s.id BETWEEN 'sf1' AND vndbid_max('sf') AND NOT v.hidden AND vs.scr = s.id
                 UNION ALL SELECT 1 FROM chars c                                     WHERE s.id BETWEEN 'ch1' AND vndbid_max('ch') AND NOT c.hidden AND c.image = s.id
              )
-             THEN greatest(1,
-                    ((greatest(0, 10.0 - s.votecount)/10)*100 + coalesce(s.sexual_stddev, 0)*100 + coalesce(s.violence_stddev, 0)*100)
-                    * (CASE WHEN vndbid_type(s.id) = 'ch' THEN 1 ELSE 0.2 END)
-                  )
+             THEN (pow(2, greatest(0, 14 - s.votecount)) + coalesce(pow(s.sexual_stddev, 2), 0)*100 + coalesce(pow(s.violence_stddev, 2), 0)*100)
+                  * (CASE WHEN vndbid_type(s.id) = 'ch' THEN 1 ELSE 0.2 END)
              ELSE 0 END AS weight
         FROM (
             SELECT i.id, count(iv.id) AS votecount
