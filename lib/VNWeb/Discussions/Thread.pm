@@ -182,6 +182,11 @@ TUWF::get qr{/$RE{tid}(?:/$RE{num})?}, sub {
           GROUP BY tpo.id, tpo.option, tpm.optid'
     );
 
+    # Mark a notification for this thread as read, if there is one.
+    tuwf->dbExeci(
+        'UPDATE notifications SET read = NOW() WHERE uid =', \auth->uid, 'AND ltype = \'t\' AND iid = ', \$id, 'AND read IS NULL'
+    ) if auth && $t->{count} <= $page*25;
+
     framework_ title => $t->{title}, sub {
         metabox_ $t;
         elm_ 'Discussions.Poll' => $POLL_OUT, {

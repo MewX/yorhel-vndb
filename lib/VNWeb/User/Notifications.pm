@@ -167,7 +167,7 @@ TUWF::post qr{/$RE{uid}/notify_update}, sub {
 TUWF::get qr{/$RE{uid}/notify/$RE{num}/(?<lid>[a-z0-9\.]+)}, sub {
     my $id = tuwf->capture('id');
     return tuwf->resNotFound if !auth || $id != auth->uid;
-    tuwf->dbExeci('UPDATE notifications SET read = NOW() WHERE uid =', \$id, ' AND id =', \tuwf->capture('num'));
+    tuwf->dbExeci('UPDATE notifications SET read = NOW() WHERE read IS NULL AND uid =', \$id, ' AND id =', \tuwf->capture('num'));
     tuwf->resRedirect('/'.tuwf->capture('lid'), 'temp');
 };
 
