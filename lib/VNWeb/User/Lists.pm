@@ -189,8 +189,7 @@ elm_api UListVNNotes => $VNOPT, {
     my($data) = @_;
     return elm_Unauth if !own $data->{uid};
     tuwf->dbExeci(
-        'UPDATE ulist_vns SET lastmod = NOW(), notes = ', \$data->{notes},
-         'WHERE uid =', \$data->{uid}, 'AND vid =', \$data->{vid}
+        'INSERT INTO ulist_vns', \%$data, 'ON CONFLICT (uid, vid) DO UPDATE SET', { %$data, lastmod => sql('NOW()') }
     );
     # Doesn't need `updcache()`
     elm_Success

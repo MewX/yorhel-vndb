@@ -700,7 +700,7 @@ sub _useroptions {
       WHERE l.uid =', \$self->authInfo->{id},  '
       ORDER BY CASE WHEN l.id < 10 THEN l.id ELSE 10 END, l.label'
   );
-  my $lst = tuwf->dbRowi('SELECT vid, vote FROM ulist_vns WHERE uid =', \$self->authInfo->{id}, 'AND vid =', \$v->{id});
+  my $lst = tuwf->dbRowi('SELECT vid, vote, notes FROM ulist_vns WHERE uid =', \$self->authInfo->{id}, 'AND vid =', \$v->{id});
 
   Tr class => 'nostripe';
    td colspan => 2;
@@ -710,6 +710,7 @@ sub _useroptions {
       onlist   => $lst->{vid}?\1:\0,
       canvote  => $minreleased && $minreleased < strftime('%Y%m%d', gmtime) ? \1 : \0,
       vote     => fmtvote($lst->{vote}).'',
+      notes    => $lst->{notes}||'',
       labels   => [ map +{ id => 1*$_->{id}, label => $_->{label}, private => $_->{private}?\1:\0 }, @$labels ],
       selected => [ map $_->{id}, grep $_->{assigned}, @$labels ],
     });
