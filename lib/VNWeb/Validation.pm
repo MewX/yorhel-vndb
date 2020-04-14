@@ -211,20 +211,24 @@ sub can_edit {
 # i.e. a list of single-character flags:
 #   0-2 -> spoilers
 #   s/S -> 1/0 traits_sexual
+#   n/N -> 1/0 show_nsfw
 # Missing flags will use default.
 sub viewget {
-    my($sp, $ts) = tuwf->reqGet('view') =~ /^([0-2])?([sS]?)$/;
+    my($sp, $ts, $ns) = tuwf->reqGet('view') =~ /^([0-2])?([sS]?)([nN]?)$/;
     {
         spoilers => $sp // auth->pref('spoilers') || 0,
-        traits_sexual => !$ts ? auth->pref('traits_sexual') : $2 eq 's',
+        traits_sexual => !$ts ? auth->pref('traits_sexual') : $ts eq 's',
+        show_nsfw => !$ns ? auth->pref('show_nsfw') : $ns eq 'n',
     }
 }
 
-# Modifies the current view settings and serializes that into a view= value.
-# XXX: This may include more flags than the current page will use.
+# Creates a new 'view=' string with the given parameters. All other fields remain at their default.
 sub viewset {
-    my %s = (viewget->%*, @_);
-    $s{spoilers}.($s{traits_sexual}?'s':'S')
+    my %s = @_;
+    join '',
+        $s{spoilers}//'',
+        !defined $s{traits_sexual} ? '' : $s{traits_sexual} ? 's' : 'S',
+        !defined $s{show_nsfw}     ? '' : $s{show_nsfw}     ? 'n' : 'N',
 }
 
 

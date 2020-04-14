@@ -42,7 +42,7 @@ sub enrich_image {
     }, $l;
 
     enrich votes => id => id => sub { sql '
-        SELECT iv.id, iv.sexual, iv.violence, ', sql_user(), '
+        SELECT iv.id, iv.uid, iv.sexual, iv.violence, ', sql_user(), '
           FROM image_votes iv
           LEFT JOIN users u ON u.id = iv.uid
          WHERE iv.id IN', $_,

@@ -45,7 +45,10 @@ sub listing_ {
                     txt_ '-' if !$l->{c_tags};
                     a_ href => "/g/links?u=$l->{user_id}", $l->{c_tags} if $l->{c_tags};
                 };
-                td_ class => 'tc8', $l->{c_imgvotes}||'-';
+                td_ class => 'tc8', sub {
+                    txt_ '-' if !$l->{c_imgvotes};
+                    a_ href => "/img/list?u=$l->{user_id}", $l->{c_imgvotes} if $l->{c_imgvotes};
+                };
             } for @$list;
         };
     };

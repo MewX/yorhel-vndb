@@ -78,7 +78,10 @@ sub _info_table_ {
     };
     tr_ sub {
         td_ 'Images';
-        td_ sprintf '%d images flagged.', $u->{c_imgvotes};
+        td_ sub {
+            txt_ sprintf '%d images flagged. ', $u->{c_imgvotes};
+            a_ href => "/img/list?u=$u->{id}", 'Browse image votes »';
+        };
     } if $u->{c_imgvotes};
     tr_ sub {
         my $stats = tuwf->dbRowi('SELECT COUNT(*) AS posts, COUNT(*) FILTER (WHERE num = 1) AS threads FROM threads_posts WHERE uid =', \$u->{id});

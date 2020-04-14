@@ -64,7 +64,7 @@ sub listing_ {
 
 
 sub opts_ {
-    my($opt) = @_;
+    my($opt, $u) = @_;
 
     my sub opt_ {
         my($type, $key, $val, $label, $checked) = @_;
@@ -75,42 +75,51 @@ sub opts_ {
 
     form_ sub {
         input_ type => 'hidden', class => 'hidden', name => 'u', value => $opt->{u} if $opt->{u};
-        input_ type => 'hidden', class => 'hidden', name => 'u2', value => $opt->{u2} if $opt->{u2} != auth->uid;
-        p_ class => 'center', sub {
-            span_ class => 'linkradio', sub {
-                txt_ 'Image types: ';
-                opt_ checkbox => t => 'ch', 'Character images', $opt->{t}->@* == 0 || in ch => $opt->{t}; em_ ' / ';
-                opt_ checkbox => t => 'cv', 'VN images',        $opt->{t}->@* == 0 || in cv => $opt->{t}; em_ ' / ';
-                opt_ checkbox => t => 'sf', 'Screenshots',      $opt->{t}->@* == 0 || in sf => $opt->{t};
-                br_;
-                txt_ 'Minimum votes: ';
-                join_ sub { em_ ' / ' }, sub { opt_ radio => m => $_, $_ }, 0..10;
-                br_;
-                if($opt->{u} != $opt->{u2}) {
-                    opt_ checkbox => my => 1, 'Only images I voted on';
-                    br_;
-                }
-                txt_ 'Order by: ';
-                if($opt->{u}) {
-                    opt_ radio => s => 'date', 'Recent'; em_ ' / ';
-                    if(auth->permDbmod) { # XXX: Hidden for regular users to discourage people from adjusting their votes to the average
-                        opt_ radio => s => 'diff', 'Vote difference'; em_ ' / '; 
-                    }
-                }
-                opt_ radio => s => 'weight', 'Weight'; em_ ' / ';
-                opt_ radio => s => 'sdev', 'Sexual stddev'; em_ ' / ';
-                opt_ radio => s => 'vdev', 'Violence stddev';
-                br_;
+        input_ type => 'hidden', class => 'hidden', name => 'u2', value => $opt->{u2} if $opt->{u2} != (auth->uid||0);
+        input_ type => 'hidden', class => 'hidden', name => 'view', value => viewset(show_nsfw => viewget('show_nsfw'));
+        table_ style => 'margin: auto', sub {
+            tr_ sub {
+                td_ 'User:';
+                td_ sub { user_ $u };
+            } if $u;
+            tr_ sub {
+                td_ 'Image types:';
+                td_ class => 'linkradio', sub {
+                    opt_ checkbox => t => 'ch', 'Character images', $opt->{t}->@* == 0 || in ch => $opt->{t}; em_ ' / ';
+                    opt_ checkbox => t => 'cv', 'VN images',        $opt->{t}->@* == 0 || in cv => $opt->{t}; em_ ' / ';
+                    opt_ checkbox => t => 'sf', 'Screenshots',      $opt->{t}->@* == 0 || in sf => $opt->{t};
+                };
             };
-            input_ type => 'submit', class => 'submit', value => 'Update';
-        };
-    };
+            tr_ sub {
+                td_ 'Minimum votes:';
+                td_ class => 'linkradio', sub { join_ sub { em_ ' / ' }, sub { opt_ radio => m => $_, $_ }, 0..10 };
+            };
+            tr_ sub {
+                td_ '';
+                td_ class => 'linkradio', sub { opt_ checkbox => my => 1, 'Only images I voted on' };
+            } if auth && $opt->{u} != $opt->{u2};
+            tr_ sub {
+                td_ 'Order by:';
+                td_ class => 'linkradio', sub {
+                    if($u) {
+                        opt_ radio => s => 'date', 'Recent'; em_ ' / ';
+                        opt_ radio => s => 'diff', 'Vote difference'; em_ ' / ';
+                    }
+                    opt_ radio => s => 'weight', 'Weight'; em_ ' / ';
+                    opt_ radio => s => 'sdev', 'Sexual stddev'; em_ ' / ';
+                    opt_ radio => s => 'vdev', 'Violence stddev';
+                }
+            };
+            tr_ sub {
+                td_ '';
+                td_ sub { input_ type => 'submit', class => 'submit', value => 'Update' };
+            }
+        }
+    }
 }
 
 
 TUWF::get qr{/img/list}, sub {
-    return tuwf->resDenied if !auth->permImgvote || !tuwf->samesite;
-
     # TODO filters: sexual / violence?
     my $opt = tuwf->validate(get =>
         s  => { onerror => 'date', enum => [qw/ weight sdev vdev date diff/] },
@@ -122,13 +131,12 @@ TUWF::get qr{/img/list}, sub {
         p  => { page => 1 },
     )->data;
 
-    $opt->{u2} ||= auth->uid;
+    $opt->{u2} ||= auth->uid || 0;
     $opt->{s} = 'weight' if !$opt->{u} && ($opt->{s} eq 'date' || $opt->{s} eq 'diff');
-    $opt->{s} = 'weight' if $opt->{s} eq 'diff' && !auth->permDbmod;
     $opt->{t} = [ List::Util::uniq sort $opt->{t}->@* ];
     $opt->{t} = [] if $opt->{t}->@* == 3;
 
-    my $u = $opt->{u} && tuwf->dbRowi(select => sql_user() => 'from users u where id =', \$opt->{u});
+    my $u = $opt->{u} && tuwf->dbRowi('SELECT id, ', sql_user(), 'FROM users u WHERE id =', \$opt->{u});
     return tuwf->resNotFound if $opt->{u} && !$u->{user_id};
 
     my $where = sql_and
@@ -160,9 +168,21 @@ TUWF::get qr{/img/list}, sub {
     framework_ title => $title, sub {
         div_ class => 'mainbox', sub {
             h1_ $title;
-            opts_ $opt;
+            opts_ $opt, $u;
         };
-        listing_ $lst, $np, $opt, \&url if @$lst;
+        my $nsfw = viewget->{show_nsfw};
+        listing_ $lst, $np, $opt, \&url if $nsfw && @$lst;
+        div_ class => 'mainbox', sub {
+            div_ class => 'warning', sub {
+                h2_ 'NSFW Warning';
+                p_ sub {
+                    txt_ 'This listing contains images that may contain sexual content or violence. ';
+                    a_ href => url(view => viewset show_nsfw => 1), 'I understand, show me.';
+                    br_;
+                    txt_ '(This warning can be disabled in your profile)';
+                };
+            };
+        } if !$nsfw && @$lst;
     };
 };
 
