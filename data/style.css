@@ -116,9 +116,9 @@ b.done        { font-weight: normal; color: $statok$ }
 b.todo        { font-weight: normal; color: $statnok$ }
 b.neutral     { font-weight: normal }
 p.center      { text-align: center; }
+.standout     { color: $standout$ }
 b.future,
-b.standout,
-a.standout    { font-weight: normal; color: $standout$; }
+b.standout    { font-weight: normal; color: $standout$; }
 .clearfloat   { clear: both; height: 0; }
 .hidden       { display: none!important }
 .invisible    { visibility: hidden }

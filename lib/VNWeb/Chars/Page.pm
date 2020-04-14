@@ -102,8 +102,8 @@ sub _rev_ {
 
 
 sub spoil_ {
-    sup_ title => 'Minor spoiler', class => 'grayedout', 'S' if $_[0] == 1;
-    sup_ title => 'Major spoiler', 'S' if $_[0] == 2;
+    sup_ title => 'Minor spoiler', 'S' if $_[0] == 1;
+    sup_ title => 'Major spoiler', class => 'standout', 'S' if $_[0] == 2;
 }
 
 
