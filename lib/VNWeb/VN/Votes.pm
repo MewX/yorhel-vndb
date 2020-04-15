@@ -48,11 +48,11 @@ TUWF::get qr{/$RE{vid}/votes}, sub {
 
     my $count = tuwf->dbVali('SELECT COUNT(*)', $fromwhere);
 
+    my $hide_list = 'NOT EXISTS(SELECT 1 FROM ulist_vns_labels uvl JOIN ulist_labels ul ON ul.uid = uvl.uid AND ul.id = uvl.lbl WHERE uvl.uid = uv.uid AND uvl.vid = uv.vid AND NOT ul.private)';
     my $lst = tuwf->dbPagei({results => 50, page => $opt->{p}},
-      'SELECT uv.vote,', sql_totime('uv.vote_date'), 'as date, ', sql_user(), '
-            , NOT EXISTS(SELECT 1 FROM ulist_vns_labels uvl JOIN ulist_labels ul ON ul.uid = uvl.uid AND ul.id = uvl.lbl WHERE uvl.uid = uv.uid AND uvl.vid = uv.vid AND NOT ul.private) AS hide_list
-        ', $fromwhere, 'ORDER BY', sprintf
-            { date => 'uv.vote_date %s', vote => 'uv.vote %s', title => '(CASE WHEN hide_list THEN NULL ELSE u.username END) %s, uv.vote_date' }->{$opt->{s}},
+      'SELECT uv.vote,', sql_totime('uv.vote_date'), 'as date, ', sql_user(), ", $hide_list AS hide_list
+        ", $fromwhere, 'ORDER BY', sprintf
+            { date => 'uv.vote_date %s', vote => 'uv.vote %s', title => "(CASE WHEN $hide_list THEN NULL ELSE u.username END) %s, uv.vote_date" }->{$opt->{s}},
             { a => 'ASC', d => 'DESC' }->{$opt->{o}}
     );
 
