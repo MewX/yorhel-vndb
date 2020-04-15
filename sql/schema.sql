@@ -806,7 +806,7 @@ CREATE TABLE users (
   c_imgvotes      integer NOT NULL DEFAULT 0,
   perm_board      boolean NOT NULL DEFAULT true,
   perm_boardmod   boolean NOT NULL DEFAULT false,
-  perm_dbbmod     boolean NOT NULL DEFAULT false,
+  perm_dbmod      boolean NOT NULL DEFAULT false,
   perm_edit       boolean NOT NULL DEFAULT true,
   perm_imgvote    boolean NOT NULL DEFAULT true,
   perm_tag        boolean NOT NULL DEFAULT true,
