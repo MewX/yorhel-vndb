@@ -109,7 +109,7 @@ sub copy_entry {
     # A few pre-defined users
     # This password is 'hunter2' with the default salt
     my $pass = '000100000801ec4185fed438752d6b3b968e2b2cd045f70005cb7e10cafdbb694a82246bd34a065b6e977e0c3dcc';
-    printf "INSERT INTO users (id, username, mail, perm_usermod, passwd, email_confirmed) VALUES (%d, '%s', '%s', %d, decode('%s', 'hex'), true);\n", @$_, $pass for(
+    printf "INSERT INTO users (id, username, mail, perm_usermod, passwd, email_confirmed) VALUES (%d, '%s', '%s', %s, decode('%s', 'hex'), true);\n", @$_, $pass for(
         [ 2, 'admin', 'admin@vndb.org', 'true' ],
         [ 3, 'user1', 'user1@vndb.org', 'false'],
         [ 4, 'user2', 'user2@vndb.org', 'false'],
