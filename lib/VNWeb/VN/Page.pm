@@ -339,7 +339,7 @@ sub tabs_ {
     # XXX: This query is kind of silly because we'll be fetching a list of characters regardless of which tab we have open.
     my $haschars = tuwf->dbVali('SELECT 1 FROM chars c JOIN chars_vns cv ON cv.id = c.id WHERE NOT c.hidden AND cv.vid =', \$v->{id}, 'LIMIT 1');
 
-    return if !$haschars && !auth->perm('edit');
+    return if !$haschars && !auth->permEdit;
     div_ class => 'maintabs', sub {
         ul_ sub {
             li_ class => (!$char ? ' tabselected' : ''), sub { a_ href => "/v$v->{id}#main", name => 'main', 'main' };
@@ -348,7 +348,7 @@ sub tabs_ {
         ul_ sub {
             li_ sub { a_ href => "/v$v->{id}/add", 'add release' };
             li_ sub { a_ href => "/c/new?vid=$v->{id}", 'add character' };
-        } if auth->perm('edit');
+        } if auth->permEdit;
     }
 }
 
