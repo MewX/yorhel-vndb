@@ -27,8 +27,6 @@ tuwf->{skins} = { map +($_ => [ $skin->get($_, 'name'), $skin->get($_, 'userid')
 tuwf->{scr_size}     = [ 136, 102 ]; # w*h of screenshot thumbnails
 tuwf->{ch_size}      = [ 256, 300 ]; # max. w*h of char images
 tuwf->{cv_size}      = [ 256, 400 ]; # max. w*h of cover images
-tuwf->{permissions}  = {qw| board 1  boardmod 2  edit 4  tag 16  dbmod 32  tagmod 64  usermod 128 |};
-tuwf->{default_perm} = 1+4+16; # Keep synchronised with the default value of users.perm
 tuwf->{$_} = config->{$_} for keys %{ config() };
 
 TUWF::set %{ config->{tuwf} };

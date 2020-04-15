@@ -351,7 +351,6 @@ sub write_types {
 
     $data .= def urlStatic  => String => string config->{url_static};
     $data .= def adminEMail => String => string config->{admin_email};
-    $data .= def userPerms  => 'List (Int, String)' => list map tuple(VNWeb::Auth::listPerms->{$_}, string $_), sort keys VNWeb::Auth::listPerms->%*;
     $data .= def skins      => 'List (String, String)' =>
                 list map tuple(string $_, string tuwf->{skins}{$_}[0]),
                 sort { tuwf->{skins}{$a}[0] cmp tuwf->{skins}{$b}[0] } keys tuwf->{skins}->%*;

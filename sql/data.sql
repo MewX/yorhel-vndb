@@ -1,5 +1,5 @@
-INSERT INTO users (id, username, mail, perm, notify_dbedit) VALUES (0, 'deleted', 'del@vndb.org', 0, FALSE);
-INSERT INTO users (id, username, mail, perm, notify_dbedit) VALUES (1, 'multi', 'multi@vndb.org', 0, FALSE);
+INSERT INTO users (id, username, mail, notify_dbedit) VALUES (0, 'deleted', 'del@vndb.org', FALSE);
+INSERT INTO users (id, username, mail, notify_dbedit) VALUES (1, 'multi', 'multi@vndb.org', FALSE);
 SELECT setval('users_id_seq', 2);
 
 INSERT INTO stats_cache (section, count) VALUES

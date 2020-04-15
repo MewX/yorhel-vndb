@@ -759,7 +759,6 @@ CREATE TABLE users (
   id         SERIAL NOT NULL PRIMARY KEY, -- [pub]
   username   varchar(20) NOT NULL UNIQUE, -- [pub]
   mail       varchar(100) NOT NULL,
-  perm       smallint NOT NULL DEFAULT 1+4+16,
   -- A valid passwd column is 46 bytes:
   --   4 bytes: N (big endian)
   --   1 byte: r
@@ -780,7 +779,6 @@ CREATE TABLE users (
   filter_vn       text NOT NULL DEFAULT '',
   filter_release  text NOT NULL DEFAULT '',
   show_nsfw       boolean NOT NULL DEFAULT FALSE,
-  hide_list       boolean NOT NULL DEFAULT FALSE, -- deprecated, replaced with ulist_labels.private
   notify_dbedit   boolean NOT NULL DEFAULT TRUE,
   notify_announce boolean NOT NULL DEFAULT FALSE,
   vn_list_own     boolean NOT NULL DEFAULT FALSE,
@@ -805,7 +803,15 @@ CREATE TABLE users (
   ulist_votes     jsonb,
   ulist_vnlist    jsonb,
   ulist_wish      jsonb,
-  c_imgvotes      integer NOT NULL DEFAULT 0
+  c_imgvotes      integer NOT NULL DEFAULT 0,
+  perm_board      boolean NOT NULL DEFAULT true,
+  perm_boardmod   boolean NOT NULL DEFAULT false,
+  perm_dbbmod     boolean NOT NULL DEFAULT false,
+  perm_edit       boolean NOT NULL DEFAULT true,
+  perm_imgvote    boolean NOT NULL DEFAULT true,
+  perm_tag        boolean NOT NULL DEFAULT true,
+  perm_tagmod     boolean NOT NULL DEFAULT false,
+  perm_usermod    boolean NOT NULL DEFAULT false
 );
 
 -- vn

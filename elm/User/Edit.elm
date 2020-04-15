@@ -50,7 +50,14 @@ init d =
 type Data
   = Username String
   | EMail String
-  | Perm Int Bool
+  | PermBoard Bool
+  | PermBoardmod Bool
+  | PermEdit Bool
+  | PermImgvote Bool
+  | PermTag Bool
+  | PermDbmod Bool
+  | PermTagmod Bool
+  | PermUsermod Bool
   | IgnVotes Bool
   | ShowNsfw Bool
   | TraitsSexual Bool
@@ -73,7 +80,14 @@ updateData msg model =
   case msg of
     Username n -> { model | username = n }
     EMail n    -> { model | email = n }
-    Perm n b   -> { model | perm = if b then or model.perm n else and model.perm (complement n) }
+    PermBoard b    -> { model | perm_board    = b }
+    PermBoardmod b -> { model | perm_boardmod = b }
+    PermEdit b     -> { model | perm_edit     = b }
+    PermImgvote b  -> { model | perm_imgvote  = b }
+    PermTag b      -> { model | perm_tag      = b }
+    PermDbmod b    -> { model | perm_dbmod    = b }
+    PermTagmod b   -> { model | perm_tagmod   = b }
+    PermUsermod b  -> { model | perm_usermod  = b }
     IgnVotes n -> { model | ign_votes = n }
     ShowNsfw b -> { model | show_nsfw = b }
     TraitsSexual b -> { model | traits_sexual = b }
@@ -140,9 +154,15 @@ view model =
       [ tr [ class "newpart" ] [ td [ colspan 2 ] [ text "Admin options" ] ]
       , formField "username::Username" [ inputText "username" data.username (Set << Username) GUE.valUsername ]
       , formField "Permissions"
-        <| List.intersperse (br_ 1)
-        <| List.map (\(n,s) -> label [] [ inputCheck "" (and data.perm n > 0) (Set << Perm n), text (" " ++ s) ])
-           GT.userPerms
+        [ label [] [ inputCheck "" data.perm_board    (Set << PermBoard),    text (" board (default)") ], br_ 1
+        , label [] [ inputCheck "" data.perm_boardmod (Set << PermBoardmod), text (" boardmod") ], br_ 1
+        , label [] [ inputCheck "" data.perm_edit     (Set << PermEdit),     text (" edit (default)") ], br_ 1
+        , label [] [ inputCheck "" data.perm_imgvote  (Set << PermImgvote),  text (" imgvote (default)") ], br_ 1
+        , label [] [ inputCheck "" data.perm_tag      (Set << PermTag),      text (" tag (default)") ], br_ 1
+        , label [] [ inputCheck "" data.perm_dbmod    (Set << PermDbmod),    text (" dbmod") ], br_ 1
+        , label [] [ inputCheck "" data.perm_tagmod   (Set << PermTagmod),   text (" tagmod") ], br_ 1
+        , label [] [ inputCheck "" data.perm_usermod  (Set << PermUsermod),  text (" usermod") ], br_ 1
+        ]
       , formField "Other" [ label [] [ inputCheck "" data.ign_votes (Set << IgnVotes), text " Ignore votes in VN statistics" ] ]
       ]
 

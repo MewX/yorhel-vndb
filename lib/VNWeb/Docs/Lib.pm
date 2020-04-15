@@ -5,16 +5,19 @@ use VNWeb::Prelude;
 our @EXPORT = qw/enrich_html/;
 
 
+my @special_perms = qw/boardmod dbmod usermod tagmod/;
+
 sub _moderators {
-    my $l = tuwf->dbAlli('SELECT id, username, perm FROM users WHERE (perm & ', \(auth->allPerms &~ auth->defaultPerms), ') > 0 ORDER BY id LIMIT 100');
-    my @modperms = grep 0 == (auth->listPerms->{$_} & auth->defaultPerms), keys auth->listPerms->%*;
+    my $cols = sql_comma map "perm_$_", @special_perms;
+    my $where = sql_or map "perm_$_", @special_perms;
+    my $l = tuwf->dbAlli("SELECT id, username, $cols FROM users WHERE $where ORDER BY id LIMIT 100");
 
     xml_string sub {
         dl_ sub {
             for my $u (@$l) {
                 dt_ sub { a_ href => "/u$u->{id}", $u->{username} };
-                dd_ auth->allPerms == ($u->{perm} & auth->allPerms) ? 'admin'
-                    : join ', ', sort grep $u->{perm} & auth->listPerms->{$_}, @modperms;
+                dd_ @special_perms == grep($u->{"perm_$_"}, @special_perms) ? 'admin'
+                    : join ', ', grep $u->{"perm_$_"}, @special_perms;
             }
         }
     }

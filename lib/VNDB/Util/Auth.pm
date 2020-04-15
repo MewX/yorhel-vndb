@@ -73,7 +73,7 @@ sub authInfo {
 # a certain action.
 sub authCan {
   my(undef, $act) = @_;
-  auth->perm() & auth->listPerms->{$act}
+  auth && auth->{user}{"perm_$act"}
 }
 
 

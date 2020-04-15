@@ -64,36 +64,20 @@ TUWF::set log_format => sub {
 use overload bool => sub { defined shift->{user}{user_id} };
 
 sub uid   { shift->{user}{user_id} }
-sub perm  { shift->{user}{perm}||0 }
 sub user  { shift->{user} }
 sub token { shift->{token} }
 
 
 
-# The 'perm' field is a bit field, with the following bits.
-# The 'usermod' flag is hardcoded in sql/func.sql for the user_* functions.
-# Flag 256 was used for 'affiliates', now also free.
-my %perms = qw{
-    board        1
-    boardmod     2
-    edit         4
-    imgvote      8
-    tag         16
-    dbmod       32
-    tagmod      64
-    usermod    128
-};
+my @perms = qw/board boardmod edit imgvote tag dbmod tagmod usermod/;
 
-sub defaultPerms { $perms{board} + $perms{edit} + $perms{tag} + $perms{imgvote} }
-sub allPerms     { my $i = 0; $i |= $_ for values %perms; $i }
-sub listPerms    { \%perms }
-
+sub listPerms { @perms }
 
 # Create a read-only accessor to check if the current user is authorized to
 # perform a particular action.
-for my $perm (keys %perms) {
+for my $perm (@perms) {
     no strict 'refs';
-    *{ "perm".ucfirst($perm) } = sub { (shift->perm() & $perms{$perm}) > 0 }
+    *{ 'perm'.ucfirst($perm) } = sub { shift->{user}{"perm_$perm"} }
 }
 
 
@@ -150,7 +134,8 @@ sub _load_session {
     my($self, $uid, $token_db) = @_;
 
     my $user = $uid ? tuwf->dbRowi(
-        'SELECT perm, ', sql_user(), ' FROM users u
+        'SELECT ', sql_user(), ',', sql_comma(map "perm_$_", @perms), '
+           FROM users u
           WHERE id = ', \$uid,
            'AND', sql_func(user_isvalidsession => 'id', sql_fromhex($token_db), \'web')
     ) : {};

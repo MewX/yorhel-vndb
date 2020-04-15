@@ -29,7 +29,7 @@ sub dbUserGet {
   );
 
   my @select = (
-    qw|id username c_votes c_changes c_tags hide_list|,
+    qw|id username c_votes c_changes c_tags|,
     VNWeb::DB::sql_user(), # XXX: This duplicates id and username, but updating all the code isn't going to be easy
     q|extract('epoch' from registered) as registered|,
   );

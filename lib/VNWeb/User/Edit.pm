@@ -6,7 +6,6 @@ use VNWeb::Prelude;
 my $FORM = form_compile in => {
     username  => { username => 1 },
     email     => { email => 1 },
-    perm      => { uint => 1, func => sub { ($_[0] & ~auth->allPerms) == 0 } },
     ign_votes => { anybool => 1 },
     show_nsfw => { anybool => 1 },
     traits_sexual => { anybool => 1 },
@@ -17,6 +16,7 @@ my $FORM = form_compile in => {
     spoilers  => { uint => 1, range => [ 0, 2 ] },
     skin      => { enum => tuwf->{skins} },
     customcss => { required => 0, default => '', maxlength => 2000 },
+    map(+("perm_$_" => { anybool => 1 }), VNWeb::Auth::listPerms),
 
     nodistract_can     => { anybool => 1 },
     nodistract_noads   => { anybool => 1 },
@@ -47,8 +47,9 @@ sub _getmail {
 }
 
 TUWF::get qr{/$RE{uid}/edit}, sub {
+    my $permcols = sql_comma map "perm_$_", auth->listPerms;
     my $u = tuwf->dbRowi(q{
-        SELECT id, username, perm, ign_votes, show_nsfw, traits_sexual
+        SELECT id, username, ign_votes, show_nsfw, traits_sexual,}, $permcols, q{
              , tags_all, tags_cont, tags_ero, tags_tech, spoilers, skin, customcss
              , nodistract_can, nodistract_noads, nodistract_nofancy, support_can, support_enabled, uniname_can, uniname, pubskin_can, pubskin_enabled
           FROM users WHERE id =}, \tuwf->capture('id')
@@ -60,12 +61,6 @@ TUWF::get qr{/$RE{uid}/edit}, sub {
     $u->{authmod} = auth->permUsermod;
     $u->{password} = undef;
     $u->{skin} ||= config->{skin_default};
-
-    # Let's not disclose this (though it's not hard to find out through other means)
-    if(!auth->permUsermod) {
-        $u->{ign_votes} = 0;
-        $u->{perm} = auth->defaultPerms;
-    }
 
     my $title = $u->{id} == auth->uid ? 'My Account' : "Edit $u->{username}";
     framework_ title => $title, type => 'u', dbobj => $u, tab => 'edit',
@@ -85,13 +80,18 @@ elm_api UserEdit => undef, $FORM, sub {
     return elm_Taken if $data->{uniname}
         && tuwf->dbVali('SELECT 1 FROM users WHERE id <>', \$data->{id}, 'AND username =', \lc($data->{uniname}));
 
+    my @setcols = qw/
+        show_nsfw traits_sexual tags_all tags_cont tags_ero tags_tech spoilers skin customcss
+        nodistract_noads nodistract_nofancy support_enabled uniname pubskin_enabled
+    /;
     if(auth->permUsermod) {
         tuwf->dbExeci(update => users => set => {
             username  => $data->{username},
             ign_votes => $data->{ign_votes},
             email_confirmed => 1,
         }, where => { id => $data->{id} });
-        tuwf->dbExeci(select => sql_func user_setperm => \$data->{id}, \auth->uid, sql_fromhex(auth->token), \$data->{perm});
+        tuwf->dbExeci(select => sql_func user_setperm_usermod => \$data->{id}, \auth->uid, sql_fromhex(auth->token), \$data->{perm_usermod});
+        push @setcols, map "perm_$_", grep $_ ne 'usermod', auth->listPerms;
     }
 
     if($data->{password}) {
@@ -136,13 +136,7 @@ elm_api UserEdit => undef, $FORM, sub {
 
     $data->{skin} = '' if $data->{skin} eq config->{skin_default};
     $data->{uniname} = '' if $data->{uniname} eq $data->{username};
-    tuwf->dbExeci('UPDATE users SET', { %{$data}{qw/
-            show_nsfw traits_sexual tags_all tags_cont tags_ero tags_tech spoilers skin customcss
-            nodistract_noads nodistract_nofancy support_enabled uniname pubskin_enabled
-        /} },
-        'WHERE id =', \$data->{id}
-    );
-
+    tuwf->dbExeci('UPDATE users SET', { %{$data}{@setcols} }, 'WHERE id =', \$data->{id});
     $ret->();
 };
 

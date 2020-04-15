@@ -611,7 +611,7 @@ $$ LANGUAGE SQL SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION user_resetpass(text, bytea) RETURNS integer AS $$
   INSERT INTO sessions (uid, token, expires, type)
     SELECT id, $2, NOW()+'1 week', 'pass' FROM users
-     WHERE lower(mail) = lower($1) AND length($2) = 20 AND perm & 128 = 0
+     WHERE lower(mail) = lower($1) AND length($2) = 20 AND NOT perm_usermod
     RETURNING uid
 $$ LANGUAGE SQL SECURITY DEFINER;
 
@@ -639,7 +639,7 @@ CREATE OR REPLACE FUNCTION user_isauth(integer, integer, bytea) RETURNS boolean 
   SELECT true FROM users
    WHERE id = $2
      AND EXISTS(SELECT 1 FROM sessions WHERE uid = $2 AND token = $3 AND type = 'web')
-     AND ($2 = $1 OR perm & 128 = 128)
+     AND ($2 = $1 OR perm_usermod)
 $$ LANGUAGE SQL;
 
 
@@ -668,8 +668,8 @@ CREATE OR REPLACE FUNCTION user_setmail_confirm(integer, bytea) RETURNS boolean 
 $$ LANGUAGE SQL SECURITY DEFINER;
 
 
-CREATE OR REPLACE FUNCTION user_setperm(integer, integer, bytea, integer) RETURNS void AS $$
-  UPDATE users SET perm = $4 WHERE id = $1 AND user_isauth(-1, $2, $3)
+CREATE OR REPLACE FUNCTION user_setperm_usermod(integer, integer, bytea, boolean) RETURNS void AS $$
+  UPDATE users SET perm_usermod = $4 WHERE id = $1 AND user_isauth(-1, $2, $3)
 $$ LANGUAGE SQL SECURITY DEFINER;
 
 
