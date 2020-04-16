@@ -99,7 +99,7 @@ our %apis = (
         } },
         votes           => { aoh => {
             user     => {},
-            uid      => { uint => 1 },
+            uid      => { uint => 1, required => 0 },
             sexual   => { uint => 1 },
             violence => { uint => 1 },
         } },

@@ -46,7 +46,7 @@ sub enrich_image {
           FROM image_votes iv
           LEFT JOIN users u ON u.id = iv.uid
          WHERE iv.id IN', $_,
-               auth ? ('AND iv.uid <> ', \auth->uid) : (), '
+               auth ? ('AND (iv.uid IS NULL OR iv.uid <> ', \auth->uid, ')') : (), '
          ORDER BY u.username'
     }, $l;
 
