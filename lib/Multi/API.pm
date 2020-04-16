@@ -1150,7 +1150,7 @@ my %GET_ULIST = (
     labels => {
       fetch => [[ ['uid','vn'], 'SELECT uvl.uid, uvl.vid, ul.id, ul.label
                FROM ulist_vns_labels uvl JOIN ulist_labels ul ON ul.uid = uvl.uid AND ul.id = uvl.lbl
-              WHERE (uvl.uid,uvl.vid) IN(%s) AND (NOT ul.private OR uvl.uid = %s)',
+              WHERE (uvl.uid,uvl.vid) IN(%s) AND (NOT ul.private OR uvl.uid = %s OR uvl.lbl = 7)',
         sub { my($n, $r) = @_;
           for my $i (@$n) {
             $i->{labels} = [ grep $i->{uid} == $_->{uid} && $i->{vn} == $_->{vid}, @$r ];
@@ -1169,7 +1169,7 @@ my %GET_ULIST = (
     vn    => $VN_FILTER,
     label => [
       [ 'int' => 'EXISTS(SELECT 1 FROM ulist_vns_labels uvl JOIN ulist_labels ul ON ul.uid = uvl.uid AND ul.id = uvl.lbl
-                          WHERE uvl.uid = uv.uid AND uvl.vid = uv.vid AND uvl.lbl = :value: AND NOT ul.private)', {'=',1}, range => [1,1e6] ],
+                          WHERE uvl.uid = uv.uid AND uvl.vid = uv.vid AND uvl.lbl = :value: AND (uvl.lbl = 7 OR NOT ul.private))', {'=',1}, range => [1,1e6] ],
     ],
   },
 );
