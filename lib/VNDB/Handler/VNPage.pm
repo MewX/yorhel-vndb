@@ -15,7 +15,7 @@ TUWF::register(
   qr{v/rand}                        => \&rand,
   qr{v([1-9]\d*)/releases}          => \&releases,
   qr{v([1-9]\d*)/staff}             => sub { $_[0]->resRedirect("/v$_[1]#staff") },
-  qr{v([1-9]\d*)(?:\.([1-9]\d*))?}  => \&page,
+  qr{old/v([1-9]\d*)(?:\.([1-9]\d*))?}  => \&page,
 );
 
 

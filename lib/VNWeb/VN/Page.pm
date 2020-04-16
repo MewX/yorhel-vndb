@@ -1,6 +1,7 @@
 package VNWeb::VN::Page;
 
 use VNWeb::Prelude;
+use VNDB::Func 'fmtrating';
 use POSIX 'strftime';
 
 
@@ -25,6 +26,20 @@ sub enrich_vn {
 }
 
 
+# Enrich everything necessary for rev_() (that also needs enrich_vn())
+sub enrich_item {
+    my($v) = @_;
+    enrich_merge aid => 'SELECT id AS sid, aid, name, original FROM staff_alias WHERE aid IN', $v->{staff}, $v->{seiyuu};
+    enrich_merge cid => 'SELECT id AS cid, name AS char_name, original AS char_original FROM chars WHERE id IN', $v->{seiyuu};
+
+    $v->{relations}   = [ sort { $a->{vid} <=> $b->{vid} } $v->{relations}->@* ];
+    $v->{anime}       = [ sort { $a->{aid} <=> $b->{aid} } $v->{anime}->@* ];
+    $v->{staff}       = [ sort { $a->{aid} <=> $b->{aid} || $a->{role} cmp $b->{role} } $v->{staff}->@* ];
+    $v->{seiyuu}      = [ sort { $a->{aid} <=> $b->{aid} || $a->{cid} <=> $b->{cid} || $a->{note} cmp $b->{note} } $v->{seiyuu}->@* ];
+    $v->{screenshots} = [ sort { idcmp($a->{scr}, $b->{scr}) } $v->{screenshots}->@* ];
+}
+
+
 sub og {
     my($v) = @_;
     +{
@@ -32,6 +47,44 @@ sub og {
         image => $v->{image} && !$v->{img_nsfw} ? tuwf->imgurl($v->{image}) :
                  [map $_->{nsfw}?():(tuwf->imgurl($_->{scr})), $v->{screenshots}->@*]->[0]
     }
+}
+
+
+sub rev_ {
+    my($v) = @_;
+    revision_ v => $v, \&enrich_item,
+        [ title       => 'Title (romaji)' ],
+        [ original    => 'Original title' ],
+        [ alias       => 'Alias'          ],
+        [ desc        => 'Description'    ],
+        [ length      => 'Length',        fmt => \%VN_LENGTH ],
+        [ staff       => 'Credits',       fmt => sub {
+            a_ href => "/s$_->{sid}", title => $_->{original}||$_->{name}, $_->{name};
+            txt_ " [$CREDIT_TYPE{$_->{role}}]";
+            txt_ " [$_->{note}]" if $_->{note};
+        }],
+        [ seiyuu      => 'Seiyuu',        fmt => sub {
+            a_ href => "/s$_->{sid}", title => $_->{original}||$_->{name}, $_->{name};
+            txt_ ' as ';
+            a_ href => "/c$_->{cid}", title => $_->{char_original}||$_->{char_name}, $_->{char_name};
+            txt_ " [$_->{note}]" if $_->{note};
+        }],
+        [ relations   => 'Relations',     fmt => sub {
+            txt_ sprintf '[%s] %s: ', $_->{official} ? 'official' : 'unofficial', $VN_RELATION{$_->{relation}}{txt};
+            a_ href => "/v$_->{vid}", title => $_->{original}||$_->{title}, $_->{title};
+        }],
+        [ anime       => 'Anime',         fmt => sub { a_ href => "https://anidb.net/anime/$_->{aid}", "a$_->{aid}" }],
+        [ screenshots => 'Screenshots',   fmt => sub {
+            txt_ '[';
+            a_ href => "/r$_->{rid}", "r$_->{rid}" if $_->{rid};
+            txt_ 'no release' if !$_->{rid};
+            txt_ '] ';
+            a_ href => tuwf->imgurl($_->{scr}), $_->{scr}; # TODO: Image viewer
+            txt_ $_->{nsfw} ? ' (Not safe)' : ' (Safe)';
+        }],
+        [ image       => 'Image',         fmt => sub { a_ href => tuwf->imgurl($_), $_ } ], # TODO: Preview if SFW
+        [ img_nsfw    => 'Image NSFW',    fmt => sub { $_ ? 'Not safe' : 'Safe' } ],
+        revision_extlinks 'v'
 }
 
 
@@ -342,13 +395,103 @@ sub tabs_ {
     return if !$haschars && !auth->permEdit;
     div_ class => 'maintabs', sub {
         ul_ sub {
-            li_ class => (!$char ? ' tabselected' : ''), sub { a_ href => "/v$v->{id}#main", name => 'main', 'main' };
-            li_ class => ($char  ? ' tabselected' : ''), sub { a_ href => "/v$v->{id}/chars#chars", name => 'chars', 'characters' };
-        } if $haschars;
+            if($haschars) {
+                li_ class => (!$char ? ' tabselected' : ''), sub { a_ href => "/v$v->{id}#main", name => 'main', 'main' };
+                li_ class => ($char  ? ' tabselected' : ''), sub { a_ href => "/v$v->{id}/chars#chars", name => 'chars', 'characters' };
+            }
+        };
         ul_ sub {
-            li_ sub { a_ href => "/v$v->{id}/add", 'add release' };
-            li_ sub { a_ href => "/c/new?vid=$v->{id}", 'add character' };
-        } if auth->permEdit;
+            if(auth->permEdit) {
+                li_ sub { a_ href => "/v$v->{id}/add", 'add release' };
+                li_ sub { a_ href => "/c/new?vid=$v->{id}", 'add character' };
+            }
+        };
+    }
+}
+
+
+sub stats_ {
+    my($v) = @_;
+
+    my $stats = tuwf->dbAlli('
+        SELECT (uv.vote::numeric/10)::int AS idx, COUNT(uv.vote) as votes, SUM(uv.vote) AS total
+          FROM ulist_vns uv
+         WHERE uv.vote IS NOT NULL
+           AND NOT EXISTS(SELECT 1 FROM users u WHERE u.id = uv.uid AND u.ign_votes)
+           AND uv.vid =', \$v->{id}, '
+         GROUP BY (uv.vote::numeric/10)::int'
+    );
+    my $sum = sum map $_->{total}, @$stats;
+    my $max = max map $_->{votes}, @$stats;
+    my $num = sum map $_->{votes}, @$stats;
+
+    my $recent = @$stats && tuwf->dbAlli('
+         SELECT uv.vote,', sql_totime('uv.vote_date'), 'as date, ', sql_user(), '
+              , NOT EXISTS(SELECT 1 FROM ulist_vns_labels uvl JOIN ulist_labels ul ON ul.uid = uvl.uid AND ul.id = uvl.lbl WHERE uvl.uid = uv.uid AND uvl.vid = uv.vid AND NOT ul.private) AS hide_list
+           FROM ulist_vns uv
+           JOIN users u ON u.id = uv.uid
+          WHERE uv.vid =', \$v->{id}, 'AND uv.vote IS NOT NULL
+            AND NOT EXISTS(SELECT 1 FROM users u WHERE u.id = uv.uid AND u.ign_votes)
+          ORDER BY uv.vote_date DESC
+          LIMIT', \8
+    );
+
+    my $rank = $v->{c_votecount} && tuwf->dbRowi('
+        SELECT c_rating, c_popularity
+             , (SELECT COUNT(*)+1 FROM vn iv WHERE NOT iv.hidden AND iv.c_popularity > COALESCE(v.c_popularity, 0.0)) AS pop_rank
+             , (SELECT COUNT(*)+1 FROM vn iv WHERE NOT iv.hidden AND iv.c_rating > COALESCE(v.c_rating, 0.0)) AS rating_rank
+          FROM vn v WHERE id =', \$v->{id}
+    );
+
+    my sub votestats_ {
+        table_ class => 'votegraph', sub {
+            thead_ sub { tr_ sub { td_ colspan => 2, 'Vote stats' } };
+            tfoot_ sub { tr_ sub { td_ colspan => 2, sprintf '%d vote%s total, average %.2f (%s)', $num, $num == 1 ? '' : 's', $sum/$num/10, fmtrating(ceil($sum/$num/10-1)||1) } };
+            tr_ sub {
+                my $num = $_;
+                my $votes = [grep $num == $_->{idx}, @$stats]->[0]{votes} || 0;
+                td_ class => 'number', $num;
+                td_ class => 'graph', sub {
+                    div_ style => sprintf('width: %dpx', ($votes||0)/$max*250), ' ';
+                    txt_ $votes||0;
+                };
+            } for (reverse 1..10);
+        };
+
+        table_ class => 'recentvotes stripe', sub {
+            thead_ sub { tr_ sub { td_ colspan => 3, sub {
+                txt_ 'Recent votes';
+                b_ sub {
+                    txt_ '(';
+                    a_ href => "/v$v->{id}/votes", 'show all';
+                    txt_ ')';
+                }
+            } } };
+            tr_ sub {
+                td_ sub {
+                    b_ class => 'grayedout', 'hidden' if $_->{hide_list};
+                    user_ $_ if !$_->{hide_list};
+                };
+                td_ fmtvote $_->{vote};
+                td_ fmtdate $_->{date};
+            } for @$recent;
+        } if $recent && @$recent;
+
+        clearfloat_;
+        div_ sub {
+            h3_ 'Ranking';
+            p_ sprintf 'Popularity: ranked #%d with a score of %.2f', $rank->{pop_rank}, ($rank->{c_popularity}||0)*100;
+            p_ sprintf 'Bayesian rating: ranked #%d with a rating of %.2f', $rank->{rating_rank}, $rank->{c_rating}/10;
+        } if $v->{c_votecount};
+    }
+
+    div_ class => 'mainbox', sub {
+        h1_ 'User stats';
+        if(!@$stats) {
+            p_ 'Nobody has voted on this visual novel yet...';
+        } else {
+            div_ class => 'votestats', \&votestats_;
+        }
     }
 }
 
@@ -391,6 +534,27 @@ sub chars_ {
         }
     }
 }
+
+
+TUWF::get qr{/$RE{vrev}}, sub {
+    my $v = db_entry v => tuwf->capture('id'), tuwf->capture('rev');
+    return tuwf->resNotFound if !$v;
+
+    enrich_vn $v;
+    enrich_item $v;
+
+    framework_ title => $v->{title}, index => !tuwf->capture('rev'), type => 'v', dbobj => $v, hiddenmsg => 1, og => og($v),
+    sub {
+        rev_ $v if tuwf->capture('rev');
+        infobox_ $v;
+        tabs_ $v, 0;
+        # TODO: Releases
+        # TODO: Staff
+        # TODO: Character summary
+        stats_ $v;
+        # TODO: Screenshots
+    };
+};
 
 
 TUWF::get qr{/$RE{vid}/chars}, sub {
