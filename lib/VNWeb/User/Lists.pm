@@ -422,17 +422,19 @@ sub vn_ {
 sub listing_ {
     my($uid, $own, $opt, $labels, $url) = @_;
 
-    my @l = grep $_ > 0, $opt->{l}->@*;
+    my @l = grep $_ > 0 && $_ != 7, $opt->{l}->@*;
     my($unlabeled) = grep $_ == -1, $opt->{l}->@*;
+    my($voted) = grep $_ == 7, $opt->{l}->@*;
 
     my @where_vns = (
-              @l ? sql('uv.vid IN(SELECT vid FROM ulist_vns_labels WHERE uid =', \$uid, 'AND lbl IN', \@l, ')') :
-           !$own ? sql('uv.vid IN(SELECT vid FROM ulist_vns_labels WHERE uid =', \$uid, 'AND lbl IN(SELECT id FROM ulist_labels WHERE uid =', \$uid, 'AND NOT private))') : (),
-      $unlabeled ? sql('NOT EXISTS(SELECT 1 FROM ulist_vns_labels WHERE uid =', \$uid, 'AND vid = uv.vid AND lbl <> ', \7, ')') : ()
+              @l ? sql('uv.vid IN(SELECT vid FROM ulist_vns_labels WHERE uid =', \$uid, 'AND lbl IN', \@l, ')') : (),
+      $unlabeled ? sql('NOT EXISTS(SELECT 1 FROM ulist_vns_labels WHERE uid =', \$uid, 'AND vid = uv.vid AND lbl <> ', \7, ')') : (),
+          $voted ? sql('uv.vote IS NOT NULL') : ()
     );
 
     my $where = sql_and
         sql('uv.uid =', \$uid),
+        !$own ? sql('uv.vid IN(SELECT vid FROM ulist_vns_labels WHERE uid =', \$uid, 'AND lbl IN(SELECT id FROM ulist_labels WHERE uid =', \$uid, 'AND NOT private))') : (),
         @where_vns ? sql_or(@where_vns) : (),
         $opt->{q} ? map sql('v.c_search like', \"%$_%"), normalize_query $opt->{q} : (),
         defined($opt->{ch}) && $opt->{ch} ? sql('LOWER(SUBSTR(v.title, 1, 1)) =', \$opt->{ch}) : (),
@@ -535,6 +537,15 @@ TUWF::get qr{/$RE{uid}/ulist}, sub {
     # All visible labels that can be filtered on, including "virtual" labels like 'No label'
     my $filtlabels = [
         @$labels,
+        # Consider label 7 (Voted) a virtual label if it's set to private.
+        !grep($_->{id} == 7, @$labels) ? {
+            id => 7, label => 'Voted', count => tuwf->dbVali(
+                'SELECT count(*)
+                   FROM ulist_vns uv
+                  WHERE uv.vote IS NOT NULL AND EXISTS(SELECT 1 FROM ulist_vns_labels uvl JOIN ulist_labels ul ON ul.uid = uvl.uid AND ul.id = uvl.lbl WHERE uvl.uid = uv.uid AND uvl.vid = uv.vid AND NOT ul.private)
+                    AND uid =', \$u->{id}
+            )
+        } : (),
         $own ? {
             id => -1, label => 'No label', count => tuwf->dbVali(
                 'SELECT count(*)
