@@ -30,7 +30,7 @@ TUWF::get qr{/$RE{pid}/rg}, sub {
     my @lines;
     my $params = $num == 15 ? '' : "?num=$num";
     for my $n (sort { $a->{id} <=> $b->{id} } values %$nodes) {
-        my $name = xml_escape shorten $n->{name}, 27;
+        my $name = val_escape shorten $n->{name}, 27;
         my $tooltip = val_escape $n->{name};
         my $nodeid = $n->{distance} == 0 ? 'id = "graph_current", ' : '';
         push @lines,

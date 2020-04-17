@@ -64,7 +64,7 @@ sub dot2svg {
 }
 
 
-sub val_escape { $_[0] =~ s/\\/\\\\/rg =~ s/"/\\"/rg =~ s/&/&amp;/rg }
+sub val_escape { $_[0] =~ s/&/&amp;/rg =~ s/\\/\\\\/rg =~ s/"/&quot;/rg =~ s/</&lt;/rg =~ s/>/&gt;/rg }
 
 
 sub node_more {

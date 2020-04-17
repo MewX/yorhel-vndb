@@ -35,7 +35,7 @@ TUWF::get qr{/$RE{vid}/rg}, sub {
     my @lines;
     my $params = "?num=$num&unoff=$unoff";
     for my $n (sort { $a->{id} <=> $b->{id} } values %$nodes) {
-        my $title = xml_escape shorten $n->{title}, 27;
+        my $title = val_escape shorten $n->{title}, 27;
         my $tooltip = val_escape $n->{title};
         my $date = rdate $n->{c_released};
         my $lang = $n->{lang}||'N/A';
