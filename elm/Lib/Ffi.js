@@ -19,3 +19,8 @@ window.elmFfi_fmtFloat = function(wrap,call) {
         }
     }
 };
+
+var urlStatic = document.querySelector('link[rel=stylesheet]').href.replace(/^(https?:\/\/[^/]+)\/.*$/, '$1');
+window.elmFfi_urlStatic = function(wrap,call) {
+    return urlStatic
+};

@@ -97,7 +97,7 @@ our %apis = (
             id       => {},
             title    => {},
         } },
-        votes           => { aoh => {
+        votes           => { unique => 0, aoh => {
             user     => {},
             uid      => { uint => 1, required => 0 },
             sexual   => { uint => 1 },
@@ -349,7 +349,6 @@ sub write_api {
 sub write_types {
     my $data = '';
 
-    $data .= def urlStatic  => String => string config->{url_static};
     $data .= def adminEMail => String => string config->{admin_email};
     $data .= def skins      => 'List (String, String)' =>
                 list map tuple(string $_, string tuwf->{skins}{$_}[0]),

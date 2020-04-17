@@ -16,7 +16,6 @@ import Lib.Util exposing (..)
 import Lib.Api as Api
 import Lib.Ffi as Ffi
 import Gen.Api as GApi
-import Gen.Types exposing (urlStatic)
 import Gen.Images as GI
 import Gen.ImageVote as GIV
 
@@ -307,7 +306,7 @@ view model =
       , p [ class "center" ] <| if i.token == Nothing then [] else
         [ text "Not sure? Read the ", a [ href "/d19" ] [ text "full guidelines" ], text " for more detailed guidance."
         , if model.myVotes < 100 then text "" else
-          span [] [ text " (", a [ href <| urlStatic ++ "/f/imgvote-keybindings.svg" ] [ text "keyboard shortcuts" ], text ")" ]
+          span [] [ text " (", a [ href <| Ffi.urlStatic ++ "/f/imgvote-keybindings.svg" ] [ text "keyboard shortcuts" ], text ")" ]
         ]
       , votestats i
       ]
