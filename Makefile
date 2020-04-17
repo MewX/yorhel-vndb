@@ -82,11 +82,13 @@ chmod: all
 
 # v2 & v2-rw
 
-data/icons/icons.css static/f/icons.png: data/icons/*.png data/icons/*/*.png util/spritegen.pl | static/f
+data/icons/icons.css: data/icons/*.png data/icons/*/*.png util/spritegen.pl | static/f
 	util/spritegen.pl
+
 static/f/icons.png: data/icons/icons.css
 
 static/f/icons.opt.png: static/f/icons.png
+	rm -f $@
 	zopflipng -m --lossy_transparent $< $@
 
 static/s/%/style.css: static/s/%/conf util/skingen.pl data/style.css data/icons/icons.css
