@@ -35,6 +35,7 @@ port preload : String -> Cmd msg
 type alias Model =
   { warn      : Bool
   , single    : Bool
+  , fullscreen: Bool
   , showVotes : Bool
   , myVotes   : Int
   , images    : Array.Array GApi.ApiImageResult
@@ -53,6 +54,7 @@ init : GI.Recv -> Model
 init d =
   { warn      = d.warn
   , single    = d.single
+  , fullscreen= False
   , showVotes = d.single
   , myVotes   = d.my_votes
   , images    = Array.fromList d.images
@@ -98,6 +100,8 @@ keyup model =
     case k of
       "ArrowLeft"  -> JD.succeed Prev
       "ArrowRight" -> JD.succeed Next
+      "v"          -> JD.succeed (Fullscreen (not model.fullscreen))
+      "Escape"     -> JD.succeed (Fullscreen False)
       _            -> keyToVote model k |> Maybe.map (\(s,v) -> JD.succeed (Vote s v True)) |> Maybe.withDefault (JD.fail "")
   ) (JD.field "key" JD.string)
 
@@ -105,6 +109,7 @@ keyup model =
 type Msg
   = SkipWarn
   | ShowVotes
+  | Fullscreen Bool
   | Desc (Maybe Int) (Maybe Int)
   | Load GApi.Response
   | Vote (Maybe Int) (Maybe Int) Bool
@@ -141,6 +146,7 @@ update msg model =
   case msg of
     SkipWarn -> load ({ model | warn = False }, Cmd.none)
     ShowVotes -> ({ model | showVotes = not model.showVotes }, Cmd.none)
+    Fullscreen b -> ({ model | fullscreen = b }, Cmd.none)
     Desc s v -> ({ model | desc = (s,v) }, Cmd.none)
 
     Load (GApi.ImageResult l) ->
@@ -309,6 +315,9 @@ view model =
           span [] [ text " (", a [ href <| Ffi.urlStatic ++ "/f/imgvote-keybindings.svg" ] [ text "keyboard shortcuts" ], text ")" ]
         ]
       , votestats i
+      , if model.fullscreen -- really lazy fullscreen mode
+        then div [ class "fullscreen", style "background-image" ("url("++i.url++")"), onClick (Fullscreen False) ] [ text "" ]
+        else text ""
       ]
 
   in div [ class "mainbox" ]

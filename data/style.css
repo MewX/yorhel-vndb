@@ -1090,6 +1090,7 @@ p.filselect i { font-style: normal }
 .imageflag > div:nth-child(6) { min-height: 200px; padding: 15px 0 }
 .imageflag > div:nth-child(6) table { margin: 0 auto }
 .imageflag > div:nth-child(6) table td { min-width: 50px }
+.imageflag .fullscreen { position: fixed; left: 0; top: 0; width: 100%; height: 100%; background-repeat: no-repeat; background-position: center; background-size: contain; background-color: #000 }
 
 
 /****** Image browser (/img/browse) ******/
