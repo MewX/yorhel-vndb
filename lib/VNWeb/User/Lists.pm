@@ -218,9 +218,11 @@ our $RLIST_STATUS = form_compile any => {
     uid => { id => 1 },
     rid => { id => 1 },
     status => { required => 0, uint => 1, enum => \%RLIST_STATUS }, # undef meaning delete
+    empty => { required => 0, default => '' }, # An 'out' field
 };
 elm_api UListRStatus => undef, $RLIST_STATUS, sub {
     my($data) = @_;
+    delete $data->{empty};
     return elm_Unauth if !own $data->{uid};
     if(!defined $data->{status}) {
         tuwf->dbExeci('DELETE FROM rlists WHERE uid =', \$data->{uid}, 'AND rid =', \$data->{rid})
