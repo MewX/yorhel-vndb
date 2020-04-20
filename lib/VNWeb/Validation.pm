@@ -201,8 +201,10 @@ sub can_edit {
 }
 
 
-# Returns { spoilers => 0-2, traits_sexual => 0/1 }
-# Based on the view= query parameter or the user's preferences.
+# Some user preferences can be overruled with a ?view= query parameter,
+# viewget() can be used to fetch these parameters, viewset() to generate a
+# query parameter with certain preferences overruled.
+#
 # The query parameter has the following format:
 #   view=1   -> spoilers=1, traits_sexual=<default>
 #   view=2s  -> spoilers=2, traits_sexual=1
@@ -213,14 +215,23 @@ sub can_edit {
 #   s/S -> 1/0 traits_sexual
 #   n/N -> 1/0 show_nsfw
 # Missing flags will use default.
+#
+# The parameter also contains a CSRF token to prevent direct links to pages
+# with sensitive content. The token is domain-separated from the form CSRF
+# tokens, but is otherwise generic for all pages and options, so if someone's
+# token leaks, it's possible to generate links to any sensitive page for that
+# particular user for several hours.
 sub viewget {
-    my($sp, $ts, $ns) = tuwf->reqGet('view') =~ /^([0-2])?([sS]?)([nN]?)$/;
+    my($view, $token) = tuwf->reqGet('view') =~ /^([^-]*)-(.+)$/;
+    $view = '' if !length($token) || !auth->csrfcheck($token, 'view');
+    my($sp, $ts, $ns) = $view =~ /^([0-2])?([sS]?)([nN]?)$/;
     {
         spoilers => $sp // auth->pref('spoilers') || 0,
         traits_sexual => !$ts ? auth->pref('traits_sexual') : $ts eq 's',
         show_nsfw => !$ns ? auth->pref('show_nsfw') : $ns eq 'n',
     }
 }
+
 
 # Creates a new 'view=' string with the given parameters. All other fields remain at their default.
 sub viewset {
@@ -229,6 +240,7 @@ sub viewset {
         $s{spoilers}//'',
         !defined $s{traits_sexual} ? '' : $s{traits_sexual} ? 's' : 'S',
         !defined $s{show_nsfw}     ? '' : $s{show_nsfw}     ? 'n' : 'N',
+        '-'.auth->csrftoken(0, 'view');
 }
 
 
@@ -236,6 +248,7 @@ sub viewset {
 # itself. We don't want people linking directly to spoilers or sexual content.
 # If we do get such a request, redirect to the same page without the ?view=
 # parameter.
+# TODO: Also redirect if the token is invalid.
 TUWF::hook before => sub {
     return if tuwf->samesite || !length tuwf->reqGet('view');
     my $qs = join '&', map { my $k=$_; my @l=tuwf->reqGets($k); map uri_escape($k).'='.uri_escape($_), @l } grep $_ ne 'view', tuwf->reqGets();

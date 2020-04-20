@@ -69,12 +69,13 @@ sub my_votes {
 
 
 my $SEND = form_compile any => {
-    images   => $VNWeb::Elm::apis{ImageResult}[0],
-    single   => { anybool => 1 },
-    warn     => { anybool => 1 },
-    my_votes => { uint => 1 },
-    pWidth   => { uint => 1 }, # Set by JS
-    pHeight  => { uint => 1 }, # ^
+    images     => $VNWeb::Elm::apis{ImageResult}[0],
+    single     => { anybool => 1 },
+    warn       => { anybool => 1 },
+    my_votes   => { uint => 1 },
+    pWidth     => { uint => 1 }, # Set by JS
+    pHeight    => { uint => 1 }, # ^
+    nsfw_token => {},
 };
 
 # Fetch a list of images for the user to vote on.
@@ -149,7 +150,7 @@ TUWF::get qr{/img/vote}, sub {
     enrich_token 1, $recent;
 
     framework_ title => 'Image flagging', sub {
-        elm_ 'ImageFlagging', $SEND, { images => [ reverse @$recent ], single => 0, warn => 1, my_votes => my_votes() };
+        elm_ 'ImageFlagging', $SEND, { images => [ reverse @$recent ], single => 0, warn => 1, my_votes => my_votes(), nsfw_token => viewset(show_nsfw => 1) };
     };
 };
 
@@ -164,7 +165,7 @@ TUWF::get qr{/img/$RE{imgid}}, sub {
     enrich_token defined($l->[0]{my_sexual}) || auth->permDbmod(), $l; # XXX: permImgmod?
 
     framework_ title => "Image flagging for $id", sub {
-        elm_ 'ImageFlagging', $SEND, { images => $l, single => 1, warn => !tuwf->samesite(), my_votes => my_votes() };
+        elm_ 'ImageFlagging', $SEND, { images => $l, single => 1, warn => !tuwf->samesite(), my_votes => my_votes(), nsfw_token => viewset(show_nsfw => 1) };
     };
 };
 

@@ -38,6 +38,7 @@ type alias Model =
   , fullscreen: Bool
   , showVotes : Bool
   , myVotes   : Int
+  , nsfwToken : String
   , images    : Array.Array GApi.ApiImageResult
   , index     : Int
   , desc      : (Maybe Int, Maybe Int)
@@ -57,6 +58,7 @@ init d =
   , fullscreen= False
   , showVotes = d.single
   , myVotes   = d.my_votes
+  , nsfwToken = d.nsfw_token
   , images    = Array.fromList d.images
   , index     = if d.single then 0 else List.length d.images
   , desc      = Maybe.withDefault (Nothing,Nothing) <| Maybe.map (\i -> (i.my_sexual, i.my_violence)) <| if d.single then List.head d.images else Nothing
@@ -222,7 +224,7 @@ view model =
           [ td [ Ffi.innerHtml v.user ] []
           , td [] [ text <| if v.sexual   == 0 then "Safe" else if v.sexual   == 1 then "Suggestive" else "Explicit" ]
           , td [] [ text <| if v.violence == 0 then "Tame" else if v.violence == 1 then "Violent"    else "Brutal" ]
-          , td [] <| Maybe.withDefault [] <| Maybe.map (\u -> [ a [ href <| "/img/list?view=n&u="++String.fromInt u ] [ text "votes" ] ]) v.uid
+          , td [] <| Maybe.withDefault [] <| Maybe.map (\u -> [ a [ href <| "/img/list?view=" ++ model.nsfwToken ++ "&u=" ++ String.fromInt u ] [ text "votes" ] ]) v.uid
           ]
         ) i.votes
       ]
