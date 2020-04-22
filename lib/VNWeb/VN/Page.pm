@@ -536,7 +536,7 @@ sub staff_ {
         @$c = sort { $a->[1] <=> $b->[1] } @$c;
     }
 
-    div_ class => 'mainbox', sub {
+    div_ class => 'mainbox', 'data-mainbox-summarize' => 200, sub {
         h1_ 'Staff';
         div_ class => sprintf('vnstaff vnstaff-%d', scalar @$_), sub {
             ul_ sub {
@@ -544,6 +544,52 @@ sub staff_ {
             } for @$_
         } for @cols;
     } if $v->{staff}->@*;
+}
+
+
+sub charsum_ {
+    my($v) = @_;
+
+    my $spoil = viewget->{spoilers};
+    my $c = tuwf->dbAlli('
+        SELECT c.id, c.name, c.original, c.gender, v.role
+          FROM chars c
+          JOIN (SELECT id, MIN(role) FROM chars_vns WHERE role <> \'appears\' AND spoil <=', \$spoil, 'AND vid =', \$v->{id}, 'GROUP BY id) v(id,role) ON c.id = v.id
+         WHERE NOT c.hidden
+         ORDER BY v.role, c.name, c.id'
+    );
+    return if !@$c;
+    enrich seiyuu => id => cid => sub { sql('
+        SELECT vs.cid, sa.id, sa.name, sa.original, vs.note
+          FROM vn_seiyuu vs
+          JOIN staff_alias sa ON sa.aid = vs.aid
+         WHERE vs.id =', \$v->{id}, 'AND vs.cid IN', $_, '
+         ORDER BY sa.name'
+    ) }, $c;
+
+    div_ class => 'mainbox', 'data-mainbox-summarize' => 200, sub {
+        p_ class => 'mainopts', sub {
+            a_ href => "/v$v->{id}/chars#chars", 'Full character list';
+        };
+        h1_ 'Character summary';
+        div_ class => 'charsum_list', sub {
+            div_ class => 'charsum_bubble', sub {
+                div_ class => 'name', sub {
+                    i_ $CHAR_ROLE{$_->{role}}{txt};
+                    abbr_ class => "icons gen $_->{gender}", title => $GENDER{$_->{gender}}, '' if $_->{gender} ne 'unknown';
+                    a_ href => "/c$_->{id}", title => $_->{original}||$_->{name}, $_->{name};
+                };
+                div_ class => 'actor', sub {
+                    txt_ 'Voiced by';
+                    $_->{seiyuu}->@* > 1 ? br_ : txt_ ' ';
+                    join_ \&br_, sub {
+                        a_ href => "/s$_->{id}", title => $_->{original}||$_->{name}, $_->{name};
+                        b_ class => 'grayedout', $_->{note} if $_->{note};
+                    }, $_->{seiyuu}->@*;
+                } if $_->{seiyuu}->@*;
+            } for @$c;
+        };
+    };
 }
 
 
@@ -687,7 +733,7 @@ TUWF::get qr{/$RE{vrev}}, sub {
         tabs_ $v, 0;
         releases_ $v;
         staff_ $v;
-        # TODO: Character summary
+        charsum_ $v;
         stats_ $v;
         # TODO: Screenshots
     };
