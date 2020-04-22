@@ -492,6 +492,61 @@ sub releases_ {
 }
 
 
+sub staff_ {
+    my($v) = @_;
+
+    # XXX: The staff listing is included in the page 3 times, for 3 different
+    # layouts. A better approach to get the same layout is to add the boxes to
+    # the HTML once with classes indicating the box position (e.g.
+    # "4col-col1-row1 3col-col2-row1" etc) and then using CSS to position the
+    # box appropriately. My attempts to do this have failed, however. The
+    # layouting can also be done in JS, but that's not my preferred option.
+
+    # Step 1: Get a list of 'boxes'; Each 'box' represents a role with a list of staff entries.
+    # @boxes = [ $height, $roleimp, $html ]
+    my %roles;
+    push $roles{$_->{role}}->@*, $_ for $v->{staff}->@*;
+    my $i=0;
+    my @boxes =
+        sort { $b->[0] <=> $a->[0] || $a->[1] <=> $b->[1] }
+        map [ 2+$roles{$_}->@*, $i++,
+            xml_string sub {
+                li_ class => 'vnstaff_head', $CREDIT_TYPE{$_};
+                li_ sub {
+                    a_ href => "/s$_->{sid}", title => $_->{original}||$_->{name}, $_->{name};
+                    b_ title => $_->{note}, class => 'grayedout', $_->{note} if $_->{note};
+                } for sort { $a->{name} cmp $b->{name} } $roles{$_}->@*;
+            }
+        ], grep $roles{$_}, keys %CREDIT_TYPE;
+
+    # Step 2. Assign boxes to columns for 2 to 4 column layouts,
+    # efficiently packing the boxes to use the least vertical space,
+    # sorting the columns and boxes within columns by role importance.
+    # (There is no 1-column layout, that's just the 2-column layout stacked with css)
+    my @cols = map [map [0,99,[]], 1..$_], 2..4; # [ $height, $min_roleimp, $boxes ] for each column in each layout
+    for my $c (@cols) {
+        for (@boxes) {
+            my $smallest = $c->[0];
+            $c->[$_][0] < $smallest->[0] && ($smallest = $c->[$_]) for 1..$#$c;
+            $smallest->[0] += $_->[0];
+            $smallest->[1] = $_->[1] if $_->[1] < $smallest->[1];
+            push $smallest->[2]->@*, $_;
+        }
+        $_->[2] = [ sort { $a->[1] <=> $b->[1] } $_->[2]->@* ] for @$c;
+        @$c = sort { $a->[1] <=> $b->[1] } @$c;
+    }
+
+    div_ class => 'mainbox', sub {
+        h1_ 'Staff';
+        div_ class => sprintf('vnstaff vnstaff-%d', scalar @$_), sub {
+            ul_ sub {
+                lit_ $_->[2] for $_->[2]->@*;
+            } for @$_
+        } for @cols;
+    } if $v->{staff}->@*;
+}
+
+
 sub stats_ {
     my($v) = @_;
 
@@ -631,7 +686,7 @@ TUWF::get qr{/$RE{vrev}}, sub {
         infobox_ $v;
         tabs_ $v, 0;
         releases_ $v;
-        # TODO: Staff
+        staff_ $v;
         # TODO: Character summary
         stats_ $v;
         # TODO: Screenshots
