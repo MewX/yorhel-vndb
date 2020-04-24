@@ -218,7 +218,7 @@ sub enrich_extlinks {
         my sub w {
             return if !$obj->{l_wikidata};
             my($v, $fmt, $label) = ($w->{$obj->{l_wikidata}}{$_[0]}, @{$WIKIDATA{$_[0]}}{'fmt', 'label'});
-            push @links, map [ $label, ref $fmt ? $fmt->($_) : sprintf $fmt, $_ ], ref $v ? @$v : $v ? $v : ()
+            push @links, map [ $label, ref $fmt ? $fmt->($_) : sprintf($fmt, $_), undef ], ref $v ? @$v : $v ? $v : ()
         }
         my sub l {
             my($f, $price) = @_;
@@ -242,7 +242,7 @@ sub enrich_extlinks {
             w 'howlongtobeat';
             w 'igdb_game';
             l 'l_renai';
-            push @links, [ 'VNStat', sprintf 'https://vnstat.net/novel/%d', $obj->{id} ] if $obj->{c_votecount}>=20;
+            push @links, [ 'VNStat', sprintf('https://vnstat.net/novel/%d', $obj->{id}), undef ] if $obj->{c_votecount}>=20;
         }
 
         # Release links
@@ -250,7 +250,7 @@ sub enrich_extlinks {
             l 'l_egs';
             l 'l_erotrail';
             l 'l_steam';
-            push @links, [ 'SteamDB', sprintf 'https://steamdb.info/app/%d/info', $obj->{l_steam} ] if $obj->{l_steam};
+            push @links, [ 'SteamDB', sprintf('https://steamdb.info/app/%d/info', $obj->{l_steam}), undef ] if $obj->{l_steam};
             l 'l_dlsite', $obj->{l_dlsite_price};
             l 'l_dlsiteen', $obj->{l_dlsiteen_price};
             l 'l_gog';
@@ -289,7 +289,7 @@ sub enrich_extlinks {
             w 'mobygames_company';
             w 'gamefaqs_company';
             w 'doujinshi_author';
-            push @links, [ 'VNStat', sprintf 'https://vnstat.net/developer/%d', $obj->{id} ];
+            push @links, [ 'VNStat', sprintf('https://vnstat.net/developer/%d', $obj->{id}), undef ];
         }
 
         $obj->{extlinks} = \@links

@@ -7,40 +7,14 @@ use TUWF ':html', 'uri_escape';
 use Exporter 'import';
 use VNDB::Func;
 use VNDB::Types;
-use List::Util 'min';
 
-our @EXPORT = ('charOps', 'charBrowseTable');
+our @EXPORT = ('charBrowseTable');
 
 TUWF::register(
   qr{c(?:([1-9]\d*)(?:\.([1-9]\d*))?/(edit|copy)|/new)}
     => \&edit,
   qr{c/([a-z0]|all)} => \&list,
 );
-
-
-sub charOps {
-  my($self, $sexual, $blockId) = @_;
-  $blockId ||= 'charops_block';
-  my $spoil = $self->authPref('spoilers')||0;
-
-  if($sexual) {
-    my $id_sex = $blockId.'_sex';
-    input type => 'checkbox', class => 'visuallyhidden sexual_check', id => $id_sex, ($self->authPref('traits_sexual') ? (checked => 'checked') : ());
-    label for => $id_sex, class => 'lst sec', 'Show sexual traits';
-  }
-
-  my $id_2 = $blockId.'_2';
-  input type => 'radio', class => 'visuallyhidden radio_spoil2', name => $blockId, id => $id_2, $spoil == 2 ? (checked => 'checked') : ();
-  label for => $id_2, $sexual ? () : (class => 'lst'), 'Spoil me!';
-
-  my $id_1 = $blockId.'_1';
-  input type => 'radio', class => 'visuallyhidden radio_spoil1', name => $blockId, id => $id_1, $spoil == 1 ? (checked => 'checked') : ();
-  label for => $id_1, 'Show minor spoilers';
-
-  my $id_0 = $blockId.'_0';
-  input type => 'radio', class => 'visuallyhidden radio_spoil0', name => $blockId, id => $id_0, $spoil == 0 ? (checked => 'checked') : ();
-  label for => $id_0, 'Hide spoilers';
-}
 
 
 sub edit {

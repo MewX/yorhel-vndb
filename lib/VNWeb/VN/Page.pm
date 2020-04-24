@@ -1,6 +1,8 @@
 package VNWeb::VN::Page;
 
 use VNWeb::Prelude;
+use VNWeb::Releases::Lib 'release_extlinks_';
+use VNDB::Func 'fmtrating';
 use POSIX 'strftime';
 
 
@@ -25,6 +27,22 @@ sub enrich_vn {
 }
 
 
+# Enrich everything necessary for rev_() (includes enrich_vn())
+sub enrich_item {
+    my($v) = @_;
+    enrich_vn $v;
+    enrich_merge aid => 'SELECT id AS sid, aid, name, original FROM staff_alias WHERE aid IN', $v->{staff}, $v->{seiyuu};
+    enrich_merge cid => 'SELECT id AS cid, name AS char_name, original AS char_original FROM chars WHERE id IN', $v->{seiyuu};
+    enrich_merge scr => 'SELECT id AS scr, width, height FROM images WHERE id IN', $v->{screenshots};
+
+    $v->{relations}   = [ sort { $a->{vid} <=> $b->{vid} } $v->{relations}->@* ];
+    $v->{anime}       = [ sort { $a->{aid} <=> $b->{aid} } $v->{anime}->@* ];
+    $v->{staff}       = [ sort { $a->{aid} <=> $b->{aid} || $a->{role} cmp $b->{role} } $v->{staff}->@* ];
+    $v->{seiyuu}      = [ sort { $a->{aid} <=> $b->{aid} || $a->{cid} <=> $b->{cid} || $a->{note} cmp $b->{note} } $v->{seiyuu}->@* ];
+    $v->{screenshots} = [ sort { idcmp($a->{scr}, $b->{scr}) } $v->{screenshots}->@* ];
+}
+
+
 sub og {
     my($v) = @_;
     +{
@@ -32,6 +50,48 @@ sub og {
         image => $v->{image} && !$v->{img_nsfw} ? tuwf->imgurl($v->{image}) :
                  [map $_->{nsfw}?():(tuwf->imgurl($_->{scr})), $v->{screenshots}->@*]->[0]
     }
+}
+
+
+sub rev_ {
+    my($v) = @_;
+    revision_ v => $v, \&enrich_item,
+        [ title       => 'Title (romaji)' ],
+        [ original    => 'Original title' ],
+        [ alias       => 'Alias'          ],
+        [ desc        => 'Description'    ],
+        [ length      => 'Length',        fmt => \%VN_LENGTH ],
+        [ staff       => 'Credits',       fmt => sub {
+            a_ href => "/s$_->{sid}", title => $_->{original}||$_->{name}, $_->{name};
+            txt_ " [$CREDIT_TYPE{$_->{role}}]";
+            txt_ " [$_->{note}]" if $_->{note};
+        }],
+        [ seiyuu      => 'Seiyuu',        fmt => sub {
+            a_ href => "/s$_->{sid}", title => $_->{original}||$_->{name}, $_->{name};
+            txt_ ' as ';
+            a_ href => "/c$_->{cid}", title => $_->{char_original}||$_->{char_name}, $_->{char_name};
+            txt_ " [$_->{note}]" if $_->{note};
+        }],
+        [ relations   => 'Relations',     fmt => sub {
+            txt_ sprintf '[%s] %s: ', $_->{official} ? 'official' : 'unofficial', $VN_RELATION{$_->{relation}}{txt};
+            a_ href => "/v$_->{vid}", title => $_->{original}||$_->{title}, $_->{title};
+        }],
+        [ anime       => 'Anime',         fmt => sub { a_ href => "https://anidb.net/anime/$_->{aid}", "a$_->{aid}" }],
+        [ screenshots => 'Screenshots',   fmt => sub {
+            txt_ '[';
+            a_ href => "/r$_->{rid}", "r$_->{rid}" if $_->{rid};
+            txt_ 'no release' if !$_->{rid};
+            txt_ '] ';
+            a_ href => tuwf->imgurl($_->{scr}), 'data-iv' => "$_->{width}x$_->{height}", $_->{scr};
+            txt_ $_->{nsfw} ? ' (Not safe)' : ' (Safe)';
+        }],
+        [ image       => 'Image',         fmt => sub {
+            !viewget->{show_nsfw} && $_[0]{img_nsfw}
+            ? a_ href => tuwf->imgurl($_), '(NSFW)'
+            : img_ src => tuwf->imgurl($_)
+        } ],
+        [ img_nsfw    => 'Image NSFW',    fmt => sub { txt_ $_ ? 'Not safe' : 'Safe' } ],
+        revision_extlinks 'v'
 }
 
 
@@ -342,13 +402,323 @@ sub tabs_ {
     return if !$haschars && !auth->permEdit;
     div_ class => 'maintabs', sub {
         ul_ sub {
-            li_ class => (!$char ? ' tabselected' : ''), sub { a_ href => "/v$v->{id}#main", name => 'main', 'main' };
-            li_ class => ($char  ? ' tabselected' : ''), sub { a_ href => "/v$v->{id}/chars#chars", name => 'chars', 'characters' };
-        } if $haschars;
+            if($haschars) {
+                li_ class => (!$char ? ' tabselected' : ''), sub { a_ href => "/v$v->{id}#main", name => 'main', 'main' };
+                li_ class => ($char  ? ' tabselected' : ''), sub { a_ href => "/v$v->{id}/chars#chars", name => 'chars', 'characters' };
+            }
+        };
         ul_ sub {
-            li_ sub { a_ href => "/v$v->{id}/add", 'add release' };
-            li_ sub { a_ href => "/c/new?vid=$v->{id}", 'add character' };
-        } if auth->permEdit;
+            if(auth->permEdit) {
+                li_ sub { a_ href => "/v$v->{id}/add", 'add release' };
+                li_ sub { a_ href => "/c/new?vid=$v->{id}", 'add character' };
+            }
+        };
+    }
+}
+
+
+sub releases_ {
+    my($v) = @_;
+
+    # TODO: Organize a long list of releases a bit better somehow? Collapsable language sections?
+
+    enrich_merge id => '
+        SELECT id, title, original, notes, minage, freeware, doujin, resolution, voiced, ani_story, ani_ero, uncensored
+          FROM releases WHERE id IN', $v->{releases};
+    enrich_merge id => sql('SELECT rid as id, status as rlist_status FROM rlists WHERE uid =', \auth->uid, 'AND rid IN'), $v->{releases} if auth;
+    enrich_flatten lang => id => id => 'SELECT id, lang FROM releases_lang WHERE id IN', $v->{releases};
+    enrich_flatten platforms => id => id => 'SELECT id, platform FROM releases_platforms WHERE id IN', $v->{releases};
+    enrich media => id => id => 'SELECT id, medium, qty FROM releases_media WHERE id IN', $v->{releases};
+
+    $v->{releases} = [ sort { $a->{released} <=> $b->{released} || $a->{id} <=> $b->{id} } $v->{releases}->@* ];
+    my %lang;
+    my @lang = grep !$lang{$_}++, map $_->{lang}->@*, $v->{releases}->@*;
+
+    my sub icon_ {
+        my($img, $label, $class) = @_;
+        $class = $class ? " release_icon_$class" : '';
+        img_ src => config->{url_static}."/f/$img.svg", class => "release_icons$class", title => $label;
+    }
+
+    my sub icons_ {
+        my($r) = @_;
+        icon_ 'voiced', $VOICED{$r->{voiced}}{txt}, "voiced$r->{voiced}" if $r->{voiced};
+        icon_ 'story_animated', "Story: $ANIMATED{$r->{ani_story}}{txt}", "anim$r->{ani_story}" if $r->{ani_story};
+        icon_ 'ero_animated', "Ero: $ANIMATED{$r->{ani_ero}}{txt}", "anim$r->{ani_ero}" if $r->{ani_ero};
+        icon_ 'free', 'Freeware' if $r->{freeware};
+        icon_ 'nonfree', 'Non-free' if !$r->{freeware};
+        icon_ 'doujin', 'Doujin' if !$r->{patch} && $r->{doujin};
+        icon_ 'commercial', 'Commercial' if !$r->{patch} && !$r->{doujin};
+        if($r->{resolution} ne 'unknown') {
+            my $type = $r->{resolution} eq 'nonstandard' ? 'custom' : $RESOLUTION{$r->{resolution}}{cat} eq 'widescreen' ? '16-9' : '4-3';
+            # Ugly workaround: PC-98 has non-square pixels, thus not widescreen
+            $type = '4-3' if $type eq '16-9' && grep $_ eq 'p98', $r->{platforms}->@*;
+            icon_ "resolution_$type", $RESOLUTION{$r->{resolution}}{txt};
+        }
+        icon_ $MEDIUM{ $r->{media}[0]{medium} }{icon}, join ', ', map fmtmedia($_->{medium}, $_->{qty}), $r->{media}->@* if $r->{media}->@*;
+        icon_ 'uncensor', 'Uncensored' if $r->{uncensored};
+        icon_ 'notes', bb2text $r->{notes} if $r->{notes};
+    }
+
+    my sub lang_ {
+        my($lang) = @_;
+        tr_ class => 'lang', sub {
+            td_ colspan => 7, sub {
+                abbr_ class => "icons lang $lang", title => $LANGUAGE{$lang}, '';
+                txt_ $LANGUAGE{$lang};
+            }
+        };
+        tr_ sub {
+            td_ class => 'tc1', sub { rdate_ $_->{released} };
+            td_ class => 'tc2', $_->{minage} < 0 ? '' : minage $_->{minage};
+            td_ class => 'tc3', sub {
+                abbr_ class => "icons $_", title => $PLATFORM{$_}, '' for grep $_ ne 'oth', $_->{platforms}->@*;
+                abbr_ class => "icons rt$_->{type}", title => $_->{type}, '';
+            };
+            td_ class => 'tc4', sub {
+                a_ href => "/r$_->{id}", title => $_->{original}||$_->{title}, $_->{title};
+                b_ class => 'grayedout', ' (patch)' if $_->{patch};
+            };
+            td_ class => 'tc_icons', sub { icons_ $_ };
+            td_ class => 'tc5 elm_dd_left', sub {
+                elm_ 'UList.ReleaseEdit', $VNWeb::User::Lists::RLIST_STATUS, { rid => $_->{id}, uid => auth->uid, status => $_->{rlist_status}, empty => '--' } if auth;
+            };
+            td_ class => 'tc6', sub { release_extlinks_ $_, "$lang$_->{id}" };
+        } for grep grep($_ eq $lang, $_->{lang}->@*), $v->{releases}->@*;
+    }
+
+    div_ class => 'mainbox releases', sub {
+        h1_ 'Releases';
+        if(!$v->{releases}->@*) {
+            p_ 'We don\'t have any information about releases of this visual novel yet...';
+        } else {
+            table_ sub { lang_ $_ for @lang };
+        }
+    }
+}
+
+
+sub staff_ {
+    my($v) = @_;
+
+    # XXX: The staff listing is included in the page 3 times, for 3 different
+    # layouts. A better approach to get the same layout is to add the boxes to
+    # the HTML once with classes indicating the box position (e.g.
+    # "4col-col1-row1 3col-col2-row1" etc) and then using CSS to position the
+    # box appropriately. My attempts to do this have failed, however. The
+    # layouting can also be done in JS, but that's not my preferred option.
+
+    # Step 1: Get a list of 'boxes'; Each 'box' represents a role with a list of staff entries.
+    # @boxes = [ $height, $roleimp, $html ]
+    my %roles;
+    push $roles{$_->{role}}->@*, $_ for $v->{staff}->@*;
+    my $i=0;
+    my @boxes =
+        sort { $b->[0] <=> $a->[0] || $a->[1] <=> $b->[1] }
+        map [ 2+$roles{$_}->@*, $i++,
+            xml_string sub {
+                li_ class => 'vnstaff_head', $CREDIT_TYPE{$_};
+                li_ sub {
+                    a_ href => "/s$_->{sid}", title => $_->{original}||$_->{name}, $_->{name};
+                    b_ title => $_->{note}, class => 'grayedout', $_->{note} if $_->{note};
+                } for sort { $a->{name} cmp $b->{name} } $roles{$_}->@*;
+            }
+        ], grep $roles{$_}, keys %CREDIT_TYPE;
+
+    # Step 2. Assign boxes to columns for 2 to 4 column layouts,
+    # efficiently packing the boxes to use the least vertical space,
+    # sorting the columns and boxes within columns by role importance.
+    # (There is no 1-column layout, that's just the 2-column layout stacked with css)
+    my @cols = map [map [0,99,[]], 1..$_], 2..4; # [ $height, $min_roleimp, $boxes ] for each column in each layout
+    for my $c (@cols) {
+        for (@boxes) {
+            my $smallest = $c->[0];
+            $c->[$_][0] < $smallest->[0] && ($smallest = $c->[$_]) for 1..$#$c;
+            $smallest->[0] += $_->[0];
+            $smallest->[1] = $_->[1] if $_->[1] < $smallest->[1];
+            push $smallest->[2]->@*, $_;
+        }
+        $_->[2] = [ sort { $a->[1] <=> $b->[1] } $_->[2]->@* ] for @$c;
+        @$c = sort { $a->[1] <=> $b->[1] } @$c;
+    }
+
+    div_ class => 'mainbox', 'data-mainbox-summarize' => 200, sub {
+        h1_ 'Staff';
+        div_ class => sprintf('vnstaff vnstaff-%d', scalar @$_), sub {
+            ul_ sub {
+                lit_ $_->[2] for $_->[2]->@*;
+            } for @$_
+        } for @cols;
+    } if $v->{staff}->@*;
+}
+
+
+sub charsum_ {
+    my($v) = @_;
+
+    my $spoil = viewget->{spoilers};
+    my $c = tuwf->dbAlli('
+        SELECT c.id, c.name, c.original, c.gender, v.role
+          FROM chars c
+          JOIN (SELECT id, MIN(role) FROM chars_vns WHERE role <> \'appears\' AND spoil <=', \$spoil, 'AND vid =', \$v->{id}, 'GROUP BY id) v(id,role) ON c.id = v.id
+         WHERE NOT c.hidden
+         ORDER BY v.role, c.name, c.id'
+    );
+    return if !@$c;
+    enrich seiyuu => id => cid => sub { sql('
+        SELECT vs.cid, sa.id, sa.name, sa.original, vs.note
+          FROM vn_seiyuu vs
+          JOIN staff_alias sa ON sa.aid = vs.aid
+         WHERE vs.id =', \$v->{id}, 'AND vs.cid IN', $_, '
+         ORDER BY sa.name'
+    ) }, $c;
+
+    div_ class => 'mainbox', 'data-mainbox-summarize' => 200, sub {
+        p_ class => 'mainopts', sub {
+            a_ href => "/v$v->{id}/chars#chars", 'Full character list';
+        };
+        h1_ 'Character summary';
+        div_ class => 'charsum_list', sub {
+            div_ class => 'charsum_bubble', sub {
+                div_ class => 'name', sub {
+                    i_ $CHAR_ROLE{$_->{role}}{txt};
+                    abbr_ class => "icons gen $_->{gender}", title => $GENDER{$_->{gender}}, '' if $_->{gender} ne 'unknown';
+                    a_ href => "/c$_->{id}", title => $_->{original}||$_->{name}, $_->{name};
+                };
+                div_ class => 'actor', sub {
+                    txt_ 'Voiced by';
+                    $_->{seiyuu}->@* > 1 ? br_ : txt_ ' ';
+                    join_ \&br_, sub {
+                        a_ href => "/s$_->{id}", title => $_->{original}||$_->{name}, $_->{name};
+                        b_ class => 'grayedout', $_->{note} if $_->{note};
+                    }, $_->{seiyuu}->@*;
+                } if $_->{seiyuu}->@*;
+            } for @$c;
+        };
+    };
+}
+
+
+sub stats_ {
+    my($v) = @_;
+
+    my $stats = tuwf->dbAlli('
+        SELECT (uv.vote::numeric/10)::int AS idx, COUNT(uv.vote) as votes, SUM(uv.vote) AS total
+          FROM ulist_vns uv
+         WHERE uv.vote IS NOT NULL
+           AND NOT EXISTS(SELECT 1 FROM users u WHERE u.id = uv.uid AND u.ign_votes)
+           AND uv.vid =', \$v->{id}, '
+         GROUP BY (uv.vote::numeric/10)::int'
+    );
+    my $sum = sum map $_->{total}, @$stats;
+    my $max = max map $_->{votes}, @$stats;
+    my $num = sum map $_->{votes}, @$stats;
+
+    my $recent = @$stats && tuwf->dbAlli('
+         SELECT uv.vote,', sql_totime('uv.vote_date'), 'as date, ', sql_user(), '
+              , NOT EXISTS(SELECT 1 FROM ulist_vns_labels uvl JOIN ulist_labels ul ON ul.uid = uvl.uid AND ul.id = uvl.lbl WHERE uvl.uid = uv.uid AND uvl.vid = uv.vid AND NOT ul.private) AS hide_list
+           FROM ulist_vns uv
+           JOIN users u ON u.id = uv.uid
+          WHERE uv.vid =', \$v->{id}, 'AND uv.vote IS NOT NULL
+            AND NOT EXISTS(SELECT 1 FROM users u WHERE u.id = uv.uid AND u.ign_votes)
+          ORDER BY uv.vote_date DESC
+          LIMIT', \8
+    );
+
+    my $rank = $v->{c_votecount} && tuwf->dbRowi('
+        SELECT c_rating, c_popularity
+             , (SELECT COUNT(*)+1 FROM vn iv WHERE NOT iv.hidden AND iv.c_popularity > COALESCE(v.c_popularity, 0.0)) AS pop_rank
+             , (SELECT COUNT(*)+1 FROM vn iv WHERE NOT iv.hidden AND iv.c_rating > COALESCE(v.c_rating, 0.0)) AS rating_rank
+          FROM vn v WHERE id =', \$v->{id}
+    );
+
+    my sub votestats_ {
+        table_ class => 'votegraph', sub {
+            thead_ sub { tr_ sub { td_ colspan => 2, 'Vote stats' } };
+            tfoot_ sub { tr_ sub { td_ colspan => 2, sprintf '%d vote%s total, average %.2f (%s)', $num, $num == 1 ? '' : 's', $sum/$num/10, fmtrating(ceil($sum/$num/10-1)||1) } };
+            tr_ sub {
+                my $num = $_;
+                my $votes = [grep $num == $_->{idx}, @$stats]->[0]{votes} || 0;
+                td_ class => 'number', $num;
+                td_ class => 'graph', sub {
+                    div_ style => sprintf('width: %dpx', ($votes||0)/$max*250), ' ';
+                    txt_ $votes||0;
+                };
+            } for (reverse 1..10);
+        };
+
+        table_ class => 'recentvotes stripe', sub {
+            thead_ sub { tr_ sub { td_ colspan => 3, sub {
+                txt_ 'Recent votes';
+                b_ sub {
+                    txt_ '(';
+                    a_ href => "/v$v->{id}/votes", 'show all';
+                    txt_ ')';
+                }
+            } } };
+            tr_ sub {
+                td_ sub {
+                    b_ class => 'grayedout', 'hidden' if $_->{hide_list};
+                    user_ $_ if !$_->{hide_list};
+                };
+                td_ fmtvote $_->{vote};
+                td_ fmtdate $_->{date};
+            } for @$recent;
+        } if $recent && @$recent;
+
+        clearfloat_;
+        div_ sub {
+            h3_ 'Ranking';
+            p_ sprintf 'Popularity: ranked #%d with a score of %.2f', $rank->{pop_rank}, ($rank->{c_popularity}||0)*100;
+            p_ sprintf 'Bayesian rating: ranked #%d with a rating of %.2f', $rank->{rating_rank}, $rank->{c_rating}/10;
+        } if $v->{c_votecount};
+    }
+
+    div_ class => 'mainbox', sub {
+        h1_ 'User stats';
+        if(!@$stats) {
+            p_ 'Nobody has voted on this visual novel yet...';
+        } else {
+            div_ class => 'votestats', \&votestats_;
+        }
+    }
+}
+
+
+sub screenshots_ {
+    my($v) = @_;
+    my $s = $v->{screenshots};
+    return if !@$s;
+
+    my %rel;
+    push $rel{$_->{rid}}->@*, $_ for @$s;
+
+    input_ id => 'nsfwhide_chk', type => 'checkbox', class => 'visuallyhidden', auth->pref('show_nsfw') ? (checked => 'checked') : ();
+    div_ class => 'mainbox', id => 'screenshots', sub {
+
+        p_ class => 'nsfwtoggle', sub {
+            txt_ 'Showing ';
+            i_ id => 'nsfwshown', scalar grep !$_->{nsfw}, @$s;
+            span_ class => 'nsfw', scalar @$s;
+            txt_ sprintf ' out of %d screenshot%s. ', scalar @$s, @$s == 1 ? '' : 's';
+            label_ for => 'nsfwhide_chk', class => 'fake_link', 'show/hide NSFW';
+        } if grep $_->{nsfw}, @$s;
+
+        h1_ 'Screenshots';
+
+        for my $r (grep $rel{$_->{id}}, $v->{releases}->@*) {
+            p_ class => 'rel', sub {
+                abbr_ class => "icons lang $_", title => $LANGUAGE{$_}, '' for $r->{languages}->@*;
+                abbr_ class => "icons $_", title => $PLATFORM{$_}, '' for $r->{platforms}->@*;
+                a_ href => "/r$r->{id}", $r->{title};
+            };
+            div_ class => 'scr', sub {
+                a_ href => tuwf->imgurl($_->{scr}), class => sprintf('scrlnk%s', $_->{nsfw} ? ' nsfw':''), 'data-iv' => "$_->{width}x$_->{height}:scr", sub {
+                    my($w, $h) = imgsize $_->{width}, $_->{height}, tuwf->{scr_size}->@*;
+                    img_ src => tuwf->imgurl($_->{scr}, 1), width => $w, height => $h, alt => "Screenshot #$_->{scr}";
+                } for $rel{$r->{id}}->@*;
+            }
+        }
     }
 }
 
@@ -391,6 +761,26 @@ sub chars_ {
         }
     }
 }
+
+
+TUWF::get qr{/$RE{vrev}}, sub {
+    my $v = db_entry v => tuwf->capture('id'), tuwf->capture('rev');
+    return tuwf->resNotFound if !$v;
+
+    enrich_item $v;
+
+    framework_ title => $v->{title}, index => !tuwf->capture('rev'), type => 'v', dbobj => $v, hiddenmsg => 1, og => og($v),
+    sub {
+        rev_ $v if tuwf->capture('rev');
+        infobox_ $v;
+        tabs_ $v, 0;
+        releases_ $v;
+        staff_ $v;
+        charsum_ $v;
+        stats_ $v;
+        screenshots_ $v;
+    };
+};
 
 
 TUWF::get qr{/$RE{vid}/chars}, sub {

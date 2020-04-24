@@ -25,6 +25,7 @@ type alias Model =
   { uid      : Int
   , rid      : Int
   , status   : Maybe Int
+  , empty    : String
   , state    : Api.State
   , dd       : DD.Config Msg
   }
@@ -34,6 +35,7 @@ init vid f =
   { uid      = f.uid
   , rid      = f.rid
   , status   = f.status
+  , empty    = f.empty
   , state    = Api.Normal
   , dd       = DD.init ("ulist_reldd" ++ String.fromInt vid ++ "_" ++ String.fromInt f.rid) Open
   }
@@ -50,7 +52,7 @@ update msg model =
     Open b -> ({ model | dd = DD.toggle model.dd b }, Cmd.none)
     Set st _ ->
       ( { model | dd = DD.toggle model.dd False, status = st, state = Api.Loading }
-      , GRS.send { uid = model.uid, rid = model.rid, status = st } Saved )
+      , GRS.send { uid = model.uid, rid = model.rid, status = st, empty = "" } Saved )
 
     Saved GApi.Success -> ({ model | state = Api.Normal }, Cmd.none)
     Saved e -> ({ model | state = Api.Error e }, Cmd.none)
@@ -59,7 +61,7 @@ update msg model =
 view : Model -> Html Msg
 view model =
   DD.view model.dd model.state
-    (text <| Maybe.withDefault "not on your list" <| Maybe.andThen (\s -> lookup s rlistStatus) model.status)
+    (text <| Maybe.withDefault model.empty <| Maybe.andThen (\s -> lookup s rlistStatus) model.status)
     <| \_ ->
       [ ul [] <| List.map (\(n, status) ->
           li [ ] [ linkRadio (Just n == model.status) (Set (Just n)) [ text status ] ]

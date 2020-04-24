@@ -55,7 +55,7 @@ init f =
   , notes      = f.notes
   , notesRev   = 0
   , notesState = Api.Normal
-  , rels       = List.map2 (\st nfo -> RE.init f.vid { uid = f.uid, rid = nfo.id, status = Just st }) f.relstatus f.rels
+  , rels       = List.map2 (\st nfo -> RE.init f.vid { uid = f.uid, rid = nfo.id, status = Just st, empty = "" }) f.relstatus f.rels
   , relNfo     = Dict.fromList <| List.map (\r -> (r.id, r)) f.rels
   , relOptions = Nothing
   , relState   = Api.Normal
@@ -132,7 +132,7 @@ update msg model =
         }, Cmd.none)
     RelLoaded e -> ({ model | relState = Api.Error e }, Cmd.none)
     RelAdd rid ->
-      ( { model | rels = model.rels ++ (if rid == 0 then [] else [RE.init model.flags.vid { rid = rid, uid = model.flags.uid, status = Just 2 }]) }
+      ( { model | rels = model.rels ++ (if rid == 0 then [] else [RE.init model.flags.vid { rid = rid, uid = model.flags.uid, status = Just 2, empty = "" }]) }
       , Task.perform (always <| Rel rid <| RE.Set (Just 2) True) <| Task.succeed True)
 
 

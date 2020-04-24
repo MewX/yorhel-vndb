@@ -182,20 +182,20 @@ hash TAG_CATEGORY =>
 
 
 hash ANIMATED =>
-    0 => { txt => 'Unknown',                    story_icon => 'unknown',                   ero_icon => 'unknown'                 },
-    1 => { txt => 'No animations',              story_icon => 'story_not_animated',        ero_icon => 'ero_not_animated'        },
-    2 => { txt => 'Simple animations',          story_icon => 'story_simple_animated',     ero_icon => 'ero_simple_animated'     },
-    3 => { txt => 'Some fully animated scenes', story_icon => 'story_some_fully_animated', ero_icon => 'ero_some_fully_animated' },
-    4 => { txt => 'All scenes fully animated',  story_icon => 'story_all_fully_animated',  ero_icon => 'ero_all_fully_animated'  };
+    0 => { txt => 'Unknown'                    },
+    1 => { txt => 'No animations'              },
+    2 => { txt => 'Simple animations'          },
+    3 => { txt => 'Some fully animated scenes' },
+    4 => { txt => 'All scenes fully animated'  };
 
 
 
 hash VOICED =>
-    0 => { txt => 'Unknown',                 icon => 'unknown'          },
-    1 => { txt => 'Not voiced',              icon => 'not_voiced'       },
-    2 => { txt => 'Only ero scenes voiced',  icon => 'ero_voiced'       },
-    3 => { txt => 'Partially voiced',        icon => 'partially_voiced' },
-    4 => { txt => 'Fully voiced',            icon => 'fully_voiced'     };
+    0 => { txt => 'Unknown'                },
+    1 => { txt => 'Not voiced'             },
+    2 => { txt => 'Only ero scenes voiced' },
+    3 => { txt => 'Partially voiced'       },
+    4 => { txt => 'Fully voiced'           };
 
 
 
