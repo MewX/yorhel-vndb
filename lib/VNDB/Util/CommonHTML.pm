@@ -12,7 +12,7 @@ use POSIX 'ceil';
 
 our @EXPORT = qw|
   htmlMainTabs htmlDenied htmlHiddenMessage htmlRevision
-  htmlEditMessage htmlItemMessage htmlVoteStats htmlSearchBox
+  htmlEditMessage htmlItemMessage htmlSearchBox
 |;
 
 
@@ -211,88 +211,6 @@ sub htmlItemMessage {
   } elsif($self->authInfo->{id} && !$self->authCan('edit')) {
     p class => 'locked', 'You are not allowed to edit this page';
   }
-}
-
-
-# generates two tables, one with a vote graph, other with recent votes
-# Only supports $type eq 'v' now.
-sub htmlVoteStats {
-  my($self, $type, $obj, $stats) = @_;
-
-  my($max, $count, $total) = (0, 0, 0);
-  for (0..$#$stats) {
-    $max = $stats->[$_][0] if $stats->[$_][0] > $max;
-    $count += $stats->[$_][0];
-    $total += $stats->[$_][1];
-  }
-  div class => 'votestats';
-   table class => 'votegraph';
-    thead; Tr;
-     td colspan => 2, 'Vote stats';
-    end; end;
-    tfoot; Tr;
-     td colspan => 2, sprintf '%d vote%s total, average %.2f%s', $count, $count == 1 ? '' : 's', $total/$count/10,
-       $type eq 'v' ? ' ('.fmtrating(ceil($total/$count/10-1)||1).')' : '';
-    end; end;
-    for (reverse 0..$#$stats) {
-      Tr;
-      td class => 'number', $_+1;
-       td class => 'graph';
-        div style => 'width: '.($stats->[$_][0]/$max*250).'px', ' ';
-        txt $stats->[$_][0];
-       end;
-      end;
-    }
-   end 'table';
-
-   my $recent = $self->dbAlli('
-     SELECT uv.vote,', VNWeb::DB::sql_totime('uv.vote_date '), 'as date, ', VNWeb::DB::sql_user(), '
-          , NOT EXISTS(SELECT 1 FROM ulist_vns_labels uvl JOIN ulist_labels ul ON ul.uid = uvl.uid AND ul.id = uvl.lbl WHERE uvl.uid = uv.uid AND uvl.vid = uv.vid AND NOT ul.private) AS hide_list
-       FROM ulist_vns uv
-       JOIN users u ON u.id = uv.uid
-      WHERE uv.vid =', \$obj->{id}, 'AND uv.vote IS NOT NULL
-        AND NOT EXISTS(SELECT 1 FROM users u WHERE u.id = uv.uid AND u.ign_votes)
-      ORDER BY uv.vote_date DESC
-      LIMIT', \8
-   );
-
-   if(@$recent) {
-     table class => 'recentvotes stripe';
-      thead; Tr;
-       td colspan => 3;
-        txt 'Recent votes';
-        b;
-         txt '(';
-         a href => "/$type$obj->{id}/votes", 'show all';
-         txt ')';
-        end;
-       end;
-      end; end;
-      for (@$recent) {
-        Tr;
-         td;
-          if($_->{hide_list}) {
-            b class => 'grayedout', 'hidden';
-          } else {
-            VNWeb::HTML::user_($_);
-          }
-         end;
-         td fmtvote $_->{vote};
-         td fmtdate $_->{date};
-        end;
-      }
-     end 'table';
-   }
-
-   clearfloat;
-   if($type eq 'v' && $obj->{c_votecount}) {
-     div;
-      h3 'Ranking';
-      p sprintf 'Popularity: ranked #%d with a score of %.2f', $obj->{p_ranking}, ($obj->{c_popularity}||0)*100;
-      p sprintf 'Bayesian rating: ranked #%d with a rating of %.2f', $obj->{r_ranking}, $obj->{c_rating}/10;
-     end;
-   }
-  end 'div';
 }
 
 
