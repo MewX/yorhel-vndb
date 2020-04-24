@@ -67,7 +67,8 @@ sub rev_ {
             txt_ " [$_->{note}]" if $_->{note};
         }],
         [ seiyuu      => 'Seiyuu',        fmt => sub {
-            a_ href => "/s$_->{sid}", title => $_->{original}||$_->{name}, $_->{name};
+            a_ href => "/s$_->{sid}", title => $_->{original}||$_->{name}, $_->{name} if $_->{sid};
+            b_ class => 'grayedout', '[removed alias]' if !$_->{sid};
             txt_ ' as ';
             a_ href => "/c$_->{cid}", title => $_->{char_original}||$_->{char_name}, $_->{char_name};
             txt_ " [$_->{note}]" if $_->{note};
