@@ -1032,6 +1032,21 @@ div#iv_view {
   color: #000;
 }
 
+/* ivview childs:
+ *   1  div -> loading
+ *   2  div -> img
+ *   3  a   -> full
+ *   4  a   -> close
+ *   5  a   -> prev
+ *   6  a   -> next */
+.ivview     { position: fixed; background: $boxbg$; border: 2px solid $border$; padding: 5px; text-align: center }
+.ivview a   { border: 0; font-weight: bold; font-size: 14px }
+.ivview img { cursor: pointer }
+.ivview > div:nth-child(1) { position: absolute; left: 48%; top: 48%; width: 30px; height: 30px }
+.ivview >   a:nth-child(3) { float: left; padding-right: 10px }
+.ivview >   a:nth-child(4) { float: right; padding-left: 10px }
+.ivview >   a:nth-child(5) { padding-right: 5px }
+.ivview >   a:nth-child(6) { padding-left: 5px }
 
 
 /****** filter selector *****/

@@ -32,6 +32,7 @@ sub enrich_item {
     my($v) = @_;
     enrich_merge aid => 'SELECT id AS sid, aid, name, original FROM staff_alias WHERE aid IN', $v->{staff}, $v->{seiyuu};
     enrich_merge cid => 'SELECT id AS cid, name AS char_name, original AS char_original FROM chars WHERE id IN', $v->{seiyuu};
+    enrich_merge scr => 'SELECT id AS scr, width, height FROM images WHERE id IN', $v->{screenshots};
 
     $v->{relations}   = [ sort { $a->{vid} <=> $b->{vid} } $v->{relations}->@* ];
     $v->{anime}       = [ sort { $a->{aid} <=> $b->{aid} } $v->{anime}->@* ];
@@ -80,7 +81,7 @@ sub rev_ {
             a_ href => "/r$_->{rid}", "r$_->{rid}" if $_->{rid};
             txt_ 'no release' if !$_->{rid};
             txt_ '] ';
-            a_ href => tuwf->imgurl($_->{scr}), $_->{scr}; # TODO: Image viewer
+            a_ href => tuwf->imgurl($_->{scr}), 'data-iv' => "$_->{width}x$_->{height}", $_->{scr};
             txt_ $_->{nsfw} ? ' (Not safe)' : ' (Safe)';
         }],
         [ image       => 'Image',         fmt => sub { a_ href => tuwf->imgurl($_), $_ } ], # TODO: Preview if SFW
@@ -475,7 +476,7 @@ sub releases_ {
             };
             td_ class => 'tc_icons', sub { icons_ $_ };
             td_ class => 'tc5 elm_dd_left', sub {
-                elm_ 'UList.ReleaseEdit', $VNWeb::User::Lists::RLIST_STATUS, { rid => $_->{id}, uid => auth->uid, status => $_->{rlist_status}, empty => '--' };
+                elm_ 'UList.ReleaseEdit', $VNWeb::User::Lists::RLIST_STATUS, { rid => $_->{id}, uid => auth->uid, status => $_->{rlist_status}, empty => '--' } if auth;
             };
             td_ class => 'tc6', sub { release_extlinks_ $_, "$lang$_->{id}" };
         } for grep grep($_ eq $lang, $_->{lang}->@*), $v->{releases}->@*;
@@ -679,6 +680,44 @@ sub stats_ {
 }
 
 
+sub screenshots_ {
+    my($v) = @_;
+    my $s = $v->{screenshots};
+    return if !@$s;
+
+    my %rel;
+    push $rel{$_->{rid}}->@*, $_ for @$s;
+
+    input_ id => 'nsfwhide_chk', type => 'checkbox', class => 'visuallyhidden', auth->pref('show_nsfw') ? (checked => 'checked') : ();
+    div_ class => 'mainbox', id => 'screenshots', sub {
+
+        p_ class => 'nsfwtoggle', sub {
+            txt_ 'Showing ';
+            i_ id => 'nsfwshown', scalar grep !$_->{nsfw}, @$s;
+            span_ class => 'nsfw', scalar @$s;
+            txt_ sprintf ' out of %d screenshot%s. ', scalar @$s, @$s == 1 ? '' : 's';
+            label_ for => 'nsfwhide_chk', class => 'fake_link', 'show/hide NSFW';
+        } if grep $_->{nsfw}, @$s;
+
+        h1_ 'Screenshots';
+
+        for my $r (grep $rel{$_->{id}}, $v->{releases}->@*) {
+            p_ class => 'rel', sub {
+                abbr_ class => "icons lang $_", title => $LANGUAGE{$_}, '' for $r->{languages}->@*;
+                abbr_ class => "icons $_", title => $PLATFORM{$_}, '' for $r->{platforms}->@*;
+                a_ href => "/r$r->{id}", $r->{title};
+            };
+            div_ class => 'scr', sub {
+                a_ href => tuwf->imgurl($_->{scr}), class => sprintf('scrlnk%s', $_->{nsfw} ? ' nsfw':''), 'data-iv' => "$_->{width}x$_->{height}:scr", sub {
+                    my($w, $h) = imgsize $_->{width}, $_->{height}, tuwf->{scr_size}->@*;
+                    img_ src => tuwf->imgurl($_->{scr}, 1), width => $w, height => $h, alt => "Screenshot #$_->{scr}";
+                } for $rel{$r->{id}}->@*;
+            }
+        }
+    }
+}
+
+
 sub chars_ {
     my($v) = @_;
     my $view = viewget;
@@ -735,7 +774,7 @@ TUWF::get qr{/$RE{vrev}}, sub {
         staff_ $v;
         charsum_ $v;
         stats_ $v;
-        # TODO: Screenshots
+        screenshots_ $v;
     };
 };
 

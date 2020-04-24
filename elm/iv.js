@@ -1,0 +1,190 @@
+//order:8 - After all regular JS, as other files may modify pageVars or modules in the Elm.* namespace.
+/* Simple image viewer widget. Usage:
+ *
+ *   <a href="full_image.jpg" data-iv="{width}x{height}:{category}">..</a>
+ *
+ * Clicking on the above link will cause the image viewer to open
+ * full_image.jpg. The {category} part can be empty or absent. If it is not
+ * empty, next/previous links will show up to point to the other images within
+ * the same category.
+ *
+ * ivInit() should be called when links with "data-iv" attributes are
+ * dynamically added or removed from the DOM.
+ */
+
+// Cache of image categories and the list of associated link objects. Used to
+// quickly generate the next/prev links.
+var cats;
+
+// DOM elements, lazily initialized in create_div()
+var ivparent = null;
+var ivimg;
+var ivfull;
+var ivnext;
+var ivprev;
+var ivload;
+var ivclose;
+
+var imgw;
+var imgh;
+
+function create_div() {
+    if(ivparent)
+        return;
+    ivparent = document.createElement('div');
+    ivparent.className = 'ivview';
+    ivparent.style.display = 'none';
+    ivparent.onclick = function(ev) { ev.stopPropagation(); return true };
+
+    ivload = document.createElement('div');
+    ivload.className = 'spinner';
+    ivload.style.display = 'none';
+    ivparent.appendChild(ivload);
+
+    ivimg = document.createElement('div');
+    ivparent.appendChild(ivimg);
+
+    ivfull = document.createElement('a');
+    ivparent.appendChild(ivfull);
+
+    ivclose = document.createElement('a');
+    ivclose.href = '#';
+    ivclose.onclick = ivClose;
+    ivclose.textContent = 'close';
+    ivparent.appendChild(ivclose);
+
+    ivprev = document.createElement('a');
+    ivprev.onclick = show;
+    ivprev.textContent = '« previous';
+    ivparent.appendChild(ivprev);
+
+    ivnext = document.createElement('a');
+    ivnext.onclick = show;
+    ivnext.textContent = 'next »';
+    ivparent.appendChild(ivnext);
+
+    document.querySelector('body').appendChild(ivparent);
+}
+
+
+// Find the next (dir=1) or previous (dir=-1) non-hidden link object for the category.
+function findnav(cat, i, dir) {
+    for(var j=i+dir; j>=0 && j<cats[cat].length; j+=dir)
+        if(cats[cat][j].offsetWidth > 0 && cats[cat][j].offsetHeight > 0)
+            return cats[cat][j];
+    return 0
+}
+
+
+// fix properties of the prev/next links
+function fixnav(lnk, cat, i, dir) {
+    var a = cat ? findnav(cat, i, dir) : 0;
+    lnk.style.visibility = a ? 'visible' : 'hidden';
+    lnk.href             = a ? a.href    : '#';
+    lnk.iv_i             = a ? a.iv_i    : 0;
+    lnk.setAttribute('data-iv', a ? a.getAttribute('data-iv') : '');
+}
+
+
+function keydown(e) {
+    if(e.key == 'ArrowLeft' && ivprev.style.visibility == 'visible')
+        ivprev.click();
+    else if(e.key == 'ArrowRight' && ivnext.style.visibility == 'visible')
+        ivnext.click();
+    else if(e.key == 'Escape' || e.key == 'Esc')
+        ivClose();
+}
+
+
+function resize() {
+    var w = imgw;
+    var h = imgh;
+    var ww = typeof(window.innerWidth)  == 'number' ? window.innerWidth  : document.documentElement.clientWidth;
+    var wh = typeof(window.innerHeight) == 'number' ? window.innerHeight : document.documentElement.clientHeight;
+    if(w+100 > ww || imgh+70 > wh) {
+        ivfull.textContent = w+'x'+h;
+        ivfull.style.visibility = 'visible';
+        if(w/h > ww/wh) { // width++
+            h *= (ww-100)/w;
+            w = ww-100;
+        } else { // height++
+            w *= (wh-70)/h;
+            h = wh-70;
+        }
+    } else
+        ivfull.style.visibility = 'hidden';
+    var dw = w;
+    var dh = h+20;
+    dw = dw < 200 ? 200 : dw;
+
+    ivparent.style.width = dw+'px';
+    ivparent.style.height = dh+'px';
+    ivparent.style.left = ((ww - dw) / 2 - 10)+'px';
+    ivparent.style.top = ((wh - dh) / 2 - 20)+'px';
+    var img = ivimg.querySelector('img');
+    img.style.width = w+'px';
+    img.style.height = h+'px';
+}
+
+
+function show(ev) {
+    var u = this.href;
+    var opt = this.getAttribute('data-iv').split(':');
+    var idx = this.iv_i;
+    imgw = Math.floor(opt[0].split('x')[0]);
+    imgh = Math.floor(opt[0].split('x')[1]);
+
+    create_div();
+
+    var img = document.createElement('img');
+    img.src = u;
+    ivfull.href = u;
+    img.onclick = ivClose;
+    img.onload = function() { ivload.style.display = 'none' };
+    ivimg.textContent = '';
+    ivimg.appendChild(img);
+
+    ivparent.style.display = 'block';
+    ivload.style.display = 'block';
+    fixnav(ivprev, opt[1], idx, -1);
+    fixnav(ivnext, opt[1], idx, 1);
+    resize();
+
+    document.addEventListener('click', ivClose);
+    document.addEventListener('keydown', keydown);
+    window.addEventListener('resize', resize);
+    ev.preventDefault();
+}
+
+
+window.ivClose = function(ev) {
+    var targetlink = ev ? ev.target : null;
+    while(targetlink && targetlink.nodeName.toLowerCase() != 'a')
+        targetlink = targetlink.parentNode;
+    if(targetlink && targetlink.getAttribute('data-iv'))
+        return false;
+    document.removeEventListener('click', ivClose);
+    document.removeEventListener('keydown', keydown);
+    window.removeEventListener('resize', resize);
+    ivparent.style.display = 'none';
+    ivimg.textContent = '';
+    return false;
+};
+
+
+window.ivInit = function() {
+    cats = {};
+    document.querySelectorAll('a[data-iv]').forEach(function(o) {
+        if(o == ivnext || o == ivprev)
+            return;
+        o.addEventListener('click', show);
+        var cat = o.getAttribute('data-iv').split(':')[1];
+        if(cat) {
+            if(!cats[cat])
+                cats[cat] = [];
+            o.iv_i = cats[cat].length;
+            cats[cat].push(o);
+        }
+    });
+};
+ivInit();
