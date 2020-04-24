@@ -12,7 +12,9 @@ type alias Model = { lnk : Links, dd : DD.Config Bool }
 
 main : Program (String,Links) Model Bool
 main = Browser.element
-  { init   = \(id,l) -> ({ lnk = l, dd = DD.init ("relextlink_"++id) identity }, Cmd.none)
+  { init   = \(id,l) ->
+      let dd = DD.init ("relextlink_"++id) identity
+      in ({ lnk = l, dd = { dd | hover = True }  }, Cmd.none)
   , view   = view
   , update = \b m -> ({ m | dd = DD.toggle m.dd b }, Cmd.none)
   , subscriptions = \model -> DD.sub model.dd
@@ -20,7 +22,7 @@ main = Browser.element
 
 view : Model -> Html Bool
 view model =
-  div [ class "elm_dd_noarrow", class "elm_dd_left" ]
+  div [ class "elm_dd_noarrow", class "elm_dd_left", class "elm_dd_relextlink" ]
   [ DD.view model.dd Api.Normal
     (span [ class "fake_link" ] [ text <|  String.fromInt (List.length model.lnk), abbr [ class "icons external", title "External link" ] [] ])
     (\_ -> [ ul [ class "rllinks_dd" ] <| List.map (\(lbl,url,price) ->

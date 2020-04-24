@@ -103,7 +103,8 @@ div.warning h2, div.notice h2 { font-size: 13px; font-weight: bold; margin: 0; }
 .elm_dd_noarrow .elm_dd > a { padding-right: 0 }
 .elm_dd_noarrow .elm_dd > a > span:last-child { display: none }
 .elm_dd_left .elm_dd > div { float: left }
-.elm_dd_left .elm_dd > div > ul { right: 4px; top: -20px }
+.elm_dd_left .elm_dd > div > ul { right: 0; top: -20px }
+.elm_dd_relextlink .elm_dd > a { padding-left: 4px }
 
 
 

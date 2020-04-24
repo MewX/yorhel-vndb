@@ -4,6 +4,7 @@ import Browser.Events as E
 import Json.Decode as JD
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Events exposing (..)
 import Lib.Api as Api
 import Lib.Html exposing (..)
 
@@ -11,11 +12,12 @@ import Lib.Html exposing (..)
 type alias Config msg =
   { id     : String
   , opened : Bool
+  , hover  : Bool -- if true, the dropdown opens on mouse-over rather than click
   , toggle : Bool -> msg
   }
 
 
--- Returns True if the element matches the target id.
+-- Returns True if the element or any of its parents has the given id
 onClickOutsideParse : String -> JD.Decoder Bool
 onClickOutsideParse id =
   JD.oneOf
@@ -34,12 +36,13 @@ init : String -> (Bool -> msg) -> Config msg
 init id msg =
   { id     = id
   , opened = False
+  , hover  = False
   , toggle = msg
   }
 
 
 sub : Config msg -> Sub msg
-sub conf = if conf.opened then onClickOutside conf.id (conf.toggle False) else Sub.none
+sub conf = if conf.opened && not conf.hover then onClickOutside conf.id (conf.toggle False) else Sub.none
 
 
 toggle : Config msg -> Bool -> Config msg
@@ -48,8 +51,14 @@ toggle conf opened = { conf | opened = opened }
 
 view : Config msg -> Api.State -> Html msg -> (() -> List (Html msg)) -> Html msg
 view conf status lbl cont =
-  div [ class "elm_dd", id conf.id ]
-  [ a [ href "#", onClickD (conf.toggle (not conf.opened)) ] <|
+  div
+  ( [ class "elm_dd", id conf.id
+    ] ++ if conf.hover then [ onMouseLeave (conf.toggle False) ] else []
+  )
+  [ a
+    ( [ href "#", onClickD (conf.toggle (if conf.hover then conf.opened else not conf.opened))
+      ] ++ if conf.hover then [ onMouseEnter (conf.toggle True) ] else []
+    ) <|
     case status of
       Api.Normal  -> [ lbl, span [] [ i [] [ text "▾" ] ] ]
       Api.Loading -> [ lbl, span [] [ span [ class "spinner" ] [] ] ]
