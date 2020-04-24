@@ -512,7 +512,7 @@ sub staff_ {
     # Step 1: Get a list of 'boxes'; Each 'box' represents a role with a list of staff entries.
     # @boxes = [ $height, $roleimp, $html ]
     my %roles;
-    push $roles{$_->{role}}->@*, $_ for $v->{staff}->@*;
+    push $roles{$_->{role}}->@*, $_ for grep $_->{sid}, $v->{staff}->@*;
     my $i=0;
     my @boxes =
         sort { $b->[0] <=> $a->[0] || $a->[1] <=> $b->[1] }
