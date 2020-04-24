@@ -27,9 +27,10 @@ sub enrich_vn {
 }
 
 
-# Enrich everything necessary for rev_() (that also needs enrich_vn())
+# Enrich everything necessary for rev_() (includes enrich_vn())
 sub enrich_item {
     my($v) = @_;
+    enrich_vn $v;
     enrich_merge aid => 'SELECT id AS sid, aid, name, original FROM staff_alias WHERE aid IN', $v->{staff}, $v->{seiyuu};
     enrich_merge cid => 'SELECT id AS cid, name AS char_name, original AS char_original FROM chars WHERE id IN', $v->{seiyuu};
     enrich_merge scr => 'SELECT id AS scr, width, height FROM images WHERE id IN', $v->{screenshots};
@@ -84,8 +85,12 @@ sub rev_ {
             a_ href => tuwf->imgurl($_->{scr}), 'data-iv' => "$_->{width}x$_->{height}", $_->{scr};
             txt_ $_->{nsfw} ? ' (Not safe)' : ' (Safe)';
         }],
-        [ image       => 'Image',         fmt => sub { a_ href => tuwf->imgurl($_), $_ } ], # TODO: Preview if SFW
-        [ img_nsfw    => 'Image NSFW',    fmt => sub { $_ ? 'Not safe' : 'Safe' } ],
+        [ image       => 'Image',         fmt => sub {
+            !viewget->{show_nsfw} && $_[0]{img_nsfw}
+            ? a_ href => tuwf->imgurl($_), '(NSFW)'
+            : img_ src => tuwf->imgurl($_)
+        } ],
+        [ img_nsfw    => 'Image NSFW',    fmt => sub { txt_ $_ ? 'Not safe' : 'Safe' } ],
         revision_extlinks 'v'
 }
 
@@ -762,7 +767,6 @@ TUWF::get qr{/$RE{vrev}}, sub {
     my $v = db_entry v => tuwf->capture('id'), tuwf->capture('rev');
     return tuwf->resNotFound if !$v;
 
-    enrich_vn $v;
     enrich_item $v;
 
     framework_ title => $v->{title}, index => !tuwf->capture('rev'), type => 'v', dbobj => $v, hiddenmsg => 1, og => og($v),

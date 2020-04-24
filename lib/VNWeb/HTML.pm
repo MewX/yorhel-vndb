@@ -477,7 +477,7 @@ sub _revision_header_ {
 
 
 sub _revision_fmtval_ {
-    my($opt, $val) = @_;
+    my($opt, $val, $obj) = @_;
     return i_ '[empty]' if !defined $val || !length $val || (defined $opt->{empty} && $val eq $opt->{empty});
     return lit_ html_escape $val if !$opt->{fmt};
     if(ref $opt->{fmt} eq 'HASH') {
@@ -486,12 +486,12 @@ sub _revision_fmtval_ {
     }
     return txt_ $val ? 'True' : 'False' if $opt->{fmt} eq 'bool';
     local $_ = $val;
-    $opt->{fmt}->();
+    $opt->{fmt}->($obj);
 }
 
 
 sub _revision_fmtcol_ {
-    my($opt, $i, $l) = @_;
+    my($opt, $i, $l, $obj) = @_;
 
     my $ctx = 100; # Number of characters of context in textual diffs
     my sub sep_ { b_ class => 'standout', '<...>' }; # Context separator
@@ -526,11 +526,11 @@ sub _revision_fmtcol_ {
                 }
 
             } elsif(@$l > 1 && $i == 2 && ($ch eq '+' || $ch eq 'c')) {
-                b_ class => 'diff_add', sub { _revision_fmtval_ $opt, $val }
+                b_ class => 'diff_add', sub { _revision_fmtval_ $opt, $val, $obj }
             } elsif(@$l > 1 && $i == 1 && ($ch eq '-' || $ch eq 'c')) {
-                b_ class => 'diff_del', sub { _revision_fmtval_ $opt, $val }
+                b_ class => 'diff_del', sub { _revision_fmtval_ $opt, $val, $obj }
             } elsif($ch eq 'c' || $ch eq 'u' || @$l == 1) {
-                _revision_fmtval_ $opt, $val;
+                _revision_fmtval_ $opt, $val, $obj;
             }
         }, @$l;
     };
@@ -578,8 +578,8 @@ sub _revision_diff_ {
 
     tr_ sub {
         td_ $name;
-        _revision_fmtcol_ \%opt, 1, $l;
-        _revision_fmtcol_ \%opt, 2, $l;
+        _revision_fmtcol_ \%opt, 1, $l, $old;
+        _revision_fmtcol_ \%opt, 2, $l, $new;
     }
 }
 
