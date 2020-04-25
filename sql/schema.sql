@@ -220,7 +220,8 @@ CREATE TABLE image_votes (
   uid      integer, -- [pub]
   sexual   smallint NOT NULL CHECK(sexual >= 0 AND sexual <= 2), -- [pub]
   violence smallint NOT NULL CHECK(violence >= 0 AND violence <= 2), -- [pub]
-  date     timestamptz NOT NULL DEFAULT NOW() -- [pub]
+  date     timestamptz NOT NULL DEFAULT NOW(),-- [pub]
+  ignore   boolean NOT NULL DEFAULT false -- [pub]
 );
 
 -- login_throttle

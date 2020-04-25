@@ -93,6 +93,7 @@ our %apis = (
         violence_stddev => { num => 1, required => 0 },
         my_sexual       => { uint => 1, required => 0 },
         my_violence     => { uint => 1, required => 0 },
+        my_overrule     => { anybool => 1 },
         entry           => { required => 0, type => 'hash', keys => {
             id       => {},
             title    => {},
@@ -102,6 +103,7 @@ our %apis = (
             uid      => { uint => 1, required => 0 },
             sexual   => { uint => 1 },
             violence => { uint => 1 },
+            ignore   => { anybool => 1 },
         } },
     } } ],
 );

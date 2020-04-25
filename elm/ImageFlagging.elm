@@ -39,6 +39,7 @@ type alias Model =
   , showVotes : Bool
   , myVotes   : Int
   , nsfwToken : String
+  , mod       : Bool
   , images    : Array.Array GApi.ApiImageResult
   , index     : Int
   , desc      : (Maybe Int, Maybe Int)
@@ -59,6 +60,7 @@ init d =
   , showVotes = d.single
   , myVotes   = d.my_votes
   , nsfwToken = d.nsfw_token
+  , mod       = d.mod
   , images    = Array.fromList d.images
   , index     = if d.single then 0 else List.length d.images
   , desc      = Maybe.withDefault (Nothing,Nothing) <| Maybe.map (\i -> (i.my_sexual, i.my_violence)) <| if d.single then List.head d.images else Nothing
@@ -72,29 +74,29 @@ init d =
   }
 
 
-keyToVote : Model -> String -> Maybe (Maybe Int, Maybe Int)
+keyToVote : Model -> String -> Maybe (Maybe Int, Maybe Int, Bool)
 keyToVote model k =
-  let (s,v) = Maybe.withDefault (Nothing,Nothing) <| Maybe.map (\i -> (i.my_sexual, i.my_violence)) <| Array.get model.index model.images
+  let (s,v,o) = Maybe.withDefault (Nothing,Nothing,False) <| Maybe.map (\i -> (i.my_sexual, i.my_violence, i.my_overrule)) <| Array.get model.index model.images
   in case k of
-      "1" -> Just (Just 0, Just 0)
-      "2" -> Just (Just 1, Just 0)
-      "3" -> Just (Just 2, Just 0)
-      "4" -> Just (Just 0, Just 1)
-      "5" -> Just (Just 1, Just 1)
-      "6" -> Just (Just 2, Just 1)
-      "7" -> Just (Just 0, Just 2)
-      "8" -> Just (Just 1, Just 2)
-      "9" -> Just (Just 2, Just 2)
-      "s" -> Just (Just 0, v)
-      "d" -> Just (Just 1, v)
-      "f" -> Just (Just 2, v)
-      "j" -> Just (s, Just 0)
-      "k" -> Just (s, Just 1)
-      "l" -> Just (s, Just 2)
+      "1" -> Just (Just 0, Just 0, o)
+      "2" -> Just (Just 1, Just 0, o)
+      "3" -> Just (Just 2, Just 0, o)
+      "4" -> Just (Just 0, Just 1, o)
+      "5" -> Just (Just 1, Just 1, o)
+      "6" -> Just (Just 2, Just 1, o)
+      "7" -> Just (Just 0, Just 2, o)
+      "8" -> Just (Just 1, Just 2, o)
+      "9" -> Just (Just 2, Just 2, o)
+      "s" -> Just (Just 0, v, o)
+      "d" -> Just (Just 1, v, o)
+      "f" -> Just (Just 2, v, o)
+      "j" -> Just (s, Just 0, o)
+      "k" -> Just (s, Just 1, o)
+      "l" -> Just (s, Just 2, o)
       _   -> Nothing
 
 keydown : Model -> JD.Decoder Msg
-keydown model = JD.andThen (\k -> keyToVote model k |> Maybe.map (\(s,v) -> JD.succeed (Desc s v)) |> Maybe.withDefault (JD.fail "")) (JD.field "key" JD.string)
+keydown model = JD.andThen (\k -> keyToVote model k |> Maybe.map (\(s,v,_) -> JD.succeed (Desc s v)) |> Maybe.withDefault (JD.fail "")) (JD.field "key" JD.string)
 
 keyup : Model -> JD.Decoder Msg
 keyup model =
@@ -104,7 +106,7 @@ keyup model =
       "ArrowRight" -> JD.succeed Next
       "v"          -> JD.succeed (Fullscreen (not model.fullscreen))
       "Escape"     -> JD.succeed (Fullscreen False)
-      _            -> keyToVote model k |> Maybe.map (\(s,v) -> JD.succeed (Vote s v True)) |> Maybe.withDefault (JD.fail "")
+      _            -> keyToVote model k |> Maybe.map (\(s,v,o) -> JD.succeed (Vote s v o True)) |> Maybe.withDefault (JD.fail "")
   ) (JD.field "key" JD.string)
 
 
@@ -114,7 +116,7 @@ type Msg
   | Fullscreen Bool
   | Desc (Maybe Int) (Maybe Int)
   | Load GApi.Response
-  | Vote (Maybe Int) (Maybe Int) Bool
+  | Vote (Maybe Int) (Maybe Int) Bool Bool
   | Save
   | Saved GApi.Response
   | Prev
@@ -158,18 +160,18 @@ update msg model =
       in pre (nc, Cmd.none)
     Load e -> ({ model | loadState = Api.Error e }, Cmd.none)
 
-    Vote s v _ ->
+    Vote s v o _ ->
       case Array.get model.index model.images of
         Nothing -> (model, Cmd.none)
         Just i ->
-          let m = { model | saved = False, images = Array.set model.index { i | my_sexual = s, my_violence = v } model.images }
+          let m = { model | saved = False, images = Array.set model.index { i | my_sexual = s, my_violence = v, my_overrule = o } model.images }
               adv = if not m.single && (i.my_sexual == Nothing || i.my_violence == Nothing) then 1 else 0
           in case (i.token,s,v) of
               -- Complete vote, mark it as a change and go to next image
               (Just token, Just xs, Just xv) -> desc <| pre <| save <| load
                 ({ m | index     = m.index + adv
                      , myVotes   = m.myVotes + adv
-                     , changes   = Dict.insert i.id { id = i.id, token = token, sexual = xs, violence = xv } m.changes
+                     , changes   = Dict.insert i.id { id = i.id, token = token, sexual = xs, violence = xv, overrule = o } m.changes
                  }, Cmd.none)
               -- Otherwise just save it internally
               _ -> (m, Cmd.none)
@@ -202,7 +204,7 @@ view model =
       let sel = i.my_sexual == s && i.my_violence == v
       in li [ classList [("sel", sel || (s /= i.my_sexual && Tuple.first model.desc == s) || (v /= i.my_violence && Tuple.second model.desc == v))] ]
          [ label [ onMouseOver (Desc s v), onMouseOut (Desc i.my_sexual i.my_violence) ]
-           [ input [ type_ "radio", onCheck (Vote s v), checked sel, onFocus (Focus lid), id lid ] [], text lbl ]
+           [ input [ type_ "radio", onCheck (Vote s v i.my_overrule), checked sel, onFocus (Focus lid), id lid ] [], text lbl ]
          ]
 
     votestats i =
@@ -220,7 +222,7 @@ view model =
         ]
       , table [] <|
         List.map (\v ->
-          tr []
+          tr [ classList [("ignored", v.ignore)]]
           [ td [ Ffi.innerHtml v.user ] []
           , td [] [ text <| if v.sexual   == 0 then "Safe" else if v.sexual   == 1 then "Suggestive" else "Explicit" ]
           , td [] [ text <| if v.violence == 0 then "Tame" else if v.violence == 1 then "Violent"    else "Brutal" ]
@@ -286,6 +288,7 @@ view model =
           , but i (Just 0) i.my_violence "vio0" " Safe"
           , but i (Just 1) i.my_violence "vio1" " Suggestive"
           , but i (Just 2) i.my_violence "vio2" " Explicit"
+          , if model.mod then li [ class "overrule" ] [ label [ title "Overrule" ] [ inputCheck "" i.my_overrule (\b -> Vote i.my_sexual i.my_violence b True), text " Overrule" ] ] else text ""
           ]
         , ul []
           [ li [] [ b [] [ text "Violence" ] ]

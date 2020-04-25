@@ -30,6 +30,7 @@ sub enrich_image {
            , i.c_sexual_avg AS sexual_avg, i.c_sexual_stddev AS sexual_stddev
            , i.c_violence_avg AS violence_avg, i.c_violence_stddev AS violence_stddev
            , iv.sexual AS my_sexual, iv.violence AS my_violence
+           , COALESCE(EXISTS(SELECT 1 FROM image_votes iv0 WHERE iv0.id = i.id AND iv0.ignore) AND NOT iv.ignore, FALSE) AS my_overrule
            , COALESCE('v'||v.id, 'c'||c.id, 'v'||vsv.id) AS entry_id
            , COALESCE(v.title, c.name, vsv.title) AS entry_title
         FROM images i
@@ -42,7 +43,7 @@ sub enrich_image {
     }, $l;
 
     enrich votes => id => id => sub { sql '
-        SELECT iv.id, iv.uid, iv.sexual, iv.violence, ', sql_user(), '
+        SELECT iv.id, iv.uid, iv.sexual, iv.violence, iv.ignore OR (u.id IS NOT NULL AND NOT u.perm_imgvote) AS ignore, ', sql_user(), '
           FROM image_votes iv
           LEFT JOIN users u ON u.id = iv.uid
          WHERE iv.id IN', $_,
@@ -63,15 +64,11 @@ sub enrich_image {
 }
 
 
-sub my_votes {
-    auth ? tuwf->dbVali('SELECT c_imgvotes FROM users WHERE id =', \auth->uid) : 0
-}
-
-
 my $SEND = form_compile any => {
     images     => $VNWeb::Elm::apis{ImageResult}[0],
     single     => { anybool => 1 },
     warn       => { anybool => 1 },
+    mod        => { anybool => 1 },
     my_votes   => { uint => 1 },
     pWidth     => { uint => 1 }, # Set by JS
     pHeight    => { uint => 1 }, # ^
@@ -127,19 +124,48 @@ elm_api ImageVote => undef, {
         token    => {},
         sexual   => { uint => 1, range => [0,2] },
         violence => { uint => 1, range => [0,2] },
+        overrule => { anybool => 1 },
     } },
 }, sub {
     my($data) = @_;
     return elm_Unauth if !auth->permImgvote;
     return elm_CSRF if !validate_token $data->{votes};
+
+    # Find out if any of these images are being overruled
+    enrich_merge id => sub { sql 'SELECT id, bool_or(ignore) AS overruled FROM image_votes WHERE id IN', $_, 'GROUP BY id' }, $data->{votes};
+    enrich_merge id => sql('SELECT id, NOT ignore AS my_overrule FROM image_votes WHERE uid =', \auth->uid, 'AND id IN'),
+        grep $_->{overruled}, $data->{votes}->@* if auth->permDbmod;
+
     for($data->{votes}->@*) {
-        $_->{uid} = auth->uid ;
-        delete $_->{token};
-        tuwf->dbExeci('INSERT INTO image_votes', $_, 'ON CONFLICT (id, uid) DO UPDATE SET', $_, ', date = now()');
+        $_->{overrule} = 0 if !auth->permDbmod;
+        my $d = {
+            id       => $_->{id},
+            uid      => auth->uid(),
+            sexual   => $_->{sexual},
+            violence => $_->{violence},
+            ignore   => !$_->{overrule} && !$_->{my_overrule} && $_->{overruled} ? 1 : 0,
+        };
+        tuwf->dbExeci('INSERT INTO image_votes', $d, 'ON CONFLICT (id, uid) DO UPDATE SET', $d, ', date = now()');
+        tuwf->dbExeci('UPDATE image_votes SET ignore =', \($_->{overrule}?1:0), 'WHERE uid IS DISTINCT FROM', \auth->uid, 'AND id =', \$_->{id})
+            if !$_->{overrule} != !$_->{my_overrule};
     }
     elm_Success
 };
 
+
+sub my_votes {
+    auth ? tuwf->dbVali('SELECT c_imgvotes FROM users WHERE id =', \auth->uid) : 0
+}
+
+
+sub imgflag_ {
+    elm_ 'ImageFlagging', $SEND, {
+        my_votes   => my_votes(),
+        nsfw_token => viewset(show_nsfw => 1),
+        mod        => auth->permDbmod()||0,
+        @_
+    };
+}
 
 
 TUWF::get qr{/img/vote}, sub {
@@ -150,7 +176,7 @@ TUWF::get qr{/img/vote}, sub {
     enrich_token 1, $recent;
 
     framework_ title => 'Image flagging', sub {
-        elm_ 'ImageFlagging', $SEND, { images => [ reverse @$recent ], single => 0, warn => 1, my_votes => my_votes(), nsfw_token => viewset(show_nsfw => 1) };
+        imgflag_ images => [ reverse @$recent ], single => 0, warn => 1;
     };
 };
 
@@ -165,7 +191,7 @@ TUWF::get qr{/img/$RE{imgid}}, sub {
     enrich_token defined($l->[0]{my_sexual}) || auth->permDbmod(), $l; # XXX: permImgmod?
 
     framework_ title => "Image flagging for $id", sub {
-        elm_ 'ImageFlagging', $SEND, { images => $l, single => 1, warn => !tuwf->samesite(), my_votes => my_votes(), nsfw_token => viewset(show_nsfw => 1) };
+        imgflag_ images => $l, single => 1, warn => !tuwf->samesite();
     };
 };
 
