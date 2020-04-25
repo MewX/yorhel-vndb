@@ -40,6 +40,7 @@ type alias Model =
   , myVotes   : Int
   , nsfwToken : String
   , mod       : Bool
+  , exclVoted : Bool
   , images    : Array.Array GApi.ApiImageResult
   , index     : Int
   , desc      : (Maybe Int, Maybe Int)
@@ -61,6 +62,7 @@ init d =
   , myVotes   = d.my_votes
   , nsfwToken = d.nsfw_token
   , mod       = d.mod
+  , exclVoted = True
   , images    = Array.fromList d.images
   , index     = if d.single then 0 else List.length d.images
   , desc      = Maybe.withDefault (Nothing,Nothing) <| Maybe.map (\i -> (i.my_sexual, i.my_violence)) <| if d.single then List.head d.images else Nothing
@@ -112,6 +114,7 @@ keyup model =
 
 type Msg
   = SkipWarn
+  | ExclVoted Bool
   | ShowVotes
   | Fullscreen Bool
   | Desc (Maybe Int) (Maybe Int)
@@ -130,7 +133,7 @@ update msg model =
   let -- Load more images if we're about to run out
       load (m,c) =
         if not m.single && m.loadState /= Api.Loading && Array.length m.images - m.index <= 3
-        then ({ m | loadState = Api.Loading }, Cmd.batch [ c, GI.send {} Load ])
+        then ({ m | loadState = Api.Loading }, Cmd.batch [ c, GI.send { excl_voted = m.exclVoted } Load ])
         else (m,c)
       -- Start a timer to save changes
       save (m,c) =
@@ -149,6 +152,7 @@ update msg model =
   in
   case msg of
     SkipWarn -> load ({ model | warn = False }, Cmd.none)
+    ExclVoted b -> ({ model | exclVoted = b }, Cmd.none)
     ShowVotes -> ({ model | showVotes = not model.showVotes }, Cmd.none)
     Fullscreen b -> ({ model | fullscreen = b }, Cmd.none)
     Desc s v -> ({ model | desc = (s,v) }, Cmd.none)
@@ -165,7 +169,7 @@ update msg model =
         Nothing -> (model, Cmd.none)
         Just i ->
           let m = { model | saved = False, images = Array.set model.index { i | my_sexual = s, my_violence = v, my_overrule = o } model.images }
-              adv = if not m.single && (i.my_sexual == Nothing || i.my_violence == Nothing) then 1 else 0
+              adv = if not m.single && (not model.exclVoted || i.my_sexual == Nothing || i.my_violence == Nothing) then 1 else 0
           in case (i.token,s,v) of
               -- Complete vote, mark it as a change and go to next image
               (Just token, Just xs, Just xv) -> desc <| pre <| save <| load
@@ -333,6 +337,8 @@ view model =
            [ li [] [ text "Make sure you are familiar with the ", a [ href "/d19" ] [ text "image flagging guidelines" ], text "." ]
            , li [] [ b [ class "standout" ] [ text "WARNING: " ], text "Images shown may include spoilers, be highly offensive and/or contain very explicit depictions of sexual acts." ]
            ]
+         , br [] []
+         , label [] [ inputCheck "" (not model.exclVoted) (\b -> ExclVoted (not b)), text " Include images I already voted on." ]
          , br [] []
          , inputButton "I understand, continue" SkipWarn []
          ]
