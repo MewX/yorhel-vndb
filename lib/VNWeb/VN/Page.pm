@@ -62,7 +62,8 @@ sub rev_ {
         [ desc        => 'Description'    ],
         [ length      => 'Length',        fmt => \%VN_LENGTH ],
         [ staff       => 'Credits',       fmt => sub {
-            a_ href => "/s$_->{sid}", title => $_->{original}||$_->{name}, $_->{name};
+            a_ href => "/s$_->{sid}", title => $_->{original}||$_->{name}, $_->{name} if $_->{sid};
+            b_ class => 'grayedout', '[removed alias]' if !$_->{sid};
             txt_ " [$CREDIT_TYPE{$_->{role}}]";
             txt_ " [$_->{note}]" if $_->{note};
         }],
@@ -692,7 +693,7 @@ sub screenshots_ {
     return if !@$s;
 
     my %rel;
-    push $rel{$_->{rid}}->@*, $_ for @$s;
+    push $rel{$_->{rid}}->@*, $_ for grep $_->{rid}, @$s;
 
     input_ id => 'nsfwhide_chk', type => 'checkbox', class => 'visuallyhidden', auth->pref('show_nsfw') ? (checked => 'checked') : ();
     div_ class => 'mainbox', id => 'screenshots', sub {
