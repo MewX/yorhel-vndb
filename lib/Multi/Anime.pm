@@ -78,6 +78,10 @@ sub unload {
 
 sub resolve {
   AnyEvent::Socket::resolve_sockaddr $O{apihost}, $O{apiport}, 'udp', 0, undef, sub {
+    if(!@_) {
+      AE::log warn => "Unable to resolve '$O{apihost}'";
+      return; # Re-use old socket address or try again after resolve_delay.
+    }
     my($fam, $type, $proto, $saddr) = @{$_[0]};
     my $sock;
     socket $sock, $fam, $type, $proto or die "Can't create UDP socket: $!";
