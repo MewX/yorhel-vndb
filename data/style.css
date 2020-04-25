@@ -650,28 +650,7 @@ div.chardetails table        { float: left; width: 530px; }
 div.chardetails table td.key { width: 100px; }
 div.chardetails.charsep      { margin-top: 30px }
 
-.charops label                 { float: right; margin: 8px 0 8px 10px;  border: 0; outline: none; color: $link$; cursor: pointer; }
-.charops label.sec             { border-left: 1px solid $border$; padding-left: 10px }
-.charops label.lst             { margin: 8px 25px 8px 10px; }
-.charops input:checked + label { color: $maintext$; }
 
-.charops .radio_spoil0:checked ~ div .charspoil_1  { display: none; }
-.charops .radio_spoil0:checked ~ div .charspoil_2  { display: none; }
-.charops .radio_spoil1:checked ~ div .charspoil_2  { display: none; }
-.charops .radio_spoil2:checked ~ div .charspoil_-1 { display: none; }
-
-.charops .radio_spoil0:checked ~ .charspoil_1  { display: none; }
-.charops .radio_spoil0:checked ~ .charspoil_2  { display: none; }
-.charops .radio_spoil1:checked ~ .charspoil_2  { display: none; }
-.charops .radio_spoil2:checked ~ .charspoil_-1 { display: none; }
-
-.sexual_check + label { clear: both; }
-
-.charops .sexual_check:not(:checked) ~ div .sexual { display: none; }
-
-.traitrow td { overflow: hidden; }
-
-.traitrow .charspoil { margin-left: -1ch; margin-right: 1ch; }
 
 /***** Char edit *****/
 

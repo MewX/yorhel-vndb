@@ -37,6 +37,25 @@
 })();
 
 
+// external links dropdown for releases (/p+)
+(function(){
+  var l = byClass('rllinks');
+  for(var i=0; i<l.length; i++) {
+    var o = byName(l[i].parentNode, 'ul')[0];
+    if(o) {
+      l[i].links_ul = l[i].parentNode.removeChild(o);
+      setClass(l[i].links_ul, 'hidden', false);
+      ddInit(l[i], 'left', function(acr) {
+        return acr.links_ul;
+      });
+      if(l[i].href.match(/#$/)) {
+        l[i].onclick = function() { return false; };
+      }
+    }
+  }
+})();
+
+
 // spam protection on all forms
 setTimeout(function() {
   for(var i=1; i<document.forms.length; i++)
