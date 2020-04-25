@@ -157,7 +157,7 @@ view model =
         [ label [] [ inputCheck "" data.perm_board    (Set << PermBoard),    text (" board (default)") ], br_ 1
         , label [] [ inputCheck "" data.perm_boardmod (Set << PermBoardmod), text (" boardmod") ], br_ 1
         , label [] [ inputCheck "" data.perm_edit     (Set << PermEdit),     text (" edit (default)") ], br_ 1
-        , label [] [ inputCheck "" data.perm_imgvote  (Set << PermImgvote),  text (" imgvote (default)") ], br_ 1
+        , label [] [ inputCheck "" data.perm_imgvote  (Set << PermImgvote),  text (" imgvote (default - existing votes will stop counting when unset)") ], br_ 1
         , label [] [ inputCheck "" data.perm_tag      (Set << PermTag),      text (" tag (default)") ], br_ 1
         , label [] [ inputCheck "" data.perm_dbmod    (Set << PermDbmod),    text (" dbmod") ], br_ 1
         , label [] [ inputCheck "" data.perm_tagmod   (Set << PermTagmod),   text (" tagmod") ], br_ 1

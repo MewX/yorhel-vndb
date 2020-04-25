@@ -170,7 +170,9 @@ BEGIN
                  , avg(violence) AS violence_avg, stddev_pop(violence) AS violence_stddev
               FROM images i
               LEFT JOIN image_votes iv ON iv.id = i.id
+              LEFT JOIN users u ON u.id = iv.uid
              WHERE ($1 IS NULL OR i.id = $1)
+               AND (u.id IS NULL OR u.perm_imgvote)
              GROUP BY i.id
         ) s
     ) weights

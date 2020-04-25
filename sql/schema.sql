@@ -808,7 +808,7 @@ CREATE TABLE users (
   perm_boardmod   boolean NOT NULL DEFAULT false,
   perm_dbmod      boolean NOT NULL DEFAULT false,
   perm_edit       boolean NOT NULL DEFAULT true,
-  perm_imgvote    boolean NOT NULL DEFAULT true,
+  perm_imgvote    boolean NOT NULL DEFAULT true, -- [pub] (public because this is used in calculating image flagging scores)
   perm_tag        boolean NOT NULL DEFAULT true,
   perm_tagmod     boolean NOT NULL DEFAULT false,
   perm_usermod    boolean NOT NULL DEFAULT false
