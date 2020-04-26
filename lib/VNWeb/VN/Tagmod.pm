@@ -73,11 +73,12 @@ TUWF::get qr{/$RE{vid}/tagmod}, sub {
 
     my $tags = tuwf->dbAlli('
         SELECT t.id, t.name, t.cat, count(*) as count, t.applicable
-             , avg(CASE WHEN tv.ignore THEN NULL ELSE tv.vote END) as rating
-             , coalesce(avg(CASE WHEN tv.ignore THEN NULL ELSE tv.spoiler END), t.defaultspoil) as spoiler
+             , avg(CASE WHEN tv.ignore OR (u.id IS NOT NULL AND NOT u.perm_tag) THEN NULL ELSE tv.vote END) as rating
+             , coalesce(avg(CASE WHEN tv.ignore OR (u.id IS NOT NULL AND NOT u.perm_tag) THEN NULL ELSE tv.spoiler END), t.defaultspoil) as spoiler
              , bool_or(tv.ignore) as overruled
           FROM tags t
           JOIN tags_vn tv ON tv.tag = t.id
+          LEFT JOIN users u ON u.id = tv.uid
          WHERE tv.vid =', \$v->{id}, '
          GROUP BY t.id, t.name, t.cat
          ORDER BY t.name'

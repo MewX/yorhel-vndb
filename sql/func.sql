@@ -221,7 +221,9 @@ BEGIN
         SELECT tv.tag, tv.vid, AVG(tv.vote)::real, CASE WHEN COUNT(tv.spoiler) = 0 THEN MIN(t.defaultspoil) ELSE AVG(tv.spoiler)::real END
           FROM tags_vn tv
           JOIN tags t ON t.id = tv.tag
+          LEFT JOIN users u ON u.id = tv.uid
          WHERE NOT tv.ignore AND t.state = 2
+           AND (u.id IS NULL OR u.perm_tag)
            AND vid NOT IN(SELECT id FROM vn WHERE hidden)
            AND (uvid IS NULL OR vid = uvid)
          GROUP BY tv.tag, tv.vid

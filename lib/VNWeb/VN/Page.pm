@@ -256,12 +256,13 @@ sub infobox_anime_ {
 
 sub infobox_tags_ {
     my($v) = @_;
-    my $rating = 'avg(CASE WHEN tv.ignore THEN NULL ELSE tv.vote END)';
+    my $rating = 'avg(CASE WHEN tv.ignore OR (u.id IS NOT NULL AND NOT u.perm_tag) THEN NULL ELSE tv.vote END)';
     my $tags = tuwf->dbAlli("
         SELECT t.id, t.name, t.cat, count(*) as cnt, $rating as rating
-             , coalesce(avg(CASE WHEN tv.ignore THEN NULL ELSE tv.spoiler END), t.defaultspoil) as spoiler
+             , coalesce(avg(CASE WHEN tv.ignore OR (u.id IS NOT NULL AND NOT u.perm_tag) THEN NULL ELSE tv.spoiler END), t.defaultspoil) as spoiler
           FROM tags t
           JOIN tags_vn tv ON tv.tag = t.id
+          LEFT JOIN users u ON u.id = tv.uid
          WHERE t.state = 1+1 AND tv.vid =", \$v->{id}, "
          GROUP BY t.id, t.name, t.cat
         HAVING $rating > 0

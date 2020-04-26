@@ -67,7 +67,7 @@ TUWF::get qr{/g/links}, sub {
 
     my $count = $filt && tuwf->dbVali('SELECT COUNT(*) FROM tags_vn tv WHERE', $where);
     my($lst, $np) = tuwf->dbPagei({ page => $opt->{p}, results => 50 }, '
-        SELECT tv.vid, tv.uid, tv.tag, tv.vote, tv.spoiler,', sql_totime('tv.date'), 'as date, tv.ignore, tv.notes, v.title,', sql_user(), ', t.name
+        SELECT tv.vid, tv.uid, tv.tag, tv.vote, tv.spoiler,', sql_totime('tv.date'), 'as date, tv.ignore OR (u.id IS NOT NULL AND NOT u.perm_tag) AS ignore, tv.notes, v.title,', sql_user(), ', t.name
           FROM tags_vn tv
           JOIN vn v ON v.id = tv.vid
           LEFT JOIN users u ON u.id = tv.uid
