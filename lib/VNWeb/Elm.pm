@@ -144,7 +144,7 @@ sub def_type {
     my $data = '';
     my @keys = $obj->{keys} ? grep $obj->{keys}{$_}{keys}||($obj->{keys}{$_}{values}&&$obj->{keys}{$_}{values}{keys}), sort keys $obj->{keys}->%* : ();
 
-    $data .= def_type($name . to_camel($_), $obj->{keys}{$_}{values} || $obj->{keys}{$_}) for @keys;
+    $data .= def_type($name . to_camel($_), $obj->{keys}{$_}{values} || bless { $obj->{keys}{$_}->%*, required => 1 }, ref $obj->{keys}{$_} ) for @keys;
 
     $data .= sprintf "\ntype alias %s = %s\n\n", $name, $obj->elm_type(
         keys => +{ map {
@@ -152,6 +152,7 @@ sub def_type {
             my $n = $name . to_camel($_);
             $n = "List $n" if $t->{values};
             $n = "Maybe ($n)" if $t->{values} && !$t->{required} && !defined $t->{default};
+            $n = "Maybe $n" if $t->{keys} && !$t->{required} && !defined $t->{default};
             ($_, $n)
         } @keys }
     );

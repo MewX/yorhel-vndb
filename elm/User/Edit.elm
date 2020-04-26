@@ -13,7 +13,7 @@ import Gen.Types as GT
 import Gen.UserEdit as GUE
 
 
-main : Program GUE.Send Model Msg
+main : Program GUE.Recv Model Msg
 main = Browser.element
   { init   = \e -> (init e, Cmd.none)
   , view   = view
@@ -22,35 +22,44 @@ main = Browser.element
   }
 
 
-type alias Model =
-  { state       : Api.State
-  , data        : GUE.Send
-  , cpass       : Bool
+type alias PassData =
+  { cpass       : Bool
   , pass1       : String
   , pass2       : String
   , opass       : String
+  }
+
+type alias Model =
+  { state       : Api.State
+  , id          : Int
+  , title       : String
+  , username    : String
+  , opts        : GUE.RecvOpts
+  , admin       : Maybe GUE.SendAdmin
+  , prefs       : Maybe GUE.SendPrefs
+  , pass        : Maybe PassData
   , passNeq     : Bool
   , mailConfirm : Bool
   }
 
 
-init : GUE.Send -> Model
+init : GUE.Recv -> Model
 init d =
   { state       = Api.Normal
-  , data        = d
-  , cpass       = False
-  , pass1       = ""
-  , pass2       = ""
-  , opass       = ""
+  , id          = d.id
+  , title       = d.title
+  , username    = d.username
+  , opts        = d.opts
+  , admin       = d.admin
+  , prefs       = d.prefs
+  , pass        = Maybe.map (always { cpass = False, pass1 = "", pass2 = "", opass = "" }) d.prefs
   , passNeq     = False
   , mailConfirm = False
   }
 
 
-type Data
-  = Username String
-  | EMail String
-  | PermBoard Bool
+type AdminMsg
+  = PermBoard Bool
   | PermBoardmod Bool
   | PermEdit Bool
   | PermImgvote Bool
@@ -60,6 +69,9 @@ type Data
   | PermTagmod Bool
   | PermUsermod Bool
   | IgnVotes Bool
+
+type PrefMsg
+  = EMail String
   | ShowNsfw Bool
   | TraitsSexual Bool
   | Spoilers Int
@@ -75,12 +87,24 @@ type Data
   | PubSkin Bool
   | Uniname String
 
+type PassMsg
+  = CPass Bool
+  | OPass String
+  | Pass1 String
+  | Pass2 String
 
-updateData : Data -> GUE.Send -> GUE.Send
-updateData msg model =
+type Msg
+  = Username String
+  | Admin AdminMsg
+  | Prefs PrefMsg
+  | Pass PassMsg
+  | Submit
+  | Submitted GApi.Response
+
+
+updateAdmin : AdminMsg -> GUE.SendAdmin -> GUE.SendAdmin
+updateAdmin msg model =
   case msg of
-    Username n -> { model | username = n }
-    EMail n    -> { model | email = n }
     PermBoard b    -> { model | perm_board    = b }
     PermBoardmod b -> { model | perm_boardmod = b }
     PermEdit b     -> { model | perm_edit     = b }
@@ -90,7 +114,12 @@ updateData msg model =
     PermDbmod b    -> { model | perm_dbmod    = b }
     PermTagmod b   -> { model | perm_tagmod   = b }
     PermUsermod b  -> { model | perm_usermod  = b }
-    IgnVotes n -> { model | ign_votes = n }
+    IgnVotes b     -> { model | ign_votes     = b }
+
+updatePrefs : PrefMsg -> GUE.SendPrefs -> GUE.SendPrefs
+updatePrefs msg model =
+  case msg of
+    EMail n    -> { model | email = n }
     ShowNsfw b -> { model | show_nsfw = b }
     TraitsSexual b -> { model | traits_sexual = b }
     Spoilers n -> { model | spoilers  = n }
@@ -106,42 +135,40 @@ updateData msg model =
     PubSkin b  -> { model | pubskin_enabled = b }
     Uniname n  -> { model | uniname = n }
 
-
-type Msg
-  = Set Data
-  | CPass Bool
-  | OPass String
-  | Pass1 String
-  | Pass2 String
-  | Submit
-  | Submitted GApi.Response
+updatePass : PassMsg -> PassData -> PassData
+updatePass msg model =
+  case msg of
+    CPass b -> { model | cpass = b }
+    OPass n -> { model | opass = n }
+    Pass1 n -> { model | pass1 = n }
+    Pass2 n -> { model | pass2 = n }
 
 
--- Synchronizes model.data.password with model.stuff
-fixup : Model -> Model
-fixup model =
-  let
-      data  = model.data
-      ndata = { data | password = if model.cpass && model.pass1 == model.pass2 then Just { old = model.opass, new = model.pass1 } else Nothing }
-  in { model | data = ndata }
+encode : Model -> GUE.Send
+encode model =
+  { id       = model.id
+  , username = model.username
+  , admin    = model.admin
+  , prefs    = model.prefs
+  , password = Maybe.andThen (\p -> if p.cpass && p.pass1 == p.pass2 then Just { old = p.opass, new = p.pass1 } else Nothing) model.pass
+  }
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    Set d   -> ({ model | data = updateData d model.data }, Cmd.none)
-    CPass b -> (fixup { model | cpass = b, passNeq = False }, Cmd.none)
-    OPass n -> (fixup { model | opass = n, passNeq = False }, Cmd.none)
-    Pass1 n -> (fixup { model | pass1 = n, passNeq = False }, Cmd.none)
-    Pass2 n -> (fixup { model | pass2 = n, passNeq = False }, Cmd.none)
+    Admin m -> ({ model | admin = Maybe.map (updateAdmin m) model.admin }, Cmd.none)
+    Prefs m -> ({ model | prefs = Maybe.map (updatePrefs m) model.prefs }, Cmd.none)
+    Pass  m -> ({ model | pass  = Maybe.map (updatePass  m) model.pass, passNeq = False }, Cmd.none)
+    Username s -> ({ model | username = s }, Cmd.none)
 
     Submit ->
-      if model.cpass && model.pass1 /= model.pass2
+      if Maybe.withDefault False (Maybe.map (\p -> p.cpass && p.pass1 /= p.pass2) model.pass)
       then ({ model | passNeq = True }, Cmd.none )
-      else ({ model | state = Api.Loading }, GUE.send model.data Submitted)
+      else ({ model | state = Api.Loading }, GUE.send (encode model) Submitted)
 
     -- TODO: This reload is only necessary for the skin and customcss options to apply, but it's nicer to do that directly from JS.
-    Submitted GApi.Success    -> (model, load <| "/u" ++ String.fromInt model.data.id ++ "/edit")
+    Submitted GApi.Success    -> (model, load <| "/u" ++ String.fromInt model.id ++ "/edit")
     Submitted GApi.MailChange -> ({ model | mailConfirm = True, state = Api.Normal }, Cmd.none)
     Submitted r -> ({ model | state = Api.Error r }, Cmd.none)
 
@@ -150,30 +177,34 @@ update msg model =
 view : Model -> Html Msg
 view model =
   let
-    data = model.data
+    opts = model.opts
+    perm b f = if opts.perm_usermod || b then f else text ""
 
-    modform =
+    adminform m =
       [ tr [ class "newpart" ] [ td [ colspan 2 ] [ text "Admin options" ] ]
-      , formField "username::Username" [ inputText "username" data.username (Set << Username) GUE.valUsername ]
+      , perm False <| formField "username::Username" [ inputText "username" model.username Username GUE.valUsername ]
       , formField "Permissions"
-        [ label [] [ inputCheck "" data.perm_board    (Set << PermBoard),    text (" board (default)") ], br_ 1
-        , label [] [ inputCheck "" data.perm_boardmod (Set << PermBoardmod), text (" boardmod") ], br_ 1
-        , label [] [ inputCheck "" data.perm_edit     (Set << PermEdit),     text (" edit (default)") ], br_ 1
-        , label [] [ inputCheck "" data.perm_imgvote  (Set << PermImgvote),  text (" imgvote (default - existing votes will stop counting when unset)") ], br_ 1
-        , label [] [ inputCheck "" data.perm_imgmod   (Set << PermImgmod),   text (" imgmod") ], br_ 1
-        , label [] [ inputCheck "" data.perm_tag      (Set << PermTag),      text (" tag (default)") ], br_ 1
-        , label [] [ inputCheck "" data.perm_dbmod    (Set << PermDbmod),    text (" dbmod") ], br_ 1
-        , label [] [ inputCheck "" data.perm_tagmod   (Set << PermTagmod),   text (" tagmod") ], br_ 1
-        , label [] [ inputCheck "" data.perm_usermod  (Set << PermUsermod),  text (" usermod") ], br_ 1
+        [ text "Fields marked with * indicate permissions assigned to new users by default", br_ 1
+        , perm opts.perm_boardmod <| label [] [ inputCheck "" m.perm_board    (Admin << PermBoard),    text " board*", br_ 1 ]
+        , perm False              <| label [] [ inputCheck "" m.perm_boardmod (Admin << PermBoardmod), text " boardmod", br_ 1 ]
+        , perm opts.perm_dbmod    <| label [] [ inputCheck "" m.perm_edit     (Admin << PermEdit),     text " edit*", br_ 1 ]
+        , perm opts.perm_imgmod   <| label [] [ inputCheck "" m.perm_imgvote  (Admin << PermImgvote),  text " imgvote* (existing votes will stop counting when unset)", br_ 1 ]
+        , perm False              <| label [] [ inputCheck "" m.perm_imgmod   (Admin << PermImgmod),   text " imgmod", br_ 1 ]
+        , perm opts.perm_tagmod   <| label [] [ inputCheck "" m.perm_tag      (Admin << PermTag),      text " tag*", br_ 1 ]
+        , perm False              <| label [] [ inputCheck "" m.perm_dbmod    (Admin << PermDbmod),    text " dbmod", br_ 1 ]
+        , perm False              <| label [] [ inputCheck "" m.perm_tagmod   (Admin << PermTagmod),   text " tagmod", br_ 1 ]
+        , perm False              <| label [] [ inputCheck "" m.perm_usermod  (Admin << PermUsermod),  text " usermod", br_ 1 ]
         ]
-      , formField "Other" [ label [] [ inputCheck "" data.ign_votes (Set << IgnVotes), text " Ignore votes in VN statistics" ] ]
+      , perm False <| formField "Other" [ label [] [ inputCheck "" m.ign_votes (Admin << IgnVotes), text " Ignore votes in VN statistics" ] ]
       ]
 
-    passform =
-      [ formField "opass::Old password" [ inputPassword "opass" model.opass OPass GUE.valPasswordOld ]
-      , formField "pass1::New password" [ inputPassword "pass1" model.pass1 Pass1 GUE.valPasswordNew ]
+    passform m =
+      [ formField "" [ label [] [ inputCheck "" m.cpass (Pass << CPass), text " Change password" ] ]
+      ] ++ if not m.cpass then [] else
+      [ formField "opass::Old password" [ inputPassword "opass" m.opass (Pass << OPass) GUE.valPasswordOld ]
+      , formField "pass1::New password" [ inputPassword "pass1" m.pass1 (Pass << Pass1) GUE.valPasswordNew ]
       , formField "pass2::Repeat"
-        [ inputPassword "pass2" model.pass2 Pass2 GUE.valPasswordNew
+        [ inputPassword "pass2" m.pass2 (Pass << Pass2) GUE.valPasswordNew
         , br_ 1
         , if model.passNeq
           then b [ class "standout" ] [ text "Passwords do not match" ]
@@ -181,55 +212,52 @@ view model =
         ]
       ]
 
-    supportform =
+    supportform m =
+      if not (opts.perm_usermod || opts.nodistract_can || opts.support_can || opts.uniname_can || opts.pubskin_can) then [] else
       [ tr [ class "newpart" ] [ td [ colspan 2 ] [ text "Supporter options⭐" ] ]
-      , if not data.nodistract_can && not data.authmod then text ""
-        else formField "" [ label [] [ inputCheck "" data.nodistract_noads (Set << NoAds), text " Disable advertising and other distractions (only hides the support icons for the moment)" ] ]
-      , if not data.nodistract_can && not data.authmod then text ""
-        else formField "" [ label [] [ inputCheck "" data.nodistract_nofancy (Set << NoFancy), text " Disable supporters badges, custom display names and profile skins" ] ]
-      , if not data.support_can && not data.authmod then text ""
-        else formField "" [ label [] [ inputCheck "" data.support_enabled (Set << Support), text " Display my supporters badge" ] ]
-      , if not data.pubskin_can && not data.authmod then text ""
-        else formField "" [ label [] [ inputCheck "" data.pubskin_enabled (Set << PubSkin), text " Apply my skin and custom CSS when others visit my profile" ] ]
-      , if not data.uniname_can && not data.authmod then text ""
-        else formField "uniname::Display name" [ inputText "uniname" (if data.uniname == "" then data.username else data.uniname) (Set << Uniname) GUE.valUniname ]
+      , perm opts.nodistract_can <| formField "" [ label [] [ inputCheck "" m.nodistract_noads   (Prefs << NoAds),   text " Disable advertising and other distractions (only hides the support icons for the moment)" ] ]
+      , perm opts.nodistract_can <| formField "" [ label [] [ inputCheck "" m.nodistract_nofancy (Prefs << NoFancy), text " Disable supporters badges, custom display names and profile skins" ] ]
+      , perm opts.support_can    <| formField "" [ label [] [ inputCheck "" m.support_enabled    (Prefs << Support), text " Display my supporters badge" ] ]
+      , perm opts.pubskin_can    <| formField "" [ label [] [ inputCheck "" m.pubskin_enabled    (Prefs << PubSkin), text " Apply my skin and custom CSS when others visit my profile" ] ]
+      , perm opts.uniname_can    <| formField "uniname::Display name" [ inputText "uniname" (if m.uniname == "" then model.username else m.uniname) (Prefs << Uniname) GUE.valPrefsUniname ]
+      ]
+
+    prefsform m =
+      [ tr [ class "newpart" ] [ td [ colspan 2 ] [ text "Preferences" ] ]
+      , formField "NSFW" [ label [] [ inputCheck "" m.show_nsfw     (Prefs << ShowNsfw),     text " Show NSFW images by default" ] ]
+      , formField ""     [ label [] [ inputCheck "" m.traits_sexual (Prefs << TraitsSexual), text " Show sexual traits by default on character pages" ] ]
+      , formField "Tags" [ label [] [ inputCheck "" m.tags_all      (Prefs << TagsAll),      text " Show all tags by default on visual novel pages (don't summarize)" ] ]
+      , formField ""
+        [ text "Default tag categories on visual novel pages:", br_ 1
+        , label [] [ inputCheck "" m.tags_cont (Prefs << TagsCont), text " Content" ], br_ 1
+        , label [] [ inputCheck "" m.tags_ero  (Prefs << TagsEro ), text " Sexual content" ], br_ 1
+        , label [] [ inputCheck "" m.tags_tech (Prefs << TagsTech), text " Technical" ]
+        ]
+      , formField "spoil::Spoiler level"
+        [ inputSelect "spoil" m.spoilers (Prefs << Spoilers) []
+          [ (0, "Hide spoilers")
+          , (1, "Show only minor spoilers")
+          , (2, "Show all spoilers")
+          ]
+        ]
+      , formField "skin::Skin" [ inputSelect "skin" m.skin (Prefs << Skin) [ style "width" "300px" ] GT.skins ]
+      , formField "css::Custom CSS" [ inputTextArea "css" m.customcss (Prefs << Css) ([ rows 5, cols 60 ] ++ GUE.valPrefsCustomcss) ]
       ]
 
   in form_ Submit (model.state == Api.Loading)
     [ div [ class "mainbox" ]
-      [ h1 [] [ text <| if data.authmod then "Edit " ++ data.username else "My preferences" ]
+      [ h1 [] [ text model.title ]
       , table [ class "formtable" ] <|
-        [ tr [ class "newpart" ] [ td [ colspan 2 ] [ text "General" ] ]
-        , formField "Username" [ text data.username ]
-        , formField "email::E-Mail" [ inputText "email" data.email (Set << EMail) GUE.valEmail ]
+        [ tr [ class "newpart" ] [ td [ colspan 2 ] [ text "Account settings" ] ]
+        , formField "Username" [ text model.username ]
+        , Maybe.withDefault (text "") <| Maybe.map (\m ->
+            formField "email::E-Mail" [ inputText "email" m.email (Prefs << EMail) GUE.valPrefsEmail ]
+          ) model.prefs
         ]
-        ++ (if data.authmod then modform else [])
-        ++ (if data.authmod || data.nodistract_can || data.support_can || data.uniname_can || data.pubskin_can then supportform else []) ++
-        [ tr [ class "newpart" ] [ td [ colspan 2 ] [ text "Password" ] ]
-        , formField "" [ label [] [ inputCheck "" model.cpass CPass, text " Change password" ] ]
-        ] ++ (if model.cpass then passform else [])
-        ++
-        [ tr [ class "newpart" ] [ td [ colspan 2 ] [ text "Preferences" ] ]
-        , formField "NSFW" [ label [] [ inputCheck "" data.show_nsfw     (Set << ShowNsfw),     text " Show NSFW images by default" ] ]
-        , formField ""     [ label [] [ inputCheck "" data.traits_sexual (Set << TraitsSexual), text " Show sexual traits by default on character pages" ] ]
-        , formField "Tags" [ label [] [ inputCheck "" data.tags_all      (Set << TagsAll),      text " Show all tags by default on visual novel pages (don't summarize)" ] ]
-        , formField ""
-          [ text "Default tag categories on visual novel pages:", br_ 1
-          , label [] [ inputCheck "" data.tags_cont (Set << TagsCont), text " Content" ], br_ 1
-          , label [] [ inputCheck "" data.tags_ero  (Set << TagsEro ), text " Sexual content" ], br_ 1
-          , label [] [ inputCheck "" data.tags_tech (Set << TagsTech), text " Technical" ]
-          ]
-        , formField "spoil::Spoiler level"
-          [ inputSelect "spoil" data.spoilers (Set << Spoilers) []
-            [ (0, "Hide spoilers")
-            , (1, "Show only minor spoilers")
-            , (2, "Show all spoilers")
-            ]
-          ]
-        , formField "skin::Skin" [ inputSelect "skin" data.skin (Set << Skin) [ style "width" "300px" ] GT.skins ]
-        , formField "css::Custom CSS" [ inputTextArea "css" data.customcss (Set << Css) ([ rows 5, cols 60 ] ++ GUE.valCustomcss) ]
-        ]
-
+        ++ (Maybe.withDefault [] (Maybe.map passform model.pass))
+        ++ (Maybe.withDefault [] (Maybe.map adminform model.admin))
+        ++ (Maybe.withDefault [] (Maybe.map supportform model.prefs))
+        ++ (Maybe.withDefault [] (Maybe.map prefsform model.prefs))
       ]
     , div [ class "mainbox" ]
       [ fieldset [ class "submit" ] [ submitButton "Submit" model.state (not model.passNeq) ]

@@ -38,7 +38,7 @@ type alias Model =
   , boards      : Maybe (List GDE.SendBoards)
   , boardAdd    : A.Model GApi.ApiBoardResult
   , msg         : TP.Model
-  , poll        : GDE.SendPoll
+  , poll        : Maybe GDE.SendPoll
   , pollEnabled : Bool
   , pollEdit    : Bool
   }

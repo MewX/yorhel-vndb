@@ -3,41 +3,61 @@ package VNWeb::User::Edit;
 use VNWeb::Prelude;
 
 
-my $FORM = form_compile in => {
-    username  => { username => 1 },
-    email     => { email => 1 },
-    ign_votes => { anybool => 1 },
-    show_nsfw => { anybool => 1 },
-    traits_sexual => { anybool => 1 },
-    tags_all  => { anybool => 1 },
-    tags_cont => { anybool => 1 },
-    tags_ero  => { anybool => 1 },
-    tags_tech => { anybool => 1 },
-    spoilers  => { uint => 1, range => [ 0, 2 ] },
-    skin      => { enum => tuwf->{skins} },
-    customcss => { required => 0, default => '', maxlength => 2000 },
-    map(+("perm_$_" => { anybool => 1 }), VNWeb::Auth::listPerms),
+my $FORM = {
+    id             => { uint => 1 },
+    title          => { _when => 'out' },
+    username       => { username => 1 }, # Can only be modified with perm_usermod
 
-    nodistract_can     => { anybool => 1 },
-    nodistract_noads   => { anybool => 1 },
-    nodistract_nofancy => { anybool => 1 },
-    support_can     => { anybool => 1 },
-    support_enabled => { anybool => 1 },
-    uniname_can     => { anybool => 1 },
-    uniname         => { required => 0, default => '', regex => qr/^.{2,15}$/ }, # Use regex to check length, HTML5 `maxlength` attribute counts UTF-16 code units...
-    pubskin_can     => { anybool => 1 },
-    pubskin_enabled => { anybool => 1 },
+    opts => { _when => 'out', type => 'hash', keys => {
+        # Supporter options available to this user
+        nodistract_can => { _when => 'out', anybool => 1 },
+        support_can    => { _when => 'out', anybool => 1 },
+        uniname_can    => { _when => 'out', anybool => 1 },
+        pubskin_can    => { _when => 'out', anybool => 1 },
+
+        # Permissions of the user editing this account
+        perm_dbmod     => { _when => 'out', anybool => 1 },
+        perm_usermod   => { _when => 'out', anybool => 1 },
+        perm_tagmod    => { _when => 'out', anybool => 1 },
+        perm_boardmod  => { _when => 'out', anybool => 1 },
+        perm_imgmod    => { _when => 'out', anybool => 1 },
+    } },
+
+    # Settings that require at least one perm_*mod
+    admin => { required => 0, type => 'hash', keys => {
+        ign_votes => { anybool => 1 },
+        map +("perm_$_" => { anybool => 1 }), VNWeb::Auth::listPerms
+    } },
+
+    # Settings that can only be read/modified by the user itself or a perm_usermod
+    prefs => { required => 0, type => 'hash', keys => {
+        email           => { email => 1 },
+        show_nsfw       => { anybool => 1 },
+        traits_sexual   => { anybool => 1 },
+        tags_all        => { anybool => 1 },
+        tags_cont       => { anybool => 1 },
+        tags_ero        => { anybool => 1 },
+        tags_tech       => { anybool => 1 },
+        spoilers        => { uint => 1, range => [ 0, 2 ] },
+        skin            => { enum => tuwf->{skins} },
+        customcss       => { required => 0, default => '', maxlength => 2000 },
+
+        # Supporter options
+        nodistract_noads   => { anybool => 1 },
+        nodistract_nofancy => { anybool => 1 },
+        support_enabled => { anybool => 1 },
+        uniname         => { required => 0, default => '', regex => qr/^.{2,15}$/ }, # Use regex to check length, HTML5 `maxlength` attribute counts UTF-16 code units...
+        pubskin_enabled => { anybool => 1 },
+    } },
 
     password  => { _when => 'in', required => 0, type => 'hash', keys => {
         old   => { password => 1 },
         new   => { password => 1 }
     } },
-
-    id        => { uint => 1 },
-    # This is technically only used for Perl->Elm data, but also received from
-    # Elm in order to make the Send and Recv types equivalent.
-    authmod   => { anybool => 1 },
 };
+
+my $FORM_IN  = form_compile in  => $FORM;
+my $FORM_OUT = form_compile out => $FORM;
 
 
 
@@ -47,54 +67,73 @@ sub _getmail {
 }
 
 TUWF::get qr{/$RE{uid}/edit}, sub {
-    my $permcols = sql_comma map "perm_$_", auth->listPerms;
-    my $u = tuwf->dbRowi(q{
-        SELECT id, username, ign_votes, show_nsfw, traits_sexual,}, $permcols, q{
-             , tags_all, tags_cont, tags_ero, tags_tech, spoilers, skin, customcss
-             , nodistract_can, nodistract_noads, nodistract_nofancy, support_can, support_enabled, uniname_can, uniname, pubskin_can, pubskin_enabled
-          FROM users WHERE id =}, \tuwf->capture('id')
-    );
-
+    my $u = tuwf->dbRowi('SELECT id, username FROM users WHERE id =', \tuwf->capture('id'));
     return tuwf->resNotFound if !$u->{id} || !can_edit u => $u;
 
-    $u->{email} = _getmail $u->{id};
-    $u->{authmod} = auth->permUsermod;
-    $u->{password} = undef;
-    $u->{skin} ||= config->{skin_default};
+    $u->{opts} = tuwf->dbRowi('SELECT nodistract_can, support_can, uniname_can, pubskin_can FROM users WHERE id =', \$u->{id});
+    $u->{opts}{perm_dbmod}    = auth->permDbmod;
+    $u->{opts}{perm_usermod}  = auth->permUsermod;
+    $u->{opts}{perm_tagmod}   = auth->permTagmod;
+    $u->{opts}{perm_boardmod} = auth->permBoardmod;
+    $u->{opts}{perm_imgmod}   = auth->permImgmod;
 
-    my $title = $u->{id} == auth->uid ? 'My Account' : "Edit $u->{username}";
-    framework_ title => $title, type => 'u', dbobj => $u, tab => 'edit',
+    $u->{prefs} = $u->{id} == auth->uid || auth->permUsermod ?
+        tuwf->dbRowi(
+            'SELECT show_nsfw, traits_sexual, tags_all, tags_cont, tags_ero, tags_tech, spoilers, skin, customcss
+                  , nodistract_noads, nodistract_nofancy, support_enabled, uniname, pubskin_enabled
+               FROM users WHERE id =', \$u->{id}
+        ) : undef;
+    $u->{prefs}{email} = _getmail $u->{id} if $u->{prefs};
+    $u->{prefs}{skin} ||= config->{skin_default} if $u->{prefs};
+
+    $u->{admin} = auth->permDbmod || auth->permUsermod || auth->permTagmod || auth->permBoardmod || auth->permImgmod ?
+        tuwf->dbRowi('SELECT ign_votes, ', sql_comma(map "perm_$_", auth->listPerms), 'FROM users WHERE id =', \$u->{id}) : undef;
+
+    $u->{password} = undef;
+
+    $u->{title} = $u->{id} == auth->uid ? 'My Account' : "Edit $u->{username}";
+    framework_ title => $u->{title}, type => 'u', dbobj => $u, tab => 'edit',
     sub {
-        elm_ 'User.Edit', $FORM, $u;
+        elm_ 'User.Edit', $FORM_OUT, $u;
     };
 };
 
 
-elm_api UserEdit => undef, $FORM, sub {
+elm_api UserEdit => $FORM_OUT, $FORM_IN, sub {
     my $data = shift;
 
     my $username = tuwf->dbVali('SELECT username FROM users WHERE id =', \$data->{id});
     return tuwf->resNotFound if !$username;
     return elm_Unauth if !can_edit u => $data;
 
-    return elm_Taken if $data->{uniname}
-        && tuwf->dbVali('SELECT 1 FROM users WHERE id <>', \$data->{id}, 'AND username =', \lc($data->{uniname}));
+    my $own = $data->{id} == auth->uid || auth->permUsermod;
+    my %set;
 
-    my @setcols = qw/
-        show_nsfw traits_sexual tags_all tags_cont tags_ero tags_tech spoilers skin customcss
-        nodistract_noads nodistract_nofancy support_enabled uniname pubskin_enabled
-    /;
-    if(auth->permUsermod) {
-        tuwf->dbExeci(update => users => set => {
-            username  => $data->{username},
-            ign_votes => $data->{ign_votes},
-            email_confirmed => 1,
-        }, where => { id => $data->{id} });
-        tuwf->dbExeci(select => sql_func user_setperm_usermod => \$data->{id}, \auth->uid, sql_fromhex(auth->token), \$data->{perm_usermod});
-        push @setcols, map "perm_$_", grep $_ ne 'usermod', auth->listPerms;
+    if($own) {
+        my $p = $data->{prefs};
+        $p->{skin} = '' if $p->{skin} eq config->{skin_default};
+        $p->{uniname} = '' if $p->{uniname} eq $username;
+        return elm_Taken if $p->{uniname} && tuwf->dbVali('SELECT 1 FROM users WHERE id <>', \$data->{id}, 'AND username =', \lc($p->{uniname}));
+
+        $set{$_} = $p->{$_} for qw/
+            show_nsfw traits_sexual tags_all tags_cont tags_ero tags_tech spoilers skin customcss
+            nodistract_noads nodistract_nofancy support_enabled uniname pubskin_enabled
+        /;
     }
 
-    if($data->{password}) {
+    if(auth->permUsermod) {
+        $set{username} = $data->{username};
+        $set{ign_votes} = $data->{admin}{ign_votes};
+        $set{email_confirmed} = 1;
+        tuwf->dbExeci(select => sql_func user_setperm_usermod => \$data->{id}, \auth->uid, sql_fromhex(auth->token), \$data->{admin}{perm_usermod});
+        $set{"perm_$_"} = $data->{admin}{"perm_$_"} for grep $_ ne 'usermod', auth->listPerms;
+    }
+    $set{perm_board}   = $data->{admin}{perm_board}   if auth->permBoardmod;
+    $set{perm_edit}    = $data->{admin}{perm_edit}    if auth->permDbmod;
+    $set{perm_imgvote} = $data->{admin}{perm_imgvote} if auth->permImgmod;
+    $set{perm_tag}     = $data->{admin}{perm_tag}     if auth->permTagmod;
+
+    if($own && $data->{password}) {
         return elm_InsecurePass if is_insecurepass $data->{password}{new};
 
         if(auth->uid == $data->{id}) {
@@ -108,13 +147,14 @@ elm_api UserEdit => undef, $FORM, sub {
 
     my $ret = \&elm_Success;
 
-    my $oldmail = _getmail $data->{id};
-    if($data->{email} ne $oldmail) {
+    my $newmail = $own && $data->{prefs}{email};
+    my $oldmail = $own && _getmail $data->{id};
+    if($own && $newmail ne $oldmail) {
+        return elm_DoubleEmail if tuwf->dbVali(select => sql_func user_emailexists => \$newmail, \$data->{id});
         if(auth->permUsermod) {
-            tuwf->dbExeci(select => sql_func user_admin_setmail => \$data->{id}, \auth->uid, sql_fromhex(auth->token), \$data->{email});
+            tuwf->dbExeci(select => sql_func user_admin_setmail => \$data->{id}, \auth->uid, sql_fromhex(auth->token), \$newmail);
         } else {
-            return elm_DoubleEmail if tuwf->dbVali(select => sql_func user_emailexists => \$data->{email}, \$data->{id});
-            my $token = auth->setmail_token($data->{email});
+            my $token = auth->setmail_token($newmail);
             my $body = sprintf
                 "Hello %s,"
                 ."\n\n"
@@ -123,10 +163,10 @@ elm_api UserEdit => undef, $FORM, sub {
                 ."%s"
                 ."\n\n"
                 ."vndb.org",
-                $username, $oldmail, $data->{email}, tuwf->reqBaseURI()."/u$data->{id}/setmail/$token";
+                $username, $oldmail, $newmail, tuwf->reqBaseURI()."/u$data->{id}/setmail/$token";
 
             tuwf->mail($body,
-                To => $data->{email},
+                To => $newmail,
                 From => 'VNDB <noreply@vndb.org>',
                 Subject => "Confirm e-mail change for $username",
             );
@@ -134,9 +174,7 @@ elm_api UserEdit => undef, $FORM, sub {
         }
     }
 
-    $data->{skin} = '' if $data->{skin} eq config->{skin_default};
-    $data->{uniname} = '' if $data->{uniname} eq $data->{username};
-    tuwf->dbExeci('UPDATE users SET', { %{$data}{@setcols} }, 'WHERE id =', \$data->{id});
+    tuwf->dbExeci('UPDATE users SET', \%set, 'WHERE id =', \$data->{id});
     $ret->();
 };
 
