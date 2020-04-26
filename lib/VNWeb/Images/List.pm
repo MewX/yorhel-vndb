@@ -46,12 +46,13 @@ sub graph_ {
 sub listing_ {
     my($lst, $np, $opt, $url) = @_;
 
+    my $view = viewset(show_nsfw => 1);
     paginate_ $url, $opt->{p}, $np, 't';
     div_ class => 'mainbox imagebrowse', sub {
         div_ class => 'imagecard', sub {
-            a_ href => "/img/$_->{id}", style => 'background-image: url('.tuwf->imgurl($_->{id}, 1).')', '';
+            a_ href => "/img/$_->{id}?view=$view", style => 'background-image: url('.tuwf->imgurl($_->{id}, 1).')', '';
             div_ sub {
-                a_ href => "/img/$_->{id}", $_->{id};
+                a_ href => "/img/$_->{id}?view=$view", $_->{id};
                 txt_ sprintf ' / %d', $_->{c_votecount},;
                 b_ class => 'grayedout', sprintf ' / w%.1f', $_->{c_weight};
                 br_;

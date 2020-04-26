@@ -338,9 +338,10 @@ view model =
            , li [] [ b [ class "standout" ] [ text "WARNING: " ], text "Images shown may include spoilers, be highly offensive and/or contain very explicit depictions of sexual acts." ]
            ]
          , br [] []
-         , label [] [ inputCheck "" (not model.exclVoted) (\b -> ExclVoted (not b)), text " Include images I already voted on." ]
-         , br [] []
-         , inputButton "I understand, continue" SkipWarn []
+         , if model.single
+           then text ""
+           else label [] [ inputCheck "" (not model.exclVoted) (\b -> ExclVoted (not b)), text " Include images I already voted on.", br [] [] ]
+         , inputButton "Continue" SkipWarn []
          ]
     else case (Array.get model.index model.images, model.loadState) of
            (Just i, _)    -> imgView i

@@ -192,7 +192,7 @@ TUWF::get qr{/img/$RE{imgid}}, sub {
     enrich_token defined($l->[0]{my_sexual}) || auth->permImgmod(), $l;
 
     framework_ title => "Image flagging for $id", sub {
-        imgflag_ images => $l, single => 1, warn => !tuwf->samesite();
+        imgflag_ images => $l, single => 1, warn => !viewget->{show_nsfw};
     };
 };
 
