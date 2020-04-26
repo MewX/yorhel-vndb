@@ -68,7 +68,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON ulist_vns_labels         TO vndb_site;
 -- users table is special; The 'perm_usermod', 'passwd' and 'mail' columns are
 -- protected and can only be accessed through the user_* functions.
 GRANT SELECT ( id, username, registered, ip, ign_votes, email_confirmed
-             , perm_board, perm_boardmod, perm_dbmod, perm_edit, perm_imgvote, perm_tag, perm_tagmod, perm_usermod
+             , perm_board, perm_boardmod, perm_dbmod, perm_edit, perm_imgvote, perm_tag, perm_tagmod, perm_usermod, perm_imgmod
              , skin, customcss, show_nsfw, notify_dbedit, notify_announce
              , tags_all, tags_cont, tags_ero, tags_tech, spoilers, traits_sexual
              , filter_vn, filter_release, vn_list_own, vn_list_wish
@@ -77,7 +77,7 @@ GRANT SELECT ( id, username, registered, ip, ign_votes, email_confirmed
              , c_vns, c_wish, c_votes, c_changes, c_imgvotes, c_tags),
       INSERT ( username, mail, ip),
       UPDATE ( username, ign_votes, email_confirmed
-             , perm_board, perm_boardmod, perm_dbmod, perm_edit, perm_imgvote, perm_tag, perm_tagmod
+             , perm_board, perm_boardmod, perm_dbmod, perm_edit, perm_imgvote, perm_tag, perm_tagmod, perm_imgmod
              , skin, customcss, show_nsfw, notify_dbedit, notify_announce
              , tags_all, tags_cont, tags_ero, tags_tech, spoilers, traits_sexual
              , filter_vn, filter_release, vn_list_own, vn_list_wish
@@ -162,8 +162,8 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON ulist_labels             TO vndb_multi;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ulist_vns                TO vndb_multi;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ulist_vns_labels         TO vndb_multi;
 
-GRANT SELECT (id, username, registered, ign_votes, email_confirmed, notify_dbedit, notify_announce, c_vns, c_wish, c_votes, c_changes, c_imgvotes, c_tags),
-      UPDATE (                                                                                      c_vns, c_wish, c_votes, c_changes, c_imgvotes, c_tags) ON users TO vndb_multi;
+GRANT SELECT (id, username, registered, ign_votes, email_confirmed, notify_dbedit, notify_announce, c_vns, c_wish, c_votes, c_changes, c_imgvotes, c_tags, perm_imgvote),
+      UPDATE (                                                                                      c_vns, c_wish, c_votes, c_changes, c_imgvotes, c_tags              ) ON users TO vndb_multi;
 GRANT                         DELETE ON users                    TO vndb_multi;
 
 GRANT SELECT,         UPDATE         ON vn                       TO vndb_multi;

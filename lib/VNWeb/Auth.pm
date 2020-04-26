@@ -70,7 +70,7 @@ sub token { shift->{token} }
 
 
 
-my @perms = qw/board boardmod edit imgvote tag dbmod tagmod usermod/;
+my @perms = qw/board boardmod edit imgvote imgmod tag dbmod tagmod usermod/;
 
 sub listPerms { @perms }
 

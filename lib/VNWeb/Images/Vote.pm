@@ -135,10 +135,10 @@ elm_api ImageVote => undef, {
     # Find out if any of these images are being overruled
     enrich_merge id => sub { sql 'SELECT id, bool_or(ignore) AS overruled FROM image_votes WHERE id IN', $_, 'GROUP BY id' }, $data->{votes};
     enrich_merge id => sql('SELECT id, NOT ignore AS my_overrule FROM image_votes WHERE uid =', \auth->uid, 'AND id IN'),
-        grep $_->{overruled}, $data->{votes}->@* if auth->permDbmod;
+        grep $_->{overruled}, $data->{votes}->@* if auth->permImgmod;
 
     for($data->{votes}->@*) {
-        $_->{overrule} = 0 if !auth->permDbmod;
+        $_->{overrule} = 0 if !auth->permImgmod;
         my $d = {
             id       => $_->{id},
             uid      => auth->uid(),
@@ -163,7 +163,7 @@ sub imgflag_ {
     elm_ 'ImageFlagging', $SEND, {
         my_votes   => my_votes(),
         nsfw_token => viewset(show_nsfw => 1),
-        mod        => auth->permDbmod()||0,
+        mod        => auth->permImgmod()||0,
         @_
     };
 }
@@ -189,7 +189,7 @@ TUWF::get qr{/img/$RE{imgid}}, sub {
     enrich_image $l;
     return tuwf->resNotFound if !defined $l->[0]{width};
 
-    enrich_token defined($l->[0]{my_sexual}) || auth->permDbmod(), $l; # XXX: permImgmod?
+    enrich_token defined($l->[0]{my_sexual}) || auth->permImgmod(), $l;
 
     framework_ title => "Image flagging for $id", sub {
         imgflag_ images => $l, single => 1, warn => !tuwf->samesite();

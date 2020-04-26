@@ -54,6 +54,7 @@ type Data
   | PermBoardmod Bool
   | PermEdit Bool
   | PermImgvote Bool
+  | PermImgmod Bool
   | PermTag Bool
   | PermDbmod Bool
   | PermTagmod Bool
@@ -84,6 +85,7 @@ updateData msg model =
     PermBoardmod b -> { model | perm_boardmod = b }
     PermEdit b     -> { model | perm_edit     = b }
     PermImgvote b  -> { model | perm_imgvote  = b }
+    PermImgmod b   -> { model | perm_imgmod   = b }
     PermTag b      -> { model | perm_tag      = b }
     PermDbmod b    -> { model | perm_dbmod    = b }
     PermTagmod b   -> { model | perm_tagmod   = b }
@@ -158,6 +160,7 @@ view model =
         , label [] [ inputCheck "" data.perm_boardmod (Set << PermBoardmod), text (" boardmod") ], br_ 1
         , label [] [ inputCheck "" data.perm_edit     (Set << PermEdit),     text (" edit (default)") ], br_ 1
         , label [] [ inputCheck "" data.perm_imgvote  (Set << PermImgvote),  text (" imgvote (default - existing votes will stop counting when unset)") ], br_ 1
+        , label [] [ inputCheck "" data.perm_imgmod   (Set << PermImgmod),   text (" imgmod") ], br_ 1
         , label [] [ inputCheck "" data.perm_tag      (Set << PermTag),      text (" tag (default)") ], br_ 1
         , label [] [ inputCheck "" data.perm_dbmod    (Set << PermDbmod),    text (" dbmod") ], br_ 1
         , label [] [ inputCheck "" data.perm_tagmod   (Set << PermTagmod),   text (" tagmod") ], br_ 1

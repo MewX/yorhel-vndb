@@ -5,7 +5,7 @@ use VNWeb::Prelude;
 our @EXPORT = qw/enrich_html/;
 
 
-my @special_perms = qw/boardmod dbmod usermod tagmod/;
+my @special_perms = qw/boardmod dbmod usermod imgmod tagmod/;
 
 sub _moderators {
     my $cols = sql_comma map "perm_$_", @special_perms;
