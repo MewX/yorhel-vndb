@@ -290,4 +290,18 @@ sub prefSet {
 }
 
 
+# Add an entry to the audit log.
+sub audit {
+    my($self, $affected_uid, $action, $detail) = @_;
+    tuwf->dbExeci('INSERT INTO audit_log', {
+        by_uid  => $self->uid(),
+        by_name => $self->{user}{user_name},
+        by_ip   => tuwf->reqIP(),
+        affected_uid  => $affected_uid||undef,
+        affected_name => $affected_uid ? sql('(SELECT username FROM users WHERE id =', \$affected_uid, ')') : undef,
+        action => $action,
+        detail => $detail,
+    });
+}
+
 1;

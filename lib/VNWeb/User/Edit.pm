@@ -136,13 +136,16 @@ elm_api UserEdit => $FORM_OUT, $FORM_IN, sub {
     if($own && $data->{password}) {
         return elm_InsecurePass if is_insecurepass $data->{password}{new};
 
+        my $ok = 1;
         if(auth->uid == $data->{id}) {
-            return elm_BadCurPass if !auth->setpass($data->{id}, undef, $data->{password}{old}, $data->{password}{new});
+            $ok = 0 if !auth->setpass($data->{id}, undef, $data->{password}{old}, $data->{password}{new});
         } else {
             tuwf->dbExeci(select => sql_func user_admin_setpass => \$data->{id}, \auth->uid,
                 sql_fromhex(auth->token), sql_fromhex auth->_preparepass($data->{password}{new})
             );
         }
+        auth->audit($data->{id}, $ok ? 'password change' : 'bad password', 'at user edit form');
+        return elm_BadCurPass if !$ok;
     }
 
     my $ret = \&elm_Success;
@@ -151,6 +154,7 @@ elm_api UserEdit => $FORM_OUT, $FORM_IN, sub {
     my $oldmail = $own && _getmail $data->{id};
     if($own && $newmail ne $oldmail) {
         return elm_DoubleEmail if tuwf->dbVali(select => sql_func user_emailexists => \$newmail, \$data->{id});
+        auth->audit($data->{id}, 'email change', "old=$oldmail; new=$newmail");
         if(auth->permUsermod) {
             tuwf->dbExeci(select => sql_func user_admin_setmail => \$data->{id}, \auth->uid, sql_fromhex(auth->token), \$newmail);
         } else {
@@ -174,7 +178,15 @@ elm_api UserEdit => $FORM_OUT, $FORM_IN, sub {
         }
     }
 
+    my $old = tuwf->dbRowi('SELECT', sql_comma(keys %set), 'FROM users WHERE id =', \$data->{id});
     tuwf->dbExeci('UPDATE users SET', \%set, 'WHERE id =', \$data->{id});
+    my $new = tuwf->dbRowi('SELECT', sql_comma(keys %set), 'FROM users WHERE id =', \$data->{id});
+
+    $_ = JSON::XS->new->allow_nonref->encode($_) for values %$old, %$new;
+    my @diff = grep $old->{$_} ne $new->{$_}, keys %set;
+    auth->audit($data->{id}, 'user edit', join '; ', map "$_: $old->{$_} -> $new->{$_}", @diff)
+        if @diff && (auth->uid != $data->{id} || grep /^(perm_|ign_votes|username)/, @diff);
+
     $ret->();
 };
 

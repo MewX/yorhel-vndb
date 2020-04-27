@@ -31,7 +31,8 @@ elm_api UserLogin => undef, {
     return $insecure ? elm_InsecurePass : elm_Success
         if auth->login($data->{username}, $data->{password}, $insecure);
 
-    # Failed login, update throttle.
+    # Failed login, log and update throttle.
+    auth->audit(tuwf->dbVali('SELECT id FROM users WHERE username =', \$data->{username}), 'bad password', 'failed login attempt');
     my $upd = {
         ip      => \$ip,
         timeout => sql_fromtime $tm + config->{login_throttle}[0]
@@ -50,6 +51,7 @@ elm_api UserChangePass => undef, {
     my $uid = tuwf->dbVali('SELECT id FROM users WHERE username =', \$data->{username});
     die if !$uid;
     return elm_InsecurePass if is_insecurepass $data->{newpass};
+    auth->audit($uid, 'password change', 'after login with an insecure password');
     die if !auth->setpass($uid, undef, $data->{oldpass}, $data->{newpass}); # oldpass should already have been verified.
     elm_Success
 };

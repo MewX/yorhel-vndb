@@ -51,7 +51,7 @@ elm_api DiscussionsEdit => $FORM_OUT, $FORM_IN, sub {
     return elm_Unauth if !can_edit t => $t;
 
     if($data->{delete} && auth->permBoardmod) {
-        warn "AUDIT: Delete t$tid.$num\n";
+        auth->audit($t->{user_id}, 'post delete', "deleted t$tid.$num");
         if($num == 1) {
             # (This could be a single query if there were proper ON DELETE CASCADE in the DB, though that's hard for notifications...)
             tuwf->dbExeci('DELETE FROM threads_posts WHERE tid =', \$tid);
@@ -68,6 +68,7 @@ elm_api DiscussionsEdit => $FORM_OUT, $FORM_IN, sub {
             return elm_Redirect "/t$tid";
         }
     }
+    auth->audit($t->{user_id}, 'post edit', "edited t$tid.$num") if $t->{user_id} != auth->uid;
 
     my $pollchanged = !$data->{tid} && $data->{poll};
     if($num == 1) {
