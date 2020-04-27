@@ -4,6 +4,7 @@ import Bitwise exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
+import Html.Keyed as K
 import Browser
 import Browser.Navigation exposing (load)
 import Lib.Html exposing (..)
@@ -201,16 +202,18 @@ view model =
     passform m =
       [ formField "" [ label [] [ inputCheck "" m.cpass (Pass << CPass), text " Change password" ] ]
       ] ++ if not m.cpass then [] else
-      [ formField "opass::Old password" [ inputPassword "opass" m.opass (Pass << OPass) GUE.valPasswordOld ]
-      , formField "pass1::New password" [ inputPassword "pass1" m.pass1 (Pass << Pass1) GUE.valPasswordNew ]
-      , formField "pass2::Repeat"
-        [ inputPassword "pass2" m.pass2 (Pass << Pass2) GUE.valPasswordNew
-        , br_ 1
-        , if model.passNeq
-          then b [ class "standout" ] [ text "Passwords do not match" ]
-          else text ""
+        [ tr [] [ K.node "td" [colspan 2] [("pass_change", table []
+          [ formField "opass::Old password" [ inputPassword "opass" m.opass (Pass << OPass) GUE.valPasswordOld ]
+          , formField "pass1::New password" [ inputPassword "pass1" m.pass1 (Pass << Pass1) GUE.valPasswordNew ]
+          , formField "pass2::Repeat"
+            [ inputPassword "pass2" m.pass2 (Pass << Pass2) GUE.valPasswordNew
+            , br_ 1
+            , if model.passNeq
+              then b [ class "standout" ] [ text "Passwords do not match" ]
+              else text ""
+            ]
+          ])]]
         ]
-      ]
 
     supportform m =
       if not (opts.perm_usermod || opts.nodistract_can || opts.support_can || opts.uniname_can || opts.pubskin_can) then [] else
