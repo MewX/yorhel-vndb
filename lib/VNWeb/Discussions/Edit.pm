@@ -68,7 +68,7 @@ elm_api DiscussionsEdit => $FORM_OUT, $FORM_IN, sub {
             return elm_Redirect "/t$tid";
         }
     }
-    auth->audit($t->{user_id}, 'post edit', "edited t$tid.$num") if $t->{user_id} != auth->uid;
+    auth->audit($t->{user_id}, 'post edit', "edited t$tid.$num") if $tid && $t->{user_id} != auth->uid;
 
     my $pollchanged = !$data->{tid} && $data->{poll};
     if($num == 1) {
