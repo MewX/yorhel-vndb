@@ -161,8 +161,8 @@ sub infobox_producers_ {
     ');
     return if !@$p;
 
-    my $prev = 0;
-    my @dev = grep $_->{developer} && $prev != $_->{id} && ($prev = $_->{id}), @$p;
+    my %dev;
+    my @dev = grep $_->{developer} && !$dev{$_->{id}}++, @$p;
 
     tr_ sub {
         td_ 'Developer';
