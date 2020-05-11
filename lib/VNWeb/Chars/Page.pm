@@ -293,7 +293,8 @@ TUWF::get qr{/$RE{crev}} => sub {
 
     framework_ title => $c->{name}, index => !tuwf->capture('rev'), type => 'c', dbobj => $c, hiddenmsg => 1,
         og => {
-            description => bb2text $c->{desc}
+            description => bb2text($c->{desc}),
+            image => $c->{image} && $c->{image}{sexual_avg} < 0.4 && $c->{image}{violence_avg} < 0.4 ? tuwf->imgurl($c->{image}{id}) : undef,
         },
     sub {
         _rev_ $c if tuwf->capture('rev');
