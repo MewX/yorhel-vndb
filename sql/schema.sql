@@ -825,7 +825,9 @@ CREATE TABLE users (
   perm_tag        boolean NOT NULL DEFAULT true, -- [pub] (public because this is used in calculating VN tag scores)
   perm_tagmod     boolean NOT NULL DEFAULT false,
   perm_usermod    boolean NOT NULL DEFAULT false,
-  perm_imgmod     boolean NOT NULL DEFAULT false
+  perm_imgmod     boolean NOT NULL DEFAULT false,
+  max_sexual      smallint NOT NULL DEFAULT 0,
+  max_violence    smallint NOT NULL DEFAULT 0
 );
 
 -- vn

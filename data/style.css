@@ -650,6 +650,15 @@ div.chardetails table        { float: left; width: 530px; }
 div.chardetails table td.key { width: 100px; }
 div.chardetails.charsep      { margin-top: 30px }
 
+.imghover { margin: 0 auto; position: relative; display: block; text-align: center }
+.imghover input:checked       ~ div.imghover--warning { display: none }
+.imghover input:not(:checked) ~ div.imghover--visible { display: none }
+.imghover div.imghover--visible a { display: none; white-space: nowrap; font-size: 11px }
+.imghover:hover div.imghover--visible { position: absolute; top: -11px; left: -11px; border: 1px solid $border$; background: $secbg$ }
+.imghover:hover div.imghover--visible img { margin: 10px 10px 0 10px }
+.imghover:hover div.imghover--visible a { display: block }
+.imghover div.imghover--warning { border: 1px solid $border$; background: $secbg$; box-sizing: border-box; padding: 10px 5px }
+
 
 
 /***** Char edit *****/

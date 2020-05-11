@@ -15,9 +15,15 @@ sub enrich_seiyuu {
 }
 
 
+sub enrich_image {
+    enrich_obj image => id => 'SELECT id, width, height, c_votecount AS votecount, c_sexual_avg AS sexual_avg, c_violence_avg AS violence_avg FROM images WHERE id IN', @_;
+}
+
+
 sub enrich_item {
     my($c) = @_;
 
+    enrich_image $c;
     enrich_merge vid => 'SELECT id AS vid, title, original FROM vn WHERE id IN', $c->{vns};
     enrich_merge rid => 'SELECT id AS rid, title AS rtitle, original AS roriginal FROM releases WHERE id IN', grep $_->{rid}, $c->{vns}->@*;
     enrich_merge tid =>
@@ -58,7 +64,49 @@ sub fetch_chars {
     }, $l;
 
     enrich_seiyuu $vid, $l;
+    enrich_image $l;
     $l
+}
+
+
+# This and enrich_image() can prolly be used for VN cover images as well.
+sub image_ {
+    my($c) = @_;
+    my $img = $c->{image};
+    return p_ 'No image' if !$img;
+
+    # XXX: no clue why I chose these thresholds.
+    my $sex = $img->{sexual_avg}   > 1.3 ? 2 : $img->{sexual_avg}   > 0.4 ? 1 : 0 if $img->{votecount};
+    my $vio = $img->{violence_avg} > 1.3 ? 2 : $img->{violence_avg} > 0.4 ? 1 : 0 if $img->{votecount};
+    my $sexd = ['Safe', 'Suggestive', 'Explicit']->[$sex] if $img->{votecount};
+    my $viod = ['Tame', 'Violent',    'Brutal'  ]->[$vio] if $img->{votecount};
+    my $sexh = $sex > auth->pref('max_sexual')||0 if $img->{votecount};
+    my $vioh = $vio > auth->pref('max_violence')||0 if $img->{votecount};
+    my $hide_on_click = $sex || $vio || !$img->{votecount};
+
+    label_ class => 'imghover', style => "width: $img->{width}px; height: $img->{height}px", sub {
+        input_ type => 'checkbox', class => 'visuallyhidden', !$img->{votecount} || $sexh || $vioh ? () : (checked => 'checked') if $hide_on_click;
+        div_ class => 'imghover--visible', sub {
+            img_ src => tuwf->imgurl($img->{id}), alt => $c->{name};
+            a_ href => "/img/$img->{id}?view=".viewset(show_nsfw=>1),
+                $img->{votecount} ? sprintf '%s / %s (%d)', $sexd, $viod, $img->{votecount} : 'Not flagged';
+        };
+        div_ class => 'imghover--warning', sub {
+            if($img->{votecount}) {
+                txt_ 'This image has been flagged as:';
+                br_; br_;
+                txt_ 'Sexual: '; $sexh ? b_ class => 'standout', $sexd : txt_ $sexd;
+                br_;
+                txt_ 'Violence '; $vioh ? b_ class => 'standout', $viod : txt_ $viod;
+            } else {
+                txt_ 'This image has not yet been flagged';
+            }
+            br_; br_;
+            span_ class => 'fake_link', 'Show me anyway';
+            br_; br_;
+            b_ class => 'grayedout', 'This warning can be disabled in your account';
+        } if $hide_on_click;
+    }
 }
 
 
@@ -85,7 +133,7 @@ sub _rev_ {
             a_ href => "/c$c->{id}", title => $c->{name}, "c$c->{id}"
         } ],
         [ main_spoil => 'Spoiler',       fmt => sub { txt_ fmtspoil $_ } ],
-        [ image      => 'Image',         empty => 0, fmt => sub { img_ src => tuwf->imgurl($_) } ],
+        [ image      => 'Image',         empty => 0, fmt => \&image_ ],
         [ vns        => 'Visual novels', fmt => sub {
             a_ href => "/v$_->{vid}", title => $_->{original}||$_->{title}, "v$_->{vid}";
             if($_->{rid}) {
@@ -113,10 +161,7 @@ sub chartable_ {
     my $view = viewget;
 
     div_ mkclass(chardetails => 1, charsep => $sep), sub {
-        div_ class => 'charimg', sub {
-            p_ 'No image uploaded yet' if !$c->{image};
-            img_ src => tuwf->imgurl($c->{image}), alt => $c->{name} if $c->{image};
-        };
+        div_ class => 'charimg', sub { image_ $c };
         table_ class => 'stripe', sub {
             thead_ sub { tr_ sub { td_ colspan => 2, sub {
                 $link

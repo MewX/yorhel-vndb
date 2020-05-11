@@ -74,6 +74,8 @@ type AdminMsg
 type PrefMsg
   = EMail String
   | ShowNsfw Bool
+  | MaxSexual Int
+  | MaxViolence Int
   | TraitsSexual Bool
   | Spoilers Int
   | TagsAll Bool
@@ -122,6 +124,8 @@ updatePrefs msg model =
   case msg of
     EMail n    -> { model | email = n }
     ShowNsfw b -> { model | show_nsfw = b }
+    MaxSexual n-> { model | max_sexual = n }
+    MaxViolence n  -> { model | max_violence = n }
     TraitsSexual b -> { model | traits_sexual = b }
     Spoilers n -> { model | spoilers  = n }
     TagsAll b  -> { model | tags_all  = b }
@@ -227,8 +231,23 @@ view model =
 
     prefsform m =
       [ tr [ class "newpart" ] [ td [ colspan 2 ] [ text "Preferences" ] ]
-      , formField "NSFW" [ label [] [ inputCheck "" m.show_nsfw     (Prefs << ShowNsfw),     text " Show NSFW images by default" ] ]
-      , formField ""     [ label [] [ inputCheck "" m.traits_sexual (Prefs << TraitsSexual), text " Show sexual traits by default on character pages" ] ]
+      , formField "NSFW" [ label [] [ inputCheck "" m.show_nsfw (Prefs << ShowNsfw), text " Show NSFW images by default" ] ]
+      , formField ""
+        [ b [ class "grayedout" ] [ text "The two options below are only used for character images at the moment, they will eventually replace the above checkbox and apply to all images on the site." ]
+        , br [] []
+        , inputSelect "" m.max_sexual (Prefs << MaxSexual) [style "width" "400px"]
+          [ (0, "Hide sexually suggestive or explicit images")
+          , (1, "Hide only sexually explicit images")
+          , (2, "Don't hide suggestive or explicit images")
+          ]
+        , br [] []
+        , inputSelect "" m.max_violence (Prefs << MaxViolence) [style "width" "400px"]
+          [ (0, "Hide violent or brutal images")
+          , (1, "Hide only brutal images")
+          , (2, "Don't hide violent or brutal images")
+          ]
+        ]
+      , formField ""     [ label [] [ inputCheck "" m.traits_sexual (Prefs << TraitsSexual), text " Show sexual traits by default on character pages" ], br_ 2 ]
       , formField "Tags" [ label [] [ inputCheck "" m.tags_all      (Prefs << TagsAll),      text " Show all tags by default on visual novel pages (don't summarize)" ] ]
       , formField ""
         [ text "Default tag categories on visual novel pages:", br_ 1

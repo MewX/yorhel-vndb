@@ -267,7 +267,7 @@ sub csrfcheck {
 my @pref_columns = qw/
     email_confirmed skin customcss filter_vn filter_release show_nsfw notify_dbedit notify_announce
     vn_list_own vn_list_wish tags_all tags_cont tags_ero tags_tech spoilers traits_sexual
-    nodistract_can nodistract_noads nodistract_nofancy
+    max_sexual max_violence nodistract_can nodistract_noads nodistract_nofancy
 /;
 
 # Returns a user preference column for the current user. Lazily loads all

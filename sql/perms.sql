@@ -71,7 +71,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON ulist_vns_labels         TO vndb_site;
 GRANT SELECT ( id, username, registered, ip, ign_votes, email_confirmed
              , perm_board, perm_boardmod, perm_dbmod, perm_edit, perm_imgvote, perm_tag, perm_tagmod, perm_usermod, perm_imgmod
              , skin, customcss, show_nsfw, notify_dbedit, notify_announce
-             , tags_all, tags_cont, tags_ero, tags_tech, spoilers, traits_sexual
+             , tags_all, tags_cont, tags_ero, tags_tech, spoilers, traits_sexual, max_sexual, max_violence
              , filter_vn, filter_release, vn_list_own, vn_list_wish
              , nodistract_can, nodistract_noads, nodistract_nofancy, support_can, support_enabled, uniname_can, uniname, pubskin_can, pubskin_enabled
              , ulist_votes, ulist_vnlist, ulist_wish
@@ -80,7 +80,7 @@ GRANT SELECT ( id, username, registered, ip, ign_votes, email_confirmed
       UPDATE ( username, ign_votes, email_confirmed
              , perm_board, perm_boardmod, perm_dbmod, perm_edit, perm_imgvote, perm_tag, perm_tagmod, perm_imgmod
              , skin, customcss, show_nsfw, notify_dbedit, notify_announce
-             , tags_all, tags_cont, tags_ero, tags_tech, spoilers, traits_sexual
+             , tags_all, tags_cont, tags_ero, tags_tech, spoilers, traits_sexual, max_sexual, max_violence
              , filter_vn, filter_release, vn_list_own, vn_list_wish
              , nodistract_can, nodistract_noads, nodistract_nofancy, support_can, support_enabled, uniname_can, uniname, pubskin_can, pubskin_enabled
              , ulist_votes, ulist_vnlist, ulist_wish

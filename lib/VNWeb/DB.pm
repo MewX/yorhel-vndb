@@ -11,7 +11,7 @@ use VNDB::Schema;
 our @EXPORT = qw/
     sql
     sql_identifier sql_join sql_comma sql_and sql_or sql_array sql_func sql_fromhex sql_tohex sql_fromtime sql_totime sql_user
-    enrich enrich_merge enrich_flatten
+    enrich enrich_merge enrich_flatten enrich_obj
     db_entry db_edit
 /;
 
@@ -119,18 +119,21 @@ sub sql_user {
 #
 # enrich $name, $key, $merge_col, $sql, @objects;
 #
-#   Add a $name field each item in @objects,
+#   Add a $name field to each item in @objects,
 #   Its value is a (possibly empty) array of hashes with data from $sql,
 #
 # enrich_flatten $name, $key, $merge_col, $sql, @objects;
 #
-#   Add a $name field each item in @objects,
+#   Add a $name field to each item in @objects,
 #   Its value is a (possibly empty) array of values from a single column from $sql,
 #
 # enrich_merge $key, $sql, @objects;
 #
 #   Merge all columns returned by $sql into @objects;
 #
+# enrich_obj $key, $merge_col, $sql, @objects;
+#
+#   Replace all non-undef $key fields in @objects with an object returned by $sql.
 #
 # Arguments:
 #
@@ -157,7 +160,7 @@ sub _enrich {
     @array = map +(ref $_ eq 'ARRAY' ? @$_ : $_), @array;
 
     # Create a list of unique identifiers to fetch, do nothing if there's nothing to fetch
-    my %ids = map +($_->{$key},1), @array;
+    my %ids = map defined($_->{$key}) ? ($_->{$key},1) : (), @array;
     return if !keys %ids;
 
     # Fetch the data
@@ -197,6 +200,16 @@ sub enrich_flatten {
         my %ids = ();
         push $ids{ delete $_->{$merge_col} }->@*, values %$_ for @$data;
         $_->{$name} = $ids{ $_->{$key} }||[] for @$array;
+    }, $key, $sql, @array;
+}
+
+
+sub enrich_obj {
+    my($key, $merge_col, $sql, @array) = @_;
+    _enrich sub {
+        my($data, $array) = @_;
+        my %ids = map +($_->{$merge_col}, $_), @$data;
+        $_->{$key} = defined $_->{$key} ? $ids{ $_->{$key} } : undef for @$array;
     }, $key, $sql, @array;
 }
 
