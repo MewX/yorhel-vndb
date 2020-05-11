@@ -80,8 +80,8 @@ sub image_ {
     my $vio = $img->{violence_avg} > 1.3 ? 2 : $img->{violence_avg} > 0.4 ? 1 : 0 if $img->{votecount};
     my $sexd = ['Safe', 'Suggestive', 'Explicit']->[$sex] if $img->{votecount};
     my $viod = ['Tame', 'Violent',    'Brutal'  ]->[$vio] if $img->{votecount};
-    my $sexh = $sex > auth->pref('max_sexual')||0 if $img->{votecount};
-    my $vioh = $vio > auth->pref('max_violence')||0 if $img->{votecount};
+    my $sexh = $sex > (auth->pref('max_sexual')||0) if $img->{votecount};
+    my $vioh = $vio > (auth->pref('max_violence')||0) if $img->{votecount};
     my $hide_on_click = $sex || $vio || !$img->{votecount};
 
     label_ class => 'imghover', style => "width: $img->{width}px; height: $img->{height}px", sub {
