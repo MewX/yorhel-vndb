@@ -5,6 +5,8 @@ import Html.Events exposing (..)
 import Html.Attributes exposing (..)
 import Browser
 import Browser.Navigation exposing (load)
+import File exposing (File)
+import File.Select as FSel
 import Lib.Util exposing (..)
 import Lib.Html exposing (..)
 import Lib.TextPreview as TP
@@ -25,8 +27,14 @@ main = Browser.element
   }
 
 
+type Tab
+  = General
+  | Image
+  | All
+
 type alias Model =
   { state       : Api.State
+  , tab         : Tab
   , editsum     : Editsum.Model
   , name        : String
   , original    : String
@@ -48,6 +56,8 @@ type alias Model =
   , mainHas     : Bool
   , mainName    : String
   , mainSearch  : A.Model GApi.ApiCharResult
+  , image       : Maybe String
+  , imageState  : Api.State
   , id          : Maybe Int
   }
 
@@ -55,6 +65,7 @@ type alias Model =
 init : GCE.Recv -> Model
 init d =
   { state       = Api.Normal
+  , tab         = General
   , editsum     = { authmod = d.authmod, editsum = TP.bbcode d.editsum, locked = d.locked, hidden = d.hidden }
   , name        = d.name
   , original    = d.original
@@ -76,6 +87,8 @@ init d =
   , mainHas     = d.main /= Nothing
   , mainName    = d.main_name
   , mainSearch  = A.init ""
+  , image       = d.image
+  , imageState  = Api.Normal
   , id          = d.id
   }
 
@@ -102,6 +115,7 @@ encode model =
   , bloodt      = model.bloodt
   , cup_size    = model.cupSize
   , main        = if model.mainHas then model.main else Nothing
+  , image       = model.image
   }
 
 mainConfig : A.Config Msg GApi.ApiCharResult
@@ -109,6 +123,7 @@ mainConfig = { wrap = MainSearch, id = "mainadd", source = A.charSource }
 
 type Msg
   = Editsum Editsum.Msg
+  | Tab Tab
   | Submit
   | Submitted GApi.Response
   | Name String
@@ -128,12 +143,17 @@ type Msg
   | CupSize String
   | MainHas Bool
   | MainSearch (A.Msg GApi.ApiCharResult)
+  | ImageSet String
+  | ImageSelect
+  | ImageSelected File
+  | ImageLoaded GApi.Response
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     Editsum m  -> let (nm,nc) = Editsum.update m model.editsum in ({ model | editsum = nm }, Cmd.map Editsum nc)
+    Tab t      -> ({ model | tab = t }, Cmd.none)
     Name s     -> ({ model | name = s }, Cmd.none)
     Original s -> ({ model | original = s }, Cmd.none)
     Alias s    -> ({ model | alias = s }, Cmd.none)
@@ -160,6 +180,12 @@ update msg model =
             Just m2 -> ({ model | mainSearch = A.clear nm "", main = Just m2.id, mainName = m2.name }, c)
             Nothing -> ({ model | mainSearch = A.clear nm "", main = Just m1.id, mainName = m1.name }, c)
 
+    ImageSet s  -> ({ model | image = if s == "" then Nothing else Just s}, Cmd.none)
+    ImageSelect -> (model, FSel.file ["image/png", "image/jpg"] ImageSelected)
+    ImageSelected f -> ({ model | imageState = Api.Loading }, Api.postImage Api.Ch f ImageLoaded)
+    ImageLoaded (GApi.Image i _ _) -> ({ model | image = Just i, imageState = Api.Normal }, Cmd.none)
+    ImageLoaded e -> ({ model | imageState = Api.Error e }, Cmd.none)
+
     Submit -> ({ model | state = Api.Loading }, GCE.send (encode model) Submitted)
     Submitted (GApi.Redirect s) -> (model, load s)
     Submitted r -> ({ model | state = Api.Error r }, Cmd.none)
@@ -173,10 +199,8 @@ isValid model = not
 
 view : Model -> Html Msg
 view model =
-  form_ Submit (model.state == Api.Loading)
-  [ div [ class "mainbox" ]
-    [ h1 [] [ text "General info" ]
-    , table [ class "formtable" ] <|
+  let
+    geninfo =
       [ formField "name::Name (romaji)" [ inputText "name" model.name Name GCE.valName ]
       , formField "original::Original name"
         [ inputText "original" model.original Original GCE.valOriginal
@@ -237,7 +261,46 @@ view model =
         , A.view mainConfig model.mainSearch [placeholder "Set character..."]
         ]
       ]
+
+    image =
+      div [ class "formimage" ]
+      [ div [] [
+        case model.image of
+          Nothing -> text "No image."
+          Just id -> img [ src (imageUrl id) ] []
+        ]
+      , div []
+        [ h2 [] [ text "Image ID" ]
+        , inputText "" (Maybe.withDefault "" model.image) ImageSet GCE.valImage
+        , Maybe.withDefault (text "") <| Maybe.map (\i -> a [ href <| "/img/"++i ] [ text " (flagging)" ]) model.image
+        , br [] []
+        , text "Use an image that already exists on the server or empty to remove the current image."
+        , br_ 2
+        , h2 [] [ text "Upload new image" ]
+        , inputButton "Browse image" ImageSelect []
+        , case model.imageState of
+            Api.Normal -> text ""
+            Api.Loading -> span [ class "spinner" ] []
+            Api.Error e -> b [ class "standout" ] [ text <| Api.showResponse e ]
+        , br [] []
+        , text "Image must be in JPEG or PNG format and at most 10 MiB. Images larger than 256x300 will automatically be resized."
+        -- TODO: Add image flagging vote thingy here after uploading a new image.
+        ]
+      ]
+
+  in
+  form_ Submit (model.state == Api.Loading)
+  [ div [ class "maintabs left" ]
+    [ ul []
+      [ li [ classList [("tabselected", model.tab == General)] ] [ a [ href "#", onClickD (Tab General) ] [ text "General info" ] ]
+      , li [ classList [("tabselected", model.tab == Image  )] ] [ a [ href "#", onClickD (Tab Image  ) ] [ text "Image"        ] ]
+      , li [ classList [("tabselected", model.tab == All    )] ] [ a [ href "#", onClickD (Tab All    ) ] [ text "All items"    ] ]
+      ]
     ]
+  , div [ class "mainbox", classList [("hidden", model.tab /= General && model.tab /= All)] ]
+    [ h1 [] [ text "General info" ], table [ class "formtable" ] geninfo ]
+  , div [ class "mainbox", classList [("hidden", model.tab /= Image && model.tab /= All)] ]
+    [ h1 [] [ text "Image" ], image ]
   , div [ class "mainbox" ] [ fieldset [ class "submit" ]
       [ Html.map Editsum (Editsum.view model.editsum)
       , submitButton "Submit" model.state (isValid model)

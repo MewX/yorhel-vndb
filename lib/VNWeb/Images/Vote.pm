@@ -52,7 +52,6 @@ sub enrich_image {
     }, $l;
 
     for(@$l) {
-        $_->{url} = tuwf->imgurl($_->{id});
         $_->{entry} = $_->{entry_id} ? { id => $_->{entry_id}, title => $_->{entry_title} } : undef;
         delete $_->{entry_id};
         delete $_->{entry_title};

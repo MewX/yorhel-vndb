@@ -28,20 +28,6 @@ table.stripe tbody tr:nth-child(odd):not(.nostripe),
 #footer   { margin: 15px auto 0 auto; text-align: center; color: $footer$; }
 #footer a { color: $footer$; text-decoration: underline; }
 
-#debug {
-  position: fixed;
-  left: 0;
-  bottom: 0;
-  background-color: #600;
-  border-right: 1px solid #c00;
-  border-top: 1px solid #c00;
-  width: 200px;
-  height: 50px;
-  text-align: center;
-}
-#debug h2 { color: #f00!important; font-size: 20px; }
-#debug, #debug a { color: #fff!important; }
-
 /* https://snook.ca/archives/html_and_css/hiding-content-for-accessibility */
 .visuallyhidden, .linkradio input {
   position: absolute !important;
@@ -184,6 +170,11 @@ table.formtable tr.newpart td { padding-top: 20px; font-weight: bold; }
 table.formtable td table td { padding: 1px 15px 1px 0px }
 table.formtable td table    { margin-bottom: 5px }
 
+div.formimage > div:nth-child(1) { width: 300px; height: 300px; text-align: center; float: left }
+div.formimage > div:nth-child(1) img { max-width: 290px; max-height: 300px }
+div.formimage > div:nth-child(2) { min-height: 330px }
+div.formimage h2 { margin: 0 }
+
 /* Format checkboxes and radio buttons as if they were normal links with unicode icons.
  * Usage:
  *
@@ -308,7 +299,7 @@ p.mainopts a         { margin: 0 5px }
 /***** main tabs *****/
 
 div.maintabs          { display: flex; justify-content: space-between; position: relative; width: 100%; height: 22px; margin: 20px 0 -22px 0; padding: 0 }
-#maincontent div:nth-child(1).maintabs { margin-top: 0 }
+#maincontent > div:nth-child(1).maintabs { margin-top: 0 }
 div.maintabs.right    { justify-content: flex-end }
 div.maintabs.left     { justify-content: flex-start }
 div.maintabs > ul       { margin: 0; padding: 0; list-style-type: none }

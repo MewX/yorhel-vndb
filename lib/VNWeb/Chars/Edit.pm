@@ -23,6 +23,7 @@ my $FORM = {
     main       => { required => 0, id => 1 },
     main_ref   => { _when => 'out', anybool => 1 },
     main_name  => { _when => 'out', default => '' },
+    image      => { required => 0, regex => qr/ch[1-9][0-9]{0,6}/ },
     hidden     => { anybool => 1 },
     locked     => { anybool => 1 },
 

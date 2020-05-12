@@ -49,6 +49,8 @@ our %apis = (
     DoubleIP       => [], # Account with same IP already exists
     BadCurPass     => [], # Current password is incorrect when changing password
     MailChange     => [], # A confirmation mail has been sent to change a user's email address
+    ImgFormat      => [], # Unrecognized image format
+    Image          => [ {}, { uint => 1 }, { uint => 1 } ], # Uploaded image id, width, height
     Releases       => [ { aoh => { # Response to 'Release'
         id       => { id => 1 },
         title    => {},
@@ -93,7 +95,6 @@ our %apis = (
     ImageResult => [ { aoh => { # Response to 'Images'
         id              => { }, # image id...
         token           => { required => 0 },
-        url             => { },
         width           => { uint => 1 },
         height          => { uint => 1 },
         votecount       => { uint => 1 },
