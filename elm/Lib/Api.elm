@@ -47,6 +47,7 @@ showResponse res =
     TagResult _                     -> unexp
     VNResult _                      -> unexp
     ProducerResult _                -> unexp
+    CharResult _                    -> unexp
     ImageResult _                   -> unexp
 
 

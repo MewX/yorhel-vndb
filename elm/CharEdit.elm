@@ -8,6 +8,7 @@ import Browser.Navigation exposing (load)
 import Lib.Util exposing (..)
 import Lib.Html exposing (..)
 import Lib.TextPreview as TP
+import Lib.Autocomplete as A
 import Lib.Api as Api
 import Lib.Editsum as Editsum
 import Gen.CharEdit as GCE
@@ -42,6 +43,11 @@ type alias Model =
   , weight      : Maybe Int
   , bloodt      : String
   , cupSize     : String
+  , main        : Maybe Int
+  , mainRef     : Bool
+  , mainHas     : Bool
+  , mainName    : String
+  , mainSearch  : A.Model GApi.ApiCharResult
   , id          : Maybe Int
   }
 
@@ -65,6 +71,11 @@ init d =
   , weight      = d.weight
   , bloodt      = d.bloodt
   , cupSize     = d.cup_size
+  , main        = d.main
+  , mainRef     = d.main_ref
+  , mainHas     = d.main /= Nothing
+  , mainName    = d.main_name
+  , mainSearch  = A.init ""
   , id          = d.id
   }
 
@@ -90,8 +101,11 @@ encode model =
   , weight      = model.weight
   , bloodt      = model.bloodt
   , cup_size    = model.cupSize
+  , main        = if model.mainHas then model.main else Nothing
   }
 
+mainConfig : A.Config Msg GApi.ApiCharResult
+mainConfig = { wrap = MainSearch, id = "mainadd", source = A.charSource }
 
 type Msg
   = Editsum Editsum.Msg
@@ -112,6 +126,8 @@ type Msg
   | Weight (Maybe Int)
   | BloodT String
   | CupSize String
+  | MainHas Bool
+  | MainSearch (A.Msg GApi.ApiCharResult)
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -134,6 +150,16 @@ update msg model =
     BloodT s   -> ({ model | bloodt = s }, Cmd.none)
     CupSize s  -> ({ model | cupSize= s }, Cmd.none)
 
+    MainHas b  -> ({ model | mainHas = b }, Cmd.none)
+    MainSearch m ->
+      let (nm, c, res) = A.update mainConfig m model.mainSearch
+      in case res of
+        Nothing -> ({ model | mainSearch = nm }, c)
+        Just m1 ->
+          case m1.main of
+            Just m2 -> ({ model | mainSearch = A.clear nm "", main = Just m2.id, mainName = m2.name }, c)
+            Nothing -> ({ model | mainSearch = A.clear nm "", main = Just m1.id, mainName = m1.name }, c)
+
     Submit -> ({ model | state = Api.Loading }, GCE.send (encode model) Submitted)
     Submitted (GApi.Redirect s) -> (model, load s)
     Submitted r -> ({ model | state = Api.Error r }, Cmd.none)
@@ -150,7 +176,7 @@ view model =
   form_ Submit (model.state == Api.Loading)
   [ div [ class "mainbox" ]
     [ h1 [] [ text "General info" ]
-    , table [ class "formtable" ]
+    , table [ class "formtable" ] <|
       [ formField "name::Name (romaji)" [ inputText "name" model.name Name GCE.valName ]
       , formField "original::Original name"
         [ inputText "original" model.original Original GCE.valOriginal
@@ -164,7 +190,6 @@ view model =
         , text "(Un)official aliases, separated by a newline. Must not include spoilers!"
         ]
       , formField "desc::Description" [ TP.view "desc" model.desc Desc 600 (style "height" "150px" :: GCE.valDesc) [ b [ class "standout" ] [ text "English please!" ] ] ]
-      , formField "gender::Sex" [ inputSelect "gender" model.gender Gender [] GT.genders ]
       , formField "bmonth::Birthday"
         [ inputSelect "bmonth" model.bMonth BMonth [style "width" "128px"]
           [ ( 0, "Unknown")
@@ -185,6 +210,9 @@ view model =
           else inputSelect "" model.bDay BDay [style "width" "70px"] <| List.map (\i -> (i, String.fromInt i)) <| List.range 1 31
         ]
       , formField "age::Age"       [ inputNumber "age" model.age Age GCE.valAge, text " years" ]
+
+      , tr [ class "newpart" ] [ td [ colspan 2 ] [ text "Body" ] ]
+      , formField "gender::Sex"    [ inputSelect "gender" model.gender Gender [] GT.genders ]
       , formField "sbust::Bust"    [ inputNumber "sbust"  (if model.sBust  == 0 then Nothing else Just model.sBust ) SBust  GCE.valS_Bust, text " cm" ]
       , formField "swaist::Waist"  [ inputNumber "swiast" (if model.sWaist == 0 then Nothing else Just model.sWaist) SWaist GCE.valS_Waist,text " cm" ]
       , formField "ship::Hips"     [ inputNumber "ship"   (if model.sHip   == 0 then Nothing else Just model.sHip  ) SHip   GCE.valS_Hip,  text " cm" ]
@@ -192,6 +220,22 @@ view model =
       , formField "weight::Weight" [ inputNumber "weight" model.weight Weight GCE.valWeight, text " kg" ]
       , formField "bloodt::Blood type" [ inputSelect "bloodt"  model.bloodt  BloodT  [] GT.bloodTypes ]
       , formField "cupsize::Cup size"  [ inputSelect "cupsize" model.cupSize CupSize [] GT.cupSizes ]
+
+      , tr [ class "newpart" ] [ td [ colspan 2 ] [ text "Instance" ] ]
+      ] ++ if model.mainRef
+      then
+      [ formField "" [ text "This character is already used as an instance for another character. If you want to link more characters to this one, please edit the other characters instead." ] ]
+      else
+      [ formField "" [ label [] [ inputCheck "" model.mainHas MainHas, text " This character is an instance of another character." ] ]
+      , formField "" <| if not model.mainHas then [] else
+        [ Maybe.withDefault (text "No character selected") <| Maybe.map (\m -> span []
+          [ text "Selected character: "
+          , b [ class "grayedout" ] [ text <| "c" ++ String.fromInt m ++ ": " ]
+          , a [ href <| "/c" ++ String.fromInt m ] [ text model.mainName ]
+          ]) model.main
+        , br [] []
+        , A.view mainConfig model.mainSearch [placeholder "Set character..."]
+        ]
       ]
     ]
   , div [ class "mainbox" ] [ fieldset [ class "submit" ]

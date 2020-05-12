@@ -8,6 +8,7 @@ module Lib.Autocomplete exposing
   , tagSource
   , vnSource
   , producerSource
+  , charSource
   , init
   , clear
   , update
@@ -32,6 +33,7 @@ import Gen.Boards as GB
 import Gen.Tags as GT
 import Gen.VN as GV
 import Gen.Producers as GP
+import Gen.Chars as GC
 
 
 type alias Config m a =
@@ -121,6 +123,23 @@ producerSource =
   , view    = \i ->
     [ b [ class "grayedout" ] [ text <| "p" ++ String.fromInt i.id ++ ": " ]
     , text i.name ]
+  , key     = \i -> String.fromInt i.id
+  }
+
+
+charSource : SourceConfig m GApi.ApiCharResult
+charSource =
+  { source  = Endpoint (\s -> GC.send { search = s })
+    <| \x -> case x of
+      GApi.CharResult e -> Just e
+      _ -> Nothing
+  , view    = \i ->
+    [ b [ class "grayedout" ] [ text <| "c" ++ String.fromInt i.id ++ ": " ]
+    , text i.name
+    , Maybe.withDefault (text "") <| Maybe.map (\m ->
+        b [ class "grayedout" ] [ text <| " (instance of c" ++ String.fromInt m.id ++ ": " ++ m.name ]
+      ) i.main
+    ]
   , key     = \i -> String.fromInt i.id
   }
 

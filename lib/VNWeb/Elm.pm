@@ -80,6 +80,16 @@ our %apis = (
         name     => {},
         original => { required => 0, default => '' },
     } } ],
+    CharResult     => [ { aoh => { # Response to 'Chars'
+        id       => { id => 1 },
+        name     => {},
+        original => { required => 0, default => '' },
+        main     => { required => 0, type => 'hash', keys => {
+            id       => { id => 1 },
+            name     => {},
+            original => { required => 0, default => '' },
+        } }
+    } } ],
     ImageResult => [ { aoh => { # Response to 'Images'
         id              => { }, # image id...
         token           => { required => 0 },
