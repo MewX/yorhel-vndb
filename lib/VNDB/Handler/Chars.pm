@@ -11,7 +11,7 @@ use VNDB::Types;
 our @EXPORT = ('charBrowseTable');
 
 TUWF::register(
-  qr{c(?:([1-9]\d*)(?:\.([1-9]\d*))?/(edit|copy)|/new)}
+  qr{old/c(?:([1-9]\d*)(?:\.([1-9]\d*))?/(edit|copy)|/new)}
     => \&edit,
   qr{c/([a-z0]|all)} => \&list,
 );

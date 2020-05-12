@@ -172,12 +172,12 @@ sub def_validation {
 
     my %v = $obj->html5_validation();
     $data .= def $name, 'List (Html.Attribute msg)', '[ '.join(', ',
-        $v{required}  ? 'A.required True' : (),
-        $v{minlength} ? "A.minlength $v{minlength}" : (),
-        $v{maxlength} ? "A.maxlength $v{maxlength}" : (),
-        $v{min}       ? 'A.min '.string($v{min}) : (),
-        $v{max}       ? 'A.max '.string($v{max}) : (),
-        $v{pattern}   ? 'A.pattern '.string($v{pattern}) : ()
+        $v{required}          ? 'A.required True' : (),
+        defined $v{minlength} ? "A.minlength $v{minlength}" : (),
+        defined $v{maxlength} ? "A.maxlength $v{maxlength}" : (),
+        defined $v{min}       ? 'A.min '.string($v{min}) : (),
+        defined $v{max}       ? 'A.max '.string($v{max}) : (),
+        $v{pattern}           ? 'A.pattern '.string($v{pattern}) : ()
     ).']' if !$obj->{keys};
     $data;
 }
@@ -367,6 +367,9 @@ sub write_types {
     $data .= def resolutions=> 'List (String, String)' => list map tuple(string $_, string +($RESOLUTION{$_}{cat}?"$RESOLUTION{$_}{cat} / ":'').$RESOLUTION{$_}{txt}), keys %RESOLUTION;
     $data .= def voiced     => 'List (Int, String)' => list map tuple($_, string $VOICED{$_}{txt}), keys %VOICED;
     $data .= def animated   => 'List (Int, String)' => list map tuple($_, string $ANIMATED{$_}{txt}), keys %ANIMATED;
+    $data .= def genders    => 'List (String, String)' => list map tuple(string $_, string $GENDER{$_}), keys %GENDER;
+    $data .= def cupSizes   => 'List (String, String)' => list map tuple(string $_, string $CUP_SIZE{$_}), keys %CUP_SIZE;
+    $data .= def bloodTypes => 'List (String, String)' => list map tuple(string $_, string $BLOOD_TYPE{$_}), keys %BLOOD_TYPE;
     $data .= def curYear    => Int => (gmtime)[5]+1900;
 
     write_module Types => $data;

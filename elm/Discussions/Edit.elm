@@ -108,7 +108,7 @@ type Msg
   | BoardSearch (A.Msg GApi.ApiBoardResult)
   | PollEnabled Bool
   | PollQ String
-  | PollMax Int
+  | PollMax (Maybe Int)
   | PollOpt Int String
   | PollRem Int
   | PollAdd
@@ -128,7 +128,7 @@ update msg model =
     Title   s     -> ({ model | title   = Just s }, Cmd.none)
     PollEnabled b -> ({ model | pollEnabled = b, poll = if model.poll == Nothing then Just { question = "", max_options = 1, options = ["",""] } else model.poll }, Cmd.none)
     PollQ s       -> ({ model | poll = Maybe.map (\p -> { p | question    = s}) model.poll }, Cmd.none)
-    PollMax n     -> ({ model | poll = Maybe.map (\p -> { p | max_options = n}) model.poll }, Cmd.none)
+    PollMax n     -> ({ model | poll = Maybe.map (\p -> { p | max_options = Maybe.withDefault 0 n}) model.poll }, Cmd.none)
     PollOpt n s   -> ({ model | poll = Maybe.map (\p -> { p | options = modidx n (always s) p.options }) model.poll }, Cmd.none)
     PollRem n     -> ({ model | poll = Maybe.map (\p -> { p | options = delidx n p.options }) model.poll }, Cmd.none)
     PollAdd       -> ({ model | poll = Maybe.map (\p -> { p | options = p.options ++ [""] }) model.poll }, Cmd.none)
@@ -201,7 +201,7 @@ view model =
               else text ""
             ]
           , formField ""
-            [ inputNumber "" p.max_options PollMax <| GDE.valPollMax_Options ++ [ Html.Attributes.max <| String.fromInt <| List.length p.options ]
+            [ inputNumber "" (Just p.max_options) PollMax <| GDE.valPollMax_Options ++ [ Html.Attributes.max <| String.fromInt <| List.length p.options ]
             , text "  Number of options people are allowed to choose."
             ]
           ]
