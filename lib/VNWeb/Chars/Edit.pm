@@ -24,6 +24,14 @@ my $FORM = {
     main_ref   => { _when => 'out', anybool => 1 },
     main_name  => { _when => 'out', default => '' },
     image      => { required => 0, regex => qr/ch[1-9][0-9]{0,6}/ },
+    traits     => { sort_keys => 'id', aoh => {
+        tid     => { id => 1 },
+        spoil   => { uint => 1, range => [0,2] },
+        name    => { _when => 'out' },
+        group   => { _when => 'out', required => 0 },
+        applicable => { _when => 'out', anybool => 1 },
+        new     => { _when => 'out', anybool => 1 },
+    } },
     hidden     => { anybool => 1 },
     locked     => { anybool => 1 },
 
@@ -42,6 +50,9 @@ TUWF::get qr{/$RE{crev}/edit} => sub {
 
     $e->{main_name} = $e->{main} ? tuwf->dbVali('SELECT name FROM chars WHERE id =', \$e->{main}) : '';
     $e->{main_ref} = tuwf->dbVali('SELECT 1 FROM chars WHERE main =', \$e->{id})||0;
+
+    enrich_merge tid => 'SELECT t.id AS tid, t.name, t.applicable, g.name AS group, g.order AS order, false AS new FROM traits t LEFT JOIN traits g ON g.id = t.group WHERE t.id IN', $e->{traits};
+    $e->{traits} = [ sort { ($a->{order}//99) <=> ($b->{order}//99) || $a->{name} cmp $b->{name} } $e->{traits}->@* ];
 
     $e->{authmod} = auth->permDbmod;
     $e->{editsum} = $e->{chrev} == $e->{maxrev} ? '' : "Reverted to revision c$e->{id}.$e->{chrev}";
@@ -86,6 +97,11 @@ elm_api CharEdit => $FORM_OUT, $FORM_IN, sub {
     die "Attempt to set main while this character is already referenced." if $data->{main} && tuwf->dbVali('SELECT 1 AS ref FROM chars WHERE main =', \$e->{id});
     # It's possible that the referenced character has been deleted since it was added as main, so don't die() on this one, just unset main.
     $data->{main} = undef if $data->{main} && !tuwf->dbVali('SELECT 1 FROM chars WHERE NOT hidden AND main IS NULL AND id =', \$data->{main});
+
+    # Allow non-applicable traits only when they were already applied to this character.
+    validate_dbid
+        sql('SELECT id FROM traits t WHERE state = 2 AND (applicable OR EXISTS(SELECT 1 FROM chars_traits ct WHERE ct.tid = t.id AND ct.id =', \$e->{id}, ')) AND id IN'),
+        map $_->{tid}, $data->{traits}->@*;
 
     return elm_Unchanged if !$new && !form_changed $FORM_CMP, $data, $e;
     my($id,undef,$rev) = db_edit c => $e->{id}, $data;

@@ -48,6 +48,7 @@ showResponse res =
     Releases _                      -> unexp
     BoardResult _                   -> unexp
     TagResult _                     -> unexp
+    TraitResult _                   -> unexp
     VNResult _                      -> unexp
     ProducerResult _                -> unexp
     CharResult _                    -> unexp

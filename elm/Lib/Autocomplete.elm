@@ -6,6 +6,7 @@ module Lib.Autocomplete exposing
   , Msg
   , boardSource
   , tagSource
+  , traitSource
   , vnSource
   , producerSource
   , charSource
@@ -31,6 +32,7 @@ import Gen.Types exposing (boardTypes)
 import Gen.Api as GApi
 import Gen.Boards as GB
 import Gen.Tags as GT
+import Gen.Traits as GTR
 import Gen.VN as GV
 import Gen.Producers as GP
 import Gen.Chars as GC
@@ -81,21 +83,39 @@ boardSource =
   }
 
 
+tagtraitStatus i =
+  case (i.searchable, i.applicable, i.state) of
+    (_,     _,     0) -> b [ class "grayedout" ] [ text " (awaiting approval)" ]
+    (_,     _,     1) -> b [ class "grayedout" ] [ text " (deleted)" ] -- (not returned by the API for now)
+    (False, False, _) -> b [ class "grayedout" ] [ text " (meta)" ]
+    (True,  False, _) -> b [ class "grayedout" ] [ text " (not applicable)" ]
+    (False, True,  _) -> b [ class "grayedout" ] [ text " (not searchable)" ]
+    _ -> text ""
+
+
 tagSource : SourceConfig m GApi.ApiTagResult
 tagSource =
   { source  = Endpoint (\s -> GT.send { search = s })
     <| \x -> case x of
       GApi.TagResult e -> Just e
       _ -> Nothing
+  , view    = \i -> [ text i.name, tagtraitStatus i ]
+  , key     = \i -> String.fromInt i.id
+  }
+
+
+traitSource : SourceConfig m GApi.ApiTraitResult
+traitSource =
+  { source  = Endpoint (\s -> GTR.send { search = s })
+    <| \x -> case x of
+      GApi.TraitResult e -> Just e
+      _ -> Nothing
   , view    = \i ->
-    [ text i.name
-    , case (i.searchable, i.applicable, i.state) of
-        (_,     _,     0) -> b [ class "grayedout" ] [ text " (awaiting approval)" ]
-        (_,     _,     1) -> b [ class "grayedout" ] [ text " (deleted)" ] -- (not returned by the API for now)
-        (False, False, _) -> b [ class "grayedout" ] [ text " (meta)" ]
-        (True,  False, _) -> b [ class "grayedout" ] [ text " (not applicable)" ]
-        (False, True,  _) -> b [ class "grayedout" ] [ text " (not searchable)" ]
-        _ -> text ""
+    [ case i.group_name of
+        Nothing -> text ""
+        Just g -> b [ class "grayedout" ] [ text <| g ++ " / " ]
+    , text i.name
+    , tagtraitStatus i
     ]
   , key     = \i -> String.fromInt i.id
   }

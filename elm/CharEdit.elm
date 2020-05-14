@@ -2,6 +2,7 @@ module CharEdit exposing (main)
 
 import Html exposing (..)
 import Html.Events exposing (..)
+import Html.Keyed as K
 import Html.Attributes exposing (..)
 import Browser
 import Browser.Navigation exposing (load)
@@ -30,6 +31,7 @@ main = Browser.element
 type Tab
   = General
   | Image
+  | Traits
   | All
 
 type alias Model =
@@ -58,6 +60,10 @@ type alias Model =
   , mainSearch  : A.Model GApi.ApiCharResult
   , image       : Maybe String
   , imageState  : Api.State
+  , traits      : List GCE.RecvTraits
+  , traitSearch : A.Model GApi.ApiTraitResult
+  , traitSelId  : Int
+  , traitSelSpl : Int
   , id          : Maybe Int
   }
 
@@ -89,6 +95,10 @@ init d =
   , mainSearch  = A.init ""
   , image       = d.image
   , imageState  = Api.Normal
+  , traits      = d.traits
+  , traitSearch = A.init ""
+  , traitSelId  = 0
+  , traitSelSpl = 0
   , id          = d.id
   }
 
@@ -116,10 +126,14 @@ encode model =
   , cup_size    = model.cupSize
   , main        = if model.mainHas then model.main else Nothing
   , image       = model.image
+  , traits      = List.map (\t -> { tid = t.tid, spoil = t.spoil }) model.traits
   }
 
 mainConfig : A.Config Msg GApi.ApiCharResult
 mainConfig = { wrap = MainSearch, id = "mainadd", source = A.charSource }
+
+traitConfig : A.Config Msg GApi.ApiTraitResult
+traitConfig = { wrap = TraitSearch, id = "traitadd", source = A.traitSource }
 
 type Msg
   = Editsum Editsum.Msg
@@ -147,6 +161,10 @@ type Msg
   | ImageSelect
   | ImageSelected File
   | ImageLoaded GApi.Response
+  | TraitDel Int
+  | TraitSel Int Int
+  | TraitSpoil Int Int
+  | TraitSearch (A.Msg GApi.ApiTraitResult)
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -185,6 +203,18 @@ update msg model =
     ImageSelected f -> ({ model | imageState = Api.Loading }, Api.postImage Api.Ch f ImageLoaded)
     ImageLoaded (GApi.Image i _ _) -> ({ model | image = Just i, imageState = Api.Normal }, Cmd.none)
     ImageLoaded e -> ({ model | imageState = Api.Error e }, Cmd.none)
+
+    TraitDel idx       -> ({ model | traits = delidx idx model.traits }, Cmd.none)
+    TraitSel id spl    -> ({ model | traitSelId = id, traitSelSpl = spl }, Cmd.none)
+    TraitSpoil idx spl -> ({ model | traits = modidx idx (\t -> { t | spoil = spl }) model.traits }, Cmd.none)
+    TraitSearch m ->
+      let (nm, c, res) = A.update traitConfig m model.traitSearch
+      in case res of
+        Nothing -> ({ model | traitSearch = nm }, c)
+        Just t ->
+          if not t.applicable || t.state /= 2 || List.any (\l -> l.tid == t.id) model.traits
+          then ({ model | traitSearch = nm }, c)
+          else ({ model | traitSearch = nm, traits = model.traits ++ [{ tid = t.id, spoil = t.defaultspoil, name = t.name, group = t.group_name, applicable = t.applicable, new = True }] }, Cmd.none)
 
     Submit -> ({ model | state = Api.Loading }, GCE.send (encode model) Submitted)
     Submitted (GApi.Redirect s) -> (model, load s)
@@ -288,19 +318,55 @@ view model =
         ]
       ]
 
+    traits =
+      let
+        old = List.filter (\(_,t) -> not t.new) <| List.indexedMap (\i t -> (i,t)) model.traits
+        new = List.filter (\(_,t) ->     t.new) <| List.indexedMap (\i t -> (i,t)) model.traits
+        spoil t = if t.tid == model.traitSelId then model.traitSelSpl else t.spoil
+        trait (i,t) = (String.fromInt t.tid,
+          tr []
+          [ td [ style "padding" "0 0 0 10px", style "text-decoration" (if t.applicable then "none" else "line-through") ]
+            [ Maybe.withDefault (text "") <| Maybe.map (\g -> b [ class "grayedout" ] [ text <| g ++ " / " ]) t.group
+            , a [ href <| "/i" ++ String.fromInt t.tid ] [ text t.name ]
+            , if t.applicable then text "" else b [ class "standout" ] [ text " (not applicable)" ]
+            ]
+          , td [ class "buts" ]
+            [ a [ href "#", onMouseOver (TraitSel t.tid 0), onMouseOut (TraitSel 0 0), onClickD (TraitSpoil i 0), classList [("s0", spoil t == 0 )], title "Not a spoiler" ] []
+            , a [ href "#", onMouseOver (TraitSel t.tid 1), onMouseOut (TraitSel 0 0), onClickD (TraitSpoil i 1), classList [("s1", spoil t == 1 )], title "Minor spoiler" ] []
+            , a [ href "#", onMouseOver (TraitSel t.tid 2), onMouseOut (TraitSel 0 0), onClickD (TraitSpoil i 2), classList [("s2", spoil t == 2 )], title "Major spoiler" ] []
+            ]
+          , td []
+            [ case (t.tid == model.traitSelId, model.traitSelSpl) of
+                (True, 0) -> text "Not a spoiler"
+                (True, 1) -> text "Minor spoiler"
+                (True, 2) -> text "Major spoiler"
+                _ -> a [ href "#", onClickD (TraitDel i)] [ text "remove" ]
+            ]
+          ])
+      in
+      K.node "table" [ class "formtable chare_traits" ] <|
+        (if List.isEmpty old then []
+         else ("head",  tr [ class "newpart" ] [ td [ colspan 3 ] [text "Current traits"     ]]) :: List.map trait old)
+        ++
+        (if List.isEmpty new then []
+         else ("added", tr [ class "newpart" ] [ td [ colspan 3 ] [text "Newly added traits" ]]) :: List.map trait new)
+        ++
+        [ ("add", tr [] [ td [ colspan 3 ] [ br_ 1, A.view traitConfig model.traitSearch [placeholder "Add trait..."] ] ])
+        ]
+
   in
   form_ Submit (model.state == Api.Loading)
   [ div [ class "maintabs left" ]
     [ ul []
       [ li [ classList [("tabselected", model.tab == General)] ] [ a [ href "#", onClickD (Tab General) ] [ text "General info" ] ]
       , li [ classList [("tabselected", model.tab == Image  )] ] [ a [ href "#", onClickD (Tab Image  ) ] [ text "Image"        ] ]
+      , li [ classList [("tabselected", model.tab == Traits )] ] [ a [ href "#", onClickD (Tab Traits ) ] [ text "Traits"       ] ]
       , li [ classList [("tabselected", model.tab == All    )] ] [ a [ href "#", onClickD (Tab All    ) ] [ text "All items"    ] ]
       ]
     ]
-  , div [ class "mainbox", classList [("hidden", model.tab /= General && model.tab /= All)] ]
-    [ h1 [] [ text "General info" ], table [ class "formtable" ] geninfo ]
-  , div [ class "mainbox", classList [("hidden", model.tab /= Image && model.tab /= All)] ]
-    [ h1 [] [ text "Image" ], image ]
+  , div [ class "mainbox", classList [("hidden", model.tab /= General && model.tab /= All)] ] [ h1 [] [ text "General info" ], table [ class "formtable" ] geninfo ]
+  , div [ class "mainbox", classList [("hidden", model.tab /= Image   && model.tab /= All)] ] [ h1 [] [ text "Image" ], image ]
+  , div [ class "mainbox", classList [("hidden", model.tab /= Traits  && model.tab /= All)] ] [ h1 [] [ text "Traits" ], traits ]
   , div [ class "mainbox" ] [ fieldset [ class "submit" ]
       [ Html.map Editsum (Editsum.view model.editsum)
       , submitButton "Submit" model.state (isValid model)

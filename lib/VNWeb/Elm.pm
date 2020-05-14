@@ -72,6 +72,16 @@ our %apis = (
         applicable   => { anybool => 1 },
         state        => { int => 1 },
     } } ],
+    TraitResult    => [ { aoh => { # Response to 'Traits'
+        id           => { id => 1 },
+        name         => {},
+        searchable   => { anybool => 1 },
+        applicable   => { anybool => 1 },
+        state        => { int => 1 },
+        defaultspoil => { uint => 1 },
+        group_id     => { required => 0, uint => 1 },
+        group_name   => { required => 0 },
+    } } ],
     VNResult       => [ { aoh => { # Response to 'VN'
         id       => { id => 1 },
         title    => {},
