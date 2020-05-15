@@ -21,6 +21,7 @@ my $FORM = {
     bloodt     => { default => 'unknown', enum => \%BLOOD_TYPE },
     cup_size   => { required => 0, default => '', enum => \%CUP_SIZE },
     main       => { required => 0, id => 1 },
+    main_spoil => { uint => 1, range => [0,2] },
     main_ref   => { _when => 'out', anybool => 1 },
     main_name  => { _when => 'out', default => '' },
     image      => { required => 0, regex => qr/ch[1-9][0-9]{0,6}/ },
@@ -32,11 +33,22 @@ my $FORM = {
         applicable => { _when => 'out', anybool => 1 },
         new     => { _when => 'out', anybool => 1 },
     } },
+    vns        => { sort_keys => ['vid', 'rid'], aoh => {
+        vid     => { id => 1 },
+        rid     => { id => 1, required => 0 },
+        spoil   => { uint => 1, range => [0,2] },
+        role    => { enum => \%CHAR_ROLE },
+        title   => { _when => 'out' },
+    } },
     hidden     => { anybool => 1 },
     locked     => { anybool => 1 },
 
     authmod    => { _when => 'out', anybool => 1 },
     editsum    => { _when => 'in out', editsum => 1 },
+    releases   => { _when => 'out', aoh => {
+        id      => { id => 1 },
+        rels    => $VNWeb::Elm::apis{Releases}[0]
+    } },
 };
 
 my $FORM_OUT = form_compile out => $FORM;
@@ -53,6 +65,21 @@ TUWF::get qr{/$RE{crev}/edit} => sub {
 
     enrich_merge tid => 'SELECT t.id AS tid, t.name, t.applicable, g.name AS group, g.order AS order, false AS new FROM traits t LEFT JOIN traits g ON g.id = t.group WHERE t.id IN', $e->{traits};
     $e->{traits} = [ sort { ($a->{order}//99) <=> ($b->{order}//99) || $a->{name} cmp $b->{name} } $e->{traits}->@* ];
+
+    enrich_merge vid => 'SELECT id AS vid, title FROM vn WHERE id IN', $e->{vns};
+    $e->{vns} = [ sort { $a->{title} cmp $b->{title} || $a->{vid} <=> $b->{vid} || ($a->{rid}||0) <=> ($b->{rid}||0) } $e->{vns}->@* ];
+    my %vns;
+    $e->{releases} = [ map !$vns{$_->{vid}}++ ? { id => $_->{vid} } : (), $e->{vns}->@* ];
+
+    enrich rels => id => vid => sub { sql '
+        SELECT rv.vid, r.id, r.title, r.original, r.released, r.type as rtype
+          FROM releases r
+          JOIN releases_vn rv ON rv.id = r.id
+         WHERE NOT r.hidden AND rv.vid IN', $_, '
+         ORDER BY r.released, r.title, r.id'
+    }, $e->{releases};
+    enrich_flatten lang => id => id => sub { sql('SELECT id, lang FROM releases_lang WHERE id IN', $_, 'ORDER BY lang') }, map $_->{rels}, $e->{releases}->@*;
+    enrich_flatten platforms => id => id => sub { sql('SELECT id, platform FROM releases_platforms WHERE id IN', $_, 'ORDER BY platform') }, map $_->{rels}, $e->{releases}->@*;
 
     $e->{authmod} = auth->permDbmod;
     $e->{editsum} = $e->{chrev} == $e->{maxrev} ? '' : "Reverted to revision c$e->{id}.$e->{chrev}";
@@ -97,11 +124,20 @@ elm_api CharEdit => $FORM_OUT, $FORM_IN, sub {
     die "Attempt to set main while this character is already referenced." if $data->{main} && tuwf->dbVali('SELECT 1 AS ref FROM chars WHERE main =', \$e->{id});
     # It's possible that the referenced character has been deleted since it was added as main, so don't die() on this one, just unset main.
     $data->{main} = undef if $data->{main} && !tuwf->dbVali('SELECT 1 FROM chars WHERE NOT hidden AND main IS NULL AND id =', \$data->{main});
+    $data->{main_spoil} = 0 if !$data->{main};
 
     # Allow non-applicable traits only when they were already applied to this character.
     validate_dbid
-        sql('SELECT id FROM traits t WHERE state = 2 AND (applicable OR EXISTS(SELECT 1 FROM chars_traits ct WHERE ct.tid = t.id AND ct.id =', \$e->{id}, ')) AND id IN'),
+        sql('SELECT id FROM traits t WHERE state = 1+1 AND (applicable OR EXISTS(SELECT 1 FROM chars_traits ct WHERE ct.tid = t.id AND ct.id =', \$e->{id}, ')) AND id IN'),
         map $_->{tid}, $data->{traits}->@*;
+
+    validate_dbid 'SELECT id FROM vn WHERE id IN', map $_->{vid}, $data->{vns}->@*;
+    # XXX: This will also die when the release has been moved to a different VN
+    # and the char hasn't been updated yet. Would be nice to give a better
+    # error message in that case.
+    for($data->{vns}->@*) {
+        die "Bad release for v$_->{vid}: r$_->{rid}\n" if defined $_->{rid} && !tuwf->dbVali('SELECT 1 FROM releases_vn WHERE id =', \$_->{rid}, 'AND vid =', \$_->{vid});
+    }
 
     return elm_Unchanged if !$new && !form_changed $FORM_CMP, $data, $e;
     my($id,undef,$rev) = db_edit c => $e->{id}, $data;

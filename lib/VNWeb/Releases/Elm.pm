@@ -3,7 +3,7 @@ package VNWeb::Releases::Elm;
 use VNWeb::Prelude;
 
 
-# Used by UList.Opt to fetch releases from a VN id.
+# Used by UList.Opt and CharEdit to fetch releases from a VN id.
 elm_api Release => undef, { vid => { id => 1 } }, sub {
     my($data) = @_;
     my $l = tuwf->dbAlli(

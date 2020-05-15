@@ -391,6 +391,7 @@ sub write_types {
     $data .= def genders    => 'List (String, String)' => list map tuple(string $_, string $GENDER{$_}), keys %GENDER;
     $data .= def cupSizes   => 'List (String, String)' => list map tuple(string $_, string $CUP_SIZE{$_}), keys %CUP_SIZE;
     $data .= def bloodTypes => 'List (String, String)' => list map tuple(string $_, string $BLOOD_TYPE{$_}), keys %BLOOD_TYPE;
+    $data .= def charRoles  => 'List (String, String)' => list map tuple(string $_, string $CHAR_ROLE{$_}{txt}), keys %CHAR_ROLE;
     $data .= def curYear    => Int => (gmtime)[5]+1900;
 
     write_module Types => $data;

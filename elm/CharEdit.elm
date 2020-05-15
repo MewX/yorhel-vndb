@@ -6,6 +6,8 @@ import Html.Keyed as K
 import Html.Attributes exposing (..)
 import Browser
 import Browser.Navigation exposing (load)
+import Dict
+import Set
 import File exposing (File)
 import File.Select as FSel
 import Lib.Util exposing (..)
@@ -14,6 +16,8 @@ import Lib.TextPreview as TP
 import Lib.Autocomplete as A
 import Lib.Api as Api
 import Lib.Editsum as Editsum
+import Lib.RDate as RDate
+import Gen.Release as GR
 import Gen.CharEdit as GCE
 import Gen.Types as GT
 import Gen.Api as GApi
@@ -32,6 +36,7 @@ type Tab
   = General
   | Image
   | Traits
+  | VNs
   | All
 
 type alias Model =
@@ -58,12 +63,16 @@ type alias Model =
   , mainHas     : Bool
   , mainName    : String
   , mainSearch  : A.Model GApi.ApiCharResult
+  , mainSpoil   : Int
   , image       : Maybe String
   , imageState  : Api.State
   , traits      : List GCE.RecvTraits
   , traitSearch : A.Model GApi.ApiTraitResult
   , traitSelId  : Int
   , traitSelSpl : Int
+  , vns         : List GCE.RecvVns
+  , vnSearch    : A.Model GApi.ApiVNResult
+  , releases    : Dict.Dict Int (List GCE.RecvReleasesRels) -- vid -> list of releases
   , id          : Maybe Int
   }
 
@@ -93,12 +102,16 @@ init d =
   , mainHas     = d.main /= Nothing
   , mainName    = d.main_name
   , mainSearch  = A.init ""
+  , mainSpoil   = d.main_spoil
   , image       = d.image
   , imageState  = Api.Normal
   , traits      = d.traits
   , traitSearch = A.init ""
   , traitSelId  = 0
   , traitSelSpl = 0
+  , vns         = d.vns
+  , vnSearch    = A.init ""
+  , releases    = Dict.fromList <| List.map (\v -> (v.id, v.rels)) d.releases
   , id          = d.id
   }
 
@@ -125,8 +138,10 @@ encode model =
   , bloodt      = model.bloodt
   , cup_size    = model.cupSize
   , main        = if model.mainHas then model.main else Nothing
+  , main_spoil  = model.mainSpoil
   , image       = model.image
   , traits      = List.map (\t -> { tid = t.tid, spoil = t.spoil }) model.traits
+  , vns         = List.map (\v -> { vid = v.vid, rid = v.rid, spoil = v.spoil, role = v.role }) model.vns
   }
 
 mainConfig : A.Config Msg GApi.ApiCharResult
@@ -134,6 +149,9 @@ mainConfig = { wrap = MainSearch, id = "mainadd", source = A.charSource }
 
 traitConfig : A.Config Msg GApi.ApiTraitResult
 traitConfig = { wrap = TraitSearch, id = "traitadd", source = A.traitSource }
+
+vnConfig : A.Config Msg GApi.ApiVNResult
+vnConfig = { wrap = VnSearch, id = "vnadd", source = A.vnSource }
 
 type Msg
   = Editsum Editsum.Msg
@@ -157,6 +175,7 @@ type Msg
   | CupSize String
   | MainHas Bool
   | MainSearch (A.Msg GApi.ApiCharResult)
+  | MainSpoil Int
   | ImageSet String
   | ImageSelect
   | ImageSelected File
@@ -165,6 +184,13 @@ type Msg
   | TraitSel Int Int
   | TraitSpoil Int Int
   | TraitSearch (A.Msg GApi.ApiTraitResult)
+  | VnRel Int (Maybe Int)
+  | VnRole Int String
+  | VnSpoil Int Int
+  | VnDel Int
+  | VnRelAdd Int String
+  | VnSearch (A.Msg GApi.ApiVNResult)
+  | VnRelGet Int GApi.Response
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -197,6 +223,7 @@ update msg model =
           case m1.main of
             Just m2 -> ({ model | mainSearch = A.clear nm "", main = Just m2.id, mainName = m2.name }, c)
             Nothing -> ({ model | mainSearch = A.clear nm "", main = Just m1.id, mainName = m1.name }, c)
+    MainSpoil n -> ({ model | mainSpoil = n }, Cmd.none)
 
     ImageSet s  -> ({ model | image = if s == "" then Nothing else Just s}, Cmd.none)
     ImageSelect -> (model, FSel.file ["image/png", "image/jpg"] ImageSelected)
@@ -213,8 +240,27 @@ update msg model =
         Nothing -> ({ model | traitSearch = nm }, c)
         Just t ->
           if not t.applicable || t.state /= 2 || List.any (\l -> l.tid == t.id) model.traits
-          then ({ model | traitSearch = nm }, c)
-          else ({ model | traitSearch = nm, traits = model.traits ++ [{ tid = t.id, spoil = t.defaultspoil, name = t.name, group = t.group_name, applicable = t.applicable, new = True }] }, Cmd.none)
+          then ({ model | traitSearch = A.clear nm "" }, c)
+          else ({ model | traitSearch = A.clear nm "", traits = model.traits ++ [{ tid = t.id, spoil = t.defaultspoil, name = t.name, group = t.group_name, applicable = t.applicable, new = True }] }, Cmd.none)
+
+    VnRel   idx r -> ({ model | vns = modidx idx (\v -> { v | rid   = r }) model.vns }, Cmd.none)
+    VnRole  idx s -> ({ model | vns = modidx idx (\v -> { v | role  = s }) model.vns }, Cmd.none)
+    VnSpoil idx n -> ({ model | vns = modidx idx (\v -> { v | spoil = n }) model.vns }, Cmd.none)
+    VnDel   idx   -> ({ model | vns = delidx idx model.vns }, Cmd.none)
+    VnRelAdd vid title ->
+      let rid = Dict.get vid model.releases |> Maybe.andThen (\rels -> List.filter (\r -> not (List.any (\v -> v.vid == vid && v.rid == Just r.id) model.vns)) rels |> List.head |> Maybe.map (\r -> r.id))
+      in ({ model | vns = model.vns ++ [{ vid = vid, title = title, rid = rid, spoil = 0, role = "primary" }] }, Cmd.none)
+    VnSearch m ->
+      let (nm, c, res) = A.update vnConfig m model.vnSearch
+      in case res of
+        Nothing -> ({ model | vnSearch = nm }, c)
+        Just vn ->
+          if List.any (\v -> v.vid == vn.id) model.vns
+          then ({ model | vnSearch = A.clear nm "" }, c)
+          else ({ model | vnSearch = A.clear nm "", vns = model.vns ++ [{ vid = vn.id, title = vn.title, rid = Nothing, spoil = 0, role = "primary" }] }
+               , if Dict.member vn.id model.releases then Cmd.none else GR.send { vid = vn.id } (VnRelGet vn.id))
+    VnRelGet vid (GApi.Releases r) -> ({ model | releases = Dict.insert vid r model.releases }, Cmd.none)
+    VnRelGet _ r -> ({ model | state = Api.Error r }, Cmd.none) -- XXX
 
     Submit -> ({ model | state = Api.Loading }, GCE.send (encode model) Submitted)
     Submitted (GApi.Redirect s) -> (model, load s)
@@ -224,7 +270,15 @@ update msg model =
 isValid : Model -> Bool
 isValid model = not
   (  model.name == model.original
+  || hasDuplicates (List.map (\v -> (v.vid, Maybe.withDefault 0 v.rid)) model.vns)
   )
+
+
+spoilOpts =
+  [ (0, "Not a spoiler")
+  , (1, "Minor spoiler")
+  , (2, "Major spoiler")
+  ]
 
 
 view : Model -> Html Msg
@@ -282,7 +336,9 @@ view model =
       else
       [ formField "" [ label [] [ inputCheck "" model.mainHas MainHas, text " This character is an instance of another character." ] ]
       , formField "" <| if not model.mainHas then [] else
-        [ Maybe.withDefault (text "No character selected") <| Maybe.map (\m -> span []
+        [ inputSelect "" model.mainSpoil MainSpoil [] spoilOpts
+        , br_ 2
+        , Maybe.withDefault (text "No character selected") <| Maybe.map (\m -> span []
           [ text "Selected character: "
           , b [ class "grayedout" ] [ text <| "c" ++ String.fromInt m ++ ": " ]
           , a [ href <| "/c" ++ String.fromInt m ] [ text model.mainName ]
@@ -336,10 +392,8 @@ view model =
             , a [ href "#", onMouseOver (TraitSel t.tid 2), onMouseOut (TraitSel 0 0), onClickD (TraitSpoil i 2), classList [("s2", spoil t == 2 )], title "Major spoiler" ] []
             ]
           , td []
-            [ case (t.tid == model.traitSelId, model.traitSelSpl) of
-                (True, 0) -> text "Not a spoiler"
-                (True, 1) -> text "Minor spoiler"
-                (True, 2) -> text "Major spoiler"
+            [ case (t.tid == model.traitSelId, lookup model.traitSelSpl spoilOpts) of
+                (True, Just s) -> text s
                 _ -> a [ href "#", onClickD (TraitDel i)] [ text "remove" ]
             ]
           ])
@@ -354,6 +408,56 @@ view model =
         [ ("add", tr [] [ td [ colspan 3 ] [ br_ 1, A.view traitConfig model.traitSearch [placeholder "Add trait..."] ] ])
         ]
 
+    -- XXX: This function has quite a few nested loops, prolly rather slow with many VNs/releases
+    vns =
+      let
+        uniq lst set =
+          case lst of
+            (x::xs) -> if Set.member x set then uniq xs set else x :: uniq xs (Set.insert x set)
+            [] -> []
+        showrel r = "[" ++ (RDate.format (RDate.expand r.released)) ++ " " ++ (String.join "," r.lang) ++ "] " ++ r.title ++ " (r" ++ String.fromInt r.id ++ ")"
+        vn vid lst rels =
+          let title = Maybe.withDefault "<unknown>" <| Maybe.map (\(_,v) -> v.title) <| List.head lst
+          in
+          [ ( String.fromInt vid
+            , tr [ class "newpart" ] [ td [ colspan 4, style "padding-bottom" "5px" ]
+              [ b [ class "grayedout" ] [ text <| "v" ++ String.fromInt vid ++ ":" ]
+              , a [ href <| "/v" ++ String.fromInt vid ] [ text title ]
+              ]]
+            )
+          ] ++ List.map (\(idx,item) ->
+            ( String.fromInt vid ++ "i" ++ String.fromInt (Maybe.withDefault 0 item.rid)
+            , tr []
+              [ td [] [ inputSelect "" item.rid (VnRel idx) [ style "width" "400px", style "margin" "0 15px" ] <|
+                  (Nothing, if List.length lst == 1 then "All (full) releases" else "Other releases")
+                  :: List.map (\r -> (Just r.id, showrel r)) rels
+                  ++ if isJust item.rid && List.isEmpty (List.filter (\r -> Just r.id == item.rid) rels)
+                     then [(item.rid, "Deleted release: r" ++ String.fromInt (Maybe.withDefault 0 item.rid))] else []
+                ]
+              , td [] [ inputSelect "" item.role (VnRole idx) [] GT.charRoles ]
+              , td [] [ inputSelect "" item.spoil (VnSpoil idx) [ style "width" "130px", style "margin" "0 5px" ] spoilOpts ]
+              , td [] [ inputButton "remove" (VnDel idx) [] ]
+              ]
+            )
+          ) lst
+          ++ (if List.map (\(_,r) -> Maybe.withDefault 0 r.rid) lst |> hasDuplicates |> not then [] else [
+            ( String.fromInt vid ++ "dup"
+            , td [] [ td [ colspan 4, style "padding" "0 15px" ] [ b [ class "standout" ] [ text "List contains duplicate releases." ] ] ]
+            )
+          ])
+          ++ (if List.length lst > List.length rels then [] else [
+            ( String.fromInt vid ++ "add"
+            , tr [] [ td [ colspan 4 ] [ inputButton "add release" (VnRelAdd vid title) [style "margin" "0 15px"] ] ]
+            )
+          ])
+      in
+      K.node "table" [ class "formtable" ] <|
+        List.concatMap
+          (\vid -> vn vid (List.filter (\(_,r) -> r.vid == vid) (List.indexedMap (\i r -> (i,r)) model.vns)) (Maybe.withDefault [] (Dict.get vid model.releases)))
+          (uniq (List.map (\v -> v.vid) model.vns) Set.empty)
+        ++
+        [ ("add", tr [] [ td [ colspan 4 ] [ br_ 1, A.view vnConfig model.vnSearch [placeholder "Add visual novel..."] ] ]) ]
+
   in
   form_ Submit (model.state == Api.Loading)
   [ div [ class "maintabs left" ]
@@ -361,12 +465,14 @@ view model =
       [ li [ classList [("tabselected", model.tab == General)] ] [ a [ href "#", onClickD (Tab General) ] [ text "General info" ] ]
       , li [ classList [("tabselected", model.tab == Image  )] ] [ a [ href "#", onClickD (Tab Image  ) ] [ text "Image"        ] ]
       , li [ classList [("tabselected", model.tab == Traits )] ] [ a [ href "#", onClickD (Tab Traits ) ] [ text "Traits"       ] ]
+      , li [ classList [("tabselected", model.tab == VNs    )] ] [ a [ href "#", onClickD (Tab VNs    ) ] [ text "Visual Novels"] ]
       , li [ classList [("tabselected", model.tab == All    )] ] [ a [ href "#", onClickD (Tab All    ) ] [ text "All items"    ] ]
       ]
     ]
   , div [ class "mainbox", classList [("hidden", model.tab /= General && model.tab /= All)] ] [ h1 [] [ text "General info" ], table [ class "formtable" ] geninfo ]
   , div [ class "mainbox", classList [("hidden", model.tab /= Image   && model.tab /= All)] ] [ h1 [] [ text "Image" ], image ]
   , div [ class "mainbox", classList [("hidden", model.tab /= Traits  && model.tab /= All)] ] [ h1 [] [ text "Traits" ], traits ]
+  , div [ class "mainbox", classList [("hidden", model.tab /= VNs     && model.tab /= All)] ] [ h1 [] [ text "Visual Novels" ], vns ]
   , div [ class "mainbox" ] [ fieldset [ class "submit" ]
       [ Html.map Editsum (Editsum.view model.editsum)
       , submitButton "Submit" model.state (isValid model)
