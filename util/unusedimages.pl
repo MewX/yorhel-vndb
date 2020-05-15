@@ -32,10 +32,11 @@ sub cleandb {
     # referenced from somewhere, soon.
     my $cnt = $db->do(q{
       DELETE FROM images WHERE id IN(
-        SELECT id FROM images EXCEPT
+        SELECT id FROM images
          WHERE id NOT IN(SELECT id FROM images WHERE id BETWEEN vndbid('ch',1) AND vndbid_max('ch') ORDER BY id DESC LIMIT  30)
            AND id NOT IN(SELECT id FROM images WHERE id BETWEEN vndbid('cv',1) AND vndbid_max('cv') ORDER BY id DESC LIMIT  30)
            AND id NOT IN(SELECT id FROM images WHERE id BETWEEN vndbid('sf',1) AND vndbid_max('sf') ORDER BY id DESC LIMIT 100)
+        EXCEPT
         SELECT * FROM (
                 SELECT scr   FROM vn_screenshots
           UNION SELECT scr   FROM vn_screenshots_hist
