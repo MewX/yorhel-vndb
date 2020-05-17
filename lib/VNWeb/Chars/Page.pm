@@ -80,12 +80,15 @@ sub image_ {
     my $vio = $img->{violence_avg} > 1.3 ? 2 : $img->{violence_avg} > 0.4 ? 1 : 0 if $img->{votecount};
     my $sexd = ['Safe', 'Suggestive', 'Explicit']->[$sex] if $img->{votecount};
     my $viod = ['Tame', 'Violent',    'Brutal'  ]->[$vio] if $img->{votecount};
-    my $sexh = $sex > (auth->pref('max_sexual')||0) if $img->{votecount};
-    my $vioh = $vio > (auth->pref('max_violence')||0) if $img->{votecount};
+    my $sexp = auth->pref('max_sexual')||0;
+    my $viop = auth->pref('max_violence')||0;
+    my $sexh = $sex > $sexp if $img->{votecount};
+    my $vioh = $vio > $viop if $img->{votecount};
+    my $hidden = $sexh || $vioh || (!$img->{votecount} && ($sexp < 2 || $viop < 2));
     my $hide_on_click = $sex || $vio || !$img->{votecount};
 
     label_ class => 'imghover', style => "width: $img->{width}px; height: $img->{height}px", sub {
-        input_ type => 'checkbox', class => 'visuallyhidden', !$img->{votecount} || $sexh || $vioh ? () : (checked => 'checked') if $hide_on_click;
+        input_ type => 'checkbox', class => 'visuallyhidden', $hidden ? () : (checked => 'checked') if $hide_on_click;
         div_ class => 'imghover--visible', sub {
             img_ src => tuwf->imgurl($img->{id}), alt => $c->{name};
             a_ href => "/img/$img->{id}?view=".viewset(show_nsfw=>1),
