@@ -36,6 +36,7 @@ elm_api UserPassSet => $FORM_OUT, $FORM_IN, sub {
     # token has expired. This case won't happen often.
     return elm_CSRF if !auth->setpass($data->{uid}, $data->{token}, undef, $data->{password});
     tuwf->dbExeci('UPDATE users SET email_confirmed = true WHERE id =', \$data->{uid});
+    auth->audit($data->{uid}, 'password change', 'with email token');
     elm_Success
 };
 

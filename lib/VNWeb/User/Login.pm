@@ -28,8 +28,10 @@ elm_api UserLogin => undef, {
     return elm_LoginThrottle if $tm-time() > config->{login_throttle}[1];
 
     my $insecure = is_insecurepass $data->{password};
-    return $insecure ? elm_InsecurePass : elm_Success
-        if auth->login($data->{username}, $data->{password}, $insecure);
+    if(auth->login($data->{username}, $data->{password}, $insecure)) {
+        auth->audit(auth->uid, 'login') if !$insecure;
+        return $insecure ? elm_InsecurePass : elm_Success
+    }
 
     # Failed login, log and update throttle.
     auth->audit(tuwf->dbVali('SELECT id FROM users WHERE username =', \$data->{username}), 'bad password', 'failed login attempt');
