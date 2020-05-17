@@ -82,10 +82,10 @@ sub image_ {
     my $viod = ['Tame', 'Violent',    'Brutal'  ]->[$vio] if $img->{votecount};
     my $sexp = auth->pref('max_sexual')||0;
     my $viop = auth->pref('max_violence')||0;
-    my $sexh = $sex > $sexp if $img->{votecount};
+    my $sexh = $sex > $sexp && $sexp >= 0 if $img->{votecount};
     my $vioh = $vio > $viop if $img->{votecount};
-    my $hidden = $sexh || $vioh || (!$img->{votecount} && ($sexp < 2 || $viop < 2));
-    my $hide_on_click = $sex || $vio || !$img->{votecount};
+    my $hidden = $sexp < 0 || $sexh || $vioh || (!$img->{votecount} && ($sexp < 2 || $viop < 2));
+    my $hide_on_click = $sexp < 0 || $sex || $vio || !$img->{votecount};
 
     label_ class => 'imghover', style => "width: $img->{width}px; height: $img->{height}px", sub {
         input_ type => 'checkbox', class => 'visuallyhidden', $hidden ? () : (checked => 'checked') if $hide_on_click;

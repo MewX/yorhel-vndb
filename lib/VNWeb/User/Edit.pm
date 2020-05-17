@@ -33,7 +33,7 @@ my $FORM = {
     prefs => { required => 0, type => 'hash', keys => {
         email           => { email => 1 },
         show_nsfw       => { anybool => 1 },
-        max_sexual      => { uint => 1, range => [ 0, 2 ] },
+        max_sexual      => {  int => 1, range => [-1, 2 ] },
         max_violence    => { uint => 1, range => [ 0, 2 ] },
         traits_sexual   => { anybool => 1 },
         tags_all        => { anybool => 1 },

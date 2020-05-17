@@ -236,12 +236,14 @@ view model =
         [ b [ class "grayedout" ] [ text "The two options below are only used for character images at the moment, they will eventually replace the above checkbox and apply to all images on the site." ]
         , br [] []
         , inputSelect "" m.max_sexual (Prefs << MaxSexual) [style "width" "400px"]
-          [ (0, "Hide sexually suggestive or explicit images")
+          [ (-1,"Hide all images")
+          , (0, "Hide sexually suggestive or explicit images")
           , (1, "Hide only sexually explicit images")
           , (2, "Don't hide suggestive or explicit images")
           ]
         , br [] []
-        , inputSelect "" m.max_violence (Prefs << MaxViolence) [style "width" "400px"]
+        , if m.max_sexual == -1 then text "" else
+          inputSelect "" m.max_violence (Prefs << MaxViolence) [style "width" "400px"]
           [ (0, "Hide violent or brutal images")
           , (1, "Hide only brutal images")
           , (2, "Don't hide violent or brutal images")
