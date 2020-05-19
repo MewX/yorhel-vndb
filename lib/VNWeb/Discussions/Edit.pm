@@ -120,7 +120,7 @@ elm_api DiscussionsEdit => $FORM_OUT, $FORM_IN, sub {
         msg => bb_subst_links($data->{msg}),
         $data->{tid} ? () : (uid => auth->uid),
         auth->permBoardmod && $num != 1 ? (hidden => $data->{hidden}) : (),
-        auth->permBoardmod && $data->{nolastmod} ? () : (edited => sql 'NOW()')
+        !$data->{tid} || (auth->permBoardmod && $data->{nolastmod}) ? () : (edited => sql 'NOW()')
     };
     tuwf->dbExeci('INSERT INTO threads_posts', $post) if !$data->{tid};
     tuwf->dbExeci('UPDATE threads_posts SET', $post, 'WHERE', { tid => $tid, num => $num }) if $data->{tid};
