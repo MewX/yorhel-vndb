@@ -66,6 +66,9 @@ type alias Model =
   , mainSpoil   : Int
   , image       : Maybe String
   , imageState  : Api.State
+  , imageNew    : Set.Set String
+  , imageSex    : Maybe Int
+  , imageVio    : Maybe Int
   , traits      : List GCE.RecvTraits
   , traitSearch : A.Model GApi.ApiTraitResult
   , traitSelId  : Int
@@ -105,6 +108,9 @@ init d =
   , mainSpoil   = d.main_spoil
   , image       = d.image
   , imageState  = Api.Normal
+  , imageNew    = Set.empty
+  , imageSex    = d.image_sex
+  , imageVio    = d.image_vio
   , traits      = d.traits
   , traitSearch = A.init ""
   , traitSelId  = 0
@@ -140,6 +146,8 @@ encode model =
   , main        = if model.mainHas then model.main else Nothing
   , main_spoil  = model.mainSpoil
   , image       = model.image
+  , image_sex   = model.imageSex
+  , image_vio   = model.imageVio
   , traits      = List.map (\t -> { tid = t.tid, spoil = t.spoil }) model.traits
   , vns         = List.map (\v -> { vid = v.vid, rid = v.rid, spoil = v.spoil, role = v.role }) model.vns
   }
@@ -180,6 +188,8 @@ type Msg
   | ImageSelect
   | ImageSelected File
   | ImageLoaded GApi.Response
+  | ImageSex Int Bool
+  | ImageVio Int Bool
   | TraitDel Int
   | TraitSel Int Int
   | TraitSpoil Int Int
@@ -228,8 +238,10 @@ update msg model =
     ImageSet s  -> ({ model | image = if s == "" then Nothing else Just s}, Cmd.none)
     ImageSelect -> (model, FSel.file ["image/png", "image/jpg"] ImageSelected)
     ImageSelected f -> ({ model | imageState = Api.Loading }, Api.postImage Api.Ch f ImageLoaded)
-    ImageLoaded (GApi.Image i _ _) -> ({ model | image = Just i, imageState = Api.Normal }, Cmd.none)
+    ImageLoaded (GApi.Image i _ _) -> ({ model | image = Just i, imageNew = Set.insert i model.imageNew, imageState = Api.Normal }, Cmd.none)
     ImageLoaded e -> ({ model | imageState = Api.Error e }, Cmd.none)
+    ImageSex i _ -> ({ model | imageSex = Just i }, Cmd.none)
+    ImageVio i _ -> ({ model | imageVio = Just i }, Cmd.none)
 
     TraitDel idx       -> ({ model | traits = delidx idx model.traits }, Cmd.none)
     TraitSel id spl    -> ({ model | traitSelId = id, traitSelSpl = spl }, Cmd.none)
@@ -370,7 +382,25 @@ view model =
             Api.Error e -> b [ class "standout" ] [ text <| Api.showResponse e ]
         , br [] []
         , text "Image must be in JPEG or PNG format and at most 10 MiB. Images larger than 256x300 will automatically be resized."
-        -- TODO: Add image flagging vote thingy here after uploading a new image.
+        , if not (Set.member (Maybe.withDefault "" model.image) model.imageNew) then text "" else div []
+          [ br [] []
+          , text "Please flag this image: (see the ", a [ href "/d19" ] [ text "image flagging guidelines" ], text " for guidance)"
+          , table []
+            [ thead [] [ tr [] [ td [] [ text "Sexual" ], td [] [ text "Violence" ] ] ]
+            , tr []
+              [ td []
+                [ label [] [ inputRadio "" (model.imageSex == Just 0) (ImageSex 0), text " Safe" ], br [] []
+                , label [] [ inputRadio "" (model.imageSex == Just 1) (ImageSex 1), text " Suggestive" ], br [] []
+                , label [] [ inputRadio "" (model.imageSex == Just 2) (ImageSex 2), text " Explicit" ]
+                ]
+              , td []
+                [ label [] [ inputRadio "" (model.imageVio == Just 0) (ImageVio 0), text " Tame" ], br [] []
+                , label [] [ inputRadio "" (model.imageVio == Just 1) (ImageVio 1), text " Violent" ], br [] []
+                , label [] [ inputRadio "" (model.imageVio == Just 2) (ImageVio 2), text " Brutal" ]
+                ]
+              ]
+            ]
+          ]
         ]
       ]
 
