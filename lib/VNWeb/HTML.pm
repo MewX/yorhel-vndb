@@ -241,7 +241,6 @@ sub _menu_ {
                 a_ href => '/v/add', 'Add Visual Novel'; br_;
                 a_ href => '/p/add', 'Add Producer'; br_;
                 a_ href => '/s/new', 'Add Staff'; br_;
-                a_ href => '/c/new', 'Add Character'; br_;
             }
             br_;
             form_ action => "$uid/logout", method => 'post', sub {

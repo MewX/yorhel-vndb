@@ -269,7 +269,7 @@ update msg model =
 
 isValid : Model -> Bool
 isValid model = not
-  (  model.name == model.original
+  (  (model.name /= "" && model.name == model.original)
   || hasDuplicates (List.map (\v -> (v.vid, Maybe.withDefault 0 v.rid)) model.vns)
   )
 

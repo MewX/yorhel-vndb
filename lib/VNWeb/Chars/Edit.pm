@@ -56,18 +56,8 @@ my $FORM_IN  = form_compile in  => $FORM;
 my $FORM_CMP = form_compile cmp => $FORM;
 
 
-TUWF::get qr{/$RE{crev}/edit} => sub {
-    my $e = db_entry c => tuwf->capture('id'), tuwf->capture('rev') or return tuwf->resNotFound;
-    return tuwf->resDenied if !can_edit c => $e;
-
-    $e->{main_name} = $e->{main} ? tuwf->dbVali('SELECT name FROM chars WHERE id =', \$e->{main}) : '';
-    $e->{main_ref} = tuwf->dbVali('SELECT 1 FROM chars WHERE main =', \$e->{id})||0;
-
-    enrich_merge tid => 'SELECT t.id AS tid, t.name, t.applicable, g.name AS group, g.order AS order, false AS new FROM traits t LEFT JOIN traits g ON g.id = t.group WHERE t.id IN', $e->{traits};
-    $e->{traits} = [ sort { ($a->{order}//99) <=> ($b->{order}//99) || $a->{name} cmp $b->{name} } $e->{traits}->@* ];
-
-    enrich_merge vid => 'SELECT id AS vid, title FROM vn WHERE id IN', $e->{vns};
-    $e->{vns} = [ sort { $a->{title} cmp $b->{title} || $a->{vid} <=> $b->{vid} || ($a->{rid}||0) <=> ($b->{rid}||0) } $e->{vns}->@* ];
+sub enrich_releases {
+    my($e) = @_;
     my %vns;
     $e->{releases} = [ map !$vns{$_->{vid}}++ ? { id => $_->{vid} } : (), $e->{vns}->@* ];
 
@@ -80,28 +70,49 @@ TUWF::get qr{/$RE{crev}/edit} => sub {
     }, $e->{releases};
     enrich_flatten lang => id => id => sub { sql('SELECT id, lang FROM releases_lang WHERE id IN', $_, 'ORDER BY lang') }, map $_->{rels}, $e->{releases}->@*;
     enrich_flatten platforms => id => id => sub { sql('SELECT id, platform FROM releases_platforms WHERE id IN', $_, 'ORDER BY platform') }, map $_->{rels}, $e->{releases}->@*;
+}
+
+
+TUWF::get qr{/$RE{crev}/(?<action>edit|copy)} => sub {
+    my $e = db_entry c => tuwf->capture('id'), tuwf->capture('rev') or return tuwf->resNotFound;
+    my $copy = tuwf->capture('action') eq 'copy';
+    return tuwf->resDenied if !can_edit c => $copy ? {} : $e;
+
+    $e->{main_name} = $e->{main} ? tuwf->dbVali('SELECT name FROM chars WHERE id =', \$e->{main}) : '';
+    $e->{main_ref} = tuwf->dbVali('SELECT 1 FROM chars WHERE main =', \$e->{id})||0;
+
+    enrich_merge tid => 'SELECT t.id AS tid, t.name, t.applicable, g.name AS group, g.order AS order, false AS new FROM traits t LEFT JOIN traits g ON g.id = t.group WHERE t.id IN', $e->{traits};
+    $e->{traits} = [ sort { ($a->{order}//99) <=> ($b->{order}//99) || $a->{name} cmp $b->{name} } $e->{traits}->@* ];
+
+    enrich_merge vid => 'SELECT id AS vid, title FROM vn WHERE id IN', $e->{vns};
+    $e->{vns} = [ sort { $a->{title} cmp $b->{title} || $a->{vid} <=> $b->{vid} || ($a->{rid}||0) <=> ($b->{rid}||0) } $e->{vns}->@* ];
+    enrich_releases $e;
 
     $e->{authmod} = auth->permDbmod;
-    $e->{editsum} = $e->{chrev} == $e->{maxrev} ? '' : "Reverted to revision c$e->{id}.$e->{chrev}";
+    $e->{editsum} = $copy ? "Copied from c$e->{id}.$e->{chrev}" : $e->{chrev} == $e->{maxrev} ? '' : "Reverted to revision c$e->{id}.$e->{chrev}";
 
-    framework_ title => "Edit $e->{name}", type => 'c', dbobj => $e, tab => 'edit',
+    my $title = ($copy ? 'Copy ' : 'Edit ').$e->{name};
+    framework_ title => $title, type => 'c', dbobj => $e, tab => tuwf->capture('action'),
     sub {
-        editmsg_ c => $e, "Edit $e->{name}";
-        elm_ CharEdit => $FORM_OUT, $e;
+        editmsg_ c => $e, $title, $copy;
+        elm_ CharEdit => $FORM_OUT, $copy ? {%$e, id=>undef} : $e;
     };
 };
 
 
-# XXX: Require VN
-# TODO: Copy.
-TUWF::get qr{/c/new}, sub {
+TUWF::get qr{/$RE{vid}/addchar}, sub {
     return tuwf->resDenied if !can_edit c => undef;
+    my $v = tuwf->dbRowi('SELECT id, title FROM vn WHERE NOT hidden AND id =', \tuwf->capture('id'));
+    return tuwf->resNotFound if !$v->{id};
+
+    my $e = elm_empty($FORM_OUT);
+    $e->{vns} = [{ vid => $v->{id}, title => $v->{title}, rid => undef, spoil => 0, role => 'primary' }];
+    enrich_releases $e;
+
     framework_ title => 'Add character',
     sub {
         editmsg_ c => undef, 'Add character';
-        elm_ CharEdit => $FORM_OUT, {
-            elm_empty($FORM_OUT)->%*,
-        };
+        elm_ CharEdit => $FORM_OUT, $e;
     };
 };
 

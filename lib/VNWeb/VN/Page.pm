@@ -413,7 +413,7 @@ sub tabs_ {
         ul_ sub {
             if(auth->permEdit) {
                 li_ sub { a_ href => "/v$v->{id}/add", 'add release' };
-                li_ sub { a_ href => "/c/new?vid=$v->{id}", 'add character' };
+                li_ sub { a_ href => "/v$v->{id}/addchar", 'add character' };
             }
         };
     }
