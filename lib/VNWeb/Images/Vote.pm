@@ -10,7 +10,7 @@ use VNWeb::Prelude;
 # influence the rating of a single image.
 sub enrich_token {
     my($canvote, $l) = @_;
-    $_->{token} = $canvote ? auth->csrftoken(0, "imgvote-$_->{id}") : undef for @$l;
+    $_->{token} = $canvote || ($_->{votecount} == 0 && auth->permImgvote) ? auth->csrftoken(0, "imgvote-$_->{id}") : undef for @$l;
 }
 
 
