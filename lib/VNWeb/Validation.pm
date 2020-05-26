@@ -222,14 +222,25 @@ sub can_edit {
 # token leaks, it's possible to generate links to any sensitive page for that
 # particular user for several hours.
 sub viewget {
-    my($view, $token) = tuwf->reqGet('view') =~ /^([^-]*)-(.+)$/;
-    $view = '' if !length($token) || !auth->csrfcheck($token, 'view');
-    my($sp, $ts, $ns) = $view =~ /^([0-2])?([sS]?)([nN]?)$/;
-    {
-        spoilers => $sp // auth->pref('spoilers') || 0,
-        traits_sexual => !$ts ? auth->pref('traits_sexual') : $ts eq 's',
-        show_nsfw => !$ns ? auth->pref('show_nsfw') : $ns eq 'n',
-    }
+    tuwf->req->{view} ||= do {
+        my($view, $token) = tuwf->reqGet('view') =~ /^([^-]*)-(.+)$/;
+
+        # Abort this request and redirect if the token is invalid.
+        if(length($view) && (!tuwf->samesite || !length($token) || !auth->csrfcheck($token, 'view'))) {
+            my $qs = join '&', map { my $k=$_; my @l=tuwf->reqGets($k); map uri_escape($k).'='.uri_escape($_), @l } grep $_ ne 'view', tuwf->reqGets();
+            tuwf->resInit;
+            tuwf->resRedirect(tuwf->reqPath().($qs?"?$qs":''), 'temp');
+            tuwf->done;
+        }
+
+        my($sp, $ts, $ns) = $view =~ /^([0-2])?([sS]?)([nN]?)$/;
+        {
+            spoilers      => $sp // auth->pref('spoilers') || 0,
+            traits_sexual => !$ts ? auth->pref('traits_sexual') : $ts eq 's',
+            show_nsfw     => !$ns ? auth->pref('show_nsfw') : $ns eq 'n',
+        }
+    };
+    tuwf->req->{view}
 }
 
 
@@ -242,18 +253,5 @@ sub viewset {
         !defined $s{show_nsfw}     ? '' : $s{show_nsfw}     ? 'n' : 'N',
         '-'.auth->csrftoken(0, 'view');
 }
-
-
-# The ?view= parameter may only be applied when the link originates from VNDB
-# itself. We don't want people linking directly to spoilers or sexual content.
-# If we do get such a request, redirect to the same page without the ?view=
-# parameter.
-# TODO: Also redirect if the token is invalid.
-TUWF::hook before => sub {
-    return if tuwf->samesite || !length tuwf->reqGet('view');
-    my $qs = join '&', map { my $k=$_; my @l=tuwf->reqGets($k); map uri_escape($k).'='.uri_escape($_), @l } grep $_ ne 'view', tuwf->reqGets();
-    tuwf->resRedirect(tuwf->reqPath().($qs?"?$qs":''), 'temp');
-    tuwf->done;
-};
 
 1;
