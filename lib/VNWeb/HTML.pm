@@ -763,64 +763,69 @@ sub itemmsg_ {
 # friendly message pointing to the guidelines and stuff.
 # Args: $type ('v','r', etc), $obj (from db_entry(), or undef for new page), $page_title, $is_this_a_copy?
 sub editmsg_ {
-  my($type, $obj, $title, $copy) = @_;
-  my $typename   = {v => 'visual novel', r => 'release', p => 'producer', c => 'character', s => 'person'}->{$type};
-  my $guidelines = {v => 2,              r => 3,         p => 4,          c => 12,          s => 16      }->{$type};
-  croak "Unknown type: $type" if !$typename;
+    my($type, $obj, $title, $copy) = @_;
+    my $typename   = {v => 'visual novel', r => 'release', p => 'producer', c => 'character', s => 'person'}->{$type};
+    my $guidelines = {v => 2,              r => 3,         p => 4,          c => 12,          s => 16      }->{$type};
+    croak "Unknown type: $type" if !$typename;
 
-  div_ class => 'mainbox', sub {
-      h1_ sub {
-          txt_ $title;
-          debug_ $obj if $obj;
-      };
-      if($copy) {
-          div_ class => 'warning', sub {
-              h2_ "You're not editing an entry!";
-              p_ sub {;
-                  txt_ "You're about to insert a new entry into the database with information based on ";
-                  a_ href => "/$type$obj->{id}", "$type$obj->{id}";
-                  txt_ '.';
-                  br_;
-                  txt_ "Hit the 'edit' tab on the right-top if you intended to edit the entry instead of creating a new one.";
-              }
-          }
-      }
-      # 'lastrev' is for compatibility with VNDB::*
-      if($obj && ($obj->{maxrev} ? $obj->{maxrev} != $obj->{chrev} : !$obj->{lastrev})) {
-          div_ class => 'warning', sub {
-              h2_ 'Reverting';
-              p_ "You are editing an old revision of this $typename. If you save it, all changes made after this revision will be reverted!";
-          }
-      }
-      div_ class => 'notice', sub {
-          h2_ 'Before editing:';
-          ul_ sub {
-              li_ sub {
-                  txt_ 'Read the ';
-                  a_ href=> "/d$guidelines", 'guidelines';
-                  txt_ '!';
-              };
-              if($obj) {
-                  li_ sub {
-                      txt_ 'Check for any existing discussions on the ';
-                      a_ href => '/t/'._board_id($type, $obj), 'discussion board';
-                  };
-                  # TODO: Include a list of the most recent edits in this page.
-                  li_ sub {
-                      txt_ 'Browse the ';
-                      a_ href => "/$type$obj->{id}/hist", 'edit history';
-                      txt_ ' for any recent changes related to what you want to change.';
-                  };
-              } elsif($type ne 'r') {
-                  li_ sub {
-                      a_ href => "/$type/all", 'Search the database';
-                      txt_ " to see if we already have information about this $typename.";
-                  }
-              }
-              li_ 'Fields marked with (*) may cause other fields to become (un)available depending on the selection.' if $type eq 'r';
-          }
-      }
-   }
+    div_ class => 'mainbox', sub {
+        h1_ sub {
+            txt_ $title;
+            debug_ $obj if $obj;
+        };
+        if($copy) {
+            div_ class => 'warning', sub {
+                h2_ "You're not editing an entry!";
+                p_ sub {;
+                    txt_ "You're about to insert a new entry into the database with information based on ";
+                    a_ href => "/$type$obj->{id}", "$type$obj->{id}";
+                    txt_ '.';
+                    br_;
+                    txt_ "Hit the 'edit' tab on the right-top if you intended to edit the entry instead of creating a new one.";
+                }
+            }
+        }
+        # 'lastrev' is for compatibility with VNDB::*
+        if($obj && ($obj->{maxrev} ? $obj->{maxrev} != $obj->{chrev} : !$obj->{lastrev})) {
+            div_ class => 'warning', sub {
+                h2_ 'Reverting';
+                p_ "You are editing an old revision of this $typename. If you save it, all changes made after this revision will be reverted!";
+            }
+        }
+        div_ class => 'notice', sub {
+            h2_ 'Before editing:';
+            ul_ sub {
+                li_ sub {
+                    txt_ 'Read the ';
+                    a_ href=> "/d$guidelines", 'guidelines';
+                    txt_ '!';
+                };
+                if($obj) {
+                    li_ sub {
+                        txt_ 'Check for any existing discussions on the ';
+                        a_ href => '/t/'._board_id($type, $obj), 'discussion board';
+                    };
+                    # TODO: Include a list of the most recent edits in this page.
+                    li_ sub {
+                        txt_ 'Browse the ';
+                        a_ href => "/$type$obj->{id}/hist", 'edit history';
+                        txt_ ' for any recent changes related to what you want to change.';
+                    };
+                } elsif($type ne 'r') {
+                    li_ sub {
+                        a_ href => "/$type/all", 'Search the database';
+                        txt_ " to see if we already have information about this $typename.";
+                    }
+                }
+                li_ 'Fields marked with (*) may cause other fields to become (un)available depending on the selection.' if $type eq 'r';
+            }
+        };
+        p_ class => 'center', sub {
+            txt_ "If you're having trouble using this new form, the ";
+            a_ href => '/old'.($obj ? "/c$obj->{id}/".tuwf->capture('action') : '/c/new?vid='.tuwf->capture('id')), 'old form';
+            txt_ ' is still available.';
+        } if $type eq 'c' && tuwf->reqPath() !~ m{^/old/};
+    }
 }
 
 1;
