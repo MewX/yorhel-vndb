@@ -11,7 +11,7 @@ use VNDB::Types;
 our @EXPORT = ('charBrowseTable');
 
 TUWF::register(
-  qr{c(?:([1-9]\d*)(?:\.([1-9]\d*))?/(edit|copy)|/new)}
+  qr{old/c(?:([1-9]\d*)(?:\.([1-9]\d*))?/(edit|copy)|/new)}
     => \&edit,
   qr{c/([a-z0]|all)} => \&list,
 );
@@ -126,7 +126,7 @@ sub edit {
   $self->htmlHeader(title => $title, noindex => 1);
   $self->htmlMainTabs('c', $r, $copy ? 'copy' : 'edit') if $r;
   $self->htmlEditMessage('c', $r, $title, $copy);
-  $self->htmlForm({ frm => $frm, action => $r ? "/c$id/".($copy ? 'copy' : 'edit') : '/c/new', editsum => 1, upload => 1 },
+  $self->htmlForm({ frm => $frm, action => $r ? "/old/c$id/".($copy ? 'copy' : 'edit') : '/old/c/new', editsum => 1, upload => 1 },
   chare_geninfo => [ 'General info',
     [ input  => name => 'Name (romaji)', short => 'name' ],
     [ input  => name => 'Original name', short => 'original' ],

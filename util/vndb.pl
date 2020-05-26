@@ -43,7 +43,7 @@ sub _path {
 }
 
 # tuwf->imgpath($image_id, $thumb)
-sub TUWF::Object::imgpath { _path $ROOT, $_[1], $_[2] }
+sub TUWF::Object::imgpath { _path "$ROOT/static", $_[1], $_[2] }
 
 # tuwf->imgurl($image_id, $thumb)
 sub TUWF::Object::imgurl { _path $_[0]{url_static}, $_[1], $_[2] }

@@ -49,6 +49,8 @@ our %apis = (
     DoubleIP       => [], # Account with same IP already exists
     BadCurPass     => [], # Current password is incorrect when changing password
     MailChange     => [], # A confirmation mail has been sent to change a user's email address
+    ImgFormat      => [], # Unrecognized image format
+    Image          => [ {}, { uint => 1 }, { uint => 1 } ], # Uploaded image id, width, height
     Releases       => [ { aoh => { # Response to 'Release'
         id       => { id => 1 },
         title    => {},
@@ -70,6 +72,16 @@ our %apis = (
         applicable   => { anybool => 1 },
         state        => { int => 1 },
     } } ],
+    TraitResult    => [ { aoh => { # Response to 'Traits'
+        id           => { id => 1 },
+        name         => {},
+        searchable   => { anybool => 1 },
+        applicable   => { anybool => 1 },
+        state        => { int => 1 },
+        defaultspoil => { uint => 1 },
+        group_id     => { required => 0, uint => 1 },
+        group_name   => { required => 0 },
+    } } ],
     VNResult       => [ { aoh => { # Response to 'VN'
         id       => { id => 1 },
         title    => {},
@@ -80,10 +92,19 @@ our %apis = (
         name     => {},
         original => { required => 0, default => '' },
     } } ],
+    CharResult     => [ { aoh => { # Response to 'Chars'
+        id       => { id => 1 },
+        name     => {},
+        original => { required => 0, default => '' },
+        main     => { required => 0, type => 'hash', keys => {
+            id       => { id => 1 },
+            name     => {},
+            original => { required => 0, default => '' },
+        } }
+    } } ],
     ImageResult => [ { aoh => { # Response to 'Images'
         id              => { }, # image id...
         token           => { required => 0 },
-        url             => { },
         width           => { uint => 1 },
         height          => { uint => 1 },
         votecount       => { uint => 1 },
@@ -172,12 +193,12 @@ sub def_validation {
 
     my %v = $obj->html5_validation();
     $data .= def $name, 'List (Html.Attribute msg)', '[ '.join(', ',
-        $v{required}  ? 'A.required True' : (),
-        $v{minlength} ? "A.minlength $v{minlength}" : (),
-        $v{maxlength} ? "A.maxlength $v{maxlength}" : (),
-        $v{min}       ? 'A.min '.string($v{min}) : (),
-        $v{max}       ? 'A.max '.string($v{max}) : (),
-        $v{pattern}   ? 'A.pattern '.string($v{pattern}) : ()
+        $v{required}          ? 'A.required True' : (),
+        defined $v{minlength} ? "A.minlength $v{minlength}" : (),
+        defined $v{maxlength} ? "A.maxlength $v{maxlength}" : (),
+        defined $v{min}       ? 'A.min '.string($v{min}) : (),
+        defined $v{max}       ? 'A.max '.string($v{max}) : (),
+        $v{pattern}           ? 'A.pattern '.string($v{pattern}) : ()
     ).']' if !$obj->{keys};
     $data;
 }
@@ -367,6 +388,10 @@ sub write_types {
     $data .= def resolutions=> 'List (String, String)' => list map tuple(string $_, string +($RESOLUTION{$_}{cat}?"$RESOLUTION{$_}{cat} / ":'').$RESOLUTION{$_}{txt}), keys %RESOLUTION;
     $data .= def voiced     => 'List (Int, String)' => list map tuple($_, string $VOICED{$_}{txt}), keys %VOICED;
     $data .= def animated   => 'List (Int, String)' => list map tuple($_, string $ANIMATED{$_}{txt}), keys %ANIMATED;
+    $data .= def genders    => 'List (String, String)' => list map tuple(string $_, string $GENDER{$_}), keys %GENDER;
+    $data .= def cupSizes   => 'List (String, String)' => list map tuple(string $_, string $CUP_SIZE{$_}), keys %CUP_SIZE;
+    $data .= def bloodTypes => 'List (String, String)' => list map tuple(string $_, string $BLOOD_TYPE{$_}), keys %BLOOD_TYPE;
+    $data .= def charRoles  => 'List (String, String)' => list map tuple(string $_, string $CHAR_ROLE{$_}{txt}), keys %CHAR_ROLE;
     $data .= def curYear    => Int => (gmtime)[5]+1900;
 
     write_module Types => $data;

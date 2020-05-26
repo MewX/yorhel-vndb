@@ -28,20 +28,6 @@ table.stripe tbody tr:nth-child(odd):not(.nostripe),
 #footer   { margin: 15px auto 0 auto; text-align: center; color: $footer$; }
 #footer a { color: $footer$; text-decoration: underline; }
 
-#debug {
-  position: fixed;
-  left: 0;
-  bottom: 0;
-  background-color: #600;
-  border-right: 1px solid #c00;
-  border-top: 1px solid #c00;
-  width: 200px;
-  height: 50px;
-  text-align: center;
-}
-#debug h2 { color: #f00!important; font-size: 20px; }
-#debug, #debug a { color: #fff!important; }
-
 /* https://snook.ca/archives/html_and_css/hiding-content-for-accessibility */
 .visuallyhidden, .linkradio input {
   position: absolute !important;
@@ -168,6 +154,8 @@ legend                   { display: none; }
 optgroup option          { padding-left: 10px; font-style: normal; }
 input.submit             { background: $boxbg$; padding: 1px 5px; }
 input.text, select       { width: 200px; }
+input[type=number]       { -moz-appearance:textfield }
+input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0 }
 fieldset.submit          { width: 100%; text-align: center; margin: 5px; }
 fieldset.submit input[type=submit] { width: 150px; }
 fieldset.submit input[type=checkbox] { margin: 0 5px 0 15px; }
@@ -181,6 +169,11 @@ table.formtable tr.newfield > td { padding-top: 5px; }
 table.formtable tr.newpart td { padding-top: 20px; font-weight: bold; }
 table.formtable td table td { padding: 1px 15px 1px 0px }
 table.formtable td table    { margin-bottom: 5px }
+
+div.formimage > div:nth-child(1) { width: 300px; height: 300px; text-align: center; float: left }
+div.formimage > div:nth-child(1) img { max-width: 290px; max-height: 300px }
+div.formimage > div:nth-child(2) { min-height: 330px }
+div.formimage h2 { margin: 0 }
 
 /* Format checkboxes and radio buttons as if they were normal links with unicode icons.
  * Usage:
@@ -306,7 +299,7 @@ p.mainopts a         { margin: 0 5px }
 /***** main tabs *****/
 
 div.maintabs          { display: flex; justify-content: space-between; position: relative; width: 100%; height: 22px; margin: 20px 0 -22px 0; padding: 0 }
-#maincontent div:nth-child(1).maintabs { margin-top: 0 }
+#maincontent > div:nth-child(1).maintabs { margin-top: 0 }
 div.maintabs.right    { justify-content: flex-end }
 div.maintabs.left     { justify-content: flex-start }
 div.maintabs > ul       { margin: 0; padding: 0; list-style-type: none }
@@ -663,6 +656,12 @@ div.chardetails.charsep      { margin-top: 30px }
 
 /***** Char edit *****/
 
+
+table.chare_traits .buts      { padding: 0 20px }
+table.chare_traits .buts a    { box-sizing: border-box; display: block; width: 15px; height: 14px; border: 1px solid $border$; margin: 0; float: left }
+table.chare_traits .buts a.s0 { border: none; background-color: #0f0 }
+table.chare_traits .buts a.s1 { border: none; background-color: #f80 }
+table.chare_traits .buts a.s2 { border: none; background-color: #f40 }
 #jt_box_chare_img div.img { float: left; height: 300px; padding-right: 20px; }
 #jt_box_chare_img h2      { margin: 0; }
 #jt_box_chare_traits table  { margin-bottom: 10px; margin-left: 10px; }

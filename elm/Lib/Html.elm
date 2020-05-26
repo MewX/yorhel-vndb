@@ -79,14 +79,14 @@ inputSelect nam sel onch attrs lst =
       ) <| List.indexedMap opt lst
 
 
-inputNumber : String -> Int -> (Int -> m) -> List (Attribute m) -> Html m
+inputNumber : String -> Maybe Int -> (Maybe Int -> m) -> List (Attribute m) -> Html m
 inputNumber nam val onch attrs = input (
     [ type_ "number"
     , class "text"
     , tabindex 10
     , style "width" "40px"
-    , value <| String.fromInt val
-    , onInput (\s -> onch <| Maybe.withDefault 0 <| String.toInt s)
+    , value <| Maybe.withDefault "" <| Maybe.map String.fromInt val
+    , onInput (\s -> onch <| String.toInt s)
     ]
     ++ attrs
     ++ (if nam == "" then [] else [ id nam, name nam ])

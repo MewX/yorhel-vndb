@@ -2,6 +2,7 @@ module Lib.Util exposing (..)
 
 import Dict
 import Task
+import Lib.Ffi as Ffi
 
 -- Delete an element from a List
 delidx : Int -> List a -> List a
@@ -57,3 +58,10 @@ validateGtin =
         ||  n >= 9770000000000
         || modBy 10 (check n) /= 0
   in String.filter Char.isDigit >> String.toInt >> Maybe.map (not << inval) >> Maybe.withDefault False
+
+
+-- Convert an image ID (e.g. "sf500") into a URL.
+imageUrl : String -> String
+imageUrl id =
+  let num = String.dropLeft 2 id |> String.toInt |> Maybe.withDefault 0
+  in Ffi.urlStatic ++ "/" ++ String.left 2 id ++ "/" ++ String.fromInt (modBy 10 (num // 10)) ++ String.fromInt (modBy 10 num) ++ "/" ++ String.fromInt num ++ ".jpg"

@@ -1,6 +1,7 @@
 module Lib.Api exposing (..)
 
 import Json.Encode as JE
+import File exposing (File)
 import Http
 
 import Gen.Api exposing (..)
@@ -22,7 +23,7 @@ showResponse res =
   in case res of
     HTTPError (Http.Timeout)        -> "Network timeout, please try again later."
     HTTPError (Http.NetworkError)   -> "Network error, please try again later."
-    HTTPError (Http.BadStatus r)    -> "Server error " ++ String.fromInt r ++ ", please try again later, or report an issue if this persists."
+    HTTPError (Http.BadStatus r)    -> "Server error " ++ String.fromInt r ++ ", please try again later or report an issue if this persists."
     HTTPError (Http.BadBody r)      -> "Invalid response from the server, please report a bug (debug info: " ++ r ++")."
     HTTPError (Http.BadUrl _)       -> unexp
     Success                         -> unexp
@@ -42,11 +43,15 @@ showResponse res =
     DoubleIP                        -> "You can only register one account from the same IP within 24 hours."
     BadCurPass                      -> "Current password is invalid."
     MailChange                      -> unexp
+    ImgFormat                       -> "Unrecognized image format, only JPEG and PNG are accepted."
+    Image _ _ _                     -> unexp
     Releases _                      -> unexp
     BoardResult _                   -> unexp
     TagResult _                     -> unexp
+    TraitResult _                   -> unexp
     VNResult _                      -> unexp
     ProducerResult _                -> unexp
+    CharResult _                    -> unexp
     ImageResult _                   -> unexp
 
 
@@ -66,5 +71,25 @@ post name body msg =
   Http.post
     { url = "/elm/" ++ name ++ ".json"
     , body = Http.jsonBody body
+    , expect = expectResponse msg
+    }
+
+
+type ImageType
+  = Ch
+  | Cv
+  | Sf
+
+postImage : ImageType -> File -> (Response -> msg) -> Cmd msg
+postImage ty file msg =
+  Http.post
+    { url  = "/elm/ImageUpload.json"
+    , body = Http.multipartBody
+      [ Http.stringPart "type" <| case ty of
+          Cv -> "cv"
+          Sf -> "sf"
+          Ch -> "ch"
+      , Http.filePart "img" file
+      ]
     , expect = expectResponse msg
     }
