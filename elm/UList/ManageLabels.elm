@@ -87,6 +87,8 @@ view model =
             ]
         ]
       ]
+
+    hasDup = hasDuplicates <| List.map (\l -> l.label) model.labels
   in
     Html.form [ onSubmit Submit, class "managelabels hidden" ]
     [ div [ ]
@@ -116,8 +118,7 @@ view model =
           [ td [] []
           , td [ colspan 3 ]
             [ a [ onClick Add ] [ text "New label" ]
-            --, inputButton "Save changes" Noop []
-            , submitButton "Save changes" model.state True
+            , submitButton "Save changes" model.state (not hasDup)
             ]
           ]
         ]
