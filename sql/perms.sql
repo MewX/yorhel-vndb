@@ -59,6 +59,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON threads_boards           TO vndb_site;
 GRANT SELECT, INSERT, UPDATE, DELETE ON threads_poll_options     TO vndb_site;
 GRANT SELECT, INSERT, UPDATE, DELETE ON threads_poll_votes       TO vndb_site;
 GRANT SELECT, INSERT, UPDATE, DELETE ON threads_posts            TO vndb_site;
+GRANT         INSERT                 ON trace_log                TO vndb_site;
 GRANT SELECT, INSERT, UPDATE, DELETE ON traits                   TO vndb_site;
 GRANT SELECT, INSERT, UPDATE, DELETE ON traits_chars             TO vndb_site;
 GRANT SELECT, INSERT, UPDATE, DELETE ON traits_parents           TO vndb_site;

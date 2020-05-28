@@ -35,10 +35,6 @@ our @EXPORT = qw/
 /;
 
 
-# Encoded as JSON and appended to the end of the page, to be read by pagevars.js.
-our %pagevars;
-
-
 # Ugly hack to move rendering down below the float object.
 sub clearfloat_ { div_ class => 'clearfloat', '' }
 
@@ -115,9 +111,8 @@ sub rdate_ {
 # Instantiate an Elm module
 sub elm_ {
     my($mod, $schema, $data, $placeholder) = @_;
-    $pagevars{elm} ||= [];
-    push $pagevars{elm}->@*, [ $mod, $data ? ($schema ? $schema->analyze->coerce_for_json($data, unknown => 'remove') : $data) : () ];
-    div_ id => "elm$#{$pagevars{elm}}", $placeholder//'';
+    push tuwf->req->{pagevars}{elm}->@*, [ $mod, $data ? ($schema ? $schema->analyze->coerce_for_json($data, unknown => 'remove') : $data) : () ];
+    div_ id => sprintf('elm%d', $#{ tuwf->req->{pagevars}{elm} }), $placeholder//'';
 }
 
 
@@ -314,7 +309,7 @@ sub _footer_ {
         my $modules = uri_escape join "\n", sort keys %INC;
         a_ href => 'data:text/plain,'.$modules, 'Modules';
         lit_ ' | ';
-        debug_ \%pagevars;
+        debug_ tuwf->req->{pagevars};
     }
 }
 
@@ -411,8 +406,8 @@ sub _hidden_msg_ {
 sub v2rwjs_ { # Also used by VNDB::Util::LayoutHTML.
     script_ type => 'application/json', id => 'pagevars', sub {
         # Escaping rules for a JSON <script> context are kinda weird, but more efficient than regular xml_escape().
-        lit_(JSON::XS->new->canonical->encode(\%pagevars) =~ s{</}{<\\/}rg =~ s/<!--/<\\u0021--/rg);
-    } if keys %pagevars;
+        lit_(JSON::XS->new->canonical->encode(tuwf->req->{pagevars}) =~ s{</}{<\\/}rg =~ s/<!--/<\\u0021--/rg);
+    } if keys tuwf->req->{pagevars}->%*;
     script_ type => 'application/javascript', src => config->{url_static}.'/f/v2rw.js?'.config->{version}, '';
 }
 
@@ -433,7 +428,7 @@ sub v2rwjs_ { # Also used by VNDB::Util::LayoutHTML.
 sub framework_ {
     my $cont = pop;
     my %o = @_;
-    %pagevars = $o{pagevars} ? $o{pagevars}->%* : ();
+    tuwf->req->{pagevars} = { $o{pagevars}->%* } if $o{pagevars};
 
     html_ lang => 'en', sub {
         head_ sub { _head_ \%o };

@@ -4,6 +4,7 @@ use v5.24;
 use warnings;
 use Cwd 'abs_path';
 use TUWF ':html_';
+use Time::HiRes 'time';
 
 $|=1; # Disable buffering on STDOUT, otherwise vndb-dev-server.pl won't pick up our readyness notification.
 
@@ -64,6 +65,8 @@ TUWF::hook before => sub {
     # Use a 'SameSite=Strict' cookie to determine whether this page was loaded from internal or external.
     # Ought to be more reliable than checking the Referer header, but it's unfortunately a bit uglier.
     tuwf->resCookie(samesite => 1, httponly => 1, samesite => 'Strict') if !tuwf->samesite;
+
+    tuwf->req->{trace_start} = time if config->{trace_log};
 };
 
 
@@ -109,8 +112,48 @@ sub TUWF::Object::resDenied {
 }
 
 
+# Intercept TUWF::any() and TUWF::register() to figure out which module is processing the request.
+if(config->{trace_log}) {
+    my sub wrap {
+        my $f = shift;
+        sub {
+            my $i = 0;
+            my $loc = ['',0];
+            while(my($pack, undef, $line) = caller($i++)) {
+                if($pack !~ '^(?:main|TUWF|VNWeb::Elm)') {
+                    $loc = [$pack,$line];
+                    last;
+                }
+            }
+            my sub subwrap { my $sub = shift; sub { tuwf->req->{trace_loc} = $loc; $sub->(@_) } }
+            $f->(map ref($_) eq 'CODE' ? subwrap($_) : $_, @_)
+        }
+    }
+    no warnings 'redefine';
+    my $x = \&TUWF::register; *TUWF::register = wrap($x);# sub { $x->(map ref($_) eq 'CODE' ? wrap($_) : $_, @_) };
+    my $y = \&TUWF::any;      *TUWF::any      = wrap($y);# sub { $y->(map ref($_) eq 'CODE' ? wrap($_) : $_, @_) };
+}
+
 TUWF::load_recursive('VNDB::Util', 'VNDB::DB', 'VNDB::Handler');
 TUWF::set import_modules => 0;
 TUWF::load_recursive('VNWeb');
+
+TUWF::hook after => sub {
+    return if rand() > config->{trace_log} || !tuwf->req->{trace_start};
+    my $sqlt = List::Util::sum(map $_->[2], tuwf->{_TUWF}{DB}{queries}->@*);
+    my %elm = map +($_->[0], 1), tuwf->req->{pagevars}{elm}->@*;
+    tuwf->dbExeci('INSERT INTO trace_log', {
+        method    => tuwf->reqMethod(),
+        path      => tuwf->reqPath(),
+        query     => tuwf->reqQuery(),
+        module    => tuwf->req->{trace_loc}[0],
+        line      => tuwf->req->{trace_loc}[1],
+        sql_num   => scalar grep($_->[0] ne 'ping/rollback' && $_->[0] ne 'commit', tuwf->{_TUWF}{DB}{queries}->@*),
+        sql_time  => $sqlt,
+        perl_time => time() - tuwf->req->{trace_start},
+        loggedin  => auth?1:0,
+        elm_mods  => '{'.join(',', sort keys %elm).'}'
+    });
+} if config->{trace_log};
 
 TUWF::run if !tuwf->{elmgen};

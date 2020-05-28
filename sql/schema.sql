@@ -701,6 +701,21 @@ CREATE TABLE threads_boards (
   PRIMARY KEY(tid, type, iid)
 );
 
+-- trace_log
+CREATE TABLE trace_log (
+  date      timestamptz NOT NULL DEFAULT NOW(),
+  method    text NOT NULL,
+  path      text NOT NULL,
+  query     text NOT NULL DEFAULT '',
+  module    text,
+  line      integer,
+  sql_num   integer,
+  sql_time  float,
+  perl_time float,
+  loggedin  boolean,
+  elm_mods  text[]
+);
+
 -- traits
 CREATE TABLE traits (
   id SERIAL PRIMARY KEY, -- [pub]
