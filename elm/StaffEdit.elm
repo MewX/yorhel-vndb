@@ -126,7 +126,7 @@ update msg model =
     AliasName i s -> (validate { model | alias = modidx i (\e -> { e | name     = s }) model.alias }, Cmd.none)
     AliasOrig i s -> (validate { model | alias = modidx i (\e -> { e | original = s }) model.alias }, Cmd.none)
     AliasMain n _ -> ({ model | aid = n }, Cmd.none)
-    AliasAdd      -> ({ model | alias = model.alias ++ [{ aid = newAid model, name = "", original = "", inuse = False }] }, Cmd.none)
+    AliasAdd      -> ({ model | alias = model.alias ++ [{ aid = newAid model, name = "", original = "", inuse = False, wantdel = False }] }, Cmd.none)
 
     Submit -> ({ model | state = Api.Loading }, GSE.send (encode model) Submitted)
     Submitted (GApi.Redirect s) -> (model, load s)
@@ -150,6 +150,7 @@ view model =
         ]
       , td [ class "tc_add" ]
         [ if model.aid == e.aid then b [ class "grayedout" ] [ text " primary" ]
+          else if e.wantdel then b [ class "standout" ] [ text " still referenced" ]
           else if e.inuse then b [ class "grayedout" ] [ text " referenced" ]
           else inputButton "remove" (AliasDel n) []
         ]

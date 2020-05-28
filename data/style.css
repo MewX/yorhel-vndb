@@ -765,7 +765,7 @@ div.charsum_list .charsum_bubble {
 #jt_box_vn_staff td.tc_note input { width: 250px }
 #jt_box_vn_cast  td.tc_add,
 #jt_box_vn_staff td.tc_add,
-.staffedit       td.tc_add { width: 40px; text-align: left }
+.staffedit       td.tc_add { width: 40px; text-align: left; white-space: nowrap }
 .staffedit table.names td { padding: 1px 2px; vertical-align: middle; }
 .staffedit table.names tr.alias_new td { padding-top: 8px }
 

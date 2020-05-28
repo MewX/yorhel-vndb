@@ -11,6 +11,7 @@ my $FORM = {
         name      => { maxlength => 200 },
         original  => { maxlength => 200, required => 0, default => '' },
         inuse     => { anybool => 1, _when => 'out' },
+        wantdel   => { anybool => 1, _when => 'out' },
     } },
     desc       => { required => 0, default => '', maxlength => 5000 },
     gender     => { default => 'unknown', enum => [qw[unknown m f]] },
@@ -39,10 +40,15 @@ TUWF::get qr{/$RE{srev}/edit} => sub {
     $e->{authmod} = auth->permDbmod;
     $e->{editsum} = $e->{chrev} == $e->{maxrev} ? '' : "Reverted to revision s$e->{id}.$e->{chrev}";
 
-    enrich_merge aid => sub {
-        'SELECT aid, EXISTS(SELECT 1 FROM vn_staff WHERE aid = x.aid UNION ALL SELECT 1 FROM vn_seiyuu WHERE aid = x.aid) AS inuse
-           FROM unnest(', sql_array(@$_), '::int[]) AS x(aid)'
-    }, $e->{alias};
+    my $alias_inuse = 'EXISTS(SELECT 1 FROM vn_staff WHERE aid = sa.aid UNION ALL SELECT 1 FROM vn_seiyuu WHERE aid = sa.aid)';
+    enrich_merge aid => sub { "SELECT aid, $alias_inuse AS inuse, false AS wantdel FROM unnest(", sql_array(@$_), '::int[]) AS sa(aid)' }, $e->{alias};
+
+    # If we're reverting to an older revision, we have to make sure all the
+    # still referenced aliases are included.
+    push $e->{alias}->@*, tuwf->dbAlli(
+        "SELECT aid, name, original, true AS inuse, true AS wantdel
+           FROM staff_alias sa WHERE $alias_inuse AND sa.id =", \$e->{id}, 'AND sa.aid NOT IN', [ map $_->{aid}, $e->{alias}->@* ]
+    )->@* if $e->{chrev} != $e->{maxrev};
 
     my $name = (grep $_->{aid} == $e->{aid}, @{$e->{alias}})[0]{name};
     framework_ title => "Edit $name", type => 's', dbobj => $e, tab => 'edit',
