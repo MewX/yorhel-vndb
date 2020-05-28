@@ -67,7 +67,7 @@ div.warning h2, div.notice h2 { font-size: 13px; font-weight: bold; margin: 0; }
 #ds_box tr.selected { background: $boxbg$; }
 #ds_box table       { width: 100%; }
 
-/* Elm dropdowns */
+/* Elm dropdowns (also in perl: VNWeb::Releases::Lib) */
 .elm_dd > a { color: $maintext$; display: block; border: none; padding-right: 15px; position: relative }
 .elm_dd > a > span:last-child { position: absolute; right: 5px; top: 0; width: 16px; text-align: right; display: block }
 .elm_dd > a > span:last-child i { visibility: hidden; font-style: normal }
@@ -88,10 +88,13 @@ div.warning h2, div.notice h2 { font-size: 13px; font-weight: bold; margin: 0; }
 .elm_dd_input .elm_dd > a { background-color: $secbg$; color: $maintext$; border: 1px solid $secborder$; font: 14px "Tahoma", "Arial", sans-serif; padding: 1px 15px 1px 2px; margin: -1px }
 .elm_dd_noarrow .elm_dd > a { padding-right: 0 }
 .elm_dd_noarrow .elm_dd > a > span:last-child { display: none }
+.elm_dd_hover .elm_dd > div { display: none }
+.elm_dd_hover .elm_dd:hover > div { display: block }
 .elm_dd_left .elm_dd > div { float: left }
 .elm_dd_left .elm_dd > div > ul { right: 0; top: -20px }
-.elm_dd_relextlink .elm_dd > a { padding-left: 4px }
-
+.elm_dd_relextlink .elm_dd > a { padding-left: 4px; color: $link$ }
+.elm_dd_relextlink ul a { text-align: right }
+.elm_dd_relextlink ul span { color: $maintext$; padding-right: 10px }
 
 
 /* general text formatting */
@@ -478,9 +481,6 @@ div#vntags                    { margin: 0 30px 0 30px; border-top: 1px solid $bo
 .releases td.tc_icons  { padding: 0 4px }
 .releases td.tc5       { width: 70px; text-align: right }
 .releases td.tc6       { text-align: right; width: 25px; padding: 0; white-space: nowrap }
-
-.rllinks_dd a { text-align: right }
-.rllinks_dd span { color: $maintext$; padding-right: 10px }
 
 #screenshots p.rel {
   background: $boxbg$;

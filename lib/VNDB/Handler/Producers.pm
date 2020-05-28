@@ -170,7 +170,7 @@ sub _releases {
          td class => 'tc5', join ', ',
            ($rel->{developer} ? 'developer' : ()), ($rel->{publisher} ? 'publisher' : ());
          td class => 'tc6';
-          $self->releaseExtLinks($rel);
+          VNWeb::Releases::Lib::release_extlinks_($rel);
          end;
         end 'tr';
       }

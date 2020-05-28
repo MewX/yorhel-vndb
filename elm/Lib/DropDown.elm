@@ -12,7 +12,7 @@ import Lib.Html exposing (..)
 type alias Config msg =
   { id     : String
   , opened : Bool
-  , hover  : Bool -- if true, the dropdown opens on mouse-over rather than click
+  , hover  : Bool -- if true, the dropdown opens on mouse-over rather than click (not currently used)
   , toggle : Bool -> msg
   }
 

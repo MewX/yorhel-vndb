@@ -10,15 +10,32 @@ our @EXPORT = qw/release_extlinks_/;
 sub release_extlinks_ {
     my($r, $id) = @_;
     return if !$r->{extlinks}->@*;
-    my $has_dd = $r->{extlinks}->@* > ($r->{website} ? 1 : 0);
-    my sub icon_ {
-        a_ href => $r->{website}||'#', sub {
-            txt_ scalar $r->{extlinks}->@* if $has_dd;
-            abbr_ class => 'icons external', title => 'External link', '';
+
+    if($r->{extlinks}->@* == 1 && $r->{website}) {
+        a_ href => $r->{website}, sub {
+            abbr_ class => 'icons external', title => 'Official website', '';
+        };
+        return
+    }
+
+    div_ class => 'elm_dd_noarrow elm_dd_hover elm_dd_left elm_dd_relextlink', sub {
+        div_ class => 'elm_dd', sub {
+            a_ href => $r->{website}||'#', sub {
+                txt_ scalar $r->{extlinks}->@*;
+                abbr_ class => 'icons external', title => 'External link', '';
+            };
+            div_ sub {
+                ul_ sub {
+                    li_ sub {
+                        a_ href => $_->[1], sub {
+                            span_ $_->[2] if length $_->[2];
+                            txt_ $_->[0];
+                        }
+                    } for $r->{extlinks}->@*;
+                }
+            }
         }
     }
-    elm_ ReleaseExtLinks => undef, [ ''.($id||$r->{id}), $r->{extlinks} ], \&icon_ if $has_dd;
-    icon_ if !$has_dd;
 }
 
 1;
