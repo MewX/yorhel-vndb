@@ -66,7 +66,7 @@ TUWF::get qr{/s/new}, sub {
         editmsg_ s => undef, 'Add staff member';
         elm_ StaffEdit => $FORM_OUT, {
             elm_empty($FORM_OUT)->%*,
-            alias => [ { aid => -1, name => '', original => '', inuse => 0 } ],
+            alias => [ { aid => -1, name => '', original => '', inuse => 0, wantdel => 0 } ],
             aid => -1
         };
     };
