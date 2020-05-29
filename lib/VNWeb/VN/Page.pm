@@ -772,7 +772,7 @@ TUWF::get qr{/$RE{vrev}}, sub {
 
     enrich_item $v;
 
-    framework_ title => $v->{title}, index => !tuwf->capture('rev'), type => 'v', dbobj => $v, hiddenmsg => 1, og => og($v),
+    framework_ title => $v->{title}, index => !tuwf->capture('rev'), type => 'v', dbobj => $v, hiddenmsg => 1, js => 1, og => og($v),
     sub {
         rev_ $v if tuwf->capture('rev');
         infobox_ $v;

@@ -1,6 +1,4 @@
-var init = Elm.UList.Opt.init;
-
-var actualInit = function(opt) {
+var actualInit = function(init, opt) {
     var app = init(opt);
 
     app.ports.ulistVNDeleted.subscribe(function(b) {
@@ -27,10 +25,10 @@ var actualInit = function(opt) {
 };
 
 // This module is typically hidden, lazily load it only when the module is visible to speed up page load time.
-Elm.UList.Opt.init = function(opt) {
+wrap_elm_init('UList.Opt', function(init, opt) {
     var e = document.getElementById('collapse_vid'+opt.flags.vid);
     if(e.checked)
-        actualInit(opt);
+        actualInit(init, opt);
     else
-        e.addEventListener('click', function() { actualInit(opt) }, { once: true });
-};
+        e.addEventListener('click', function() { actualInit(init, opt) }, { once: true });
+});

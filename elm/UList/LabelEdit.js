@@ -1,5 +1,4 @@
-var init = Elm.UList.LabelEdit.init;
-Elm.UList.LabelEdit.init = function(opt) {
+wrap_elm_init('UList.LabelEdit', function(init, opt) {
     opt.flags.uid = pageVars.uid;
     opt.flags.labels = pageVars.labels;
     var app = init(opt);
@@ -8,4 +7,4 @@ Elm.UList.LabelEdit.init = function(opt) {
         l.setAttribute('data-publabel', pub?1:'');
         l.classList.toggle('invisible', !((l.getAttribute('data-voted') && !pageVars.voteprivate) || l.getAttribute('data-publabel')))
     });
-};
+});

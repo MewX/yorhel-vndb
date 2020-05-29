@@ -23,7 +23,7 @@ if(pageVars.elm) {
     for(var i=0; i<pageVars.elm.length; i++) {
         var e = pageVars.elm[i];
         //if(e[0] != 'UList.DateEdit') continue;
-        var mod = e[0].split('.').reduce(function(p, c) { return p[c] }, Elm);
+        var mod = e[0].split('.').reduce(function(p, c) { return p[c] }, window.Elm);
         var node = document.getElementById('elm'+i);
         if(e.length > 1)
             mod.init({ node: node, flags: e[1] });

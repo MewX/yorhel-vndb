@@ -567,7 +567,7 @@ TUWF::get qr{/$RE{uid}/ulist}, sub {
             : $num_core_labels == 1 && $opt_labels->{5} ? 'wish' : 'list';
 
     my $title = $own ? 'My list' : user_displayname($u)."'s list";
-    framework_ title => $title, type => 'u', dbobj => $u, tab => $tab,
+    framework_ title => $title, type => 'u', dbobj => $u, tab => $tab, js => 1,
         $own ? ( pagevars => {
             uid         => $u->{id}*1,
             labels      => $LABELS->analyze->{keys}{labels}->coerce_for_json($labels),

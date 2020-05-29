@@ -403,19 +403,11 @@ sub _hidden_msg_ {
 }
 
 
-sub v2rwjs_ { # Also used by VNDB::Util::LayoutHTML.
-    script_ type => 'application/json', id => 'pagevars', sub {
-        # Escaping rules for a JSON <script> context are kinda weird, but more efficient than regular xml_escape().
-        lit_(JSON::XS->new->canonical->encode(tuwf->req->{pagevars}) =~ s{</}{<\\/}rg =~ s/<!--/<\\u0021--/rg);
-    } if keys tuwf->req->{pagevars}->%*;
-    script_ type => 'application/javascript', src => config->{url_static}.'/f/v2rw.js?'.config->{version}, '';
-}
-
-
 # Options:
 #   title      => $title
 #   index      => 1/0, default 0
 #   feeds      => 1/0
+#   js         => 1/0, set to 1 to ensure 'plain.js' is included on the page even if no elm_() modules are loaded.
 #   search     => $query
 #   og         => { opengraph metadata }
 #   type       => Database entry type (used for the main tabs & hidden message)
@@ -441,7 +433,12 @@ sub framework_ {
                 $cont->() unless $o{hiddenmsg} && _hidden_msg_ \%o;
                 div_ id => 'footer', \&_footer_;
             };
-            v2rwjs_;
+            script_ type => 'application/json', id => 'pagevars', sub {
+                # Escaping rules for a JSON <script> context are kinda weird, but more efficient than regular xml_escape().
+                lit_(JSON::XS->new->canonical->encode(tuwf->req->{pagevars}) =~ s{</}{<\\/}rg =~ s/<!--/<\\u0021--/rg);
+            } if keys tuwf->req->{pagevars}->%*;
+            script_ type => 'application/javascript', src => config->{url_static}.'/f/elm.js?'.config->{version}, '' if tuwf->req->{pagevars}{elm};
+            script_ type => 'application/javascript', src => config->{url_static}.'/f/plain.js?'.config->{version}, '' if $o{js} || tuwf->req->{pagevars}{elm};
         }
     }
 }

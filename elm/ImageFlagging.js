@@ -1,6 +1,4 @@
-var init = Elm.ImageFlagging.init;
-
-Elm.ImageFlagging.init = function(opt) {
+wrap_elm_init('ImageFlagging', function(init, opt) {
     opt.flags.pWidth  = window.innerWidth  || document.documentElement.clientWidth  || document.body.clientWidth;
     opt.flags.pHeight = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
     var app = init(opt);
@@ -15,4 +13,4 @@ Elm.ImageFlagging.init = function(opt) {
             preload[url].src = url;
         }
     });
-};
+});
