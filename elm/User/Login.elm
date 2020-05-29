@@ -31,6 +31,9 @@ type alias Model =
   , state    : Api.State
   , insecure : Bool
   , noteq    : Bool
+    -- Extra Elm-side input validation, because apparently some login managers
+    -- bypass HTML5 validation or proper onChange messages fail to get invoked.
+  , invalid  : Bool
   }
 
 
@@ -44,6 +47,7 @@ init ref =
   , state    = Api.Normal
   , insecure = False
   , noteq    = False
+  , invalid  = False
   }
 
 
@@ -59,13 +63,15 @@ type Msg
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    Username n -> ({ model | username = String.toLower n }, Cmd.none)
-    Password n -> ({ model | password = n }, Cmd.none)
+    Username n -> ({ model | invalid = False, username = String.toLower n }, Cmd.none)
+    Password n -> ({ model | invalid = False, password = n }, Cmd.none)
     Newpass1 n -> ({ model | newpass1 = n, noteq = False }, Cmd.none)
     Newpass2 n -> ({ model | newpass2 = n, noteq = False }, Cmd.none)
 
     Submit ->
-      if not model.insecure
+      if model.username == "" || model.password == ""
+      then ( { model | invalid = True }, Cmd.none)
+      else if not model.insecure
       then ( { model | state = Api.Loading }
            , GUL.send { username = model.username, password = model.password } Submitted )
       else if model.newpass1 /= model.newpass2
@@ -131,6 +137,9 @@ view model =
   in form_ Submit (model.state == Api.Loading)
       [ if model.insecure then changeBox else loginBox
       , div [ class "mainbox" ]
-        [ fieldset [ class "submit" ] [ submitButton "Submit" model.state True ]
+        [ fieldset [ class "submit" ]
+          [ if model.invalid then b [ class "standout" ] [ text "Username or password is empty." ] else text ""
+          , submitButton "Submit" model.state (not model.invalid)
+          ]
         ]
       ]
