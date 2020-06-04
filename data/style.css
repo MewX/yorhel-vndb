@@ -661,25 +661,6 @@ table.chare_traits .buts a    { box-sizing: border-box; display: block; width: 1
 table.chare_traits .buts a.s0 { border: none; background-color: #0f0 }
 table.chare_traits .buts a.s1 { border: none; background-color: #f80 }
 table.chare_traits .buts a.s2 { border: none; background-color: #f40 }
-#jt_box_chare_img div.img { float: left; height: 300px; padding-right: 20px; }
-#jt_box_chare_img h2      { margin: 0; }
-#jt_box_chare_traits table  { margin-bottom: 10px; margin-left: 10px; }
-#jt_box_chare_traits h2     { margin: 0 0 3px 0px; }
-#jt_box_chare_traits td.tc_name       { width: 200px }
-#jt_box_chare_traits td.tc_name input { width: 280px; }
-#jt_box_chare_traits td.tc_spoil      { width: 80px; }
-#jt_box_chare_vns table  { margin-bottom: 10px; margin-left: 10px; }
-#jt_box_chare_vns h2     { margin: 0 0 3px 0px; }
-#jt_box_chare_vns td.tc_vn   { font-weight: bold; padding: 5px 0 3px 0 }
-#jt_box_chare_vns td.tc_vn i { font-weight: normal; padding-left: 5px; font-style: normal  }
-#jt_box_chare_vns td.tc_rel  { width: 340px; padding-left: 15px }
-#jt_box_chare_vns td.tc_rel select  { width: 340px; }
-#jt_box_chare_vns td.tc_rol,
-#jt_box_chare_vns td.tc_rol select  { width: 150px }
-#jt_box_chare_vns td.tc_spl,
-#jt_box_chare_vns td.tc_spl select  { width: 100px }
-#jt_box_chare_vns td.tc_del         { padding-left: 5px }
-#jt_box_chare_vns td.tc_vnadd input { width: 280px }
 
 
 /***** Char browse *****/

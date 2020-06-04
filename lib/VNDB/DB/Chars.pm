@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Exporter 'import';
 
-our @EXPORT = qw|dbCharFilters dbCharGet dbCharGetRev dbCharRevisionInsert|;
+our @EXPORT = qw|dbCharFilters dbCharGet|;
 
 
 # Character filters shared by dbCharGet and dbVNGet
@@ -86,31 +86,6 @@ sub dbCharGet {
 }
 
 
-sub dbCharGetRev {
-  my $self = shift;
-  my %o = (what => '', @_);
-
-  $o{rev} ||= $self->dbRow('SELECT MAX(rev) AS rev FROM changes WHERE type = \'c\' AND itemid = ?', $o{id})->{rev};
-
-  my $select = 'c.itemid AS id, ch.name, ch.original, ch.gender';
-  $select .= ', extract(\'epoch\' from c.added) as added, c.comments, c.rev, c.ihid, c.ilock, '.VNWeb::DB::sql_user();
-  $select .= ', c.id AS cid, NOT EXISTS(SELECT 1 FROM changes c2 WHERE c2.type = c.type AND c2.itemid = c.itemid AND c2.rev = c.rev+1) AS lastrev';
-  $select .= ', ch.alias, ch.desc, coalesce(vndbid_num(ch.image), 0) as image, ch.b_month, ch.b_day, ch.s_bust, ch.s_waist, ch.s_hip, ch.height, ch.weight, ch.bloodt, ch.cup_size, ch.age, ch.main, ch.main_spoil, co.hidden, co.locked' if $o{what} =~ /extended/;
-
-  my $r = $self->dbAll(q|
-    SELECT !s
-      FROM changes c
-      JOIN chars co ON co.id = c.itemid
-      JOIN chars_hist ch ON ch.chid = c.id
-      JOIN users u ON u.id = c.requester
-      WHERE c.type = 'c' AND c.itemid = ? AND c.rev = ?|,
-    $select, $o{id}, $o{rev}
-  );
-
-  return _enrich($self, $r, 0, 1, $o{what});
-}
-
-
 sub _enrich {
   my($self, $r, $np, $rev, $what, $vid) = @_;
 
@@ -172,26 +147,4 @@ sub _enrich {
 }
 
 
-# Updates the edit_* tables, used from dbItemEdit()
-# Arguments: { columns in chars_rev + traits + vns },
-sub dbCharRevisionInsert {
-  my($self, $o) = @_;
-
-  my %set = map exists($o->{$_}) ? (qq|"$_" = ?|, $o->{$_}) : (),
-    qw|name original alias desc b_month b_day s_bust s_waist s_hip height weight bloodt cup_size age gender main main_spoil|;
-  $set{'image = vndbid(\'ch\',?)'} = $o->{image}||undef if exists $o->{image};
-  $self->dbExec('UPDATE edit_chars !H', \%set) if keys %set;
-
-  if($o->{traits}) {
-    $self->dbExec('DELETE FROM edit_chars_traits');
-    $self->dbExec('INSERT INTO edit_chars_traits (tid, spoil) VALUES (?,?)', $_->[0],$_->[1]) for (@{$o->{traits}});
-  }
-  if($o->{vns}) {
-    $self->dbExec('DELETE FROM edit_chars_vns');
-    $self->dbExec('INSERT INTO edit_chars_vns (vid, rid, spoil, role) VALUES(!l)', $_) for (@{$o->{vns}});
-  }
-}
-
-
 1;
-

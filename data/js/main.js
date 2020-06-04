@@ -39,8 +39,4 @@ VARS = /*VARS*/;
 // Producer editing (/p+/edit)
 //include prodrel.js
 
-// Character editing (/c+/edit)
-//include chartraits.js
-//include charvns.js
-
 // @license-end
