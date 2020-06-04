@@ -17,7 +17,7 @@ my $monthly;
 
 
 sub run {
-  push_watcher schedule 12*3600, 24*3600, \&daily;
+  push_watcher schedule 7*3600+1800, 24*3600, \&daily; # 7:30 UTC, 30 minutes before the daily DB dumps are created
   push_watcher schedule 0, 3600, \&vnsearch_check;
   push_watcher pg->listen(vnsearch => on_notify => \&vnsearch_check);
   set_monthly();
@@ -65,16 +65,16 @@ my %dailies = (
            AND r.released <= TO_CHAR(NOW(), 'YYYYMMDD')::integer
       ) AS r(id)|,
 
-  # takes about 15 seconds max, still OK
+  # takes about 6 seconds, OK
   tagcache => 'SELECT tag_vn_calc(NULL)',
 
-  # takes about 25 seconds, OK
+  # takes about 11 seconds, OK
   traitcache => 'SELECT traits_chars_calc(NULL)',
 
-  # takes about 4 seconds, OK
+  # takes about 5 seconds, OK
   vnstats => 'SELECT update_vnvotestats()',
 
-  # takes a few seconds, need more data and measurements. This query /should/ not be necessary.
+  # takes about 10 seconds, OK
   imagecache => 'SELECT update_images_cache(NULL)',
 
   cleansessions      => q|DELETE FROM sessions       WHERE expires    < NOW()|,
