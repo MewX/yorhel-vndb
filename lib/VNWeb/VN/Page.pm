@@ -628,12 +628,7 @@ sub stats_ {
           LIMIT', \8
     );
 
-    my $rank = $v->{c_votecount} && tuwf->dbRowi('
-        SELECT c_rating, c_popularity
-             , (SELECT COUNT(*)+1 FROM vn iv WHERE NOT iv.hidden AND iv.c_popularity > COALESCE(v.c_popularity, 0.0)) AS pop_rank
-             , (SELECT COUNT(*)+1 FROM vn iv WHERE NOT iv.hidden AND iv.c_rating > COALESCE(v.c_rating, 0.0)) AS rating_rank
-          FROM vn v WHERE id =', \$v->{id}
-    );
+    my $rank = $v->{c_votecount} && tuwf->dbRowi('SELECT c_rating, c_popularity, c_pop_rank, c_rat_rank FROM vn v WHERE id =', \$v->{id});
 
     my sub votestats_ {
         table_ class => 'votegraph', sub {
@@ -672,8 +667,8 @@ sub stats_ {
         clearfloat_;
         div_ sub {
             h3_ 'Ranking';
-            p_ sprintf 'Popularity: ranked #%d with a score of %.2f', $rank->{pop_rank}, ($rank->{c_popularity}||0)*100;
-            p_ sprintf 'Bayesian rating: ranked #%d with a rating of %.2f', $rank->{rating_rank}, $rank->{c_rating}/10;
+            p_ sprintf 'Popularity: ranked #%d with a score of %.2f', $rank->{c_pop_rank}, ($rank->{c_popularity}||0)*100;
+            p_ sprintf 'Bayesian rating: ranked #%d with a rating of %.2f', $rank->{c_rat_rank}, $rank->{c_rating}/10;
         } if $v->{c_votecount};
     }
 

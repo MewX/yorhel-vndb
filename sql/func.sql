@@ -102,7 +102,7 @@ CREATE OR REPLACE FUNCTION update_vncache(integer) RETURNS void AS $$
 $$ LANGUAGE sql;
 
 
--- Update vn.c_popularity, c_rating and c_votecount
+-- Update vn.c_popularity, c_rating, c_votecount, c_pop_rank and c_rat_rank
 CREATE OR REPLACE FUNCTION update_vnvotestats() RETURNS void AS $$
   WITH votes(vid, uid, vote) AS ( -- List of all non-ignored VN votes
     SELECT vid, uid, vote FROM ulist_vns WHERE vote IS NOT NULL AND uid NOT IN(SELECT id FROM users WHERE ign_votes)
@@ -124,14 +124,16 @@ CREATE OR REPLACE FUNCTION update_vnvotestats() RETURNS void AS $$
         SELECT uid, vid, ((rank() OVER (PARTITION BY uid ORDER BY vote))::real - 1) ^ 0.36788 FROM votes
       ) x(uid, vid, rank)
      GROUP BY vid
-  ), stats(vid, rating, count, popularity) AS ( -- Combined stats
+  ), stats(vid, rating, count, popularity, pop_rank, rat_rank) AS ( -- Combined stats
     SELECT v.id, COALESCE(r.rating, 0), COALESCE(r.count, 0)
          , p.win/(SELECT MAX(win) FROM popularities)
+         , CASE WHEN p.win    IS NULL THEN NULL ELSE rank() OVER(ORDER BY hidden, p.win    DESC NULLS LAST) END
+         , CASE WHEN r.rating IS NULL THEN NULL ELSE rank() OVER(ORDER BY hidden, r.rating DESC NULLS LAST) END
       FROM vn v
       LEFT JOIN ratings r ON r.vid = v.id
       LEFT JOIN popularities p ON p.vid = v.id AND p.win > 0
   )
-  UPDATE vn SET c_rating = rating, c_votecount = count, c_popularity = popularity FROM stats WHERE id = vid;
+  UPDATE vn SET c_rating = rating, c_votecount = count, c_popularity = popularity, c_pop_rank = pop_rank, c_rat_rank = rat_rank FROM stats WHERE id = vid;
 $$ LANGUAGE SQL;
 
 

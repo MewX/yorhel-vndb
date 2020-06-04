@@ -868,7 +868,9 @@ CREATE TABLE vn ( -- dbentry_type=v
   c_rating   real, -- [pub]
   c_votecount integer NOT NULL DEFAULT 0, -- [pub]
   c_search   text,
-  l_wikidata integer -- [pub]
+  l_wikidata integer, -- [pub]
+  c_pop_rank integer,
+  c_rat_rank integer
 );
 
 -- vn_hist
