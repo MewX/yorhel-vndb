@@ -20,6 +20,7 @@ my $FORM = {
         spoiler   => { _when => 'out', num => 1 },
         overruled => { _when => 'out', anybool => 1 },
         othnotes  => { _when => 'out' },
+        state     => { _when => 'out', uint => 1 },
         applicable => { _when => 'out', anybool => 1 },
     } },
     mod   => { _when => 'out', anybool => 1 },
@@ -72,7 +73,7 @@ TUWF::get qr{/$RE{vid}/tagmod}, sub {
     return tuwf->resDenied if !auth->permTag;
 
     my $tags = tuwf->dbAlli('
-        SELECT t.id, t.name, t.cat, count(*) as count, t.applicable
+        SELECT t.id, t.name, t.cat, count(*) as count, t.state, t.applicable
              , coalesce(avg(CASE WHEN tv.ignore OR (u.id IS NOT NULL AND NOT u.perm_tag) THEN NULL ELSE tv.vote END), 0) as rating
              , coalesce(avg(CASE WHEN tv.ignore OR (u.id IS NOT NULL AND NOT u.perm_tag) THEN NULL ELSE tv.spoiler END), t.defaultspoil) as spoiler
              , bool_or(tv.ignore) as overruled

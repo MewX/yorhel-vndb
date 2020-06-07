@@ -111,7 +111,8 @@ update msg model =
                 if t.state == 1                                    then ([], "Can't add deleted tags")
                 else if not t.applicable                           then ([], "Tag is not applicable")
                 else if List.any (\it -> it.id == t.id) model.tags then ([], "Tag is already in the list")
-                else ([{ id = t.id, vote = 2, spoil = Nothing, overrule = False, notes = "", cat = "new", name = t.name, rating = 0, count = 0, spoiler = 0, overruled = False, othnotes = "", applicable = t.applicable }], "")
+                else ([{ id = t.id, vote = 2, spoil = Nothing, overrule = False, notes = "", cat = "new", name = t.name
+                       , rating = 0, count = 0, spoiler = 0, overruled = False, othnotes = "", state = t.state, applicable = t.applicable }], "")
           in (changed { model | add = if ms == "" then A.clear nm "" else nm, tags = model.tags ++ nl, addMsg = ms }, c)
 
     Submit ->
@@ -139,8 +140,12 @@ viewTag t sel vid mod =
   in
     tr [] <|
     [ td [ class "tc_tagname" ]
-      [ a [ href <| "/g"++String.fromInt t.id, style "text-decoration" (if t.applicable then "none" else "line-through") ] [ text t.name ]
-      , if t.applicable then text "" else b [ class "grayedout" ] [ text " (not applicable)" ]
+      [ a [ href <| "/g"++String.fromInt t.id, style "text-decoration" (if t.applicable && t.state /= 1 then "none" else "line-through") ] [ text t.name ]
+      , case (t.state, t.applicable) of
+          (0, _)     -> b [ class "grayedout" ] [ text " (awaiting approval)" ]
+          (1, _)     -> b [ class "grayedout" ] [ text " (deleted)" ]
+          (_, False) -> b [ class "grayedout" ] [ text " (not applicable)" ]
+          _ -> text ""
       ]
     , td [ class "tc_myvote buts"  ]
       [ a [ href "#", onMouseOver (SetSel t.id (Vote -3)), onMouseOut (SetSel 0 NoSel), onClickD (SetVote t.id -3), classList [("ld", vote <  0)], title "Downvote"    ] []
