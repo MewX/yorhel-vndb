@@ -3,6 +3,7 @@ package VNDB::DB::VN;
 
 use strict;
 use warnings;
+use v5.10;
 use TUWF 'sqlprint';
 use POSIX 'strftime';
 use Exporter 'import';
@@ -325,20 +326,25 @@ sub dbScreenshotGet {
 # if any arguments are given, it will return one random screenshot for each VN
 sub dbScreenshotRandom {
   my($self, @vids) = @_;
-  # Assumption: vndbid_num(id) for screenshots doesn't have ~too~ many gaps (less than, say, 80%)
-  return $self->dbAll(q|
-    SELECT vndbid_num(s.id) AS scr, s.width, s.height, v.id AS vid, v.title
-      FROM images s
-      JOIN vn_screenshots vs ON vs.scr = s.id
-      JOIN vn v ON v.id = vs.id
-     WHERE NOT v.hidden AND NOT vs.nsfw
-       AND s.id IN(
-         SELECT vndbid('sf', floor(1 + random() * (select last_value from screenshots_seq))::int)
-           FROM generate_series(1,20)
-          LIMIT 20
-       )
-     LIMIT 4|
-  ) if !@vids;
+  if(!@vids) {
+    my $where = q{c_weight > 0 and vndbid_type(id) = 'sf' and c_sexual_avg < 0.4 and c_violence_avg < 0.4};
+    state $stats ||= $self->dbRow("SELECT count(*) as total, count(*) filter(where $where) as subset from images");
+    my $sample = 100*List::Util::min(1, (1000 / $stats->{subset}) * ($stats->{total} / $stats->{subset}));
+    return $self->dbAll(q{
+        SELECT vndbid_num(i.id) AS scr, i.width, i.height, v.id AS vid, v.title
+          FROM (
+            SELECT id, width, height
+              FROM images TABLESAMPLE SYSTEM (?)
+             WHERE c_weight > 0 and vndbid_type(id) = 'sf' and c_sexual_avg < 0.4 and c_violence_avg < 0.4
+             ORDER BY random()
+             LIMIT 4
+          ) i(id)
+          JOIN vn_screenshots vs ON vs.scr = i.id
+          JOIN vn v ON v.id = vs.id
+         ORDER BY random()
+         LIMIT 4
+    }, $sample);
+  }
 
   # this query is faster than it looks
   return $self->dbAll(join(' UNION ALL ', map
