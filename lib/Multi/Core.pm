@@ -148,7 +148,7 @@ sub run {
 # Eg. daily at 12:00 GMT: schedule 24*3600, 12*3600, sub { .. }.
 sub schedule {
   my($o, $i, $s) = @_;
-  AE::timer($i - ((AE::time() + $o) % $i), $i, $s);
+  AE::timer($i - ((AE::time() - $o) % $i), $i, $s);
 }
 
 
