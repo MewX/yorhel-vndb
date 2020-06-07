@@ -25,8 +25,8 @@ my $FORM = {
     main_ref   => { _when => 'out', anybool => 1 },
     main_name  => { _when => 'out', default => '' },
     image      => { required => 0, regex => qr/ch[1-9][0-9]{0,6}/ },
-    image_sex  => { required => 0, uint => 1, range => [0,2] },
-    image_vio  => { required => 0, uint => 1, range => [0,2] },
+    image_sex  => { _when => 'in out', required => 0, uint => 1, range => [0,2] },
+    image_vio  => { _when => 'in out', required => 0, uint => 1, range => [0,2] },
     traits     => { sort_keys => 'id', aoh => {
         tid     => { id => 1 },
         spoil   => { uint => 1, range => [0,2] },
