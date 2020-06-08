@@ -82,12 +82,12 @@ our %LINKS = (
         l_dlsite   => { label => 'DLsite (jpn)'
                       , fmt   => 'https://www.dlsite.com/home/work/=/product_id/%s.html'
                       , fmt2  => sub { sprintf config->{dlsite_url}, shift->{l_dlsite_shop}||'home' }
-                      , regex => qr{(?:www\.)?dlsite\.com/.*/work/=/product_id/([VR]J[0-9]{6}).*}
+                      , regex => qr{(?:www\.)?dlsite\.com/.*/(?:dlaf/=/link/work/aid/.*/id|work/=/product_id)/([VR]J[0-9]{6}).*}
                       , patt  => 'https://www.dlsite.com/<store>/work/=/product_id/<VJ or RJ-code>' },
         l_dlsiteen => { label => 'DLsite (eng)'
                       , fmt   => 'https://www.dlsite.com/eng/work/=/product_id/%s.html'
                       , fmt2  => sub { sprintf config->{dlsite_url}, shift->{l_dlsiteen_shop}||'eng' }
-                      , regex => qr{(?:www\.)?dlsite\.com/.*/work/=/product_id/([VR]E[0-9]{6}).*}
+                      , regex => qr{(?:www\.)?dlsite\.com/.*/(?:dlaf/=/link/work/aid/.*/id|work/=/product_id)/([VR]E[0-9]{6}).*}
                       , patt  => 'https://www.dlsite.com/<store>/work/=/product_id/<VE or RE-code>' },
         l_gog      => { label => 'GOG'
                       , fmt   => 'https://www.gog.com/game/%s'
@@ -128,7 +128,7 @@ our %LINKS = (
                       , regex => qr{(?:www\.)?getchu\.com/soft\.phtml\?id=([0-9]+).*} },
         l_getchudl => { label => 'DL.Getchu'
                       , fmt   => 'http://dl.getchu.com/i/item%d'
-                      , regex => qr{(?:dl|order)\.getchu\.com/i/item([0-9]+).*} },
+                      , regex => qr{(?:dl|order)\.getchu\.com/(?:i/item|(?:r|index).php.*[?&]gcd=D?0*)([0-9]+).*} },
         l_dmm      => { label => 'DMM'
                       , fmt   => 'https://%s'
                       , regex => qr{((?:www\.|dlsoft\.)?dmm\.(?:com|co\.jp)/[^\s]+)}
