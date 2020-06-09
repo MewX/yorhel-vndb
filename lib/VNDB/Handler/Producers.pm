@@ -3,181 +3,18 @@ package VNDB::Handler::Producers;
 
 use strict;
 use warnings;
-use TUWF ':html', ':xml', 'xml_escape', 'html_escape';
+use TUWF ':html', ':xml';
 use VNDB::Func;
 use VNDB::Types;
-use VNDB::ExtLinks;
 
 
 TUWF::register(
-  qr{p([1-9]\d*)(?:\.([1-9]\d*))?} => \&page,
   qr{p/add}                        => \&addform,
   qr{p(?:([1-9]\d*)(?:\.([1-9]\d*))?/edit|/new)}
     => \&edit,
   qr{p/([a-z0]|all)}               => \&list,
   qr{xml/producers\.xml}           => \&pxml,
 );
-
-
-sub page {
-  my($self, $pid, $rev) = @_;
-
-  my $method = $rev ? 'dbProducerGetRev' : 'dbProducerGet';
-  my $p = $self->$method(
-    id => $pid,
-    what => 'extended relations',
-    $rev ? ( rev => $rev ) : ()
-  )->[0];
-  return $self->resNotFound if !$p->{id};
-  enrich_extlinks p => $p;
-
-  my $metadata = {
-    'og:title' => $p->{name},
-    'og:description' => bb2text $p->{desc},
-  };
-
-  $self->htmlHeader(title => $p->{name}, noindex => $rev, metadata => $metadata);
-  $self->htmlMainTabs(p => $p);
-  return if $self->htmlHiddenMessage('p', $p);
-
-  if($rev) {
-    my $prev = $rev && $rev > 1 && $self->dbProducerGetRev(id => $pid, rev => $rev-1, what => 'extended relations')->[0];
-    $self->htmlRevision('p', $prev, $p,
-      [ type      => 'Type',          serialize => sub { $PRODUCER_TYPE{$_[0]} } ],
-      [ name      => 'Name (romaji)', diff => 1 ],
-      [ original  => 'Original name', diff => 1 ],
-      [ alias     => 'Aliases',       diff => qr/[ ,\n\.]/ ],
-      [ lang      => 'Language',      serialize => sub { "$_[0] ($LANGUAGE{$_[0]})" } ],
-      [ website   => 'Website',       diff => 1 ],
-      [ l_wp      => 'Wikipedia link',htmlize => sub {
-        $_[0] ? sprintf '<a href="http://en.wikipedia.org/wiki/%s">%1$s</a>', xml_escape $_[0] : '[empty]'
-      }],
-      [ l_wikidata=> 'Wikidata ID', htmlize => sub { $_[0] ? sprintf '<a href="https://www.wikidata.org/wiki/Q%d">Q%1$d</a>', $_[0] : '[empty]' } ],
-      [ desc      => 'Description', diff => qr/[ ,\n\.]/ ],
-      [ relations => 'Relations',   join => '<br />', split => sub {
-        my @r = map sprintf('%s: <a href="/p%d" title="%s">%s</a>',
-          $PRODUCER_RELATION{$_->{relation}}{txt}, $_->{id}, xml_escape($_->{original}||$_->{name}), xml_escape shorten $_->{name}, 40
-        ), sort { $a->{id} <=> $b->{id} } @{$_[0]};
-        return @r ? @r : ('[empty]');
-      }],
-    );
-  }
-
-  div class => 'mainbox';
-   $self->htmlItemMessage('p', $p);
-   h1 $p->{name};
-   h2 class => 'alttitle', lang => $p->{lang}, $p->{original} if $p->{original};
-   p class => 'center';
-    txt $PRODUCER_TYPE{$p->{type}};
-    br;
-    txt "Primary language: $LANGUAGE{$p->{lang}}";
-    if($p->{alias}) {
-      (my $alias = $p->{alias}) =~ s/\n/, /g;
-      br;
-      txt "a.k.a. $alias";
-    }
-
-    br if $p->{extlinks}->@*;
-    for($p->{extlinks}->@*) {
-      a href => $_->[1], $_->[0];
-      txt ' - ' if $_ ne $p->{extlinks}[$#{$p->{extlinks}}];
-    }
-   end 'p';
-
-   if(@{$p->{relations}}) {
-     my %rel;
-     push @{$rel{$_->{relation}}}, $_
-       for (sort { $a->{name} cmp $b->{name} } @{$p->{relations}});
-     p class => 'center';
-      br;
-      for my $r (keys %PRODUCER_RELATION) {
-        next if !$rel{$r};
-        txt $PRODUCER_RELATION{$r}{txt}.': ';
-        for (@{$rel{$r}}) {
-          a href => "/p$_->{id}", title => $_->{original}||$_->{name}, shorten $_->{name}, 40;
-          txt ', ' if $_ ne $rel{$r}[$#{$rel{$r}}];
-        }
-        br;
-      }
-     end 'p';
-   }
-
-   if($p->{desc}) {
-     p class => 'description';
-      lit bb2html $p->{desc};
-     end;
-   }
-  end 'div';
-
-  _releases($self, $p);
-
-  $self->htmlFooter;
-}
-
-sub _releases {
-  my($self, $p) = @_;
-
-  # prodpage_(dev|pub)
-  my $r = $self->dbReleaseGet(pid => $p->{id}, results => 999, what => 'vn platforms links');
-  enrich_extlinks r => $r;
-
-  div class => 'mainbox';
-   a href => '#', id => 'expandprodrel', 'collapse';
-   h1 'Releases';
-   if(!@$r) {
-     p 'We have currently no visual novels by this producer.';
-     end;
-     return;
-   }
-
-   my %vn; # key = vid, value = [ $r1, $r2, $r3, .. ]
-   my @vn; # $vn objects in order of first release
-   for my $rel (@$r) {
-     for my $v (@{$rel->{vn}}) {
-       push @vn, $v if !$vn{$v->{vid}};
-       push @{$vn{$v->{vid}}}, $rel;
-     }
-   }
-
-   table id => 'prodrel';
-    for my $v (@vn) {
-      Tr class => 'vn';
-       td colspan => 6;
-        i; lit fmtdatestr $vn{$v->{vid}}[0]{released}; end;
-        a href => "/v$v->{vid}", title => $v->{original}, $v->{title};
-        span '('.join(', ',
-           (grep($_->{developer}, @{$vn{$v->{vid}}}) ? 'developer' : ()),
-           (grep($_->{publisher}, @{$vn{$v->{vid}}}) ? 'publisher' : ())
-        ).')';
-       end;
-      end;
-      for my $rel (@{$vn{$v->{vid}}}) {
-        Tr class => 'rel';
-         td class => 'tc1'; lit fmtdatestr $rel->{released}; end;
-         td class => 'tc2', $rel->{minage} < 0 ? '' : minage $rel->{minage};
-         td class => 'tc3';
-          for (sort @{$rel->{platforms}}) {
-            next if $_ eq 'oth';
-            cssicon $_, $PLATFORM{$_};
-          }
-          cssicon "lang $_", $LANGUAGE{$_} for (@{$rel->{languages}});
-          cssicon "rt$rel->{type}", $rel->{type};
-         end;
-         td class => 'tc4';
-          a href => "/r$rel->{id}", title => $rel->{original}||$rel->{title}, $rel->{title};
-          b class => 'grayedout', ' (patch)' if $rel->{patch};
-         end;
-         td class => 'tc5', join ', ',
-           ($rel->{developer} ? 'developer' : ()), ($rel->{publisher} ? 'publisher' : ());
-         td class => 'tc6';
-          VNWeb::Releases::Lib::release_extlinks_($rel);
-         end;
-        end 'tr';
-      }
-    }
-   end 'table';
-  end 'div';
-}
 
 
 sub addform {

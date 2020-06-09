@@ -1,7 +1,7 @@
 package VNWeb::VN::Page;
 
 use VNWeb::Prelude;
-use VNWeb::Releases::Lib 'release_extlinks_';
+use VNWeb::Releases::Lib;
 use VNDB::Func 'fmtrating';
 use POSIX 'strftime';
 
@@ -425,43 +425,10 @@ sub releases_ {
 
     # TODO: Organize a long list of releases a bit better somehow? Collapsable language sections?
 
-    enrich_merge id => '
-        SELECT id, title, original, notes, minage, freeware, doujin, resolution, voiced, ani_story, ani_ero, uncensored
-          FROM releases WHERE id IN', $v->{releases};
-    enrich_merge id => sql('SELECT rid as id, status as rlist_status FROM rlists WHERE uid =', \auth->uid, 'AND rid IN'), $v->{releases} if auth;
-    enrich_flatten lang => id => id => 'SELECT id, lang FROM releases_lang WHERE id IN', $v->{releases};
-    enrich_flatten platforms => id => id => 'SELECT id, platform FROM releases_platforms WHERE id IN', $v->{releases};
-    enrich media => id => id => 'SELECT id, medium, qty FROM releases_media WHERE id IN', $v->{releases};
-
+    enrich_release $v->{releases};
     $v->{releases} = [ sort { $a->{released} <=> $b->{released} || $a->{id} <=> $b->{id} } $v->{releases}->@* ];
     my %lang;
     my @lang = grep !$lang{$_}++, map $_->{lang}->@*, $v->{releases}->@*;
-
-    my sub icon_ {
-        my($img, $label, $class) = @_;
-        $class = $class ? " release_icon_$class" : '';
-        img_ src => config->{url_static}."/f/$img.svg", class => "release_icons$class", title => $label;
-    }
-
-    my sub icons_ {
-        my($r) = @_;
-        icon_ 'voiced', $VOICED{$r->{voiced}}{txt}, "voiced$r->{voiced}" if $r->{voiced};
-        icon_ 'story_animated', "Story: $ANIMATED{$r->{ani_story}}{txt}", "anim$r->{ani_story}" if $r->{ani_story};
-        icon_ 'ero_animated', "Ero: $ANIMATED{$r->{ani_ero}}{txt}", "anim$r->{ani_ero}" if $r->{ani_ero};
-        icon_ 'free', 'Freeware' if $r->{freeware};
-        icon_ 'nonfree', 'Non-free' if !$r->{freeware};
-        icon_ 'doujin', 'Doujin' if !$r->{patch} && $r->{doujin};
-        icon_ 'commercial', 'Commercial' if !$r->{patch} && !$r->{doujin};
-        if($r->{resolution} ne 'unknown') {
-            my $type = $r->{resolution} eq 'nonstandard' ? 'custom' : $RESOLUTION{$r->{resolution}}{cat} eq 'widescreen' ? '16-9' : '4-3';
-            # Ugly workaround: PC-98 has non-square pixels, thus not widescreen
-            $type = '4-3' if $type eq '16-9' && grep $_ eq 'p98', $r->{platforms}->@*;
-            icon_ "resolution_$type", $RESOLUTION{$r->{resolution}}{txt};
-        }
-        icon_ $MEDIUM{ $r->{media}[0]{medium} }{icon}, join ', ', map fmtmedia($_->{medium}, $_->{qty}), $r->{media}->@* if $r->{media}->@*;
-        icon_ 'uncensor', 'Uncensored' if $r->{uncensored};
-        icon_ 'notes', bb2text $r->{notes} if $r->{notes};
-    }
 
     my sub lang_ {
         my($lang) = @_;
@@ -471,31 +438,15 @@ sub releases_ {
                 txt_ $LANGUAGE{$lang};
             }
         };
-        tr_ sub {
-            td_ class => 'tc1', sub { rdate_ $_->{released} };
-            td_ class => 'tc2', $_->{minage} < 0 ? '' : minage $_->{minage};
-            td_ class => 'tc3', sub {
-                abbr_ class => "icons $_", title => $PLATFORM{$_}, '' for grep $_ ne 'oth', $_->{platforms}->@*;
-                abbr_ class => "icons rt$_->{type}", title => $_->{type}, '';
-            };
-            td_ class => 'tc4', sub {
-                a_ href => "/r$_->{id}", title => $_->{original}||$_->{title}, $_->{title};
-                b_ class => 'grayedout', ' (patch)' if $_->{patch};
-            };
-            td_ class => 'tc_icons', sub { icons_ $_ };
-            td_ class => 'tc5 elm_dd_left', sub {
-                elm_ 'UList.ReleaseEdit', $VNWeb::User::Lists::RLIST_STATUS, { rid => $_->{id}, uid => auth->uid, status => $_->{rlist_status}, empty => '--' } if auth;
-            };
-            td_ class => 'tc6', sub { release_extlinks_ $_, "$lang$_->{id}" };
-        } for grep grep($_ eq $lang, $_->{lang}->@*), $v->{releases}->@*;
+        release_row_ $_, $lang for grep grep($_ eq $lang, $_->{lang}->@*), $v->{releases}->@*;
     }
 
-    div_ class => 'mainbox releases', sub {
+    div_ class => 'mainbox', sub {
         h1_ 'Releases';
         if(!$v->{releases}->@*) {
             p_ 'We don\'t have any information about releases of this visual novel yet...';
         } else {
-            table_ sub { lang_ $_ for @lang };
+            table_ class => 'releases', sub { lang_ $_ for @lang };
         }
     }
 }

@@ -413,6 +413,18 @@ div.postsearch td.tc2             { width: 65px;  }
 div.postsearch td.tc3             { width: 90px; }
 
 
+/***** Release listings on VN & producer pages */
+
+.releases { width: 100%; }
+.releases tr.lang td,
+.releases tr.vn td     { background: $boxbg$; font-weight: bold; }
+.releases td.tc1       { padding-left: 30px; width: 80px; white-space: nowrap }
+.releases td.tc2       { text-align: center; width: 50px; white-space: nowrap }
+.releases td.tc3       { text-align: right; padding: 0; width: 120px; }
+.releases td.tc_icons  { padding: 0 4px }
+.releases td.tc_prod   { color: $grayedout$; white-space: nowrap; width: 50px }
+.releases td.tc5       { width: 70px; text-align: right }
+.releases td.tc6       { text-align: right; width: 25px; padding: 0; white-space: nowrap }
 
 
 /***** VN page *******/
@@ -471,16 +483,8 @@ div#vntags                    { margin: 0 30px 0 30px; border-top: 1px solid $bo
 
 /* end of tag filter machinery */
 
-.releases table,
 #screenshots table     { width: 100%; }
-.releases tr.lang td,
 #screenshots tr.rel td { background: $boxbg$; font-weight: bold; }
-.releases td.tc1       { padding-left: 30px; width: 80px; white-space: nowrap }
-.releases td.tc2       { text-align: center; width: 50px; white-space: nowrap }
-.releases td.tc3       { text-align: right; padding: 0; width: 90px; }
-.releases td.tc_icons  { padding: 0 4px }
-.releases td.tc5       { width: 70px; text-align: right }
-.releases td.tc6       { text-align: right; width: 25px; padding: 0; white-space: nowrap }
 
 #screenshots p.rel {
   background: $boxbg$;
@@ -581,22 +585,14 @@ div.scr_uploader     { visibility: hidden; overflow: hidden; width: 1px; height:
 
 
 
-/***** Producer page/list *******/
+/***** Producer page *******/
 
-#prodrel              { width:  100%; }
-#prodrel tr.vn td     { background: $boxbg$; font-weight: bold; }
-#prodrel tr.vn i,
-#prodrel tr.vn span   { display: none }
-#prodrel.collapse tr.vn td   { padding: 1px; background: none; font-weight: normal }
-#prodrel.collapse tr.vn i    { font-style: normal; display: block; float: left; width: 80px; padding: 0 0 0 40px; }
-#prodrel.collapse tr.vn span { display: inline; font-weight: normal; color: $grayedout$; padding: 0 0 0 5px }
-#prodrel.collapse tr.rel     { display: none }
-#prodrel td.tc1       { width:  80px; padding-left: 30px; white-space: nowrap }
-#prodrel td.tc2       { width:  50px; text-align: center; white-space: nowrap }
-#prodrel td.tc3       { width: 120px; text-align: right;  padding: 0; }
-#prodrel td.tc5       { width: 120px; color: $grayedout$; }
-#prodrel td.tc6       { width:  25px; text-align: right; padding: 0; white-space: nowrap }
-#expandprodrel        { float: right; font-weight: bold; padding-bottom: 2px; border: none }
+.prodvns { list-style-type: none }
+.prodvns li span:first-child { display: inline-block; width: 80px; text-align: right; padding-right: 15px }
+.prodvns li span:last-child { color: $grayedout$; padding-left: 15px }
+
+
+/***** Producer list ******/
 
 div.producerbrowse    { padding-bottom: 10px }
 .producerbrowse ul    { float: left; margin-top: -5px; margin-left: 3%; width: 28%; }
