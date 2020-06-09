@@ -475,6 +475,15 @@ view model =
             , td [] [ td [ colspan 4, style "padding" "0 15px" ] [ b [ class "standout" ] [ text "List contains duplicate releases." ] ] ]
             )
           ])
+          ++ (if 1 /= List.length (List.filter (\(_,r) -> isJust r.rid) lst) then [] else [
+            ( String.fromInt vid ++ "warn"
+            , tr [] [ td [ colspan 4, style "padding" "0 15px" ]
+              [ b [ class "standout" ] [ text "Note: " ]
+              , text "Only select specific releases if the character has a significantly different role in those releases. "
+              , br [] []
+              , text "If the character's role is mostly the same in all releases (ignoring trials), then just select \"All (full) releases\"." ]
+            ])
+          ])
           ++ (if List.length lst > List.length rels then [] else [
             ( String.fromInt vid ++ "add"
             , tr [] [ td [ colspan 4 ] [ inputButton "add release" (VnRelAdd vid title) [style "margin" "0 15px"] ] ]
