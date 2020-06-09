@@ -270,11 +270,20 @@ isValid model = not
 viewGen : Model -> Html Msg
 viewGen model =
   table [ class "formtable" ]
-  [ formField "title::Title (romaji)" [ inputText "title" model.title Title (style "width" "500px" :: GRE.valTitle) ]
+  [ formField "title::Title (romaji)"
+    [ inputText "title" model.title Title (style "width" "500px" :: GRE.valTitle)
+    , if containsNonLatin model.title
+      then b [ class "standout" ] [ br [] [], text "This title field should only contain latin-alphabet characters, please put the \"actual\" title in the field below and the romanization above." ]
+      else text ""
+    ]
   , formField "original::Original title"
     [ inputText "original" model.original Original (style "width" "500px" :: GRE.valOriginal)
     , if model.title /= "" && model.title == model.original
       then b [ class "standout" ] [ br [] [], text "Should not be the same as the Title (romaji). Leave blank is the original title is already in the latin alphabet" ]
+      else if model.original /= "" && not (containsNonLatin model.original)
+      then b [ class "standout" ] [ br [] [], text "Original title does not seem to contain any non-latin characters. Leave this field empty if the title is already in the latin alphabet" ]
+      else if containsJapanese model.original && not (Set.isEmpty model.lang) && not (Set.member "ja" model.lang)
+      then b [ class "standout" ] [ br [] [], text "Non-Japanese releases should (probably) not have a Japanese original title." ]
       else text ""
     ]
 

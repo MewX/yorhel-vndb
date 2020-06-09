@@ -2,6 +2,7 @@ module Lib.Util exposing (..)
 
 import Dict
 import Task
+import Regex
 import Lib.Ffi as Ffi
 
 -- Delete an element from a List
@@ -65,3 +66,18 @@ imageUrl : String -> String
 imageUrl id =
   let num = String.dropLeft 2 id |> String.toInt |> Maybe.withDefault 0
   in Ffi.urlStatic ++ "/" ++ String.left 2 id ++ "/" ++ String.fromInt (modBy 10 (num // 10)) ++ String.fromInt (modBy 10 num) ++ "/" ++ String.fromInt num ++ ".jpg"
+
+
+
+jap_ : Regex.Regex
+jap_ = Maybe.withDefault Regex.never (Regex.fromString "[\\u3000-\\u9fff\\uff00-\\uff9f]")
+
+-- Not even close to comprehensive, just excludes a few scripts commonly found on VNDB.
+nonlatin_ : Regex.Regex
+nonlatin_ = Maybe.withDefault Regex.never (Regex.fromString "[\\u3000-\\u9fff\\uff00-\\uff9f\\u0400-\\u04ff]")
+
+containsJapanese : String -> Bool
+containsJapanese = Regex.contains jap_
+
+containsNonLatin : String -> Bool
+containsNonLatin = Regex.contains nonlatin_
