@@ -205,7 +205,7 @@ sub chartable_ {
                 push @groups, $_ if !@groups || $groups[$#groups]{group} != $_->{group};
                 push $groups[$#groups]{traits}->@*, $_;
             }
-            tr_ sub {
+            tr_ class => "trait_group_i$_->{group}", sub {
                 td_ class => 'key', sub { a_ href => "/i$_->{group}", $_->{groupname} };
                 td_ sub { join_ ', ', sub { a_ href => "/i$_->{tid}", $_->{name}; spoil_ $_->{spoil} }, $_->{traits}->@* };
             } for @groups;
