@@ -142,7 +142,7 @@ elm_api ReleaseEdit => $FORM_OUT, $FORM_IN, sub {
     }
     $data->{doujin} = $data->{voiced} = $data->{ani_story} = $data->{ani_ero} = 0 if $data->{patch};
     $data->{resolution} = 'unknown' if $data->{patch};
-    $data->{uncensored} = 0 if $data->{minage} != 18;
+    $data->{uncensored} = $data->{ani_ero} = 0 if $data->{minage} != 18;
     $_->{qty} = $MEDIUM{$_->{medium}}{qty} ? $_->{qty}||1 : 0 for $data->{media}->@*;
     $data->{notes} = bb_subst_links $data->{notes};
     die "No VNs selected" if !$data->{vn}->@*;
