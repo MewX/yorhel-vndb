@@ -133,7 +133,6 @@ sub _sanitize_css {
     s/binding\s*://ig; # Definitely don't want bindings.
     s/&/&amp;/g;
     s/</&lt;/g;
-    s/>/&gt;/g;
     $_;
 }
 
