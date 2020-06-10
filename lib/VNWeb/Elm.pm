@@ -38,6 +38,7 @@ our %apis = (
     Redirect       => [{}], # Redirect to the given URL
     CSRF           => [], # Invalid CSRF token
     Invalid        => [], # POST data did not validate the schema
+    Editsum        => [], # Invalid edit summary
     Content        => [{}], # Rendered HTML content (for markdown/bbcode APIs)
     BadLogin       => [], # Invalid user or pass
     LoginThrottle  => [], # Too many failed login attempts
@@ -283,6 +284,10 @@ sub elm_api {
         }
 
         my $data = tuwf->validate(json => $in);
+        # Handle failure of the 'editsum' validation as a special case and return elm_Editsum().
+        if(!$data && $data->err->{errors} && grep $_->{validation} eq 'editsum' || ($_->{validation} eq 'required' && $_->{key} eq 'editsum'), $data->err->{errors}->@*) {
+            return elm_Editsum();
+        }
         if(!$data) {
             warn "JSON validation failed\ninput: " . JSON::XS->new->allow_nonref->pretty->canonical->encode(tuwf->reqJSON) . "\nerror: " . JSON::XS->new->encode($data->err) . "\n";
             return elm_Invalid();
