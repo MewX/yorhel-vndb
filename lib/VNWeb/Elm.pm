@@ -278,7 +278,7 @@ sub elm_api {
     $in = comp $in;
 
     TUWF::post qr{/elm/\Q$name\E\.json} => sub {
-        if(!auth->csrfcheck(tuwf->reqHeader('X-CSRF-Token')||'')) {
+        if(!tuwf->samesite && !auth->csrfcheck(tuwf->reqHeader('X-CSRF-Token')||'')) {
             warn "Invalid CSRF token in request\n";
             return elm_CSRF();
         }
