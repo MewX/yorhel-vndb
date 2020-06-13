@@ -40,7 +40,7 @@ sub enrich_item {
 sub fetch_chars {
     my($vid, $where) = @_;
     my $l = tuwf->dbAlli('
-        SELECT id, name, original, alias, "desc", gender, b_month, b_day, s_bust, s_waist, s_hip, height, weight, bloodt, cup_size, age, image
+        SELECT id, name, original, alias, "desc", gender, spoil_gender, b_month, b_day, s_bust, s_waist, s_hip, height, weight, bloodt, cup_size, age, image
           FROM chars WHERE NOT hidden AND (', $where, ')
          ORDER BY name
     ');

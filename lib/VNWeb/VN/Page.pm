@@ -682,6 +682,7 @@ sub chars_ {
         map max(
             (map $_->{spoil}, $_->{traits}->@*),
             (map $_->{spoil}, $_->{vns}->@*),
+            defined $_->{spoil_gender} ? 2 : 0,
             $_->{desc} =~ /\[spoiler\]/i ? 2 : 0,
         ), @$chars
     );
