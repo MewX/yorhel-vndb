@@ -121,6 +121,7 @@ sub _rev_ {
         [ alias      => 'Aliases'        ],
         [ desc       => 'Description'    ],
         [ gender     => 'Sex',           fmt => \%GENDER ],
+        [ spoil_gender=> 'Sex (spoiler)',fmt => \%GENDER ],
         [ b_month    => 'Birthday/month',empty => 0 ],
         [ b_day      => 'Birthday/day',  empty => 0 ],
         [ s_bust     => 'Bust',          empty => 0 ],
@@ -172,6 +173,13 @@ sub chartable_ {
                 : b_ style => 'margin-right: 10px', $c->{name};
                 b_ class => 'grayedout', style => 'margin-right: 10px', $c->{original} if $c->{original};
                 abbr_ class => "icons gen $c->{gender}", title => $GENDER{$c->{gender}}, '' if $c->{gender} ne 'unknown';
+                if($view->{spoilers} == 2 && defined $c->{spoil_gender}) {
+                    txt_ '(';
+                    abbr_ class => "icons gen $c->{spoil_gender}", title => $GENDER{$c->{spoil_gender}}, '' if $c->{spoil_gender} ne 'unknown';
+                    txt_ 'unknown' if $c->{spoil_gender} eq 'unknown';
+                    spoil_ 2;
+                    txt_ ')';
+                }
                 span_ $BLOOD_TYPE{$c->{bloodt}} if $c->{bloodt} ne 'unknown';
             }}};
 
@@ -289,6 +297,7 @@ TUWF::get qr{/$RE{crev}} => sub {
         $inst_maxspoil||0,
         (map $_->{spoil}, $c->{traits}->@*),
         (map $_->{spoil}, $c->{vns}->@*),
+        defined $c->{spoil_gender} ? 2 : 0,
         $c->{desc} =~ /\[spoiler\]/i ? 2 : 0, # crude
     );
     # Only display the sexual traits toggle when there are sexual traits within the current spoiler level.

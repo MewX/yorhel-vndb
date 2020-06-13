@@ -10,6 +10,7 @@ my $FORM = {
     alias      => { required => 0, default => '', maxlength => 500 },
     desc       => { required => 0, default => '', maxlength => 5000 },
     gender     => { default => 'unknown', enum => \%GENDER },
+    spoil_gender=>{ required => 0, enum => \%GENDER },
     b_month    => { required => 0, default => 0, uint => 1, range => [ 0, 12 ] },
     b_day      => { required => 0, default => 0, uint => 1, range => [ 0, 31 ] },
     age        => { required => 0, uint => 1, range => [ 0, 32767 ] },

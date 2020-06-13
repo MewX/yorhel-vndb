@@ -135,7 +135,8 @@ CREATE TABLE chars ( -- dbentry_type=c
   main       integer, -- [pub] chars.id
   main_spoil smallint NOT NULL DEFAULT 0, -- [pub]
   cup_size   cup_size NOT NULL DEFAULT '', -- [pub]
-  age        smallint -- [pub]
+  age        smallint, -- [pub]
+  spoil_gender gender -- [pub]
 );
 
 -- chars_hist
@@ -158,7 +159,8 @@ CREATE TABLE chars_hist (
   main       integer, -- chars.id
   main_spoil smallint NOT NULL DEFAULT 0,
   cup_size   cup_size NOT NULL DEFAULT '',
-  age        smallint
+  age        smallint,
+  spoil_gender gender
 );
 
 -- chars_traits

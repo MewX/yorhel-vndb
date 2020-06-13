@@ -48,6 +48,7 @@ type alias Model =
   , alias       : String
   , desc        : TP.Model
   , gender      : String
+  , spoilGender : Maybe String
   , bMonth      : Int
   , bDay        : Int
   , age         : Maybe Int
@@ -90,6 +91,7 @@ init d =
   , alias       = d.alias
   , desc        = TP.bbcode d.desc
   , gender      = d.gender
+  , spoilGender = d.spoil_gender
   , bMonth      = d.b_month
   , bDay        = if d.b_day == 0 then 1 else d.b_day
   , age         = d.age
@@ -133,6 +135,7 @@ encode model =
   , alias       = model.alias
   , desc        = model.desc.data
   , gender      = model.gender
+  , spoil_gender= model.spoilGender
   , b_month     = model.bMonth
   , b_day       = model.bDay
   , age         = model.age
@@ -171,6 +174,7 @@ type Msg
   | Alias String
   | Desc TP.Msg
   | Gender String
+  | SpoilGender (Maybe String)
   | BMonth Int
   | BDay Int
   | Age (Maybe Int)
@@ -213,6 +217,7 @@ update msg model =
     Alias s    -> ({ model | alias = s }, Cmd.none)
     Desc m     -> let (nm,nc) = TP.update m model.desc in ({ model | desc = nm }, Cmd.map Desc nc)
     Gender s   -> ({ model | gender = s }, Cmd.none)
+    SpoilGender s->({model | spoilGender = s }, Cmd.none)
     BMonth n   -> ({ model | bMonth = n }, Cmd.none)
     BDay n     -> ({ model | bDay   = n }, Cmd.none)
     Age s      -> ({ model | age    = s }, Cmd.none)
@@ -332,7 +337,20 @@ view model =
       , formField "age::Age"       [ inputNumber "age" model.age Age GCE.valAge, text " years" ]
 
       , tr [ class "newpart" ] [ td [ colspan 2 ] [ text "Body" ] ]
-      , formField "gender::Sex"    [ inputSelect "gender" model.gender Gender [] GT.genders ]
+      , formField "gender::Sex"
+        [ inputSelect "gender" model.gender Gender [] GT.genders
+        , label [] [ inputCheck "" (isJust model.spoilGender) (\b -> SpoilGender <| if b then (Just "unknown") else Nothing), text " spoiler" ]
+        , case model.spoilGender of
+            Nothing -> text ""
+            Just gen -> span []
+              [ br [] []
+              , text "▲ apparent (non-spoiler) sex"
+              , br [] []
+              , text "▼ actual (spoiler) sex"
+              , br [] []
+              , inputSelect "" gen (\s -> SpoilGender (Just s)) [] GT.genders
+              ]
+        ]
       , formField "sbust::Bust"    [ inputNumber "sbust"  (if model.sBust  == 0 then Nothing else Just model.sBust ) SBust  GCE.valS_Bust, text " cm" ]
       , formField "swaist::Waist"  [ inputNumber "swiast" (if model.sWaist == 0 then Nothing else Just model.sWaist) SWaist GCE.valS_Waist,text " cm" ]
       , formField "ship::Hips"     [ inputNumber "ship"   (if model.sHip   == 0 then Nothing else Just model.sHip  ) SHip   GCE.valS_Hip,  text " cm" ]
