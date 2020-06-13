@@ -100,6 +100,15 @@ sub opts_ {
                 td_ class => 'linkradio', sub { opt_ checkbox => my => 1, 'Only images I voted on' };
             } if auth && $opt->{u} != $opt->{u2};
             tr_ sub {
+                td_ 'Time filter';
+                td_ class => 'linkradio', sub {
+                    opt_ radio => d => 1,  'Last 24h'; em_ ' / ';
+                    opt_ radio => d => 7,  'Last 7d'; em_ ' / ';
+                    opt_ radio => d => 30, 'Last 30d'; em_ ' / ';
+                    opt_ radio => d => 0,  'Any time';
+                }
+            } if $opt->{u};
+            tr_ sub {
                 td_ 'Order by:';
                 td_ class => 'linkradio', sub {
                     if($u) {
@@ -126,6 +135,7 @@ TUWF::get qr{/img/list}, sub {
         s  => { onerror => 'date', enum => [qw/ weight sdev vdev date diff/] },
         t  => { onerror => [], scalar => 1, type => 'array', values => { enum => [qw/ ch cv sf /] } },
         m  => { onerror => 0, range => [0,10] },
+        d  => { onerror => 0, range => [0,10000] },
         u  => { onerror => 0, id => 1 },
         u2 => { onerror => 0, id => 1 }, # Hidden option, allows comparing two users by overriding the 'My' user.
         my => { anybool => 1 },
@@ -136,13 +146,15 @@ TUWF::get qr{/img/list}, sub {
     $opt->{s} = 'weight' if !$opt->{u} && ($opt->{s} eq 'date' || $opt->{s} eq 'diff');
     $opt->{t} = [ List::Util::uniq sort $opt->{t}->@* ];
     $opt->{t} = [] if $opt->{t}->@* == 3;
+    $opt->{d} = 0 if !$opt->{u};
 
     my $u = $opt->{u} && tuwf->dbRowi('SELECT id, ', sql_user(), 'FROM users u WHERE id =', \$opt->{u});
     return tuwf->resNotFound if $opt->{u} && !$u->{user_id};
 
     my $where = sql_and
         $opt->{t}->@* ? sql_or(map sql('i.id BETWEEN vndbid(',\"$_",',1) AND vndbid_max(',\"$_",')'), $opt->{t}->@*) : (),
-        $opt->{m} ? sql('i.c_votecount >=', \$opt->{m}) : ();
+        $opt->{m} ? sql('i.c_votecount >=', \$opt->{m}) : (),
+        $opt->{d} ? sql('iu.date > NOW()-', \"$opt->{d} days", '::interval') : ();
 
     my($lst, $np) = tuwf->dbPagei({ results => 100, page => $opt->{p} }, '
         SELECT i.id, i.width, i.height, i.c_votecount, i.c_weight
