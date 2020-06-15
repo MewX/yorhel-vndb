@@ -24,6 +24,7 @@ our @EXPORT = qw/
     join_
     user_ user_displayname
     rdate rdate_
+    spoil_
     elm_
     framework_
     revision_
@@ -105,6 +106,13 @@ sub rdate {
 sub rdate_ {
     my $str = rdate $_[0];
     $_[0] > strftime('%Y%m%d', gmtime) ? b_ class => 'future', $str : txt_ $str;
+}
+
+
+# Spoiler indication supscript (used for tags & traits)
+sub spoil_ {
+    sup_ title => 'Minor spoiler', 'S' if $_[0] == 1;
+    sup_ title => 'Major spoiler', class => 'standout', 'S' if $_[0] == 2;
 }
 
 

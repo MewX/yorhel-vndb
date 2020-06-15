@@ -300,6 +300,7 @@ sub infobox_tags_ {
                 my $cut = $cnt->[0] > 15 ? ' cut cut2 cut1 cut0' : $cnt->[1] > 15 ? ' cut cut2 cut1' : $cnt->[2] > 15 ? ' cut cut2' : '';
                 span_ class => "tagspl$spoil cat_$_->{cat} $cut", sub {
                     a_ href => "/g$_->{id}", style => sprintf('font-size: %dpx', $_->{rating}*3.5+6), $_->{name};
+                    spoil_ $spoil;
                     b_ class => 'grayedout', sprintf ' %.1f', $_->{rating};
                 }
             }, @$tags;

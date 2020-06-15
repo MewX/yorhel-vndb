@@ -153,12 +153,6 @@ sub _rev_ {
 }
 
 
-sub spoil_ {
-    sup_ title => 'Minor spoiler', 'S' if $_[0] == 1;
-    sup_ title => 'Major spoiler', class => 'standout', 'S' if $_[0] == 2;
-}
-
-
 # Also used by VN::Page
 sub chartable_ {
     my($c, $link, $sep, $vn) = @_;
