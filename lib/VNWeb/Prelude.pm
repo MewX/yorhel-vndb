@@ -14,7 +14,7 @@
 #  use VNDB::BBCode;
 #  use VNDB::Types;
 #  use VNDB::Config;
-#  use VNDB::Func qw/fmtdate fmtage fmtvote fmtspoil fmtmedia minage query_encode lang_attr md2html/;
+#  use VNDB::Func qw/fmtdate fmtage fmtvote fmtspoil fmtmedia minage resolution query_encode lang_attr md2html/;
 #  use VNDB::ExtLinks;
 #  use VNWeb::Auth;
 #  use VNWeb::HTML;
@@ -58,7 +58,7 @@ sub import {
     use VNDB::BBCode;
     use VNDB::Types;
     use VNDB::Config;
-    use VNDB::Func qw/fmtdate fmtage fmtvote fmtspoil fmtmedia minage query_encode lang_attr md2html/;
+    use VNDB::Func qw/fmtdate fmtage fmtvote fmtspoil fmtmedia minage resolution query_encode lang_attr md2html/;
     use VNDB::ExtLinks;
     use VNWeb::Auth;
     use VNWeb::HTML;

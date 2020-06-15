@@ -24,7 +24,9 @@ sub dbReleaseFilters {
     defined $o{date_after}  ? ( 'r.released >= ?'  => $o{date_after} ) : (),
     defined $o{minage}      ? ( 'r.minage IN(!l)'  => [ ref $o{minage}     ? $o{minage}     : [$o{minage}]     ] ) : (),
     defined $o{doujin}      ? ( 'NOT r.patch AND r.doujin = ?'        => $o{doujin} == 1 ? 1 : 0) : (),
-    defined $o{resolution}  ? ( 'NOT r.patch AND r.resolution IN(!l)' => [ ref $o{resolution} ? $o{resolution} : [$o{resolution}] ] ) : (),
+    defined $o{resolution}  ? ( 'NOT r.patch AND ARRAY[r.reso_x, r.reso_y] IN(!l)' =>
+                                [[ map $_ eq 'unknown' ? '{0,0}' : $_ eq 'nonstandard' ? '{0,1}' : '{'.(s/x/,/r).'}',
+                                       ref $o{resolution} ? $o{resolution}->@* : $o{resolution} ]] ) : (),
     defined $o{voiced}      ? ( 'NOT r.patch AND r.voiced IN(!l)'     => [ ref $o{voiced}     ? $o{voiced}     : [$o{voiced}]     ] ) : (),
     defined $o{ani_story}   ? ( 'NOT r.patch AND r.ani_story IN(!l)'  => [ ref $o{ani_story}  ? $o{ani_story}  : [$o{ani_story}]  ] ) : (),
     defined $o{ani_ero}     ? ( 'NOT r.patch AND r.ani_ero IN(!l)'    => [ ref $o{ani_ero}    ? $o{ani_ero}    : [$o{ani_ero}]    ] ) : (),
@@ -87,7 +89,7 @@ sub dbReleaseGet {
   my @select = (
     qw|r.id r.title r.original r.website r.released r.minage r.type r.patch|,
     $o{what} =~ /extended/ ? qw|
-        r.notes r.catalog r.gtin r.resolution r.voiced r.freeware r.doujin r.uncensored r.ani_story r.ani_ero r.engine r.hidden r.locked
+        r.notes r.catalog r.gtin r.reso_x r.reso_y r.voiced r.freeware r.doujin r.uncensored r.ani_story r.ani_ero r.engine r.hidden r.locked
     | : (),
     $o{pid} ? ('rp.developer', 'rp.publisher') : (),
     $o{what} =~ /links/ ? qw|
@@ -99,7 +101,7 @@ sub dbReleaseGet {
     title       => 'r.title %s,                                   r.released %1$s',
     type        => 'r.patch %s, r.type %1$s,                      r.released %1$s, r.title %1$s',
     publication => 'r.doujin %s, r.freeware %1$s,   r.patch %1$s, r.released %1$s, r.title %1$s',
-    resolution  => 'r.resolution %s,                r.patch %2$s, r.released %1$s, r.title %1$s',
+    resolution  => 'r.reso_x %s, r.reso_y %1$s,     r.patch %2$s, r.released %1$s, r.title %1$s',
     voiced      => 'r.voiced %s,                    r.patch %2$s, r.released %1$s, r.title %1$s',
     ani_ero     => 'r.ani_story %s, r.ani_ero %1$s, r.patch %2$s, r.released %1$s, r.title %1$s',
     released    => 'r.released %s, r.id %1$s',
@@ -129,7 +131,7 @@ sub dbReleaseGetRev {
   $o{rev} ||= $self->dbRow('SELECT MAX(rev) AS rev FROM changes WHERE type = \'r\' AND itemid = ?', $o{id})->{rev};
 
   my $select = 'c.itemid AS id, r.title, r.original, r.website, r.released, r.minage, r.type, r.patch';
-  $select .= ', r.notes, r.catalog, r.gtin, r.resolution, r.voiced, r.freeware, r.doujin, r.uncensored, r.ani_story, r.ani_ero, r.engine, ro.hidden, ro.locked' if $o{what} =~ /extended/;
+  $select .= ', r.notes, r.catalog, r.gtin, r.reso_x, r.reso_y, r.voiced, r.freeware, r.doujin, r.uncensored, r.ani_story, r.ani_ero, r.engine, ro.hidden, ro.locked' if $o{what} =~ /extended/;
   $select .= ', extract(\'epoch\' from c.added) as added, c.comments, c.rev, c.ihid, c.ilock, '.VNWeb::DB::sql_user();
   $select .= ', c.id AS cid, NOT EXISTS(SELECT 1 FROM changes c2 WHERE c2.type = c.type AND c2.itemid = c.itemid AND c2.rev = c.rev+1) AS lastrev';
   $select .= ', r.gtin, r.l_steam, r.l_gog, r.l_gyutto, r.l_digiket, r.l_melon, r.l_getchu, r.l_getchudl, r.l_dmm, r.l_itch, r.l_jastusa, r.l_egs, r.l_erotrail, r.l_mg, r.l_denpa, r.l_jlist, r.l_dlsite, r.l_dlsiteen, r.l_melonjp, r.l_toranoana, r.l_gamejolt, r.l_nutaku' if $o{what} =~ /links/;

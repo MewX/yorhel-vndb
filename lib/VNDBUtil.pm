@@ -1,4 +1,4 @@
-# Misc. utility functions, do not rely on YAWF or POE and can be used from any script
+# Misc. utility functions, these do not rely on TUWF or AnyEvent and can be used from any script
 
 package VNDBUtil;
 
@@ -9,12 +9,19 @@ use Encode 'encode_utf8';
 use Unicode::Normalize 'NFKD', 'compose';
 use Socket 'inet_pton', 'inet_ntop', 'AF_INET', 'AF_INET6';
 
-our @EXPORT = qw|shorten gtintype normalize_titles normalize_query imgsize norm_ip|;
+our @EXPORT = qw|shorten resolution gtintype normalize_titles normalize_query imgsize norm_ip|;
 
 
 sub shorten {
   my($str, $len) = @_;
   return length($str) > $len ? substr($str, 0, $len-3).'...' : $str;
+}
+
+
+sub resolution {
+  my($x,$y) = @_;
+  ($x,$y) = ($x->{reso_x}, $x->{reso_y}) if ref $x;
+  $x ? "${x}x${y}" : $y == 1 ? 'Non-standard' : undef
 }
 
 

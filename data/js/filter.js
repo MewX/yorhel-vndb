@@ -29,6 +29,13 @@
 var fil_escape = "_ !\"#$%&'()*+,-./:;<=>?@[\\]^`{|}~".split('');
 var fil_objs = [];
 
+var resolutions = [
+    ["unknown","Unknown / console / handheld"],
+    ["nonstandard","Non-standard"],
+    ["4:3",["640x480","640x480"],["800x600","800x600"],["1024x768","1024x768"],["1280x960","1280x960"],["1600x1200","1600x1200"]],
+    ["widescreen",["640x400","640x400"],["960x600","960x600"],["960x640","960x640"],["1024x576","1024x576"],["1024x600","1024x600"],["1024x640","1024x640"],["1280x720","1280x720"],["1280x800","1280x800"],["1366x768","1366x768"],["1600x900","1600x900"],["1920x1080","1920x1080"]]
+];
+
 function getObj(obj) {
     while(!obj.fil_fields)
         obj = obj.parentNode;
@@ -643,7 +650,7 @@ function filReleases() {
     [ 'Language',             filFSelect('lang',       'Language',          20, VARS.languages) ],
     byId('rfilselect') ? null :
       [ 'Original language',    filFSelect('olang',    'Original language', 20, VARS.languages) ],
-    [ 'Screen resolution',    filFSelect('resolution', 'Screen resolution', 15, VARS.resolutions) ],
+    [ 'Screen resolution',    filFSelect('resolution', 'Screen resolution', 15, resolutions) ],
     [ 'Platform',             filFSelect('plat',       'Platform',          20, plat) ],
     [ 'Producer',
       [ '',       ' ',                     tag('Boolean or, selecting more gives more results') ],

@@ -98,10 +98,8 @@ my @rel_cols = (
     na_for_patch  => 1,
     default       => 1,
     what          => 'extended',
-    has_data      => sub { $_[0]{resolution} ne 'unknown' },
-    draw          => sub {
-      txt $_[0]{resolution} eq 'unknown' ? 'Unknown' : $RESOLUTION{$_[0]{resolution}}{txt};
-    },
+    has_data      => sub { !!$_[0]{reso_y} },
+    draw          => sub { txt resolution($_[0]) || 'Unknown' },
   }, { # Voiced
     id            => 'voi',
     sort_field    => 'voiced',

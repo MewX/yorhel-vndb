@@ -15,7 +15,7 @@ use POE::Filter::VNDBAPI 'encode_filters';
 use Encode 'encode_utf8', 'decode_utf8';
 use Crypt::URandom 'urandom';
 use Crypt::ScryptKDF 'scrypt_raw';;
-use VNDBUtil 'normalize_query', 'norm_ip';
+use VNDBUtil 'normalize_query', 'norm_ip', 'resolution';
 use VNDB::Types;
 use VNDB::Config;
 use JSON::XS;
@@ -603,14 +603,14 @@ my %GET_RELEASE = (
       ]],
     },
     details => {
-      select => 'r.website, r.notes, r.minage, r.gtin, r.catalog, r.resolution, r.voiced, r.ani_story, r.ani_ero',
+      select => 'r.website, r.notes, r.minage, r.gtin, r.catalog, r.reso_x, r.reso_y, r.voiced, r.ani_story, r.ani_ero',
       proc   => sub {
         $_[0]{website}  ||= undef;
         $_[0]{notes}    ||= undef;
         $_[0]{minage}   = $_[0]{minage} < 0 ? undef : $_[0]{minage}*1;
         $_[0]{gtin}     ||= undef;
         $_[0]{catalog}  ||= undef;
-        $_[0]{resolution} = $_[0]{resolution} eq 'unknown' ? undef : $RESOLUTION{ $_[0]{resolution} }{txt};
+        $_[0]{resolution} = resolution $_[0];
         $_[0]{voiced}     = $_[0]{voiced}     ? $_[0]{voiced}*1    : undef;
         $_[0]{animation}  = [
           $_[0]{ani_story} ? $_[0]{ani_story}*1 : undef,
@@ -618,6 +618,8 @@ my %GET_RELEASE = (
         ];
         delete($_[0]{ani_story});
         delete($_[0]{ani_ero});
+        delete($_[0]{reso_x});
+        delete($_[0]{reso_y});
       },
       fetch => [
         [ 'id', 'SELECT id, platform FROM releases_platforms WHERE id IN(%s)',

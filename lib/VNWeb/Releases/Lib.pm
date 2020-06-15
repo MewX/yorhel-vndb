@@ -10,7 +10,7 @@ our @EXPORT = qw/enrich_release release_row_/;
 # Assumption: Each release already has id, type, patch, released, gtin and enrich_extlinks().
 sub enrich_release {
     my($r) = @_;
-    enrich_merge id => 'SELECT id, title, original, notes, minage, freeware, doujin, resolution, voiced, ani_story, ani_ero, uncensored FROM releases WHERE id IN', $r;
+    enrich_merge id => 'SELECT id, title, original, notes, minage, freeware, doujin, reso_x, reso_y, voiced, ani_story, ani_ero, uncensored FROM releases WHERE id IN', $r;
     enrich_merge id => sql('SELECT rid as id, status as rlist_status FROM rlists WHERE uid =', \auth->uid, 'AND rid IN'), $r if auth;
     enrich_flatten lang => id => id => sub { sql 'SELECT id, lang FROM releases_lang WHERE id IN', $_, 'ORDER BY id, lang' }, $r;
     enrich_flatten platforms => id => id => sub { sql 'SELECT id, platform FROM releases_platforms WHERE id IN', $_, 'ORDER BY id, platform' }, $r;
@@ -68,11 +68,11 @@ sub release_row_ {
         icon_ 'nonfree', 'Non-free' if !$r->{freeware};
         icon_ 'doujin', 'Doujin' if !$r->{patch} && $r->{doujin};
         icon_ 'commercial', 'Commercial' if !$r->{patch} && !$r->{doujin};
-        if($r->{resolution} ne 'unknown') {
-            my $type = $r->{resolution} eq 'nonstandard' ? 'custom' : $RESOLUTION{$r->{resolution}}{cat} eq 'widescreen' ? '16-9' : '4-3';
+        if($r->{reso_y}) {
+            my $type = $r->{reso_y} == 1 ? 'custom' : $r->{reso_x} / $r->{reso_y} > 4/3 ? '16-9' : '4-3';
             # Ugly workaround: PC-98 has non-square pixels, thus not widescreen
             $type = '4-3' if $type eq '16-9' && grep $_ eq 'p98', $r->{platforms}->@*;
-            icon_ "resolution_$type", $RESOLUTION{$r->{resolution}}{txt};
+            icon_ "resolution_$type", resolution $r;
         }
         icon_ $MEDIUM{ $r->{media}[0]{medium} }{icon}, join ', ', map fmtmedia($_->{medium}, $_->{qty}), $r->{media}->@* if $r->{media}->@*;
         icon_ 'uncensor', 'Uncensored' if $r->{uncensored};

@@ -65,7 +65,6 @@ CREATE TYPE producer_relation AS ENUM ('old', 'new', 'sub', 'par', 'imp', 'ipa',
 CREATE TYPE release_type      AS ENUM ('complete', 'partial', 'trial');
 CREATE TYPE tag_category      AS ENUM('cont', 'ero', 'tech');
 CREATE TYPE vn_relation       AS ENUM ('seq', 'preq', 'set', 'alt', 'char', 'side', 'par', 'ser', 'fan', 'orig');
-CREATE TYPE resolution        AS ENUM ('unknown', 'nonstandard', '640x480', '800x600', '1024x768', '1280x960', '1600x1200', '640x400', '960x600', '960x640', '1024x576', '1024x600', '1024x640', '1280x720', '1280x800', '1366x768', '1600x900', '1920x1080');
 CREATE TYPE session_type      AS ENUM ('web', 'pass', 'mail');
 
 -- Sequences used for ID generation of items not in the DB
@@ -328,7 +327,6 @@ CREATE TABLE releases ( -- dbentry_type=r
   patch      boolean NOT NULL DEFAULT FALSE, -- [pub]
   freeware   boolean NOT NULL DEFAULT FALSE, -- [pub]
   doujin     boolean NOT NULL DEFAULT FALSE, -- [pub]
-  resolution resolution NOT NULL DEFAULT 'unknown', -- [pub]
   voiced     smallint NOT NULL DEFAULT 0, -- [pub]
   ani_story  smallint NOT NULL DEFAULT 0, -- [pub]
   ani_ero    smallint NOT NULL DEFAULT 0, -- [pub]
@@ -354,7 +352,9 @@ CREATE TABLE releases ( -- dbentry_type=r
   l_toranoana bigint NOT NULL DEFAULT 0, -- [pub]
   l_melonjp  integer NOT NULL DEFAULT 0, -- [pub]
   l_gamejolt integer NOT NULL DEFAULT 0, -- [pub]
-  l_nutaku   text NOT NULL DEFAULT '' -- [pub]
+  l_nutaku   text NOT NULL DEFAULT '', -- [pub]
+  reso_x     smallint NOT NULL DEFAULT 0, -- [pub] When reso_x is 0, reso_y is either 0 for 'unknown' or 1 for 'non-standard'.
+  reso_y     smallint NOT NULL DEFAULT 0 -- [pub]
 );
 
 -- releases_hist
@@ -372,7 +372,6 @@ CREATE TABLE releases_hist (
   patch      boolean NOT NULL DEFAULT FALSE,
   freeware   boolean NOT NULL DEFAULT FALSE,
   doujin     boolean NOT NULL DEFAULT FALSE,
-  resolution resolution NOT NULL DEFAULT 'unknown',
   voiced     smallint NOT NULL DEFAULT 0,
   ani_story  smallint NOT NULL DEFAULT 0,
   ani_ero    smallint NOT NULL DEFAULT 0,
@@ -398,7 +397,9 @@ CREATE TABLE releases_hist (
   l_toranoana bigint NOT NULL DEFAULT 0,
   l_melonjp  integer NOT NULL DEFAULT 0,
   l_gamejolt integer NOT NULL DEFAULT 0,
-  l_nutaku   text NOT NULL DEFAULT ''
+  l_nutaku   text NOT NULL DEFAULT '',
+  reso_x     smallint NOT NULL DEFAULT 0,
+  reso_y     smallint NOT NULL DEFAULT 0
 );
 
 -- releases_lang

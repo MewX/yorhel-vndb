@@ -14,24 +14,6 @@ use VNDB::Config;
 use VNDB::Types;
 
 
-# screen resolution information, suitable for usage in filFSelect()
-sub resolutions {
-  my $cat = '';
-  my @r;
-  my $push = \@r;
-  for my $i (keys %RESOLUTION) {
-    my $r = $RESOLUTION{$i};
-    if($cat ne $r->{cat}) {
-      push @r, [$r->{cat}];
-      $cat = $r->{cat};
-      $push = $r[$#r];
-    }
-    push @$push, [$i, $r->{txt}];
-  }
-  \@r
-}
-
-
 sub vars {
   my %vars = (
     rlist_status  => [ map [ $_, $RLIST_STATUS{$_} ], keys %RLIST_STATUS ],
@@ -49,7 +31,6 @@ sub vars {
     genders       => [ map [ $_, $GENDER{$_} ], keys %GENDER ],
     credit_type   => [ map [ $_, $CREDIT_TYPE{$_} ], keys %CREDIT_TYPE ],
     cup_size      => [ grep $_, keys %CUP_SIZE ],
-    resolutions   => scalar resolutions(),
   );
   JSON::XS->new->encode(\%vars);
 }

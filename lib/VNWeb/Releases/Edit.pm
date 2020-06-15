@@ -22,7 +22,8 @@ my $FORM = {
     released   => { default => 99999999, min => 1, rdate => 1 },
     minage     => { int => 1, enum => \%AGE_RATING },
     uncensored => { anybool => 1 },
-    resolution => { default => 'unknown', enum => \%RESOLUTION },
+    reso_x     => { uint => 1, range => [0,32767] },
+    reso_y     => { uint => 1, range => [0,32767] },
     voiced     => { uint => 1, enum => \%VOICED },
     ani_story  => { uint => 1, enum => \%ANIMATED },
     ani_ero    => { uint => 1, enum => \%ANIMATED },
@@ -47,6 +48,10 @@ my $FORM = {
         engine => {},
         count  => { uint => 1 },
     } },
+    resolutions=> { _when => 'out', aoh => {
+        resolution => {},
+        count      => { uint => 1 },
+    } },
     authmod    => { _when => 'out', anybool => 1 },
     editsum    => { _when => 'in out', editsum => 1 },
 };
@@ -57,12 +62,19 @@ my $FORM_CMP = form_compile cmp => $FORM;
 
 sub to_extlinks { $_[0]{extlinks} = { map +($_, delete $_[0]{$_}), grep /^l_/, keys $_[0]->%* } }
 
-sub engines {
-    tuwf->dbAlli(q{
-         SELECT engine, count(*) AS count FROM releases WHERE NOT hidden AND engine <> ''
-          GROUP BY engine ORDER BY count(*) DESC, engine
-    })
+sub enrich_form {
+    my($e) = @_;
+    $e->{authmod} = auth->permDbmod;
+    $e->{engines} = tuwf->dbAlli(q{
+        SELECT engine, count(*) AS count FROM releases WHERE NOT hidden AND engine <> ''
+         GROUP BY engine ORDER BY count(*) DESC, engine
+    });
+    $e->{resolutions} = [ map +{ resolution => resolution($_), count => $_->{count} }, tuwf->dbAlli(q{
+        SELECT reso_x, reso_y, count(*) AS count FROM releases WHERE NOT hidden AND NOT (reso_x = 0 AND reso_y = 0)
+         GROUP BY reso_x, reso_y ORDER BY count(*) DESC
+    })->@* ];
 }
+
 
 TUWF::get qr{/$RE{rrev}/(?<action>edit|copy)} => sub {
     my $e = db_entry r => tuwf->capture('id'), tuwf->capture('rev') or return tuwf->resNotFound;
@@ -70,10 +82,9 @@ TUWF::get qr{/$RE{rrev}/(?<action>edit|copy)} => sub {
     return tuwf->resDenied if !can_edit r => $copy ? {} : $e;
 
     $e->{rtype} = delete $e->{type};
-    $e->{authmod} = auth->permDbmod;
     $e->{editsum} = $copy ? "Copied from r$e->{id}.$e->{chrev}" : $e->{chrev} == $e->{maxrev} ? '' : "Reverted to revision r$e->{id}.$e->{chrev}";
 
-    $e->{engines} = engines;
+    enrich_form $e;
     to_extlinks $e;
 
     enrich_merge vid => 'SELECT id AS vid, title FROM vn WHERE id IN', $e->{vn};
@@ -98,6 +109,14 @@ TUWF::get qr{/$RE{vid}/add}, sub {
     my $delrel = tuwf->dbAlli('SELECT r.id, r.title, r.original FROM releases r JOIN releases_vn rv ON rv.id = r.id WHERE r.hidden AND rv.vid =', \$v->{id}, 'ORDER BY id');
     enrich_flatten languages => id => id => 'SELECT id, lang FROM releases_lang WHERE id IN', $delrel;
 
+    my $e = {
+        elm_empty($FORM_OUT)->%*,
+        title    => $v->{title},
+        original => $v->{original},
+        vn       => [{vid => $v->{id}, title => $v->{title}}],
+    };
+    enrich_form $e;
+
     framework_ title => "Add release to $v->{title}",
     sub {
         editmsg_ r => undef, "Add release to $v->{title}";
@@ -118,14 +137,7 @@ TUWF::get qr{/$RE{vid}/add}, sub {
             }
         } if @$delrel;
 
-        elm_ ReleaseEdit => $FORM_OUT, {
-            elm_empty($FORM_OUT)->%*,
-            title    => $v->{title},
-            original => $v->{original},
-            engines  => engines(),
-            authmod  => auth->permDbmod(),
-            vn       => [{vid => $v->{id}, title => $v->{title}}],
-        };
+        elm_ ReleaseEdit => $FORM_OUT, $e;
     };
 };
 
@@ -141,11 +153,12 @@ elm_api ReleaseEdit => $FORM_OUT, $FORM_IN, sub {
         $data->{locked} = $e->{locked}||0;
     }
     $data->{doujin} = $data->{voiced} = $data->{ani_story} = $data->{ani_ero} = 0 if $data->{patch};
-    $data->{resolution} = 'unknown' if $data->{patch};
+    $data->{reso_x} = $data->{reso_y} = 0 if $data->{patch};
     $data->{uncensored} = $data->{ani_ero} = 0 if $data->{minage} != 18;
     $_->{qty} = $MEDIUM{$_->{medium}}{qty} ? $_->{qty}||1 : 0 for $data->{media}->@*;
     $data->{notes} = bb_subst_links $data->{notes};
     die "No VNs selected" if !$data->{vn}->@*;
+    die "Invalid resolution: ($data->{reso_x},$data->{reso_y})" if (!$data->{reso_x} && $data->{reso_y} > 1) || ($data->{reso_x} && !$data->{reso_y});
 
     to_extlinks $e;
     $e->{rtype} = delete $e->{type};

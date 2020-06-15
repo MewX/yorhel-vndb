@@ -49,7 +49,10 @@ type alias Model =
   , released   : D.RDate
   , minage     : Int
   , uncensored : Bool
-  , resolution : String
+  , resoX      : Int
+  , resoY      : Int
+  , resoConf   : A.Config Msg GRE.RecvResolutions
+  , reso       : A.Model GRE.RecvResolutions
   , voiced     : Int
   , ani_story  : Int
   , ani_ero    : Int
@@ -78,6 +81,37 @@ engineConf lst =
     }
   }
 
+
+resoConf : List GRE.RecvResolutions -> A.Config Msg GRE.RecvResolutions
+resoConf lst =
+  { wrap   = Resolution
+  , id = "resolution"
+  , source =
+    { source = A.Func (\s -> List.filter (\e -> String.contains (String.toLower s) (String.toLower e.resolution)) lst |> List.take 10)
+    , view   = \i -> [ text i.resolution, b [ class "grayedout" ] [ text <| " (" ++ String.fromInt i.count ++ ")" ] ]
+    , key    = \i -> i.resolution
+    }
+  }
+
+resoFmt : Int -> Int -> String
+resoFmt x y =
+  case (x,y) of
+    (0,0) -> ""
+    (0,1) -> "Non-standard"
+    _ -> String.fromInt x ++ "x" ++ String.fromInt y
+
+resoParse : String -> Maybe (Int, Int)
+resoParse s =
+  case (String.toLower s, String.split "x" s) of
+    ("", _) -> Just (0,0)
+    ("non-standard", _) -> Just (0,1)
+    (_, [sx,sy]) ->
+      case (String.toInt sx, String.toInt sy) of
+        (Just ix, Just iy) -> if ix < 1 || ix > 32767 || iy < 1 || iy > 32767 then Nothing else Just (ix,iy)
+        _ -> Nothing
+    _ -> Nothing
+
+
 init : GRE.Recv -> Model
 init d =
   { state      = Api.Normal
@@ -98,7 +132,10 @@ init d =
   , released   = d.released
   , minage     = d.minage
   , uncensored = d.uncensored
-  , resolution = d.resolution
+  , resoX      = d.reso_x
+  , resoY      = d.reso_y
+  , resoConf   = resoConf d.resolutions
+  , reso       = A.init (resoFmt d.reso_x d.reso_y)
   , voiced     = d.voiced
   , ani_story  = d.ani_story
   , ani_ero    = d.ani_ero
@@ -136,7 +173,8 @@ encode model =
   , released    = model.released
   , minage      = model.minage
   , uncensored  = model.uncensored
-  , resolution  = model.resolution
+  , reso_x      = model.resoX
+  , reso_y      = model.resoY
   , voiced      = model.voiced
   , ani_story   = model.ani_story
   , ani_ero     = model.ani_ero
@@ -176,7 +214,7 @@ type Msg
   | Released D.RDate
   | Minage Int
   | Uncensored Bool
-  | Resolution String
+  | Resolution (A.Msg GRE.RecvResolutions)
   | Voiced Int
   | AniStory Int
   | AniEro Int
@@ -215,7 +253,13 @@ update msg model =
     Released d -> ({ model | released = d }, Cmd.none)
     Minage i   -> ({ model | minage = i }, Cmd.none)
     Uncensored b->({ model | uncensored = b }, Cmd.none)
-    Resolution s->({ model | resolution = s }, Cmd.none)
+    Resolution m->
+      let (nm, c, en) = A.update model.resoConf m model.reso
+          nmod = { model | reso = Maybe.withDefault nm <| Maybe.map (\e -> A.clear nm e.resolution) en }
+          n2mod = case resoParse nmod.reso.value of
+            Just (x,y) -> { nmod | resoX = x, resoY = y }
+            Nothing -> nmod
+      in (n2mod, c)
     Voiced i   -> ({ model | voiced = i }, Cmd.none)
     AniStory i -> ({ model | ani_story = i }, Cmd.none)
     AniEro i   -> ({ model | ani_ero = i }, Cmd.none)
@@ -264,6 +308,7 @@ isValid model = not
   || hasDuplicates (List.map (\m -> (m.medium, m.qty)) model.media)
   || not model.gtinValid
   || List.isEmpty model.vn
+  || resoParse model.reso.value == Nothing
   )
 
 
@@ -328,7 +373,10 @@ viewGen model =
   , if model.patch then text "" else
     formField "engine::Engine" [ A.view model.engineConf model.engine [] ]
   , if model.patch then text "" else
-    formField "resolution::Resolution" [ inputSelect "resolution" model.resolution Resolution [] GT.resolutions ]
+    formField "resolution::Resolution"
+    [ A.view model.resoConf model.reso []
+    , if resoParse model.reso.value == Nothing then b [ class "standout" ] [ text " Invalid resolution" ] else text ""
+    ]
   , if model.patch then text "" else
     formField "voiced::Voiced" [ inputSelect "voiced" model.voiced Voiced [] GT.voiced ]
   , if model.patch then text "" else

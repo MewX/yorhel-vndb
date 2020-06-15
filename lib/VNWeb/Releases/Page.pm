@@ -14,6 +14,8 @@ sub enrich_item {
     $r->{vn}        = [ sort { $a->{title}  cmp $b->{title}  || $a->{vid} <=> $b->{vid} } $r->{vn}->@*        ];
     $r->{producers} = [ sort { $a->{name}   cmp $b->{name}   || $a->{pid} <=> $b->{pid} } $r->{producers}->@* ];
     $r->{media}     = [ sort { $a->{medium} cmp $b->{medium} || $a->{qty} <=> $b->{qty} } $r->{media}->@*     ];
+
+    $r->{resolution} = resolution $r;
 }
 
 
@@ -36,7 +38,7 @@ sub _rev_ {
         [ notes      => 'Notes' ],
         [ platforms  => 'Platforms',       fmt => \%PLATFORM ],
         [ media      => 'Media',           fmt => sub { txt_ fmtmedia $_->{medium}, $_->{qty}; } ],
-        [ resolution => 'Resolution',      fmt => \%RESOLUTION ],
+        [ resolution => 'Resolution'     ],
         [ voiced     => 'Voiced',          fmt => \%VOICED ],
         [ ani_story  => 'Story animation', fmt => \%ANIMATED ],
         [ ani_ero    => 'Ero animation',   fmt => \%ANIMATED ],
@@ -119,8 +121,8 @@ sub _infotable_ {
 
         tr_ sub {
             td_ 'Resolution';
-            td_ $RESOLUTION{$r->{resolution}}{txt};
-        } if $r->{resolution} ne 'unknown';
+            td_ resolution $r;
+        } if $r->{reso_y};
 
         tr_ sub {
             td_ 'Voiced';

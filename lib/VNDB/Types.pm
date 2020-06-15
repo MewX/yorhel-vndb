@@ -237,29 +237,6 @@ hash MEDIUM =>
 
 
 
-# SQL: ENUM resolution
-hash RESOLUTION =>
-    unknown     => { txt => 'Unknown / console / handheld', cat => '' }, # hardcoded in many places
-    nonstandard => { txt => 'Non-standard', cat => ''                 }, # hardcoded in VNPage.pm
-    '640x480'   => { txt => '640x480',      cat => '4:3'              },
-    '800x600'   => { txt => '800x600',      cat => '4:3'              },
-    '1024x768'  => { txt => '1024x768',     cat => '4:3'              },
-    '1280x960'  => { txt => '1280x960',     cat => '4:3'              },
-    '1600x1200' => { txt => '1600x1200',    cat => '4:3'              },
-    '640x400'   => { txt => '640x400',      cat => 'widescreen'       },
-    '960x600'   => { txt => '960x600',      cat => 'widescreen'       },
-    '960x640'   => { txt => '960x640',      cat => 'widescreen'       },
-    '1024x576'  => { txt => '1024x576',     cat => 'widescreen'       },
-    '1024x600'  => { txt => '1024x600',     cat => 'widescreen'       },
-    '1024x640'  => { txt => '1024x640',     cat => 'widescreen'       },
-    '1280x720'  => { txt => '1280x720',     cat => 'widescreen'       },
-    '1280x800'  => { txt => '1280x800',     cat => 'widescreen'       },
-    '1366x768'  => { txt => '1366x768',     cat => 'widescreen'       },
-    '1600x900'  => { txt => '1600x900',     cat => 'widescreen'       },
-    '1920x1080' => { txt => '1920x1080',    cat => 'widescreen'       };
-
-
-
 # SQL: ENUM release_type
 hash RELEASE_TYPE =>
     complete => 'Complete',
