@@ -102,7 +102,13 @@ resoFmt x y =
 
 resoParse : String -> Maybe (Int, Int)
 resoParse s =
-  case (String.toLower s, String.split "x" s) of
+  let t =  String.replace "*" "x" s
+        |> String.replace "×" "x"
+        |> String.replace " " ""
+        |> String.replace "\t" ""
+        |> String.toLower |> String.trim
+  in
+  case (t, String.split "x" t) of
     ("", _) -> Just (0,0)
     ("non-standard", _) -> Just (0,1)
     (_, [sx,sy]) ->
