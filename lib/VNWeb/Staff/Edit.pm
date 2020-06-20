@@ -91,9 +91,9 @@ elm_api StaffEdit => $FORM_OUT, $FORM_IN, sub {
     die "Duplicate aliases" if grep $names{"$_->{name}\x00$_->{original}"}++, $data->{alias}->@*;
     die "Original = name" if grep $_->{name} eq $_->{original}, $data->{alias}->@*;
 
-    # For positive alias IDs: Make sure they exist and are owned by this entry.
+    # For positive alias IDs: Make sure they exist and are (or were) owned by this entry.
     validate_dbid
-        sql('SELECT aid FROM staff_alias WHERE id =', \$e->{id}, 'AND aid IN'),
+        sql('SELECT aid FROM staff_alias_hist WHERE chid IN(SELECT id FROM changes WHERE type = \'s\' AND itemid =', \$e->{id}, ') AND aid IN'),
         grep $_>=0, map $_->{aid}, $data->{alias}->@*;
 
     # For negative alias IDs: Assign a new ID.
