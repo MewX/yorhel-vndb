@@ -154,6 +154,7 @@ elm_api ReleaseEdit => $FORM_OUT, $FORM_IN, sub {
     }
     $data->{doujin} = $data->{voiced} = $data->{ani_story} = $data->{ani_ero} = 0 if $data->{patch};
     $data->{reso_x} = $data->{reso_y} = 0 if $data->{patch};
+    $data->{engine} = '' if $data->{patch};
     $data->{uncensored} = $data->{ani_ero} = 0 if $data->{minage} != 18;
     $_->{qty} = $MEDIUM{$_->{medium}}{qty} ? $_->{qty}||1 : 0 for $data->{media}->@*;
     $data->{notes} = bb_subst_links $data->{notes};
