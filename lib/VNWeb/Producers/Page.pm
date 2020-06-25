@@ -149,7 +149,7 @@ TUWF::get qr{/$RE{prev}(?:/(?<tab>vn|rel))?}, sub {
 
     my $pref = tuwf->reqCookie('prodrelexpand') ? 'vn' : 'rel';
     my $tab = tuwf->capture('tab') || $pref;
-    tuwf->resCookie(prodrelexpand => $tab eq 'vn' ? 1 : undef) if $tab && $tab ne $pref;
+    tuwf->resCookie(prodrelexpand => $tab eq 'vn' ? 1 : undef, expires => time + 315360000) if $tab && $tab ne $pref;
     $tab = 'rel' if !$tab;
 
     framework_ title => $p->{name}, index => !tuwf->capture('rev'), type => 'p', dbobj => $p, hiddenmsg => 1,
