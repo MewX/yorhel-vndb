@@ -10,8 +10,8 @@ TUWF::get qr{/$RE{vid}/rg}, sub {
     my $unoff = tuwf->validate(get => unoff => { anybool => 1 })->data;
     my $v = tuwf->dbRowi('SELECT id, title, original, hidden AS entry_hidden, locked AS entry_locked FROM vn WHERE id =', \$id);
 
-    my $hasofficial = tuwf->dbVali('SELECT 1 FROM vn_relations WHERE official AND id =', \$id, 'LIMIT 1');
-    $unoff = 1 if !$hasofficial;
+    my $has = tuwf->dbRowi('SELECT bool_or(official) AS official, bool_or(not official) AS unofficial FROM vn_relations WHERE id =', \$id, 'GROUP BY id');
+    $unoff = 1 if !$has->{official};
 
     # Big list of { id0, id1, relation } hashes.
     # Each relation is included twice, with id0 and id1 reversed.
@@ -61,7 +61,7 @@ TUWF::get qr{/$RE{vid}/rg}, sub {
                 txt_ sprintf "Displaying %d out of %d related visual novels.", $visible_nodes, $total_nodes;
                 debug_ +{ nodes => $nodes, rel => $rel };
                 br_;
-                if($hasofficial) {
+                if($has->{official}) {
                     if($unoff) {
                         txt_ 'Show / ';
                         a_ href => "?num=$num&unoff=0", 'Hide';
@@ -72,16 +72,18 @@ TUWF::get qr{/$RE{vid}/rg}, sub {
                     txt_ ' unofficial relations. ';
                     br_;
                 }
-                txt_ 'Adjust graph size: ';
-                join_ ', ', sub {
-                    if($_ == min $num, $total_nodes) {
-                        txt_ $_ ;
-                    } else {
-                        a_ href => "/v$id/rg?num=$_", $_;
-                    }
-                }, grep($_ < $total_nodes, 10, 15, 25, 50, 75, 100, 150, 250, 500, 750, 1000), $total_nodes;
+                if($total_nodes > 10) {
+                    txt_ 'Adjust graph size: ';
+                    join_ ', ', sub {
+                        if($_ == min $num, $total_nodes) {
+                            txt_ $_ ;
+                        } else {
+                            a_ href => "/v$id/rg?num=$_", $_;
+                        }
+                    }, grep($_ < $total_nodes, 10, 15, 25, 50, 75, 100, 150, 250, 500, 750, 1000), $total_nodes;
+                }
                 txt_ '.';
-            } if $total_nodes > 10;
+            } if $total_nodes > 10 || $has->{unofficial};
             p_ class => 'center', sub { lit_ dot2svg $dot };
         };
         clearfloat_;
