@@ -10,9 +10,9 @@ use VNDB::Types;
 
 
 TUWF::register(
-  qr{v(?:([1-9]\d*)(?:\.([1-9]\d*))?/edit|/new)}
+  qr{old/v(?:([1-9]\d*)(?:\.([1-9]\d*))?/edit|/new)}
     => \&edit,
-  qr{v/add}                => \&addform,
+  qr{old/v/add}            => \&addform,
   qr{xml/vn\.xml}          => \&vnxml,
   qr{xml/screenshots\.xml} => \&scrxml,
 );
@@ -69,7 +69,7 @@ sub addform {
     end 'div';
   }
 
-  $self->htmlForm({ frm => $frm, action => '/v/add', continue => @$l ? 2 : 1 },
+  $self->htmlForm({ frm => $frm, action => '/old/v/add', continue => @$l ? 2 : 1 },
   vn_add => [ 'Add a new visual novel',
     [ input    => short => 'title',     name => 'Title (romaji)', width => 450 ],
     [ input    => short => 'original',  name => 'Original title', width => 450 ],
@@ -255,7 +255,7 @@ sub _uploadimage {
 
 sub _form {
   my($self, $v, $frm, $r, $chars) = @_;
-  $self->htmlForm({ frm => $frm, action => $v ? "/v$v->{id}/edit" : '/v/new', editsum => 1, upload => 1 },
+  $self->htmlForm({ frm => $frm, action => $v ? "/old/v$v->{id}/edit" : '/old/v/new', editsum => 1, upload => 1 },
   vn_geninfo => [ 'General info',
     [ input    => short => 'title',     name => 'Title (romaji)', width => 450 ],
     [ input    => short => 'original',  name => 'Original title', width => 450 ],

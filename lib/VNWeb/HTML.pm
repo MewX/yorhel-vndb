@@ -821,6 +821,11 @@ sub editmsg_ {
                 li_ 'Fields marked with (*) may cause other fields to become (un)available depending on the selection.' if $type eq 'r';
             }
         };
+        p_ class => 'center', sub {
+            txt_ "If you're having trouble using this new form, the ";
+            a_ href => '/old'.($obj ? "/v$obj->{id}/edit" : '/v/add'), 'old form';
+            txt_ ' is still available.';
+        } if $type eq 'v' && tuwf->reqPath() !~ m{^/old/};
     }
 }
 
