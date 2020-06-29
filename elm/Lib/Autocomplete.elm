@@ -10,6 +10,7 @@ module Lib.Autocomplete exposing
   , vnSource
   , producerSource
   , charSource
+  , animeSource
   , init
   , clear
   , update
@@ -36,6 +37,7 @@ import Gen.Traits as GTR
 import Gen.VN as GV
 import Gen.Producers as GP
 import Gen.Chars as GC
+import Gen.Anime as GA
 
 
 type alias Config m a =
@@ -160,6 +162,19 @@ charSource =
         b [ class "grayedout" ] [ text <| " (instance of c" ++ String.fromInt m.id ++ ": " ++ m.name ]
       ) i.main
     ]
+  , key     = \i -> String.fromInt i.id
+  }
+
+
+animeSource : SourceConfig m GApi.ApiAnimeResult
+animeSource =
+  { source  = Endpoint (\s -> GA.send { search = s })
+    <| \x -> case x of
+      GApi.AnimeResult e -> Just e
+      _ -> Nothing
+  , view    = \i ->
+    [ b [ class "grayedout" ] [ text <| "a" ++ String.fromInt i.id ++ ": " ]
+    , text i.title ]
   , key     = \i -> String.fromInt i.id
   }
 

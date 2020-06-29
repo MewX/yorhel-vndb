@@ -103,6 +103,11 @@ our %apis = (
             original => { required => 0, default => '' },
         } }
     } } ],
+    AnimeResult => [ { aoh => { # Response to 'Anime'
+        id       => { id => 1 },
+        title    => {},
+        original => { required => 0, default => '' },
+    } } ],
     ImageResult => [ { aoh => { # Response to 'Images'
         id              => { }, # image id...
         token           => { required => 0 },
@@ -396,6 +401,7 @@ sub write_types {
     $data .= def cupSizes   => 'List (String, String)' => list map tuple(string $_, string $CUP_SIZE{$_}), keys %CUP_SIZE;
     $data .= def bloodTypes => 'List (String, String)' => list map tuple(string $_, string $BLOOD_TYPE{$_}), keys %BLOOD_TYPE;
     $data .= def charRoles  => 'List (String, String)' => list map tuple(string $_, string $CHAR_ROLE{$_}{txt}), keys %CHAR_ROLE;
+    $data .= def vnLengths  => 'List (Int, String)' => list map tuple($_, string $VN_LENGTH{$_}{txt}.($VN_LENGTH{$_}{time}?" ($VN_LENGTH{$_}{time})":'')), keys %VN_LENGTH;
     $data .= def curYear    => Int => (gmtime)[5]+1900;
 
     write_module Types => $data;

@@ -47,6 +47,11 @@ type alias Model =
   , original    : String
   , alias       : String
   , desc        : TP.Model
+  , length      : Int
+  , lWikidata   : Maybe Int
+  , lRenai      : String
+  , anime       : List GVE.RecvAnime
+  , animeSearch : A.Model GApi.ApiAnimeResult
   , id          : Maybe Int
   }
 
@@ -60,6 +65,11 @@ init d =
   , original    = d.original
   , alias       = d.alias
   , desc        = TP.bbcode d.desc
+  , length      = d.length
+  , lWikidata   = d.l_wikidata
+  , lRenai      = d.l_renai
+  , anime       = d.anime
+  , animeSearch = A.init ""
   , id          = d.id
   }
 
@@ -74,7 +84,14 @@ encode model =
   , original    = model.original
   , alias       = model.alias
   , desc        = model.desc.data
+  , length      = model.length
+  , l_wikidata  = model.lWikidata
+  , l_renai     = model.lRenai
+  , anime       = List.map (\a -> { aid = a.aid }) model.anime
   }
+
+animeConfig : A.Config Msg GApi.ApiAnimeResult
+animeConfig = { wrap = AnimeSearch, id = "animeadd", source = A.animeSource }
 
 type Msg
   = Editsum Editsum.Msg
@@ -85,6 +102,11 @@ type Msg
   | Original String
   | Alias String
   | Desc TP.Msg
+  | Length Int
+  | LWikidata (Maybe Int)
+  | LRenai String
+  | AnimeDel Int
+  | AnimeSearch (A.Msg GApi.ApiAnimeResult)
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -96,6 +118,19 @@ update msg model =
     Original s -> ({ model | original = s }, Cmd.none)
     Alias s    -> ({ model | alias = s }, Cmd.none)
     Desc m     -> let (nm,nc) = TP.update m model.desc in ({ model | desc = nm }, Cmd.map Desc nc)
+    Length n   -> ({ model | length = n }, Cmd.none)
+    LWikidata n-> ({ model | lWikidata = n }, Cmd.none)
+    LRenai s   -> ({ model | lRenai = s }, Cmd.none)
+
+    AnimeDel i -> ({ model | anime = delidx i model.anime }, Cmd.none)
+    AnimeSearch m ->
+      let (nm, c, res) = A.update animeConfig m model.animeSearch
+      in case res of
+        Nothing -> ({ model | animeSearch = nm }, c)
+        Just a ->
+          if List.any (\l -> l.aid == a.id) model.anime
+          then ({ model | animeSearch = A.clear nm "" }, c)
+          else ({ model | animeSearch = A.clear nm "", anime = model.anime ++ [{ aid = a.id, title = a.title, original = a.original }] }, Cmd.none)
 
     Submit -> ({ model | state = Api.Loading }, GVE.send (encode model) Submitted)
     Submitted (GApi.Redirect s) -> (model, load s)
@@ -130,6 +165,19 @@ view model =
       , formField "desc::Description"
         [ TP.view "desc" model.desc Desc 600 (style "height" "180px" :: GVE.valDesc) [ b [ class "standout" ] [ text "English please!" ] ]
         , text "Short description of the main story. Please do not include spoilers, and don't forget to list the source in case you didn't write the description yourself."
+        ]
+      , formField "length::Length" [ inputSelect "length" model.length Length [] GT.vnLengths ]
+      , formField "l_wikidata::Wikidata ID" [ inputWikidata "l_wikidata" model.lWikidata LWikidata ]
+      , formField "l_renai::Renai.us link" [ text "http://renai.us/game/", inputText "l_renai" model.lRenai LRenai [], text ".shtml" ]
+      , formField "Related anime"
+        [ if List.isEmpty model.anime then text ""
+          else table [] <| List.indexedMap (\i e -> tr []
+            [ td [ style "text-align" "right" ] [ b [ class "grayedout" ] [ text <| "a" ++ String.fromInt e.aid ++ ":" ] ]
+            , td [] [ a [ href <| "https://anidb.net/anime/" ++ String.fromInt e.aid ] [ text e.title ] ]
+            , td [] [ inputButton "remove" (AnimeDel i) [] ]
+            ]
+          ) model.anime
+        , A.view animeConfig model.animeSearch [placeholder "Add anime..."]
         ]
       ]
 

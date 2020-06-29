@@ -9,6 +9,14 @@ my $FORM = {
     original   => { required => 0, default => '', maxlength => 250 },
     alias      => { required => 0, default => '', maxlength => 500 },
     desc       => { required => 0, default => '', maxlength => 10240 },
+    length     => { uint => 1, enum => \%VN_LENGTH },
+    l_wikidata => { required => 0, uint => 1, max => (1<<31)-1 },
+    l_renai    => { required => 0, default => '', maxlength => 100 },
+    anime      => { sort_keys => 'id', aoh => {
+        aid      => { id => 1 },
+        title    => { _when => 'out' },
+        original => { _when => 'out', required => 0, default => '' },
+    } },
     hidden     => { anybool => 1 },
     locked     => { anybool => 1 },
 
@@ -28,6 +36,8 @@ TUWF::get qr{/$RE{vrev}/edit} => sub {
     $e->{image_sex} = $e->{image_vio} = undef;
     $e->{authmod} = auth->permDbmod;
     $e->{editsum} = $e->{chrev} == $e->{maxrev} ? '' : "Reverted to revision v$e->{id}.$e->{chrev}";
+
+    enrich_merge aid => 'SELECT id AS aid, title_romaji AS title, title_kanji AS original FROM anime WHERE id IN', $e->{anime};
 
     framework_ title => "Edit $e->{title}", type => 'v', dbobj => $e, tab => 'edit',
     sub {
@@ -62,6 +72,8 @@ elm_api VNEdit => $FORM_OUT, $FORM_IN, sub {
         $data->{locked} = $e->{locked}||0;
     }
     $data->{desc} = bb_subst_links $data->{desc};
+
+    validate_dbid 'SELECT id FROM anime WHERE id IN', map $_->{aid}, $data->{anime}->@*;
 
     return elm_Unchanged if !$new && !form_changed $FORM_CMP, $data, $e;
     my($id,undef,$rev) = db_edit v => $e->{id}, $data;

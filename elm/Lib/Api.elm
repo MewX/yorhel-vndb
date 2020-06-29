@@ -53,6 +53,7 @@ showResponse res =
     VNResult _                      -> unexp
     ProducerResult _                -> unexp
     CharResult _                    -> unexp
+    AnimeResult _                   -> unexp
     ImageResult _                   -> unexp
 
 
