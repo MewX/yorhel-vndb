@@ -10,8 +10,10 @@ use warnings;
 use Multi::Core;
 use AnyEvent::Socket;
 use AnyEvent::Util;
+use AnyEvent::HTTP;
 use Encode 'decode_utf8', 'encode_utf8';
 use VNDB::Types;
+use VNDB::Config;
 
 
 sub LOGIN_ACCEPTED         () { 200 }
@@ -33,6 +35,7 @@ my @handled_codes = (
 
 
 my %O = (
+  titlesurl => 'https://anidb.net/api/anime-titles.dat.gz',
   apihost => 'api.anidb.net',
   apiport => 9000,
   # AniDB UDP API options
@@ -45,6 +48,7 @@ my %O = (
   maxtimeoutdelay => 2*3600,
   check_delay => 3600,
   resolve_delay => 3*3600,
+  titles_delay => 48*3600,
   cachetime => '3 months',
 );
 
@@ -63,9 +67,11 @@ my %C = (
 
 sub run {
   shift;
+  $O{ua} = sprintf 'VNDB.org Anime Fetcher (Multi v%s; contact@vndb.org)', config->{version};
   %O = (%O, @_);
   die "No AniDB user/pass configured!" if !$O{user} || !$O{pass};
 
+  push_watcher schedule 0, $O{titles_delay}, \&titles_import;
   push_watcher schedule 0, $O{resolve_delay}, \&resolve;
   resolve();
 }
@@ -74,6 +80,70 @@ sub run {
 sub unload {
   undef $C{tw};
 }
+
+
+
+# BUGs, kind of:
+# - If the 'ja' title is not present in the titles dump, the title_kanji column will not be set to NULL.
+# - This doesn't attempt to delete rows from the anime table that aren't present in the titles dump.
+# Both can be 'solved' by periodically pruning unreferenced rows from the anime
+# table and setting all title_kanji columns to NULL.
+
+my %T;
+
+sub titles_import {
+  %T = (
+    titles => 0,
+    updates => 0,
+    start_dl => AE::now(),
+  );
+  http_get $O{titlesurl}, headers => {'User-Agent' => $O{ua} }, timeout => 60, sub {
+    my($body, $hdr) = @_;
+    return AE::log warn => "Error fetching titles dump: $hdr->{Status} $hdr->{Reason}" if $hdr->{Status} !~ /^2/;
+
+    $T{start_insert} = AE::now();
+    if(!open $T{fh}, '<:gzip:utf8', \$body) {
+      AE::log warn => "Error parsing titles dump: $!";
+      return;
+    }
+    titles_insert();
+  };
+}
+
+sub titles_next {
+  my $F = $T{fh};
+  while(local $_ = <$F>) {
+    chomp;
+    next if /^#/;
+    my($id,$type,$lang,$title) = split /\|/, $_, 4;
+    return (0, $id, $title) if $type eq '1';
+    return (1, $id, $title) if $type eq '4' && $lang eq 'ja';
+  }
+  ()
+}
+
+sub titles_insert {
+  my($orig, $id, $title) = titles_next();
+
+  if(!defined $orig) {
+    AE::log info => sprintf 'AniDB title import: %d titles, %d updates in %.1fs (fetch) + %.1fs (insert)',
+      $T{titles}, $T{updates}, $T{start_insert}-$T{start_dl}, AE::now()-$T{start_insert};
+    %T = ();
+    return;
+  }
+
+  my $col = $orig ? 'title_kanji' : 'title_romaji';
+  pg_cmd "INSERT INTO anime (id, $col) VALUES (\$1, \$2) ON CONFLICT (id) DO UPDATE SET $col = excluded.$col WHERE anime.$col IS DISTINCT FROM excluded.$col", [ $id, $title ], sub {
+    my($res) = @_;
+    return if pg_expect $res, 0;
+    $T{titles}++;
+    $T{updates} += $res->cmdRows;
+    titles_insert();
+  }
+}
+
+
+
 
 
 sub resolve {
@@ -104,7 +174,10 @@ sub resolve {
 
 sub check_anime {
   return if $C{aid} || $C{tw};
-  pg_cmd 'SELECT id FROM anime WHERE lastfetch IS NULL OR lastfetch < NOW() - $1::interval ORDER BY lastfetch DESC NULLS FIRST LIMIT 1', [ $O{cachetime} ], sub {
+  pg_cmd 'SELECT id FROM anime
+           WHERE EXISTS(SELECT 1 FROM vn_anime WHERE aid = anime.id)
+             AND (lastfetch IS NULL OR lastfetch < NOW() - $1::interval)
+           ORDER BY lastfetch DESC NULLS FIRST LIMIT 1', [ $O{cachetime} ], sub {
     my $res = shift;
     return if pg_expect $res, 1 or $C{aid} or $C{tw} or !$res->rows;
     $C{aid} = $res->value(0,0);
@@ -129,7 +202,8 @@ sub nextcmd {
     ) : ( # logged in, get anime
       command => 'ANIME',
       aid => $C{aid},
-      acode => 3973121, # aid, ANN id, NFO id, year, type, romaji, kanji
+      # aid, year, type, ann, nfo
+      amask => sprintf('%02x%02x%02x%02x%02x%02x%02x', 128+32+16, 0, 0, 0, 64+16, 0, 0),
     );
 
   # XXX: We don't have a writability watcher, but since we're only ever sending
@@ -230,27 +304,25 @@ sub handlemsg {
 sub update_anime {
   my $r = shift;
 
-  # aid, ANN id, NFO id, year, type, romaji, kanji
-  my @col = split(/\|/, $r, 7);
+  # aid, year, type, ann, nfo
+  my @col = split(/\|/, $r, 5);
   for(@col) {
     $_ =~ s/<br \/>/\n/g;
     $_ =~ s/`/'/g;
   }
-  $col[1] = undef if !$col[1];
-  $col[2] = undef if !$col[2] || $col[2] =~ /^0,/;
-  $col[3] = $col[3] =~ /^([0-9]+)/ ? $1 : undef;
-  ($col[4]) = grep lc($col[4]) eq lc($ANIME_TYPE{$_}{anidb}), keys %ANIME_TYPE;
-  $col[5] = undef if !$col[5];
-  $col[6] = undef if !$col[6];
+  if($col[0] ne $C{aid}) {
+    AE::log warn => sprintf 'Received from aid (%s) for a%d', $col[0], $C{aid};
+    return;
+  }
+  $col[1] = $col[1] =~ /^([0-9]+)/ ? $1 : undef;
+  ($col[2]) = grep lc($col[2]) eq lc($ANIME_TYPE{$_}{anidb}), keys %ANIME_TYPE;
+  $col[3] = undef if !$col[3];
+  $col[4] = undef if !$col[4] || $col[2] =~ /^0,/;
 
   pg_cmd 'UPDATE anime
-    SET id = $1, ann_id = $2, nfo_id = $3, year = $4, type = $5,
-        title_romaji = $6, title_kanji = $7, lastfetch = NOW()
-    WHERE id = $8',
-    [ @col, $C{aid} ];
+    SET id = $1, year = $2, type = $3, ann_id = $4, nfo_id = $5, lastfetch = NOW()
+    WHERE id = $1', \@col;
   AE::log info => "Fetched anime info for a$C{aid}";
-  AE::log warn => "a$C{aid} doesn't have a title or year!"
-    if !$col[3] || !$col[5];
 }
 
 
