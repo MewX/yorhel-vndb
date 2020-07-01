@@ -17,6 +17,7 @@ import Lib.Autocomplete as A
 import Lib.Api as Api
 import Lib.Editsum as Editsum
 import Lib.RDate as RDate
+import Lib.Image as Img
 import Gen.Release as GR
 import Gen.CharEdit as GCE
 import Gen.Types as GT
@@ -65,11 +66,7 @@ type alias Model =
   , mainName    : String
   , mainSearch  : A.Model GApi.ApiCharResult
   , mainSpoil   : Int
-  , image       : Maybe String
-  , imageState  : Api.State
-  , imageNew    : Set.Set String
-  , imageSex    : Maybe Int
-  , imageVio    : Maybe Int
+  , image       : Img.Image
   , traits      : List GCE.RecvTraits
   , traitSearch : A.Model GApi.ApiTraitResult
   , traitSelId  : Int
@@ -108,11 +105,7 @@ init d =
   , mainName    = d.main_name
   , mainSearch  = A.init ""
   , mainSpoil   = d.main_spoil
-  , image       = d.image
-  , imageState  = Api.Normal
-  , imageNew    = Set.empty
-  , imageSex    = d.image_sex
-  , imageVio    = d.image_vio
+  , image       = Img.info d.image_info
   , traits      = d.traits
   , traitSearch = A.init ""
   , traitSelId  = 0
@@ -148,9 +141,7 @@ encode model =
   , cup_size    = model.cupSize
   , main        = if model.mainHas then model.main else Nothing
   , main_spoil  = model.mainSpoil
-  , image       = model.image
-  , image_sex   = model.imageSex
-  , image_vio   = model.imageVio
+  , image       = model.image.id
   , traits      = List.map (\t -> { tid = t.tid, spoil = t.spoil }) model.traits
   , vns         = List.map (\v -> { vid = v.vid, rid = v.rid, spoil = v.spoil, role = v.role }) model.vns
   }
@@ -188,12 +179,10 @@ type Msg
   | MainHas Bool
   | MainSearch (A.Msg GApi.ApiCharResult)
   | MainSpoil Int
-  | ImageSet String
+  | ImageSet String Bool
   | ImageSelect
   | ImageSelected File
-  | ImageLoaded GApi.Response
-  | ImageSex Int Bool
-  | ImageVio Int Bool
+  | ImageMsg Img.Msg
   | TraitDel Int
   | TraitSel Int Int
   | TraitSpoil Int Int
@@ -240,13 +229,10 @@ update msg model =
             Nothing -> ({ model | mainSearch = A.clear nm "", main = Just m1.id, mainName = m1.name }, c)
     MainSpoil n -> ({ model | mainSpoil = n }, Cmd.none)
 
-    ImageSet s  -> ({ model | image = if s == "" then Nothing else Just s}, Cmd.none)
+    ImageSet s b -> let (nm, nc) = Img.new b s in ({ model | image = nm }, Cmd.map ImageMsg nc)
     ImageSelect -> (model, FSel.file ["image/png", "image/jpg"] ImageSelected)
-    ImageSelected f -> ({ model | imageState = Api.Loading }, Api.postImage Api.Ch f ImageLoaded)
-    ImageLoaded (GApi.Image i _ _) -> ({ model | image = Just i, imageNew = Set.insert i model.imageNew, imageState = Api.Normal }, Cmd.none)
-    ImageLoaded e -> ({ model | imageState = Api.Error e }, Cmd.none)
-    ImageSex i _ -> ({ model | imageSex = Just i }, Cmd.none)
-    ImageVio i _ -> ({ model | imageVio = Just i }, Cmd.none)
+    ImageSelected f -> let (nm, nc) = Img.upload Api.Ch f in ({ model | image = nm }, Cmd.map ImageMsg nc)
+    ImageMsg m -> let (nm, nc) = Img.update m model.image in ({ model | image = nm }, Cmd.map ImageMsg nc)
 
     TraitDel idx       -> ({ model | traits = delidx idx model.traits }, Cmd.none)
     TraitSel id spl    -> ({ model | traitSelId = id, traitSelSpl = spl }, Cmd.none)
@@ -288,6 +274,7 @@ isValid : Model -> Bool
 isValid model = not
   (  (model.name /= "" && model.name == model.original)
   || hasDuplicates (List.map (\v -> (v.vid, Maybe.withDefault 0 v.rid)) model.vns)
+  || not (Img.isValid model.image)
   )
 
 
@@ -380,45 +367,25 @@ view model =
 
     image =
       div [ class "formimage" ]
-      [ div [] [
-        case model.image of
-          Nothing -> text "No image."
-          Just id -> img [ src (imageUrl id) ] []
-        ]
+      [ div [] [ Img.viewImg model.image ]
       , div []
         [ h2 [] [ text "Image ID" ]
-        , inputText "" (Maybe.withDefault "" model.image) ImageSet GCE.valImage
-        , Maybe.withDefault (text "") <| Maybe.map (\i -> a [ href <| "/img/"++i ] [ text " (flagging)" ]) model.image
+        , input ([ type_ "text", class "text", tabindex 10, value (Maybe.withDefault "" model.image.id), onInputValidation ImageSet ] ++ GCE.valImage) []
         , br [] []
         , text "Use an image that already exists on the server or empty to remove the current image."
         , br_ 2
         , h2 [] [ text "Upload new image" ]
         , inputButton "Browse image" ImageSelect []
-        , case model.imageState of
-            Api.Normal -> text ""
-            Api.Loading -> span [ class "spinner" ] []
-            Api.Error e -> b [ class "standout" ] [ text <| Api.showResponse e ]
         , br [] []
         , text "Image must be in JPEG or PNG format and at most 10 MiB. Images larger than 256x300 will automatically be resized."
-        , if not (Set.member (Maybe.withDefault "" model.image) model.imageNew) then text "" else div []
-          [ br [] []
-          , text "Please flag this image: (see the ", a [ href "/d19" ] [ text "image flagging guidelines" ], text " for guidance)"
-          , table []
-            [ thead [] [ tr [] [ td [] [ text "Sexual" ], td [] [ text "Violence" ] ] ]
-            , tr []
-              [ td []
-                [ label [] [ inputRadio "" (model.imageSex == Just 0) (ImageSex 0), text " Safe" ], br [] []
-                , label [] [ inputRadio "" (model.imageSex == Just 1) (ImageSex 1), text " Suggestive" ], br [] []
-                , label [] [ inputRadio "" (model.imageSex == Just 2) (ImageSex 2), text " Explicit" ]
-                ]
-              , td []
-                [ label [] [ inputRadio "" (model.imageVio == Just 0) (ImageVio 0), text " Tame" ], br [] []
-                , label [] [ inputRadio "" (model.imageVio == Just 1) (ImageVio 1), text " Violent" ], br [] []
-                , label [] [ inputRadio "" (model.imageVio == Just 2) (ImageVio 2), text " Brutal" ]
-                ]
+        , case Img.viewVote model.image of
+            Nothing -> text ""
+            Just v ->
+              div []
+              [ br [] []
+              , text "Please flag this image: (see the ", a [ href "/d19" ] [ text "image flagging guidelines" ], text " for guidance)"
+              , Html.map ImageMsg v
               ]
-            ]
-          ]
         ]
       ]
 

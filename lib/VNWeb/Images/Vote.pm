@@ -1,66 +1,7 @@
 package VNWeb::Images::Vote;
 
 use VNWeb::Prelude;
-
-
-# Add signed tokens to the image ist - indicating that the current user is
-# permitted to vote on these images. These tokens ensure that non-moderators
-# can only vote on images that they have been randomly assigned, thus
-# preventing possible abuse when a single person uses multiple accounts to
-# influence the rating of a single image.
-sub enrich_token {
-    my($canvote, $l) = @_;
-    $_->{token} = $canvote || ($_->{votecount} == 0 && auth->permImgvote) ? auth->csrftoken(0, "imgvote-$_->{id}") : undef for @$l;
-}
-
-
-# Does the reverse of enrich_token. Returns true if all tokens validated.
-sub validate_token {
-    my($l) = @_;
-    my $ok = 1;
-    $ok &&= $_->{token} && auth->csrfcheck($_->{token}, "imgvote-$_->{id}") for @$l;
-    $ok;
-}
-
-
-sub enrich_image {
-    my($l) = @_;
-    enrich_merge id => sub { sql q{
-      SELECT i.id, i.width, i.height, i.c_votecount AS votecount
-           , i.c_sexual_avg AS sexual_avg, i.c_sexual_stddev AS sexual_stddev
-           , i.c_violence_avg AS violence_avg, i.c_violence_stddev AS violence_stddev
-           , iv.sexual AS my_sexual, iv.violence AS my_violence
-           , COALESCE(EXISTS(SELECT 1 FROM image_votes iv0 WHERE iv0.id = i.id AND iv0.ignore) AND NOT iv.ignore, FALSE) AS my_overrule
-           , COALESCE('v'||v.id, 'c'||c.id, 'v'||vsv.id) AS entry_id
-           , COALESCE(v.title, c.name, vsv.title) AS entry_title
-        FROM images i
-        LEFT JOIN image_votes iv ON iv.id = i.id AND iv.uid =}, \auth->uid, q{
-        LEFT JOIN vn v ON i.id BETWEEN 'cv1' AND vndbid_max('cv') AND v.image = i.id
-        LEFT JOIN chars c ON i.id BETWEEN 'ch1' AND vndbid_max('ch') AND c.image = i.id
-        LEFT JOIN vn_screenshots vs ON i.id BETWEEN 'sf1' AND vndbid_max('sf') AND vs.scr = i.id
-        LEFT JOIN vn vsv ON i.id BETWEEN 'sf1' AND vndbid_max('sf') AND vsv.id = vs.id
-       WHERE i.id IN}, $_
-    }, $l;
-
-    enrich votes => id => id => sub { sql '
-        SELECT iv.id, iv.uid, iv.sexual, iv.violence, iv.ignore OR (u.id IS NOT NULL AND NOT u.perm_imgvote) AS ignore, ', sql_user(), '
-          FROM image_votes iv
-          LEFT JOIN users u ON u.id = iv.uid
-         WHERE iv.id IN', $_,
-               auth ? ('AND (iv.uid IS NULL OR iv.uid <> ', \auth->uid, ')') : (), '
-         ORDER BY u.username'
-    }, $l;
-
-    for(@$l) {
-        $_->{entry} = $_->{entry_id} ? { id => $_->{entry_id}, title => $_->{entry_title} } : undef;
-        delete $_->{entry_id};
-        delete $_->{entry_title};
-        for my $v ($_->{votes}->@*) {
-            $v->{user} = xml_string sub { user_ $v }; # Easier than duplicating user_() in Elm
-            delete $v->{$_} for grep /^user_/, keys %$v;
-        }
-    }
-}
+use VNWeb::Images::Lib;
 
 
 my $SEND = form_compile any => {
@@ -73,6 +14,7 @@ my $SEND = form_compile any => {
     pHeight    => { uint => 1 }, # ^
     nsfw_token => {},
 };
+
 
 # Fetch a list of images for the user to vote on.
 elm_api Images => $SEND, { excl_voted => { anybool => 1 } }, sub {
@@ -112,15 +54,14 @@ elm_api Images => $SEND, { excl_voted => { anybool => 1 } }, sub {
          LIMIT', \30
     );
     warn sprintf 'Weighted random image sampling query returned %d < 30 rows for u%d with a sample fraction of %f', scalar @$l, auth->uid(), $tablesample if @$l < 30;
-    enrich_image $l;
-    enrich_token 1, $l;
+    enrich_image 1, $l;
     elm_ImageResult $l;
 };
 
 
 elm_api ImageVote => undef, {
     votes => { sort_keys => 'id', aoh => {
-        id       => { regex => qr/^(?:ch|cv|sf)[1-9][0-9]*$/ },
+        id       => { vndbid => [qw/ch cv sf/] },
         token    => {},
         sexual   => { uint => 1, range => [0,2] },
         violence => { uint => 1, range => [0,2] },
@@ -172,8 +113,7 @@ TUWF::get qr{/img/vote}, sub {
     return tuwf->resDenied if !auth->permImgvote;
 
     my $recent = tuwf->dbAlli('SELECT id FROM image_votes WHERE uid =', \auth->uid, 'ORDER BY date DESC LIMIT', \30);
-    enrich_image $recent;
-    enrich_token 1, $recent;
+    enrich_image 1, $recent;
 
     framework_ title => 'Image flagging', sub {
         imgflag_ images => [ reverse @$recent ], single => 0, warn => 1;
@@ -185,10 +125,8 @@ TUWF::get qr{/img/$RE{imgid}}, sub {
     my $id = tuwf->capture('id');
 
     my $l = [{ id => $id }];
-    enrich_image $l;
+    enrich_image defined($l->[0]{my_sexual}) || auth->permImgmod(), $l;
     return tuwf->resNotFound if !defined $l->[0]{width};
-
-    enrich_token defined($l->[0]{my_sexual}) || auth->permImgmod(), $l;
 
     framework_ title => "Image flagging for $id", sub {
         imgflag_ images => $l, single => 1, warn => !viewget->{show_nsfw};

@@ -1,6 +1,7 @@
 package VNWeb::Chars::Edit;
 
 use VNWeb::Prelude;
+use VNWeb::Images::Lib 'enrich_image';
 
 
 my $FORM = {
@@ -25,9 +26,8 @@ my $FORM = {
     main_spoil => { uint => 1, range => [0,2] },
     main_ref   => { _when => 'out', anybool => 1 },
     main_name  => { _when => 'out', default => '' },
-    image      => { required => 0, regex => qr/ch[1-9][0-9]{0,6}/ },
-    image_sex  => { _when => 'in out', required => 0, uint => 1, range => [0,2] },
-    image_vio  => { _when => 'in out', required => 0, uint => 1, range => [0,2] },
+    image      => { required => 0, vndbid => 'ch' },
+    image_info => { _when => 'out', required => 0, type => 'hash', keys => $VNWeb::Elm::apis{ImageResult}[0]{aoh} },
     traits     => { sort_keys => 'id', aoh => {
         tid     => { id => 1 },
         spoil   => { uint => 1, range => [0,2] },
@@ -91,7 +91,13 @@ TUWF::get qr{/$RE{crev}/(?<action>edit|copy)} => sub {
     $e->{vns} = [ sort { $a->{title} cmp $b->{title} || $a->{vid} <=> $b->{vid} || ($a->{rid}||0) <=> ($b->{rid}||0) } $e->{vns}->@* ];
     enrich_releases $e;
 
-    $e->{image_sex} = $e->{image_vio} = undef;
+    if($e->{image}) {
+        $e->{image_info} = { id => $e->{image} };
+        enrich_image 0, [$e->{image_info}];
+    } else {
+        $e->{image_info} = undef;
+    }
+
     $e->{authmod} = auth->permDbmod;
     $e->{editsum} = $copy ? "Copied from c$e->{id}.$e->{chrev}" : $e->{chrev} == $e->{maxrev} ? '' : "Reverted to revision c$e->{id}.$e->{chrev}";
 
@@ -153,11 +159,6 @@ elm_api CharEdit => $FORM_OUT, $FORM_IN, sub {
     for($data->{vns}->@*) {
         die "Bad release for v$_->{vid}: r$_->{rid}\n" if defined $_->{rid} && !tuwf->dbVali('SELECT 1 FROM releases_vn WHERE id =', \$_->{rid}, 'AND vid =', \$_->{vid});
     }
-
-    tuwf->dbExeci(
-        'INSERT INTO image_votes', { id => $data->{image}, uid => auth->uid, sexual => $data->{image_sex}, violence => $data->{image_vio} },
-        '    ON CONFLICT (id, uid) DO NOTHING'
-    ) if $data->{image} && defined $data->{image_sex} && defined $data->{image_vio} && tuwf->dbVali('SELECT 1 FROM images WHERE c_votecount = 0 AND id =', \$data->{image});
 
     return elm_Unchanged if !$new && !form_changed $FORM_CMP, $data, $e;
     my($id,undef,$rev) = db_edit c => $e->{id}, $data;

@@ -1,6 +1,7 @@
 package VNWeb::Misc::ImageUpload;
 
 use VNWeb::Prelude;
+use VNWeb::Images::Lib;
 use Image::Magick;
 
 sub save_img {
@@ -54,7 +55,17 @@ TUWF::post qr{/elm/ImageUpload.json}, sub {
     save_img $im, $id, 0, $ow, $oh, $nw, $nh;
     save_img $im, $id, 1, $nw, $nh, tuwf->{scr_size}->@* if $type eq 'sf';
 
-    elm_Image $id, $ow, $oh;
+    my $l = [{id => $id}];
+    enrich_image 1, $l;
+    elm_ImageResult $l;
+};
+
+
+elm_api Image => undef, { id => { vndbid => [qw/ch cv sf/] } }, sub {
+    my($data) = @_;
+    my $l = tuwf->dbAlli('SELECT id FROM images WHERE id =', \$data->{id});
+    enrich_image 0, $l;
+    elm_ImageResult $l;
 };
 
 1;

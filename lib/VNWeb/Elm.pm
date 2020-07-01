@@ -51,7 +51,6 @@ our %apis = (
     BadCurPass     => [], # Current password is incorrect when changing password
     MailChange     => [], # A confirmation mail has been sent to change a user's email address
     ImgFormat      => [], # Unrecognized image format
-    Image          => [ {}, { uint => 1 }, { uint => 1 } ], # Uploaded image id, width, height
     Releases       => [ { aoh => { # Response to 'Release'
         id       => { id => 1 },
         title    => {},
@@ -136,15 +135,16 @@ our %apis = (
 );
 
 
-# Generate the elm_Response() functions
+# Compile %apis into a %schema and generate the elm_Response() functions
+my %schemas;
 for my $name (keys %apis) {
     no strict 'refs';
-    $apis{$name} = [ map tuwf->compile($_), $apis{$name}->@* ];
+    $schemas{$name} = [ map tuwf->compile($_), $apis{$name}->@* ];
     *{'elm_'.$name} = sub {
         my @args = map {
-            $apis{$name}[$_]->validate($_[$_])->data if tuwf->debug;
-            $apis{$name}[$_]->analyze->coerce_for_json($_[$_], unknown => 'reject')
-        } 0..$#{$apis{$name}};
+            $schemas{$name}[$_]->validate($_[$_])->data if tuwf->debug;
+            $schemas{$name}[$_]->analyze->coerce_for_json($_[$_], unknown => 'reject')
+        } 0..$#{$schemas{$name}};
         tuwf->resJSON({$name, \@args})
     };
     push @EXPORT, 'elm_'.$name;
@@ -347,9 +347,9 @@ sub write_api {
     # of the Elm code, similar to def_type().
     my(@union, @decode);
     my $data = '';
-    my $len = max map length, keys %apis;
-    for (sort keys %apis) {
-        my($name, $schema) = ($_, $apis{$_});
+    my $len = max map length, keys %schemas;
+    for (sort keys %schemas) {
+        my($name, $schema) = ($_, $schemas{$_});
         my $def = $name;
         my $dec = sprintf 'JD.field "%s"%s <| %s', $name,
             ' 'x($len-(length $name)),

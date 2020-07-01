@@ -1,0 +1,162 @@
+module Lib.Image exposing (..)
+
+import Html exposing (..)
+import Html.Attributes exposing (..)
+import Html.Events exposing (..)
+import Process
+import Task
+import File exposing (File)
+import Lib.Html exposing (..)
+import Lib.Api as Api
+import Lib.Util exposing (imageUrl)
+import Gen.Api as GApi
+import Gen.Image as GI
+import Gen.ImageVote as GIV
+
+
+type State
+  = Normal
+  | Invalid
+  | NotFound
+  | Loading
+  | Error GApi.Response
+
+type alias Image =
+  { id        : Maybe String
+  , img       : Maybe GApi.ApiImageResult
+  , imgState  : State
+  , saveState : Api.State
+  , saveTimer : Bool
+  }
+
+
+info : Maybe GApi.ApiImageResult -> Image
+info img =
+  { id        = Maybe.map (\i -> i.id) img
+  , img       = img
+  , imgState  = Normal
+  , saveState = Api.Normal
+  , saveTimer = False
+  }
+
+
+-- Fetch image info from the ID
+new : Bool -> String -> (Image, Cmd Msg)
+new valid id =
+  ( { id        = if id == "" then Nothing else Just id
+    , img       = Nothing
+    , imgState  = if id == "" then Normal else if valid then Loading else Invalid
+    , saveState = Api.Normal
+    , saveTimer = False
+    }
+  , if valid && id /= "" then GI.send { id = id } Loaded else Cmd.none
+  )
+
+
+-- Upload a new image from a form
+upload : Api.ImageType -> File -> (Image, Cmd Msg)
+upload t f =
+  ( { id        = Nothing
+    , img       = Nothing
+    , imgState  = Loading
+    , saveState = Api.Normal
+    , saveTimer = False
+    }
+  , Api.postImage t f Loaded)
+
+
+type Msg
+  = Loaded GApi.Response
+  | MySex Int Bool
+  | MyVio Int Bool
+  | Save
+  | Saved GApi.Response
+
+
+update : Msg -> Image -> (Image, Cmd Msg)
+update msg model =
+  let
+    save m =
+      if m.saveTimer || Maybe.withDefault True (Maybe.map (\i -> i.token == Nothing || i.my_sexual == Nothing || i.my_violence == Nothing) m.img)
+      then (m, Cmd.none)
+      else ({ m | saveTimer = True }, Task.perform (always Save) (Process.sleep 1000))
+  in
+  case msg of
+    Loaded (GApi.ImageResult [i]) -> ({ model | id = Just i.id, img = Just i, imgState = Normal}, Cmd.none)
+    Loaded (GApi.ImageResult []) -> ({ model | imgState = NotFound}, Cmd.none)
+    Loaded e -> ({ model | imgState = Error e }, Cmd.none)
+
+    MySex v _ -> save { model | img = Maybe.map (\i -> { i | my_sexual   = Just v }) model.img }
+    MyVio v _ -> save { model | img = Maybe.map (\i -> { i | my_violence = Just v }) model.img }
+
+    Save ->
+      case Maybe.map (\i -> (i.token, i.my_sexual, i.my_violence)) model.img of
+        Just (Just token, Just sex, Just vio) ->
+          ( { model | saveTimer = False, saveState = Api.Loading }
+          , GIV.send { votes = [{ id = Maybe.withDefault "" model.id, token = token, sexual = sex, violence = vio, overrule = False }] } Saved)
+        _ -> (model, Cmd.none)
+    Saved (GApi.Success) -> ({ model | saveState = Api.Normal}, Cmd.none)
+    Saved e -> ({ model | saveState = Api.Error e }, Cmd.none)
+
+
+
+isValid : Image -> Bool
+isValid img = img.imgState == Normal
+
+
+viewImg : Image -> Html m
+viewImg image =
+  case (image.imgState, image.img) of
+    (Loading, _) -> div [ class "spinner" ] []
+    (NotFound, _) -> b [ class "standout" ] [ text "Image not found." ]
+    (Invalid, _) -> b [ class "standout" ] [ text "Invalid image ID." ]
+    (Error e, _) -> b [ class "standout" ] [ text <| Api.showResponse e ]
+    (_, Nothing) -> text "No image."
+    (_, Just i) ->
+      label [ class "imghover", style "width" (String.fromInt i.width++"px"), style "height" (String.fromInt i.height++"px") ]
+      [ div [ class "imghover--visible" ]
+        [ img [ src (imageUrl i.id) ] []
+        , a [ href <| "/img/"++i.id ] <|
+          case (i.sexual_avg, i.violence_avg) of
+            (Just sex, Just vio) ->
+              -- XXX: These thresholds are subject to change, maybe just show the numbers here?
+              [ text <| if sex > 1.3 then "Explicit" else if sex > 0.4 then "Suggestive" else "Tame"
+              , text " / "
+              , text <| if vio > 1.3 then "Brutal"   else if vio > 0.4 then "Violent"    else "Safe"
+              , text <| " (" ++ String.fromInt i.votecount ++ ")"
+              ]
+            _ -> [ text "Not flagged" ]
+        ]
+      ]
+
+
+viewVote : Image -> Maybe (Html Msg)
+viewVote model =
+  let
+    vote i = table []
+      [ thead [] [ tr []
+        [ td [] [ text "Sexual ", if model.saveState == Api.Loading then span [ class "spinner" ] [] else text "" ]
+        , td [] [ text "Violence" ]
+        ] ]
+      , tfoot [] <|
+        case model.saveState of
+          Api.Error e -> [ tr [] [ td [ colspan 2 ] [ b [ class "standout" ] [ text (Api.showResponse e) ] ] ] ]
+          _ -> []
+      , tr []
+        [ td []
+          [ label [] [ inputRadio "" (i.my_sexual == Just 0) (MySex 0), text " Safe" ], br [] []
+          , label [] [ inputRadio "" (i.my_sexual == Just 1) (MySex 1), text " Suggestive" ], br [] []
+          , label [] [ inputRadio "" (i.my_sexual == Just 2) (MySex 2), text " Explicit" ]
+          ]
+        , td []
+          [ label [] [ inputRadio "" (i.my_violence == Just 0) (MyVio 0), text " Tame" ], br [] []
+          , label [] [ inputRadio "" (i.my_violence == Just 1) (MyVio 1), text " Violent" ], br [] []
+          , label [] [ inputRadio "" (i.my_violence == Just 2) (MyVio 2), text " Brutal" ]
+          ]
+        ]
+      ]
+  in case model.img of
+      Nothing -> Nothing
+      Just i ->
+        if i.token == Nothing then Nothing
+        else Just (vote i)

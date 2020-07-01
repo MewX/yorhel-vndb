@@ -24,6 +24,11 @@ our @EXPORT = qw/
 
 TUWF::set custom_validations => {
     id          => { uint => 1, max => (1<<26)-1 },
+    # 'vndbid' SQL type, accepts an arrayref with accepted prefixes.
+    vndbid      => sub {
+        my $types = ref $_[0] ? join '|', $_[0]->@* : $_[0];
+        +{ regex => qr/^(?:$types)[1-9][0-9]{0,6}$/ }
+    },
     editsum     => { required => 1, length => [ 2, 5000 ] },
     page        => { uint => 1, min => 1, max => 1000, required => 0, default => 1, onerror => 1 },
     upage       => { uint => 1, min => 1, required => 0, default => 1, onerror => 1 }, # pagination without a maximum

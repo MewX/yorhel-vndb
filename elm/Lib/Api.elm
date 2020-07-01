@@ -45,7 +45,6 @@ showResponse res =
     BadCurPass                      -> "Current password is invalid."
     MailChange                      -> unexp
     ImgFormat                       -> "Unrecognized image format, only JPEG and PNG are accepted."
-    Image _ _ _                     -> unexp
     Releases _                      -> unexp
     BoardResult _                   -> unexp
     TagResult _                     -> unexp
