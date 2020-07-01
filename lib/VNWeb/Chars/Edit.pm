@@ -147,6 +147,8 @@ elm_api CharEdit => $FORM_OUT, $FORM_IN, sub {
     $data->{main} = undef if $data->{main} && !tuwf->dbVali('SELECT 1 FROM chars WHERE NOT hidden AND main IS NULL AND id =', \$data->{main});
     $data->{main_spoil} = 0 if !$data->{main};
 
+    validate_dbid 'SELECT id FROM images WHERE id IN', $data->{image} if $data->{image};
+
     # Allow non-applicable traits only when they were already applied to this character.
     validate_dbid
         sql('SELECT id FROM traits t WHERE state = 1+1 AND (applicable OR EXISTS(SELECT 1 FROM chars_traits ct WHERE ct.tid = t.id AND ct.id =', \$e->{id}, ')) AND id IN'),

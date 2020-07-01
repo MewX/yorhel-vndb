@@ -366,9 +366,9 @@ view model =
       ]
 
     image =
-      div [ class "formimage" ]
-      [ div [] [ Img.viewImg model.image ]
-      , div []
+      table [ class "formimage" ] [ tr []
+      [ td [] [ Img.viewImg model.image ]
+      , td []
         [ h2 [] [ text "Image ID" ]
         , input ([ type_ "text", class "text", tabindex 10, value (Maybe.withDefault "" model.image.id), onInputValidation ImageSet ] ++ GCE.valImage) []
         , br [] []
@@ -387,7 +387,7 @@ view model =
               , Html.map ImageMsg v
               ]
         ]
-      ]
+      ] ]
 
     traits =
       let

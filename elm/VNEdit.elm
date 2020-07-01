@@ -16,6 +16,7 @@ import Lib.TextPreview as TP
 import Lib.Autocomplete as A
 import Lib.Api as Api
 import Lib.Editsum as Editsum
+import Lib.Image as Img
 import Gen.VNEdit as GVE
 import Gen.Types as GT
 import Gen.Api as GApi
@@ -52,6 +53,7 @@ type alias Model =
   , lRenai      : String
   , anime       : List GVE.RecvAnime
   , animeSearch : A.Model GApi.ApiAnimeResult
+  , image       : Img.Image
   , id          : Maybe Int
   }
 
@@ -70,6 +72,7 @@ init d =
   , lRenai      = d.l_renai
   , anime       = d.anime
   , animeSearch = A.init ""
+  , image       = Img.info d.image_info
   , id          = d.id
   }
 
@@ -88,6 +91,7 @@ encode model =
   , l_wikidata  = model.lWikidata
   , l_renai     = model.lRenai
   , anime       = List.map (\a -> { aid = a.aid }) model.anime
+  , image       = model.image.id
   }
 
 animeConfig : A.Config Msg GApi.ApiAnimeResult
@@ -107,6 +111,10 @@ type Msg
   | LRenai String
   | AnimeDel Int
   | AnimeSearch (A.Msg GApi.ApiAnimeResult)
+  | ImageSet String Bool
+  | ImageSelect
+  | ImageSelected File
+  | ImageMsg Img.Msg
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -132,6 +140,11 @@ update msg model =
           then ({ model | animeSearch = A.clear nm "" }, c)
           else ({ model | animeSearch = A.clear nm "", anime = model.anime ++ [{ aid = a.id, title = a.title, original = a.original }] }, Cmd.none)
 
+    ImageSet s b -> let (nm, nc) = Img.new b s in ({ model | image = nm }, Cmd.map ImageMsg nc)
+    ImageSelect -> (model, FSel.file ["image/png", "image/jpg"] ImageSelected)
+    ImageSelected f -> let (nm, nc) = Img.upload Api.Cv f in ({ model | image = nm }, Cmd.map ImageMsg nc)
+    ImageMsg m -> let (nm, nc) = Img.update m model.image in ({ model | image = nm }, Cmd.map ImageMsg nc)
+
     Submit -> ({ model | state = Api.Loading }, GVE.send (encode model) Submitted)
     Submitted (GApi.Redirect s) -> (model, load s)
     Submitted r -> ({ model | state = Api.Error r }, Cmd.none)
@@ -140,6 +153,7 @@ update msg model =
 isValid : Model -> Bool
 isValid model = not
   (  (model.title /= "" && model.title == model.original)
+  || not (Img.isValid model.image)
   )
 
 
@@ -181,6 +195,30 @@ view model =
         ]
       ]
 
+    image =
+      table [ class "formimage" ] [ tr []
+      [ td [] [ Img.viewImg model.image ]
+      , td []
+        [ h2 [] [ text "Image ID" ]
+        , input ([ type_ "text", class "text", tabindex 10, value (Maybe.withDefault "" model.image.id), onInputValidation ImageSet ] ++ GVE.valImage) []
+        , br [] []
+        , text "Use an image that already exists on the server or empty to remove the current image."
+        , br_ 2
+        , h2 [] [ text "Upload new image" ]
+        , inputButton "Browse image" ImageSelect []
+        , br [] []
+        , text "Preferably the cover of the CD/DVD/package. Image must be in JPEG or PNG format and at most 10 MiB. Images larger than 256x400 will automatically be resized."
+        , case Img.viewVote model.image of
+            Nothing -> text ""
+            Just v ->
+              div []
+              [ br [] []
+              , text "Please flag this image: (see the ", a [ href "/d19" ] [ text "image flagging guidelines" ], text " for guidance)"
+              , Html.map ImageMsg v
+              ]
+        ]
+      ] ]
+
   in
   form_ Submit (model.state == Api.Loading)
   [ div [ class "maintabs left" ]
@@ -195,7 +233,7 @@ view model =
       ]
     ]
   , div [ class "mainbox", classList [("hidden", model.tab /= General     && model.tab /= All)] ] [ h1 [] [ text "General info" ], table [ class "formtable" ] geninfo ]
-  , div [ class "mainbox", classList [("hidden", model.tab /= Image       && model.tab /= All)] ] [ h1 [] [ text "Image" ] ]
+  , div [ class "mainbox", classList [("hidden", model.tab /= Image       && model.tab /= All)] ] [ h1 [] [ text "Image" ], image ]
   , div [ class "mainbox", classList [("hidden", model.tab /= Staff       && model.tab /= All)] ] [ h1 [] [ text "Staff" ] ]
   , div [ class "mainbox", classList [("hidden", model.tab /= Cast        && model.tab /= All)] ] [ h1 [] [ text "Cast" ] ]
   , div [ class "mainbox", classList [("hidden", model.tab /= Relations   && model.tab /= All)] ] [ h1 [] [ text "Relations" ] ]

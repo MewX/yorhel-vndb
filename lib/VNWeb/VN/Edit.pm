@@ -1,6 +1,7 @@
 package VNWeb::VN::Edit;
 
 use VNWeb::Prelude;
+use VNWeb::Images::Lib 'enrich_image';
 
 
 my $FORM = {
@@ -17,6 +18,8 @@ my $FORM = {
         title    => { _when => 'out' },
         original => { _when => 'out', required => 0, default => '' },
     } },
+    image      => { required => 0, vndbid => 'cv' },
+    image_info => { _when => 'out', required => 0, type => 'hash', keys => $VNWeb::Elm::apis{ImageResult}[0]{aoh} },
     hidden     => { anybool => 1 },
     locked     => { anybool => 1 },
 
@@ -36,6 +39,13 @@ TUWF::get qr{/$RE{vrev}/edit} => sub {
     $e->{image_sex} = $e->{image_vio} = undef;
     $e->{authmod} = auth->permDbmod;
     $e->{editsum} = $e->{chrev} == $e->{maxrev} ? '' : "Reverted to revision v$e->{id}.$e->{chrev}";
+
+    if($e->{image}) {
+        $e->{image_info} = { id => $e->{image} };
+        enrich_image 0, [$e->{image_info}];
+    } else {
+        $e->{image_info} = undef;
+    }
 
     enrich_merge aid => 'SELECT id AS aid, title_romaji AS title, title_kanji AS original FROM anime WHERE id IN', $e->{anime};
 
@@ -74,6 +84,7 @@ elm_api VNEdit => $FORM_OUT, $FORM_IN, sub {
     $data->{desc} = bb_subst_links $data->{desc};
 
     validate_dbid 'SELECT id FROM anime WHERE id IN', map $_->{aid}, $data->{anime}->@*;
+    validate_dbid 'SELECT id FROM images WHERE id IN', $data->{image} if $data->{image};
 
     return elm_Unchanged if !$new && !form_changed $FORM_CMP, $data, $e;
     my($id,undef,$rev) = db_edit v => $e->{id}, $data;
