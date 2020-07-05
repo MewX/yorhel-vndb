@@ -39,7 +39,6 @@ type Tab
   | Image
   | Staff
   | Cast
-  | Relations
   | Screenshots
   | All
 
@@ -57,6 +56,8 @@ type alias Model =
   , anime       : List GVE.RecvAnime
   , animeSearch : A.Model GApi.ApiAnimeResult
   , image       : Img.Image
+  , vns         : List GVE.RecvRelations
+  , vnSearch    : A.Model GApi.ApiVNResult
   , screenshots : List (Int,Img.Image,Maybe Int) -- internal id, img, rel
   , scrUplRel   : Maybe Int
   , scrUplNum   : Maybe Int
@@ -78,6 +79,8 @@ init d =
   , length      = d.length
   , lWikidata   = d.l_wikidata
   , lRenai      = d.l_renai
+  , vns         = d.relations
+  , vnSearch    = A.init ""
   , anime       = d.anime
   , animeSearch = A.init ""
   , image       = Img.info d.image_info
@@ -103,6 +106,7 @@ encode model =
   , length      = model.length
   , l_wikidata  = model.lWikidata
   , l_renai     = model.lRenai
+  , relations   = List.map (\v -> { vid = v.vid, relation = v.relation, official = v.official }) model.vns
   , anime       = List.map (\a -> { aid = a.aid }) model.anime
   , image       = model.image.id
   , screenshots = List.map (\(_,i,r) -> { scr = Maybe.withDefault "" i.id, rid = r }) model.screenshots
@@ -110,6 +114,9 @@ encode model =
 
 animeConfig : A.Config Msg GApi.ApiAnimeResult
 animeConfig = { wrap = AnimeSearch, id = "animeadd", source = A.animeSource }
+
+vnConfig : A.Config Msg GApi.ApiVNResult
+vnConfig = { wrap = VNSearch, id = "relationadd", source = A.vnSource }
 
 type Msg
   = Editsum Editsum.Msg
@@ -123,6 +130,10 @@ type Msg
   | Length Int
   | LWikidata (Maybe Int)
   | LRenai String
+  | VNDel Int
+  | VNRel Int String
+  | VNOfficial Int Bool
+  | VNSearch (A.Msg GApi.ApiVNResult)
   | AnimeDel Int
   | AnimeSearch (A.Msg GApi.ApiAnimeResult)
   | ImageSet String Bool
@@ -149,6 +160,18 @@ update msg model =
     Length n   -> ({ model | length = n }, Cmd.none)
     LWikidata n-> ({ model | lWikidata = n }, Cmd.none)
     LRenai s   -> ({ model | lRenai = s }, Cmd.none)
+
+    VNDel idx        -> ({ model | vns = delidx idx model.vns }, Cmd.none)
+    VNRel idx rel    -> ({ model | vns = modidx idx (\v -> { v | relation = rel }) model.vns }, Cmd.none)
+    VNOfficial idx o -> ({ model | vns = modidx idx (\v -> { v | official = o   }) model.vns }, Cmd.none)
+    VNSearch m ->
+      let (nm, c, res) = A.update vnConfig m model.vnSearch
+      in case res of
+        Nothing -> ({ model | vnSearch = nm }, c)
+        Just v ->
+          if List.any (\l -> l.vid == v.id) model.vns
+          then ({ model | vnSearch = A.clear nm "" }, c)
+          else ({ model | vnSearch = A.clear nm "", vns = model.vns ++ [{ vid = v.id, title = v.title, original = v.original, relation = "seq", official = True }] }, Cmd.none)
 
     AnimeDel i -> ({ model | anime = delidx i model.anime }, Cmd.none)
     AnimeSearch m ->
@@ -226,6 +249,25 @@ view model =
       , formField "length::Length" [ inputSelect "length" model.length Length [] GT.vnLengths ]
       , formField "l_wikidata::Wikidata ID" [ inputWikidata "l_wikidata" model.lWikidata LWikidata ]
       , formField "l_renai::Renai.us link" [ text "http://renai.us/game/", inputText "l_renai" model.lRenai LRenai [], text ".shtml" ]
+
+      , tr [ class "newpart" ] [ td [ colspan 2 ] [ text "Database relations" ] ]
+      , formField "Related VNs"
+        [ if List.isEmpty model.vns then text ""
+          else table [] <| List.indexedMap (\i v -> tr []
+            [ td [ style "text-align" "right" ] [ b [ class "grayedout" ] [ text <| "v" ++ String.fromInt v.vid ++ ":" ] ]
+            , td [ style "text-align" "right"] [ a [ href <| "/v" ++ String.fromInt v.vid ] [ text v.title ] ]
+            , td []
+              [ text "is an "
+              , label [] [ inputCheck "" v.official (VNOfficial i), text " official" ]
+              , inputSelect "" v.relation (VNRel i) [] GT.vnRelations
+              , text " of this VN"
+              ]
+            , td [] [ inputButton "remove" (VNDel i) [] ]
+            ]
+          ) model.vns
+        , A.view vnConfig model.vnSearch [placeholder "Add visual novel..."]
+        ]
+      , tr [ class "newpart" ] [ td [ colspan 2 ] [] ]
       , formField "Related anime"
         [ if List.isEmpty model.anime then text ""
           else table [] <| List.indexedMap (\i e -> tr []
@@ -349,7 +391,6 @@ view model =
       , li [ classList [("tabselected", model.tab == Image      )] ] [ a [ href "#", onClickD (Tab Image      ) ] [ text "Image"        ] ]
       , li [ classList [("tabselected", model.tab == Staff      )] ] [ a [ href "#", onClickD (Tab Staff      ) ] [ text "Staff"        ] ]
       , li [ classList [("tabselected", model.tab == Cast       )] ] [ a [ href "#", onClickD (Tab Cast       ) ] [ text "Cast"         ] ]
-      , li [ classList [("tabselected", model.tab == Relations  )] ] [ a [ href "#", onClickD (Tab Relations  ) ] [ text "Relations"    ] ]
       , li [ classList [("tabselected", model.tab == Screenshots)] ] [ a [ href "#", onClickD (Tab Screenshots) ] [ text "Screenshots"  ] ]
       , li [ classList [("tabselected", model.tab == All        )] ] [ a [ href "#", onClickD (Tab All        ) ] [ text "All items"    ] ]
       ]
@@ -358,7 +399,6 @@ view model =
   , div [ class "mainbox", classList [("hidden", model.tab /= Image       && model.tab /= All)] ] [ h1 [] [ text "Image" ], image ]
   , div [ class "mainbox", classList [("hidden", model.tab /= Staff       && model.tab /= All)] ] [ h1 [] [ text "Staff" ] ]
   , div [ class "mainbox", classList [("hidden", model.tab /= Cast        && model.tab /= All)] ] [ h1 [] [ text "Cast" ] ]
-  , div [ class "mainbox", classList [("hidden", model.tab /= Relations   && model.tab /= All)] ] [ h1 [] [ text "Relations" ] ]
   , div [ class "mainbox", classList [("hidden", model.tab /= Screenshots && model.tab /= All)] ] [ h1 [] [ text "Screenshots" ], screenshots ]
   , div [ class "mainbox" ] [ fieldset [ class "submit" ]
       [ Html.map Editsum (Editsum.view model.editsum)

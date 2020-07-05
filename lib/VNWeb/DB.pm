@@ -331,7 +331,7 @@ sub db_edit {
         my $base = $t->{base}{name} =~ s/_hist$//r;
         tuwf->dbExeci("UPDATE edit_${base} SET ", sql_comma(
             map sql(sql_identifier($_->{name}), ' = ', val $data->{$_->{name}}, $_),
-                grep exists $data->{$_->{name}}, $t->{base}{cols}->@*
+                grep $_->{name} ne 'chid' && exists $data->{$_->{name}}, $t->{base}{cols}->@*
         ));
     }
 

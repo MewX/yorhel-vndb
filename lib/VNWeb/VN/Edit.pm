@@ -13,13 +13,20 @@ my $FORM = {
     length     => { uint => 1, enum => \%VN_LENGTH },
     l_wikidata => { required => 0, uint => 1, max => (1<<31)-1 },
     l_renai    => { required => 0, default => '', maxlength => 100 },
-    anime      => { sort_keys => 'id', aoh => {
+    anime      => { sort_keys => 'aid', aoh => {
         aid      => { id => 1 },
         title    => { _when => 'out' },
         original => { _when => 'out', required => 0, default => '' },
     } },
     image      => { required => 0, vndbid => 'cv' },
     image_info => { _when => 'out', required => 0, type => 'hash', keys => $VNWeb::Elm::apis{ImageResult}[0]{aoh} },
+    relations  => { sort_keys => 'vid', aoh => {
+        vid      => { id => 1 },
+        relation => { enum => \%VN_RELATION },
+        official => { anybool => 1 },
+        title    => { _when => 'out' },
+        original => { _when => 'out', required => 0, default => '' },
+    } },
     screenshots=> { sort_keys => 'scr', aoh => {
         scr      => { vndbid => 'sf' },
         rid      => { required => 0, id => 1 },
@@ -56,6 +63,8 @@ TUWF::get qr{/$RE{vrev}/edit} => sub {
     enrich_image 0, [map $_->{info}, $e->{screenshots}->@*];
 
     enrich_merge aid => 'SELECT id AS aid, title_romaji AS title, title_kanji AS original FROM anime WHERE id IN', $e->{anime};
+
+    enrich_merge vid => 'SELECT id AS vid, title, original FROM vn WHERE id IN', $e->{relations};
 
     $e->{releases} = tuwf->dbAlli('
         SELECT rv.vid, r.id, r.title, r.original, r.released, r.type as rtype, r.reso_x, r.reso_y
@@ -105,6 +114,10 @@ elm_api VNEdit => $FORM_OUT, $FORM_IN, sub {
     validate_dbid 'SELECT id FROM images WHERE id IN', $data->{image} if $data->{image};
     validate_dbid 'SELECT id FROM images WHERE id IN', map $_->{scr}, $data->{screenshots}->@*;
 
+    $data->{relations} = [] if $data->{hidden};
+    validate_dbid 'SELECT id FROM vn WHERE id IN', map $_->{vid}, $data->{relations}->@*;
+    die "Relation with self" if grep $_->{vid} == $e->{id}, $data->{relations}->@*;
+
     die "Screenshot without releases assigned" if grep !$_->{rid}, $data->{screenshots}->@*; # This is only the case for *very* old revisions, form disallows this now.
     # Allow linking to deleted or moved releases only if the previous revision also had that.
     # (The form really should encourage the user to fix that, but disallowing the edit seems a bit overkill)
@@ -120,7 +133,41 @@ elm_api VNEdit => $FORM_OUT, $FORM_IN, sub {
 
     return elm_Unchanged if !$new && !form_changed $FORM_CMP, $data, $e;
     my($id,undef,$rev) = db_edit v => $e->{id}, $data;
+    update_reverse($id, $rev, $e, $data);
     elm_Redirect "/v$id.$rev";
 };
+
+
+sub update_reverse {
+    my($id, $rev, $old, $new) = @_;
+
+    my %old = map +($_->{vid}, $_), $old->{relations} ? $old->{relations}->@* : ();
+    my %new = map +($_->{vid}, $_), $new->{relations}->@*;
+
+    # Updates to be performed, vid => { vid => x, relation => y, official => z } or undef if the relation should be removed.
+    my %upd;
+
+    for my $i (keys %old, keys %new) {
+        if($old{$i} && !$new{$i}) {
+            $upd{$i} = undef;
+        } elsif(!$old{$i} || $old{$i}{relation} ne $new{$i}{relation} || !$old{$i}{official} != !$new{$i}{official}) {
+            $upd{$i} = {
+                vid      => $id,
+                relation => $VN_RELATION{ $new{$i}{relation} }{reverse},
+                official => $new{$i}{official}
+            };
+        }
+    }
+
+    for my $i (keys %upd) {
+        my $v = db_entry v => $i;
+        $v->{relations} = [
+            $upd{$i} ? $upd{$i} : (),
+            grep $_->{vid} != $id, $v->{relations}->@*
+        ];
+        $v->{editsum} = "Reverse relation update caused by revision v$id.$rev";
+        db_edit v => $i, $v, 1;
+    }
+}
 
 1;
