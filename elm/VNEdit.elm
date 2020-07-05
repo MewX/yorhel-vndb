@@ -1,4 +1,4 @@
-module VNEdit exposing (main)
+port module VNEdit exposing (main)
 
 import Html exposing (..)
 import Html.Events exposing (..)
@@ -14,6 +14,7 @@ import Lib.Util exposing (..)
 import Lib.Html exposing (..)
 import Lib.TextPreview as TP
 import Lib.Autocomplete as A
+import Lib.RDate as RDate
 import Lib.Api as Api
 import Lib.Editsum as Editsum
 import Lib.Image as Img
@@ -30,6 +31,8 @@ main = Browser.element
   , subscriptions = always Sub.none
   }
 
+
+port ivRefresh : Bool -> Cmd msg
 
 type Tab
   = General
@@ -54,6 +57,11 @@ type alias Model =
   , anime       : List GVE.RecvAnime
   , animeSearch : A.Model GApi.ApiAnimeResult
   , image       : Img.Image
+  , screenshots : List (Int,Img.Image,Maybe Int) -- internal id, img, rel
+  , scrUplRel   : Maybe Int
+  , scrUplNum   : Maybe Int
+  , scrId       : Int -- latest used internal id
+  , releases    : List GVE.RecvReleases
   , id          : Maybe Int
   }
 
@@ -73,6 +81,11 @@ init d =
   , anime       = d.anime
   , animeSearch = A.init ""
   , image       = Img.info d.image_info
+  , screenshots = List.indexedMap (\n i -> (n, Img.info (Just i.info), i.rid)) d.screenshots
+  , scrUplRel   = Nothing
+  , scrUplNum   = Nothing
+  , scrId       = 100
+  , releases    = d.releases
   , id          = d.id
   }
 
@@ -92,6 +105,7 @@ encode model =
   , l_renai     = model.lRenai
   , anime       = List.map (\a -> { aid = a.aid }) model.anime
   , image       = model.image.id
+  , screenshots = List.map (\(_,i,r) -> { scr = Maybe.withDefault "" i.id, rid = r }) model.screenshots
   }
 
 animeConfig : A.Config Msg GApi.ApiAnimeResult
@@ -115,6 +129,12 @@ type Msg
   | ImageSelect
   | ImageSelected File
   | ImageMsg Img.Msg
+  | ScrUplRel (Maybe Int)
+  | ScrUplSel
+  | ScrUpl File (List File)
+  | ScrMsg Int Img.Msg
+  | ScrRel Int (Maybe Int)
+  | ScrDel Int
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -145,6 +165,28 @@ update msg model =
     ImageSelected f -> let (nm, nc) = Img.upload Api.Cv f in ({ model | image = nm }, Cmd.map ImageMsg nc)
     ImageMsg m -> let (nm, nc) = Img.update m model.image in ({ model | image = nm }, Cmd.map ImageMsg nc)
 
+    ScrUplRel s -> ({ model | scrUplRel = s }, Cmd.none)
+    ScrUplSel -> (model, FSel.files ["image/png", "image/jpg"] ScrUpl)
+    ScrUpl f1 fl ->
+      if 1 + List.length fl > 10 - List.length model.screenshots
+      then ({ model | scrUplNum = Just (1 + List.length fl) }, Cmd.none)
+      else
+        let imgs = List.map (Img.upload Api.Sf) (f1::fl)
+        in ( { model
+             | scrId = model.scrId + 100
+             , scrUplNum = Nothing
+             , screenshots = model.screenshots ++ List.indexedMap (\n (i,_) -> (model.scrId+n,i,model.scrUplRel)) imgs
+             }
+           , List.indexedMap (\n (_,c) -> Cmd.map (ScrMsg (model.scrId+n)) c) imgs |> Cmd.batch)
+    ScrMsg id m ->
+      let f (i,s,r) =
+            if i /= id then ((i,s,r), Cmd.none)
+            else let (nm,nc) = Img.update m s in ((i,nm,r), Cmd.map (ScrMsg id) nc)
+          lst = List.map f model.screenshots
+      in ({ model | screenshots = List.map Tuple.first lst }, Cmd.batch (ivRefresh True :: List.map Tuple.second lst))
+    ScrRel n s -> ({ model | screenshots = List.map (\(i,img,r) -> if i == n then (i,img,s) else (i,img,r)) model.screenshots }, Cmd.none)
+    ScrDel n   -> ({ model | screenshots = List.filter (\(i,_,_) -> i /= n) model.screenshots }, ivRefresh True)
+
     Submit -> ({ model | state = Api.Loading }, GVE.send (encode model) Submitted)
     Submitted (GApi.Redirect s) -> (model, load s)
     Submitted r -> ({ model | state = Api.Error r }, Cmd.none)
@@ -154,6 +196,7 @@ isValid : Model -> Bool
 isValid model = not
   (  (model.title /= "" && model.title == model.original)
   || not (Img.isValid model.image)
+  || List.any (\(_,i,r) -> r == Nothing || not (Img.isValid i)) model.screenshots
   )
 
 
@@ -219,6 +262,85 @@ view model =
         ]
       ] ]
 
+    screenshots =
+      let
+        showrel r = "[" ++ (RDate.format (RDate.expand r.released)) ++ " " ++ (String.join "," r.lang) ++ "] " ++ r.title ++ " (r" ++ String.fromInt r.id ++ ")"
+        rellist = List.map (\r -> (Just r.id, showrel r)) model.releases
+        scr n (id, i, rel) = tr [] <|
+          let imgdim = Maybe.map (\nfo -> (nfo.width, nfo.height)) i.img |> Maybe.withDefault (0,0)
+              relnfo = List.filter (\r -> Just r.id == rel) model.releases |> List.head
+              reldim = relnfo |> Maybe.andThen (\r -> if r.reso_x == 0 then Nothing else Just (r.reso_x, r.reso_y))
+              dimstr (x,y) = String.fromInt x ++ "x" ++ String.fromInt y
+          in
+          [ td [] [ Img.viewImg i ]
+          , td [] [ Img.viewVote i |> Maybe.map (Html.map (ScrMsg id)) |> Maybe.withDefault (text "") ]
+          , td []
+            [ b [] [ text <| "Screenshot #" ++ String.fromInt (n+1) ]
+            , text " (", a [ href "#", onClickD (ScrDel id) ] [ text "remove" ], text ")"
+            , br [] []
+            , text <| "Image resolution: " ++ dimstr imgdim
+            , br [] []
+            , text <| Maybe.withDefault "" <| Maybe.map (\dim -> "Release resolution: " ++ dimstr dim) reldim
+            , span [] <|
+              if reldim == Nothing then [ br [] [] ]
+              else if reldim == Just imgdim then [ text " ✔", br [] [] ]
+              else [ text " ❌"
+                   , br [] []
+                   , b [ class "standout" ] [ text "WARNING: Resolutions do not match, please take screenshots with the correct resolution and make sure to crop them correctly!" ]
+                   ]
+            , br [] []
+            , inputSelect "" rel (ScrRel id) [style "width" "500px"] <| rellist ++
+              case (relnfo, rel) of
+                (_, Nothing) -> [(Nothing, "[No release selected]")]
+                (Nothing, Just r) -> [(Just r, "[Deleted or unlinked release: r" ++ String.fromInt r ++ "]")]
+                _ -> []
+            ]
+          ]
+
+        add =
+          let free = 10 - List.length model.screenshots
+          in
+          if free <= 0
+          then [ b [] [ text "Enough screenshots" ]
+               , br [] []
+               , text "The limit of 10 screenshots per visual novel has been reached. If you want to add a new screenshot, please remove an existing one first."
+               ]
+          else
+            [ b [] [ text "Add screenshots" ]
+            , br [] []
+            , text <| String.fromInt free ++ " more screenshot" ++ (if free == 1 then "" else "s") ++ " can be added."
+            , br [] []
+            , inputSelect "" model.scrUplRel ScrUplRel [style "width" "500px"] ((Nothing, "-- select release --") :: rellist)
+            , br [] []
+            , if model.scrUplRel == Nothing then text "" else span []
+              [ inputButton "Select images" ScrUplSel []
+              , case model.scrUplNum of
+                  Just num -> text " Too many images selected."
+                  Nothing -> text ""
+              , br [] []
+              ]
+            , br [] []
+            , b [] [ text "Important reminder" ]
+            , ul []
+              [ li [] [ text "Screenshots must be in the native resolution of the game" ]
+              , li [] [ text "Screenshots must not include window borders and should not have copyright markings" ]
+              , li [] [ text "Don't only upload event CGs" ]
+              ]
+            , text "Read the ", a [ href "/d2#6" ] [ text "full guidelines" ], text " for more information."
+            ]
+      in
+        if model.id == Nothing
+        then text <| "Screenshots can be uploaded when this visual novel once it has a release entry associated with it. "
+                  ++ "To do so, first create this entry without screenshots, then create the appropriate release entries, and finally come back to this form by editing the visual novel."
+        else if List.isEmpty model.releases
+        then p []
+             [ text "This visual novel does not have any releases associated with it (yet). Please "
+             , a [ href <| "/v" ++ Maybe.withDefault "" (Maybe.map String.fromInt model.id) ++ "/add" ] [ text "add the appropriate release entries" ]
+             , text " first and then come back to this form to upload screenshots."
+             ]
+        else table [ class "vnedit_scr" ]
+             <| tfoot [] [ tr [] [ td [] [], td [ colspan 2 ] add ] ] :: List.indexedMap scr model.screenshots
+
   in
   form_ Submit (model.state == Api.Loading)
   [ div [ class "maintabs left" ]
@@ -237,7 +359,7 @@ view model =
   , div [ class "mainbox", classList [("hidden", model.tab /= Staff       && model.tab /= All)] ] [ h1 [] [ text "Staff" ] ]
   , div [ class "mainbox", classList [("hidden", model.tab /= Cast        && model.tab /= All)] ] [ h1 [] [ text "Cast" ] ]
   , div [ class "mainbox", classList [("hidden", model.tab /= Relations   && model.tab /= All)] ] [ h1 [] [ text "Relations" ] ]
-  , div [ class "mainbox", classList [("hidden", model.tab /= Screenshots && model.tab /= All)] ] [ h1 [] [ text "Screenshots" ] ]
+  , div [ class "mainbox", classList [("hidden", model.tab /= Screenshots && model.tab /= All)] ] [ h1 [] [ text "Screenshots" ], screenshots ]
   , div [ class "mainbox" ] [ fieldset [ class "submit" ]
       [ Html.map Editsum (Editsum.view model.editsum)
       , submitButton "Submit" model.state (isValid model)

@@ -20,11 +20,17 @@ my $FORM = {
     } },
     image      => { required => 0, vndbid => 'cv' },
     image_info => { _when => 'out', required => 0, type => 'hash', keys => $VNWeb::Elm::apis{ImageResult}[0]{aoh} },
+    screenshots=> { sort_keys => 'scr', aoh => {
+        scr      => { vndbid => 'sf' },
+        rid      => { required => 0, id => 1 },
+        info     => { _when => 'out', type => 'hash', keys => $VNWeb::Elm::apis{ImageResult}[0]{aoh} },
+    } },
     hidden     => { anybool => 1 },
     locked     => { anybool => 1 },
 
     authmod    => { _when => 'out', anybool => 1 },
     editsum    => { _when => 'in out', editsum => 1 },
+    releases   => { _when => 'out', $VNWeb::Elm::apis{Releases}[0]->%* },
 };
 
 my $FORM_OUT = form_compile out => $FORM;
@@ -46,8 +52,20 @@ TUWF::get qr{/$RE{vrev}/edit} => sub {
     } else {
         $e->{image_info} = undef;
     }
+    $_->{info} = {id=>$_->{scr}} for $e->{screenshots}->@*;
+    enrich_image 0, [map $_->{info}, $e->{screenshots}->@*];
 
     enrich_merge aid => 'SELECT id AS aid, title_romaji AS title, title_kanji AS original FROM anime WHERE id IN', $e->{anime};
+
+    $e->{releases} = tuwf->dbAlli('
+        SELECT rv.vid, r.id, r.title, r.original, r.released, r.type as rtype, r.reso_x, r.reso_y
+          FROM releases r
+          JOIN releases_vn rv ON rv.id = r.id
+         WHERE NOT r.hidden AND rv.vid =', \$e->{id}, '
+         ORDER BY r.released, r.title, r.id'
+    );
+    enrich_flatten lang => id => id => sub { sql('SELECT id, lang FROM releases_lang WHERE id IN', $_, 'ORDER BY lang') }, $e->{releases};
+    enrich_flatten platforms => id => id => sub { sql('SELECT id, platform FROM releases_platforms WHERE id IN', $_, 'ORDER BY platform') }, $e->{releases};
 
     framework_ title => "Edit $e->{title}", type => 'v', dbobj => $e, tab => 'edit',
     sub {
@@ -85,6 +103,20 @@ elm_api VNEdit => $FORM_OUT, $FORM_IN, sub {
 
     validate_dbid 'SELECT id FROM anime WHERE id IN', map $_->{aid}, $data->{anime}->@*;
     validate_dbid 'SELECT id FROM images WHERE id IN', $data->{image} if $data->{image};
+    validate_dbid 'SELECT id FROM images WHERE id IN', map $_->{scr}, $data->{screenshots}->@*;
+
+    die "Screenshot without releases assigned" if grep !$_->{rid}, $data->{screenshots}->@*; # This is only the case for *very* old revisions, form disallows this now.
+    # Allow linking to deleted or moved releases only if the previous revision also had that.
+    # (The form really should encourage the user to fix that, but disallowing the edit seems a bit overkill)
+    validate_dbid sub { '
+        SELECT r.id FROM releases r JOIN releases_vn rv ON r.id = rv.id WHERE NOT r.hidden AND rv.vid =', \$e->{id}, ' AND r.id IN', $_, '
+         UNION
+        SELECT rid FROM vn_screenshots WHERE id =', \$e->{id}, 'AND rid IN', $_
+    }, map $_->{rid}, $data->{screenshots}->@*;
+
+    $data->{image_nsfw} = $e->{image_nsfw}||0;
+    my %oldscr = map +($_->{scr}, $_->{nsfw}), @{ $e->{screenshots}||[] };
+    $_->{nsfw} = $oldscr{$_->{scr}}||0 for $data->{screenshots}->@*;
 
     return elm_Unchanged if !$new && !form_changed $FORM_CMP, $data, $e;
     my($id,undef,$rev) = db_edit v => $e->{id}, $data;

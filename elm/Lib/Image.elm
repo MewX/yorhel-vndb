@@ -113,10 +113,23 @@ viewImg image =
     (Error e, _) -> b [ class "standout" ] [ text <| Api.showResponse e ]
     (_, Nothing) -> text "No image."
     (_, Just i) ->
-      label [ class "imghover", style "width" (String.fromInt i.width++"px"), style "height" (String.fromInt i.height++"px") ]
+      let
+        maxWidth  = toFloat <| if String.startsWith "sf" i.id then 136 else 10000
+        maxHeight = toFloat <| if String.startsWith "sf" i.id then 102 else 10000
+        sWidth    = maxWidth  / toFloat i.width
+        sHeight   = maxHeight / toFloat i.height
+        scale     = Basics.min 1 <| if sWidth < sHeight then sWidth else sHeight
+        imgWidth  = round <| scale * toFloat i.width
+        imgHeight = round <| scale * toFloat i.height
+      in
+      -- TODO: Onclick iv.js support for screenshot thumbnails
+      label [ class "imghover", style "width" (String.fromInt imgWidth++"px"), style "height" (String.fromInt imgHeight++"px") ]
       [ div [ class "imghover--visible" ]
-        [ img [ src (imageUrl i.id) ] []
-        , a [ href <| "/img/"++i.id ] <|
+        [ if String.startsWith "sf" i.id
+          then a [ href (imageUrl i.id), attribute "data-iv" <| String.fromInt i.width ++ "x" ++ String.fromInt i.height ++ ":scr" ]
+               [ img [ src <| imageUrl <| String.replace "sf" "st" i.id ] [] ]
+          else img [ src <| imageUrl i.id ] []
+        , a [ class "imghover--overlay", href <| "/img/"++i.id ] <|
           case (i.sexual_avg, i.violence_avg) of
             (Just sex, Just vio) ->
               -- XXX: These thresholds are subject to change, maybe just show the numbers here?
@@ -143,12 +156,12 @@ viewVote model =
           Api.Error e -> [ tr [] [ td [ colspan 2 ] [ b [ class "standout" ] [ text (Api.showResponse e) ] ] ] ]
           _ -> []
       , tr []
-        [ td []
+        [ td [ style "white-space" "nowrap" ]
           [ label [] [ inputRadio "" (i.my_sexual == Just 0) (MySex 0), text " Safe" ], br [] []
           , label [] [ inputRadio "" (i.my_sexual == Just 1) (MySex 1), text " Suggestive" ], br [] []
           , label [] [ inputRadio "" (i.my_sexual == Just 2) (MySex 2), text " Explicit" ]
           ]
-        , td []
+        , td [ style "white-space" "nowrap" ]
           [ label [] [ inputRadio "" (i.my_violence == Just 0) (MyVio 0), text " Tame" ], br [] []
           , label [] [ inputRadio "" (i.my_violence == Just 1) (MyVio 1), text " Violent" ], br [] []
           , label [] [ inputRadio "" (i.my_violence == Just 2) (MyVio 2), text " Brutal" ]

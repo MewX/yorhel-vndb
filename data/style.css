@@ -563,6 +563,12 @@ div#vntags                    { margin: 0 30px 0 30px; border-top: 1px solid $bo
 #scr_table select    { width: 400px; }
 div.scr_uploader     { visibility: hidden; overflow: hidden; width: 1px; height: 1px; position: absolute; display: none; left: 0; top: 0; }
 
+.vnedit_scr { width: 95%; margin: auto }
+.vnedit_scr > tr:nth-child(odd) > td { background: $boxbg$ }
+.vnedit_scr > tr > td { border-bottom: 1px solid $border$ }
+.vnedit_scr > tr > td:nth-child(1) { padding: 10px; width: 136px }
+.vnedit_scr > tr > td:nth-child(2) { width: 10px; padding-top: 20px }
+
 
 /***** VN Release tab *****/
 
@@ -641,9 +647,10 @@ div.chardetails.charsep      { margin-top: 30px }
 .imghover { margin: 0 auto; position: relative; display: block; text-align: center }
 .imghover input:checked       ~ div.imghover--warning { display: none }
 .imghover input:not(:checked) ~ div.imghover--visible { display: none }
-.imghover div.imghover--visible a { display: none; white-space: nowrap; font-size: 11px }
+.imghover div.imghover--visible a { border-bottom: 0 }
+.imghover div.imghover--visible .imghover--overlay { display: none; white-space: nowrap; font-size: 11px }
 .imghover:hover div.imghover--visible { position: absolute }
-.imghover:hover div.imghover--visible a { display: block; position: absolute; right: 0; bottom: 0; padding: 5px 10px; background: $secbg$; border: 0 }
+.imghover:hover div.imghover--visible .imghover--overlay { display: block; position: absolute; right: 0; bottom: 0; padding: 5px 10px; background: $secbg$; border: 0 }
 .imghover div.imghover--warning { border: 1px solid $border$; background: $secbg$; box-sizing: border-box; padding: 10px 5px }
 
 

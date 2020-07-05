@@ -57,6 +57,8 @@ our %apis = (
         original => { required => 0, default => '' },
         released => { uint => 1 },
         rtype    => {},
+        reso_x   => { uint => 1 },
+        reso_y   => { uint => 1 },
         lang     => { type => 'array', values => {} },
         platforms=> { type => 'array', values => {} },
     } } ],

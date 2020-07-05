@@ -65,7 +65,7 @@ sub enrich_releases {
     $e->{releases} = [ map !$vns{$_->{vid}}++ ? { id => $_->{vid} } : (), $e->{vns}->@* ];
 
     enrich rels => id => vid => sub { sql '
-        SELECT rv.vid, r.id, r.title, r.original, r.released, r.type as rtype
+        SELECT rv.vid, r.id, r.title, r.original, r.released, r.type as rtype, r.reso_x, r.reso_y
           FROM releases r
           JOIN releases_vn rv ON rv.id = r.id
          WHERE NOT r.hidden AND rv.vid IN', $_, '

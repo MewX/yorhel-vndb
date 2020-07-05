@@ -7,7 +7,7 @@ use VNWeb::Prelude;
 elm_api Release => undef, { vid => { id => 1 } }, sub {
     my($data) = @_;
     my $l = tuwf->dbAlli(
-        'SELECT r.id, r.title, r.original, r.type AS rtype, r.released
+        'SELECT r.id, r.title, r.original, r.type AS rtype, r.released, r.reso_x, r.reso_y
            FROM releases r
            JOIN releases_vn rv ON rv.id = r.id
           WHERE NOT r.hidden

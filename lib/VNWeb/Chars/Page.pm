@@ -91,7 +91,7 @@ sub image_ {
         input_ type => 'checkbox', class => 'visuallyhidden', $hidden ? () : (checked => 'checked') if $hide_on_click;
         div_ class => 'imghover--visible', sub {
             img_ src => tuwf->imgurl($img->{id}), alt => $c->{name};
-            a_ href => "/img/$img->{id}?view=".viewset(show_nsfw=>1),
+            a_ class => 'imghover--overlay', href => "/img/$img->{id}?view=".viewset(show_nsfw=>1),
                 $img->{votecount} ? sprintf '%s / %s (%d)', $sexd, $viod, $img->{votecount} : 'Not flagged';
         };
         div_ class => 'imghover--warning', sub {

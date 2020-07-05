@@ -166,15 +166,7 @@ my $VNOPT = form_compile any => {
     uid   => { id => 1 },
     vid   => { id => 1 },
     notes => {},
-    rels  => { aoh => { # Same structure as 'elm_Releases' response
-        id       => { id => 1 },
-        title    => {},
-        original => {},
-        released => { uint => 1 },
-        rtype    => {},
-        lang     => { type => 'array', values => {} },
-        platforms=> { type => 'array', values => {} },
-    } },
+    rels  => $VNWeb::Elm::apis{Releases}[0],
     relstatus => { type => 'array', values => { uint => 1 } }, # List of release statuses, same order as rels
 };
 
@@ -469,7 +461,7 @@ sub listing_ {
     enrich_flatten labels => id => vid => sql('SELECT vid, lbl FROM ulist_vns_labels WHERE uid =', \$uid, 'AND vid IN'), $lst;
 
     enrich rels => id => vid => sub { sql '
-        SELECT rv.vid, r.id, r.title, r.original, r.released, r.type as rtype, rl.status
+        SELECT rv.vid, r.id, r.title, r.original, r.released, r.type as rtype, rl.status, r.reso_x, r.reso_y
           FROM rlists rl
           JOIN releases r ON rl.rid = r.id
           JOIN releases_vn rv ON rv.id = r.id
