@@ -51,6 +51,7 @@ showResponse res =
     TraitResult _                   -> unexp
     VNResult _                      -> unexp
     ProducerResult _                -> unexp
+    StaffResult _                   -> unexp
     CharResult _                    -> unexp
     AnimeResult _                   -> unexp
     ImageResult _                   -> unexp

@@ -53,11 +53,13 @@ type alias Model =
   , length      : Int
   , lWikidata   : Maybe Int
   , lRenai      : String
+  , vns         : List GVE.RecvRelations
+  , vnSearch    : A.Model GApi.ApiVNResult
   , anime       : List GVE.RecvAnime
   , animeSearch : A.Model GApi.ApiAnimeResult
   , image       : Img.Image
-  , vns         : List GVE.RecvRelations
-  , vnSearch    : A.Model GApi.ApiVNResult
+  , staff       : List GVE.RecvStaff
+  , staffSearch : A.Model GApi.ApiStaffResult
   , screenshots : List (Int,Img.Image,Maybe Int) -- internal id, img, rel
   , scrUplRel   : Maybe Int
   , scrUplNum   : Maybe Int
@@ -84,6 +86,8 @@ init d =
   , anime       = d.anime
   , animeSearch = A.init ""
   , image       = Img.info d.image_info
+  , staff       = d.staff
+  , staffSearch = A.init ""
   , screenshots = List.indexedMap (\n i -> (n, Img.info (Just i.info), i.rid)) d.screenshots
   , scrUplRel   = Nothing
   , scrUplNum   = Nothing
@@ -109,14 +113,18 @@ encode model =
   , relations   = List.map (\v -> { vid = v.vid, relation = v.relation, official = v.official }) model.vns
   , anime       = List.map (\a -> { aid = a.aid }) model.anime
   , image       = model.image.id
+  , staff       = List.map (\s -> { aid = s.aid, role = s.role, note = s.note }) model.staff
   , screenshots = List.map (\(_,i,r) -> { scr = Maybe.withDefault "" i.id, rid = r }) model.screenshots
   }
+
+vnConfig : A.Config Msg GApi.ApiVNResult
+vnConfig = { wrap = VNSearch, id = "relationadd", source = A.vnSource }
 
 animeConfig : A.Config Msg GApi.ApiAnimeResult
 animeConfig = { wrap = AnimeSearch, id = "animeadd", source = A.animeSource }
 
-vnConfig : A.Config Msg GApi.ApiVNResult
-vnConfig = { wrap = VNSearch, id = "relationadd", source = A.vnSource }
+staffConfig : A.Config Msg GApi.ApiStaffResult
+staffConfig = { wrap = StaffSearch, id = "staffadd", source = A.staffSource }
 
 type Msg
   = Editsum Editsum.Msg
@@ -140,6 +148,10 @@ type Msg
   | ImageSelect
   | ImageSelected File
   | ImageMsg Img.Msg
+  | StaffDel Int
+  | StaffRole Int String
+  | StaffNote Int String
+  | StaffSearch (A.Msg GApi.ApiStaffResult)
   | ScrUplRel (Maybe Int)
   | ScrUplSel
   | ScrUpl File (List File)
@@ -188,6 +200,15 @@ update msg model =
     ImageSelected f -> let (nm, nc) = Img.upload Api.Cv f in ({ model | image = nm }, Cmd.map ImageMsg nc)
     ImageMsg m -> let (nm, nc) = Img.update m model.image in ({ model | image = nm }, Cmd.map ImageMsg nc)
 
+    StaffDel idx    -> ({ model | staff = delidx idx model.staff }, Cmd.none)
+    StaffRole idx v -> ({ model | staff = modidx idx (\s -> { s | role = v }) model.staff }, Cmd.none)
+    StaffNote idx v -> ({ model | staff = modidx idx (\s -> { s | note = v }) model.staff }, Cmd.none)
+    StaffSearch m ->
+      let (nm, c, res) = A.update staffConfig m model.staffSearch
+      in case res of
+        Nothing -> ({ model | staffSearch = nm }, c)
+        Just s -> ({ model | staffSearch = A.clear nm "", staff = model.staff ++ [{ id = s.id, aid = s.aid, name = s.name, original = s.original, role = "staff", note = "" }] }, Cmd.none)
+
     ScrUplRel s -> ({ model | scrUplRel = s }, Cmd.none)
     ScrUplSel -> (model, FSel.files ["image/png", "image/jpg"] ScrUpl)
     ScrUpl f1 fl ->
@@ -220,6 +241,7 @@ isValid model = not
   (  (model.title /= "" && model.title == model.original)
   || not (Img.isValid model.image)
   || List.any (\(_,i,r) -> r == Nothing || not (Img.isValid i)) model.screenshots
+  || hasDuplicates (List.map (\s -> (s.aid, s.role)) model.staff)
   )
 
 
@@ -303,6 +325,44 @@ view model =
               ]
         ]
       ] ]
+
+    staff =
+      let
+        head =
+          if List.isEmpty model.staff then [] else [
+            thead [] [ tr []
+            [ td [] []
+            , td [] [ text "Staff" ]
+            , td [] [ text "Role" ]
+            , td [] [ text "Note" ]
+            , td [] []
+            ] ] ]
+        foot =
+          tfoot [] [ tr [] [ td [] [], td [ colspan 4 ]
+          [ br [] []
+          , if hasDuplicates (List.map (\s -> (s.aid, s.role)) model.staff)
+            then b [ class "standout" ] [ text "List contains duplicate staff roles.", br [] [] ]
+            else text ""
+          , A.view staffConfig model.staffSearch [placeholder "Add staff..."]
+          , text "Can't find the person you're looking for? You can "
+          , a [ href "/s/new" ] [ text "create a new entry" ]
+          , text ", but "
+          , a [ href "/s/all" ] [ text "please check for aliasses first." ]
+          , br_ 2
+          , text "Some guidelines:"
+          , ul []
+            [ li [] [ text "Please add major staff only, i.e. people who had a significant and noticable impact on the work." ]
+            , li [] [ text "If one person performed several roles, you can add multiple entries with different major roles." ]
+            ]
+          ] ] ]
+        item n s = tr []
+          [ td [ style "text-align" "right" ] [ b [ class "grayedout" ] [ text <| "s" ++ String.fromInt s.id ++ ":" ] ]
+          , td [] [ a [ href <| "/s" ++ String.fromInt s.id ] [ text s.name ] ]
+          , td [] [ inputSelect "" s.role (StaffRole n) [style "width" "150px" ] GT.creditTypes ]
+          , td [] [ inputText "" s.note (StaffNote n) (style "width" "300px" :: GVE.valStaffNote) ]
+          , td [] [ inputButton "remove" (StaffDel n) [] ]
+          ]
+      in table [] <| head ++ [ foot ] ++ List.indexedMap item model.staff
 
     screenshots =
       let
@@ -397,7 +457,7 @@ view model =
     ]
   , div [ class "mainbox", classList [("hidden", model.tab /= General     && model.tab /= All)] ] [ h1 [] [ text "General info" ], table [ class "formtable" ] geninfo ]
   , div [ class "mainbox", classList [("hidden", model.tab /= Image       && model.tab /= All)] ] [ h1 [] [ text "Image" ], image ]
-  , div [ class "mainbox", classList [("hidden", model.tab /= Staff       && model.tab /= All)] ] [ h1 [] [ text "Staff" ] ]
+  , div [ class "mainbox", classList [("hidden", model.tab /= Staff       && model.tab /= All)] ] [ h1 [] [ text "Staff" ], staff ]
   , div [ class "mainbox", classList [("hidden", model.tab /= Cast        && model.tab /= All)] ] [ h1 [] [ text "Cast" ] ]
   , div [ class "mainbox", classList [("hidden", model.tab /= Screenshots && model.tab /= All)] ] [ h1 [] [ text "Screenshots" ], screenshots ]
   , div [ class "mainbox" ] [ fieldset [ class "submit" ]

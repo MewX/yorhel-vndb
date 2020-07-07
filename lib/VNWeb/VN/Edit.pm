@@ -13,6 +13,13 @@ my $FORM = {
     length     => { uint => 1, enum => \%VN_LENGTH },
     l_wikidata => { required => 0, uint => 1, max => (1<<31)-1 },
     l_renai    => { required => 0, default => '', maxlength => 100 },
+    relations  => { sort_keys => 'vid', aoh => {
+        vid      => { id => 1 },
+        relation => { enum => \%VN_RELATION },
+        official => { anybool => 1 },
+        title    => { _when => 'out' },
+        original => { _when => 'out', required => 0, default => '' },
+    } },
     anime      => { sort_keys => 'aid', aoh => {
         aid      => { id => 1 },
         title    => { _when => 'out' },
@@ -20,11 +27,12 @@ my $FORM = {
     } },
     image      => { required => 0, vndbid => 'cv' },
     image_info => { _when => 'out', required => 0, type => 'hash', keys => $VNWeb::Elm::apis{ImageResult}[0]{aoh} },
-    relations  => { sort_keys => 'vid', aoh => {
-        vid      => { id => 1 },
-        relation => { enum => \%VN_RELATION },
-        official => { anybool => 1 },
-        title    => { _when => 'out' },
+    staff      => { sort_keys => ['aid','role'], aoh => {
+        aid      => { id => 1 },
+        role     => { enum => \%CREDIT_TYPE },
+        note     => { required => 0, default => '', maxlength => 250 },
+        id       => { _when => 'out', id => 1 },
+        name     => { _when => 'out' },
         original => { _when => 'out', required => 0, default => '' },
     } },
     screenshots=> { sort_keys => 'scr', aoh => {
@@ -62,9 +70,10 @@ TUWF::get qr{/$RE{vrev}/edit} => sub {
     $_->{info} = {id=>$_->{scr}} for $e->{screenshots}->@*;
     enrich_image 0, [map $_->{info}, $e->{screenshots}->@*];
 
+    enrich_merge vid => 'SELECT id AS vid, title, original FROM vn WHERE id IN', $e->{relations};
     enrich_merge aid => 'SELECT id AS aid, title_romaji AS title, title_kanji AS original FROM anime WHERE id IN', $e->{anime};
 
-    enrich_merge vid => 'SELECT id AS vid, title, original FROM vn WHERE id IN', $e->{relations};
+    enrich_merge aid => 'SELECT id, aid, name, original FROM staff_alias WHERE aid IN', $e->{staff};
 
     $e->{releases} = tuwf->dbAlli('
         SELECT rv.vid, r.id, r.title, r.original, r.released, r.type as rtype, r.reso_x, r.reso_y
@@ -113,6 +122,7 @@ elm_api VNEdit => $FORM_OUT, $FORM_IN, sub {
     validate_dbid 'SELECT id FROM anime WHERE id IN', map $_->{aid}, $data->{anime}->@*;
     validate_dbid 'SELECT id FROM images WHERE id IN', $data->{image} if $data->{image};
     validate_dbid 'SELECT id FROM images WHERE id IN', map $_->{scr}, $data->{screenshots}->@*;
+    validate_dbid 'SELECT aid FROM staff_alias WHERE aid IN', map $_->{aid}, $data->{staff}->@*;
 
     $data->{relations} = [] if $data->{hidden};
     validate_dbid 'SELECT id FROM vn WHERE id IN', map $_->{vid}, $data->{relations}->@*;

@@ -9,6 +9,7 @@ module Lib.Autocomplete exposing
   , traitSource
   , vnSource
   , producerSource
+  , staffSource
   , charSource
   , animeSource
   , init
@@ -36,6 +37,7 @@ import Gen.Tags as GT
 import Gen.Traits as GTR
 import Gen.VN as GV
 import Gen.Producers as GP
+import Gen.Staff as GS
 import Gen.Chars as GC
 import Gen.Anime as GA
 
@@ -146,6 +148,19 @@ producerSource =
     [ b [ class "grayedout" ] [ text <| "p" ++ String.fromInt i.id ++ ": " ]
     , text i.name ]
   , key     = \i -> String.fromInt i.id
+  }
+
+
+staffSource : SourceConfig m GApi.ApiStaffResult
+staffSource =
+  { source  = Endpoint (\s -> GS.send { search = s })
+    <| \x -> case x of
+      GApi.StaffResult e -> Just e
+      _ -> Nothing
+  , view    = \i ->
+    [ b [ class "grayedout" ] [ text <| "s" ++ String.fromInt i.id ++ ": " ]
+    , text i.name ]
+  , key     = \i -> String.fromInt i.aid
   }
 
 
