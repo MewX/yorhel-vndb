@@ -35,6 +35,15 @@ my $FORM = {
         name     => { _when => 'out' },
         original => { _when => 'out', required => 0, default => '' },
     } },
+    seiyuu     => { sort_keys => ['aid','cid'], aoh => {
+        aid      => { id => 1 },
+        cid      => { id => 1 },
+        note     => { required => 0, default => '', maxlength => 250 },
+        # Staff info
+        id       => { _when => 'out', id => 1 },
+        name     => { _when => 'out' },
+        original => { _when => 'out', required => 0, default => '' },
+    } },
     screenshots=> { sort_keys => 'scr', aoh => {
         scr      => { vndbid => 'sf' },
         rid      => { required => 0, id => 1 },
@@ -46,6 +55,11 @@ my $FORM = {
     authmod    => { _when => 'out', anybool => 1 },
     editsum    => { _when => 'in out', editsum => 1 },
     releases   => { _when => 'out', $VNWeb::Elm::apis{Releases}[0]->%* },
+    chars      => { _when => 'out', aoh => {
+        id       => { id => 1 },
+        name     => {},
+        original => { required => 0, default => '' },
+    } },
 };
 
 my $FORM_OUT = form_compile out => $FORM;
@@ -73,7 +87,12 @@ TUWF::get qr{/$RE{vrev}/edit} => sub {
     enrich_merge vid => 'SELECT id AS vid, title, original FROM vn WHERE id IN', $e->{relations};
     enrich_merge aid => 'SELECT id AS aid, title_romaji AS title, title_kanji AS original FROM anime WHERE id IN', $e->{anime};
 
-    enrich_merge aid => 'SELECT id, aid, name, original FROM staff_alias WHERE aid IN', $e->{staff};
+    enrich_merge aid => 'SELECT id, aid, name, original FROM staff_alias WHERE aid IN', $e->{staff}, $e->{seiyuu};
+
+    # It's possible for older revisions to link to aliases that have been removed.
+    # Let's exclude those to make sure the form will at least load.
+    $e->{staff}  = [ grep $_->{id}, $e->{staff}->@* ];
+    $e->{seiyuu} = [ grep $_->{id}, $e->{seiyuu}->@* ];
 
     $e->{releases} = tuwf->dbAlli('
         SELECT rv.vid, r.id, r.title, r.original, r.released, r.type as rtype, r.reso_x, r.reso_y
@@ -84,6 +103,12 @@ TUWF::get qr{/$RE{vrev}/edit} => sub {
     );
     enrich_flatten lang => id => id => sub { sql('SELECT id, lang FROM releases_lang WHERE id IN', $_, 'ORDER BY lang') }, $e->{releases};
     enrich_flatten platforms => id => id => sub { sql('SELECT id, platform FROM releases_platforms WHERE id IN', $_, 'ORDER BY platform') }, $e->{releases};
+
+    $e->{chars} = tuwf->dbAlli('
+        SELECT id, name, original FROM chars
+         WHERE NOT hidden AND id IN(SELECT id FROM chars_vns WHERE vid =', \$e->{id},')
+         ORDER BY name, id'
+    );
 
     framework_ title => "Edit $e->{title}", type => 'v', dbobj => $e, tab => 'edit',
     sub {
@@ -123,6 +148,7 @@ elm_api VNEdit => $FORM_OUT, $FORM_IN, sub {
     validate_dbid 'SELECT id FROM images WHERE id IN', $data->{image} if $data->{image};
     validate_dbid 'SELECT id FROM images WHERE id IN', map $_->{scr}, $data->{screenshots}->@*;
     validate_dbid 'SELECT aid FROM staff_alias WHERE aid IN', map $_->{aid}, $data->{staff}->@*;
+    validate_dbid 'SELECT aid FROM staff_alias WHERE aid IN', map $_->{aid}, $data->{seiyuu}->@*;
 
     $data->{relations} = [] if $data->{hidden};
     validate_dbid 'SELECT id FROM vn WHERE id IN', map $_->{vid}, $data->{relations}->@*;
@@ -136,6 +162,13 @@ elm_api VNEdit => $FORM_OUT, $FORM_IN, sub {
          UNION
         SELECT rid FROM vn_screenshots WHERE id =', \$e->{id}, 'AND rid IN', $_
     }, map $_->{rid}, $data->{screenshots}->@*;
+
+    # Likewise, allow linking to deleted or moved characters.
+    validate_dbid sub { '
+        SELECT c.id FROM chars c JOIN chars_vns cv ON c.id = cv.id WHERE NOT c.hidden AND cv.vid =', \$e->{id}, ' AND c.id IN', $_, '
+         UNION
+        SELECT cid FROM vn_seiyuu WHERE id =', \$e->{id}, 'AND cid IN', $_
+    }, map $_->{cid}, $data->{seiyuu}->@*;
 
     $data->{image_nsfw} = $e->{image_nsfw}||0;
     my %oldscr = map +($_->{scr}, $_->{nsfw}), @{ $e->{screenshots}||[] };

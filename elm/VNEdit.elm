@@ -60,11 +60,15 @@ type alias Model =
   , image       : Img.Image
   , staff       : List GVE.RecvStaff
   , staffSearch : A.Model GApi.ApiStaffResult
+  , seiyuu      : List GVE.RecvSeiyuu
+  , seiyuuSearch: A.Model GApi.ApiStaffResult
+  , seiyuuDef   : Int -- character id for newly added seiyuu
   , screenshots : List (Int,Img.Image,Maybe Int) -- internal id, img, rel
   , scrUplRel   : Maybe Int
   , scrUplNum   : Maybe Int
   , scrId       : Int -- latest used internal id
   , releases    : List GVE.RecvReleases
+  , chars       : List GVE.RecvChars
   , id          : Maybe Int
   }
 
@@ -88,11 +92,15 @@ init d =
   , image       = Img.info d.image_info
   , staff       = d.staff
   , staffSearch = A.init ""
+  , seiyuu      = d.seiyuu
+  , seiyuuSearch= A.init ""
+  , seiyuuDef   = Maybe.withDefault 0 <| List.head <| List.map (\c -> c.id) d.chars
   , screenshots = List.indexedMap (\n i -> (n, Img.info (Just i.info), i.rid)) d.screenshots
   , scrUplRel   = Nothing
   , scrUplNum   = Nothing
   , scrId       = 100
   , releases    = d.releases
+  , chars       = d.chars
   , id          = d.id
   }
 
@@ -114,6 +122,7 @@ encode model =
   , anime       = List.map (\a -> { aid = a.aid }) model.anime
   , image       = model.image.id
   , staff       = List.map (\s -> { aid = s.aid, role = s.role, note = s.note }) model.staff
+  , seiyuu      = List.map (\s -> { aid = s.aid, cid  = s.cid,  note = s.note }) model.seiyuu
   , screenshots = List.map (\(_,i,r) -> { scr = Maybe.withDefault "" i.id, rid = r }) model.screenshots
   }
 
@@ -125,6 +134,9 @@ animeConfig = { wrap = AnimeSearch, id = "animeadd", source = A.animeSource }
 
 staffConfig : A.Config Msg GApi.ApiStaffResult
 staffConfig = { wrap = StaffSearch, id = "staffadd", source = A.staffSource }
+
+seiyuuConfig : A.Config Msg GApi.ApiStaffResult
+seiyuuConfig = { wrap = SeiyuuSearch, id = "seiyuuadd", source = A.staffSource }
 
 type Msg
   = Editsum Editsum.Msg
@@ -152,6 +164,11 @@ type Msg
   | StaffRole Int String
   | StaffNote Int String
   | StaffSearch (A.Msg GApi.ApiStaffResult)
+  | SeiyuuDef Int
+  | SeiyuuDel Int
+  | SeiyuuChar Int Int
+  | SeiyuuNote Int String
+  | SeiyuuSearch (A.Msg GApi.ApiStaffResult)
   | ScrUplRel (Maybe Int)
   | ScrUplSel
   | ScrUpl File (List File)
@@ -209,6 +226,16 @@ update msg model =
         Nothing -> ({ model | staffSearch = nm }, c)
         Just s -> ({ model | staffSearch = A.clear nm "", staff = model.staff ++ [{ id = s.id, aid = s.aid, name = s.name, original = s.original, role = "staff", note = "" }] }, Cmd.none)
 
+    SeiyuuDef c      -> ({ model | seiyuuDef = c }, Cmd.none)
+    SeiyuuDel idx    -> ({ model | seiyuu = delidx idx model.seiyuu }, Cmd.none)
+    SeiyuuChar idx v -> ({ model | seiyuu = modidx idx (\s -> { s | cid  = v }) model.seiyuu }, Cmd.none)
+    SeiyuuNote idx v -> ({ model | seiyuu = modidx idx (\s -> { s | note = v }) model.seiyuu }, Cmd.none)
+    SeiyuuSearch m ->
+      let (nm, c, res) = A.update seiyuuConfig m model.seiyuuSearch
+      in case res of
+        Nothing -> ({ model | seiyuuSearch = nm }, c)
+        Just s -> ({ model | seiyuuSearch = A.clear nm "", seiyuu = model.seiyuu ++ [{ id = s.id, aid = s.aid, name = s.name, original = s.original, cid = model.seiyuuDef, note = "" }] }, Cmd.none)
+
     ScrUplRel s -> ({ model | scrUplRel = s }, Cmd.none)
     ScrUplSel -> (model, FSel.files ["image/png", "image/jpg"] ScrUpl)
     ScrUpl f1 fl ->
@@ -242,6 +269,7 @@ isValid model = not
   || not (Img.isValid model.image)
   || List.any (\(_,i,r) -> r == Nothing || not (Img.isValid i)) model.screenshots
   || hasDuplicates (List.map (\s -> (s.aid, s.role)) model.staff)
+  || hasDuplicates (List.map (\s -> (s.aid, s.cid)) model.seiyuu)
   )
 
 
@@ -364,6 +392,55 @@ view model =
           ]
       in table [] <| head ++ [ foot ] ++ List.indexedMap item model.staff
 
+    cast =
+      let
+        chars = List.map (\c -> (c.id, c.name ++ " (c" ++ String.fromInt c.id ++ ")")) model.chars
+        head =
+          if List.isEmpty model.seiyuu then [] else [
+            thead [] [ tr []
+            [ td [] [ text "Character" ]
+            , td [] [ text "Cast" ]
+            , td [] [ text "Note" ]
+            , td [] []
+            ] ] ]
+        foot =
+          tfoot [] [ tr [] [ td [ colspan 4 ]
+          [ br [] []
+          , b [] [ text "Add cast" ]
+          , br [] []
+          , if hasDuplicates (List.map (\s -> (s.aid, s.cid)) model.seiyuu)
+            then b [ class "standout" ] [ text "List contains duplicate cast roles.", br [] [] ]
+            else text ""
+          , inputSelect "" model.seiyuuDef SeiyuuDef [] chars
+          , text " voiced by "
+          , div [ style "display" "inline-block" ] [ A.view seiyuuConfig model.seiyuuSearch [] ]
+          , br [] []
+          , text "Can't find the person you're looking for? You can "
+          , a [ href "/s/new" ] [ text "create a new entry" ]
+          , text ", but "
+          , a [ href "/s/all" ] [ text "please check for aliasses first." ]
+          ] ] ]
+        item n s = tr []
+          [ td [] [ inputSelect "" s.cid (SeiyuuChar n) []
+            <| chars ++ if List.any (\c -> c.id == s.cid) model.chars then [] else [(s.cid, "[deleted/moved character: c" ++ String.fromInt s.cid ++ "]")] ]
+          , td []
+            [ b [ class "grayedout" ] [ text <| "s" ++ String.fromInt s.id ++ ":" ]
+            , a [ href <| "/s" ++ String.fromInt s.id ] [ text s.name ] ]
+          , td [] [ inputText "" s.note (SeiyuuNote n) (style "width" "300px" :: GVE.valSeiyuuNote) ]
+          , td [] [ inputButton "remove" (SeiyuuDel n) [] ]
+          ]
+      in
+        if model.id == Nothing
+        then text <| "Voice actors can be added to this visual novel once it has character entries associated with it. "
+                  ++ "To do so, first create this entry without cast, then create the appropriate character entries, and finally come back to this form by editing the visual novel."
+        else if List.isEmpty model.chars && List.isEmpty model.seiyuu
+        then p []
+             [ text "This visual novel does not have any characters associated with it (yet). Please "
+             , a [ href <| "/v" ++ Maybe.withDefault "" (Maybe.map String.fromInt model.id) ++ "/addchar" ] [ text "add the appropriate character entries" ]
+             , text " first and then come back to this form to assign voice actors."
+             ]
+        else table [] <| head ++ [ foot ] ++ List.indexedMap item model.seiyuu
+
     screenshots =
       let
         showrel r = "[" ++ (RDate.format (RDate.expand r.released)) ++ " " ++ (String.join "," r.lang) ++ "] " ++ r.title ++ " (r" ++ String.fromInt r.id ++ ")"
@@ -432,7 +509,7 @@ view model =
             ]
       in
         if model.id == Nothing
-        then text <| "Screenshots can be uploaded when this visual novel once it has a release entry associated with it. "
+        then text <| "Screenshots can be uploaded to this visual novel once it has a release entry associated with it. "
                   ++ "To do so, first create this entry without screenshots, then create the appropriate release entries, and finally come back to this form by editing the visual novel."
         else if List.isEmpty model.releases
         then p []
@@ -458,7 +535,7 @@ view model =
   , div [ class "mainbox", classList [("hidden", model.tab /= General     && model.tab /= All)] ] [ h1 [] [ text "General info" ], table [ class "formtable" ] geninfo ]
   , div [ class "mainbox", classList [("hidden", model.tab /= Image       && model.tab /= All)] ] [ h1 [] [ text "Image" ], image ]
   , div [ class "mainbox", classList [("hidden", model.tab /= Staff       && model.tab /= All)] ] [ h1 [] [ text "Staff" ], staff ]
-  , div [ class "mainbox", classList [("hidden", model.tab /= Cast        && model.tab /= All)] ] [ h1 [] [ text "Cast" ] ]
+  , div [ class "mainbox", classList [("hidden", model.tab /= Cast        && model.tab /= All)] ] [ h1 [] [ text "Cast" ], cast ]
   , div [ class "mainbox", classList [("hidden", model.tab /= Screenshots && model.tab /= All)] ] [ h1 [] [ text "Screenshots" ], screenshots ]
   , div [ class "mainbox" ] [ fieldset [ class "submit" ]
       [ Html.map Editsum (Editsum.view model.editsum)
