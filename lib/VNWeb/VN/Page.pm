@@ -2,6 +2,7 @@ package VNWeb::VN::Page;
 
 use VNWeb::Prelude;
 use VNWeb::Releases::Lib;
+use VNWeb::Images::Lib 'image_', 'enrich_image_obj';
 use VNDB::Func 'fmtrating';
 use POSIX 'strftime';
 
@@ -13,6 +14,7 @@ sub enrich_vn {
     enrich_merge vid => 'SELECT id AS vid, title, original FROM vn WHERE id IN', $v->{relations};
     enrich_merge aid => 'SELECT id AS aid, title_romaji, title_kanji, year, type, ann_id, lastfetch FROM anime WHERE id IN', $v->{anime};
     enrich_extlinks v => $v;
+    enrich_image_obj image => $v;
 
     # This fetches rather more information than necessary for infobox_(), but it'll have to do.
     # (And we'll need it for the releases tab anyway)
@@ -87,37 +89,9 @@ sub rev_ {
             a_ href => tuwf->imgurl($_->{scr}), 'data-iv' => "$_->{width}x$_->{height}", $_->{scr};
             txt_ $_->{nsfw} ? ' (Not safe)' : ' (Safe)';
         }],
-        [ image       => 'Image',         fmt => sub {
-            !viewget->{show_nsfw} && $_[0]{img_nsfw}
-            ? a_ href => tuwf->imgurl($_), '(NSFW)'
-            : img_ src => tuwf->imgurl($_)
-        } ],
-        [ img_nsfw    => 'Image NSFW',    fmt => sub { txt_ $_ ? 'Not safe' : 'Safe' } ],
+        [ image       => 'Image',         fmt => sub { image_ $_ } ],
+        [ img_nsfw    => 'Image NSFW (unused)', fmt => sub { txt_ $_ ? 'Not safe' : 'Safe' } ],
         revision_extlinks 'v'
-}
-
-
-sub infobox_img_ {
-    my($v) = @_;
-    p_ 'No image uploaded yet.' if !$v->{image};
-    img_ src => tuwf->imgurl($v->{image}), alt => $v->{title} if $v->{image} && !$v->{img_nsfw};
-
-    p_ class => 'nsfw_pic', sub {
-        input_ id => 'nsfw_chk', type => 'checkbox', class => 'visuallyhidden', tuwf->authPref('show_nsfw') ? (checked => 'checked') : ();
-        label_ for => 'nsfw_chk', sub {
-            span_ id => 'nsfw_show', sub {
-                txt_ 'This image has been flagged as Not Safe For Work.';
-                br_; br_;
-                span_ class => 'fake_link', 'Show me anyway';
-                br_; br_;
-                txt_ '(This warning can be disabled in your account)';
-            };
-            span_ id => 'nsfw_hid', sub {
-                img_ src => tuwf->imgurl($v->{image}), alt => $v->{title};
-                i_ 'Flagged as NSFW';
-            };
-        };
-    } if $v->{image} && $v->{img_nsfw};
 }
 
 
@@ -349,7 +323,7 @@ sub infobox_ {
         h2_ class => 'alttitle', lang_attr($v->{c_olang}), $v->{original} if $v->{original};
 
         div_ class => 'vndetails', sub {
-            div_ class => 'vnimg', sub { infobox_img_ $v };
+            div_ class => 'vnimg', sub { image_ $v->{image}, $v->{title}; };
 
             table_ class => 'stripe', sub {
                 tr_ sub {
