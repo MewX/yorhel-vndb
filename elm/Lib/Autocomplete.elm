@@ -127,7 +127,7 @@ traitSource =
 
 vnSource : SourceConfig m GApi.ApiVNResult
 vnSource =
-  { source  = Endpoint (\s -> GV.send { search = s })
+  { source  = Endpoint (\s -> GV.send { search = [s], hidden = False })
     <| \x -> case x of
       GApi.VNResult e -> Just e
       _ -> Nothing

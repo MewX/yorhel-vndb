@@ -88,6 +88,7 @@ our %apis = (
         id       => { id => 1 },
         title    => {},
         original => { required => 0, default => '' },
+        hidden   => { anybool => 1 },
     } } ],
     ProducerResult => [ { aoh => { # Response to 'Producers'
         id       => { id => 1 },

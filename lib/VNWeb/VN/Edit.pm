@@ -118,16 +118,13 @@ TUWF::get qr{/$RE{vrev}/edit} => sub {
 };
 
 
-# TODO: Make this work
 TUWF::get qr{/v/add}, sub {
     return tuwf->resDenied if !can_edit v => undef;
-
-    my $e = elm_empty($FORM_OUT);
 
     framework_ title => 'Add visual novel',
     sub {
         editmsg_ v => undef, 'Add visual novel';
-        elm_ VNEdit => $FORM_OUT, $e;
+        elm_ VNEdit => $FORM_OUT, elm_empty($FORM_OUT);
     };
 };
 

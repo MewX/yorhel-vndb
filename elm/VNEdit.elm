@@ -18,6 +18,7 @@ import Lib.RDate as RDate
 import Lib.Api as Api
 import Lib.Editsum as Editsum
 import Lib.Image as Img
+import Gen.VN as GV
 import Gen.VNEdit as GVE
 import Gen.Types as GT
 import Gen.Api as GApi
@@ -70,6 +71,8 @@ type alias Model =
   , releases    : List GVE.RecvReleases
   , chars       : List GVE.RecvChars
   , id          : Maybe Int
+  , dupCheck    : Bool
+  , dupVNs      : List GApi.ApiVNResult
   }
 
 
@@ -102,6 +105,8 @@ init d =
   , releases    = d.releases
   , chars       = d.chars
   , id          = d.id
+  , dupCheck    = False
+  , dupVNs      = []
   }
 
 
@@ -175,6 +180,8 @@ type Msg
   | ScrMsg Int Img.Msg
   | ScrRel Int (Maybe Int)
   | ScrDel Int
+  | DupSubmit
+  | DupResults GApi.Response
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -182,9 +189,9 @@ update msg model =
   case msg of
     Editsum m  -> let (nm,nc) = Editsum.update m model.editsum in ({ model | editsum = nm }, Cmd.map Editsum nc)
     Tab t      -> ({ model | tab = t }, Cmd.none)
-    Title s    -> ({ model | title = s }, Cmd.none)
-    Original s -> ({ model | original = s }, Cmd.none)
-    Alias s    -> ({ model | alias = s }, Cmd.none)
+    Title s    -> ({ model | title    = s, dupVNs = [] }, Cmd.none)
+    Original s -> ({ model | original = s, dupVNs = [] }, Cmd.none)
+    Alias s    -> ({ model | alias    = s, dupVNs = [] }, Cmd.none)
     Desc m     -> let (nm,nc) = TP.update m model.desc in ({ model | desc = nm }, Cmd.map Desc nc)
     Length n   -> ({ model | length = n }, Cmd.none)
     LWikidata n-> ({ model | lWikidata = n }, Cmd.none)
@@ -258,6 +265,16 @@ update msg model =
     ScrRel n s -> ({ model | screenshots = List.map (\(i,img,r) -> if i == n then (i,img,s) else (i,img,r)) model.screenshots }, Cmd.none)
     ScrDel n   -> ({ model | screenshots = List.filter (\(i,_,_) -> i /= n) model.screenshots }, ivRefresh True)
 
+    DupSubmit ->
+      if List.isEmpty model.dupVNs
+      then ({ model | state = Api.Loading }, GV.send { hidden = True, search = model.title :: model.original :: String.lines model.alias } DupResults)
+      else ({ model | dupCheck = True, dupVNs = [] }, Cmd.none)
+    DupResults (GApi.VNResult vns) ->
+      if List.isEmpty vns
+      then ({ model | state = Api.Normal, dupCheck = True, dupVNs = [] }, Cmd.none)
+      else ({ model | state = Api.Normal, dupVNs = vns }, Cmd.none)
+    DupResults r -> ({ model | state = Api.Error r }, Cmd.none)
+
     Submit -> ({ model | state = Api.Loading }, GVE.send (encode model) Submitted)
     Submitted (GApi.Redirect s) -> (model, load s)
     Submitted r -> ({ model | state = Api.Error r }, Cmd.none)
@@ -276,7 +293,7 @@ isValid model = not
 view : Model -> Html Msg
 view model =
   let
-    geninfo =
+    titles =
       [ formField "title::Title (romaji)"
         [ inputText "title" model.title Title (style "width" "500px" :: GVE.valTitle)
         , if containsNonLatin model.title
@@ -302,7 +319,10 @@ view model =
         , br [] []
         , text "Titles that are listed in the releases should not be added here!"
         ]
-      , formField "desc::Description"
+      ]
+
+    geninfo = titles ++
+      [ formField "desc::Description"
         [ TP.view "desc" model.desc Desc 600 (style "height" "180px" :: GVE.valDesc) [ b [ class "standout" ] [ text "English please!" ] ]
         , text "Short description of the main story. Please do not include spoilers, and don't forget to list the source in case you didn't write the description yourself."
         ]
@@ -530,26 +550,47 @@ view model =
         else table [ class "vnedit_scr" ]
              <| tfoot [] [ tr [] [ td [] [], td [ colspan 2 ] add ] ] :: List.indexedMap scr model.screenshots
 
-  in
-  form_ Submit (model.state == Api.Loading)
-  [ div [ class "maintabs left" ]
-    [ ul []
-      [ li [ classList [("tabselected", model.tab == General    )] ] [ a [ href "#", onClickD (Tab General    ) ] [ text "General info" ] ]
-      , li [ classList [("tabselected", model.tab == Image      )] ] [ a [ href "#", onClickD (Tab Image      ) ] [ text "Image"        ] ]
-      , li [ classList [("tabselected", model.tab == Staff      )] ] [ a [ href "#", onClickD (Tab Staff      ) ] [ text "Staff"        ] ]
-      , li [ classList [("tabselected", model.tab == Cast       )] ] [ a [ href "#", onClickD (Tab Cast       ) ] [ text "Cast"         ] ]
-      , li [ classList [("tabselected", model.tab == Screenshots)] ] [ a [ href "#", onClickD (Tab Screenshots) ] [ text "Screenshots"  ] ]
-      , li [ classList [("tabselected", model.tab == All        )] ] [ a [ href "#", onClickD (Tab All        ) ] [ text "All items"    ] ]
+    newform () =
+      form_ DupSubmit (model.state == Api.Loading)
+      [ div [ class "mainbox" ] [ h1 [] [ text "Add a new visual novel" ], table [ class "formtable" ] titles ]
+      , div [ class "mainbox" ]
+        [ if List.isEmpty model.dupVNs then text "" else
+          div []
+          [ h1 [] [ text "Possible duplicates" ]
+          , text "The following is a list of visual novels that match the title(s) you gave. "
+          , text "Please check this list to avoid creating a duplicate visual novel entry. "
+          , text "Be especially wary of items that have been deleted! To see why an entry has been deleted, click on its title."
+          , ul [] <| List.map (\v -> li []
+              [ a [ href <| "/v" ++ String.fromInt v.id ] [ text v.title ]
+              , if v.hidden then b [ class "standout" ] [ text " (deleted)" ] else text ""
+              ]
+            ) model.dupVNs
+          ]
+        , fieldset [ class "submit" ] [ submitButton (if List.isEmpty model.dupVNs then "Continue" else "Continue anyway") model.state (isValid model) ]
+        ]
       ]
-    ]
-  , div [ class "mainbox", classList [("hidden", model.tab /= General     && model.tab /= All)] ] [ h1 [] [ text "General info" ], table [ class "formtable" ] geninfo ]
-  , div [ class "mainbox", classList [("hidden", model.tab /= Image       && model.tab /= All)] ] [ h1 [] [ text "Image" ], image ]
-  , div [ class "mainbox", classList [("hidden", model.tab /= Staff       && model.tab /= All)] ] [ h1 [] [ text "Staff" ], staff ]
-  , div [ class "mainbox", classList [("hidden", model.tab /= Cast        && model.tab /= All)] ] [ h1 [] [ text "Cast" ], cast ]
-  , div [ class "mainbox", classList [("hidden", model.tab /= Screenshots && model.tab /= All)] ] [ h1 [] [ text "Screenshots" ], screenshots ]
-  , div [ class "mainbox" ] [ fieldset [ class "submit" ]
-      [ Html.map Editsum (Editsum.view model.editsum)
-      , submitButton "Submit" model.state (isValid model)
+
+    fullform () =
+      form_ Submit (model.state == Api.Loading)
+      [ div [ class "maintabs left" ]
+        [ ul []
+          [ li [ classList [("tabselected", model.tab == General    )] ] [ a [ href "#", onClickD (Tab General    ) ] [ text "General info" ] ]
+          , li [ classList [("tabselected", model.tab == Image      )] ] [ a [ href "#", onClickD (Tab Image      ) ] [ text "Image"        ] ]
+          , li [ classList [("tabselected", model.tab == Staff      )] ] [ a [ href "#", onClickD (Tab Staff      ) ] [ text "Staff"        ] ]
+          , li [ classList [("tabselected", model.tab == Cast       )] ] [ a [ href "#", onClickD (Tab Cast       ) ] [ text "Cast"         ] ]
+          , li [ classList [("tabselected", model.tab == Screenshots)] ] [ a [ href "#", onClickD (Tab Screenshots) ] [ text "Screenshots"  ] ]
+          , li [ classList [("tabselected", model.tab == All        )] ] [ a [ href "#", onClickD (Tab All        ) ] [ text "All items"    ] ]
+          ]
+        ]
+      , div [ class "mainbox", classList [("hidden", model.tab /= General     && model.tab /= All)] ] [ h1 [] [ text "General info" ], table [ class "formtable" ] geninfo ]
+      , div [ class "mainbox", classList [("hidden", model.tab /= Image       && model.tab /= All)] ] [ h1 [] [ text "Image" ], image ]
+      , div [ class "mainbox", classList [("hidden", model.tab /= Staff       && model.tab /= All)] ] [ h1 [] [ text "Staff" ], staff ]
+      , div [ class "mainbox", classList [("hidden", model.tab /= Cast        && model.tab /= All)] ] [ h1 [] [ text "Cast" ], cast ]
+      , div [ class "mainbox", classList [("hidden", model.tab /= Screenshots && model.tab /= All)] ] [ h1 [] [ text "Screenshots" ], screenshots ]
+      , div [ class "mainbox" ] [ fieldset [ class "submit" ]
+          [ Html.map Editsum (Editsum.view model.editsum)
+          , submitButton "Submit" model.state (isValid model)
+          ]
+        ]
       ]
-    ]
-  ]
+  in if model.id == Nothing && not model.dupCheck then newform () else fullform ()
