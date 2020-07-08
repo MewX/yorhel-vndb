@@ -277,20 +277,30 @@ view : Model -> Html Msg
 view model =
   let
     geninfo =
-      [ formField "title::Title (romaji)" [ inputText "title" model.title Title GVE.valTitle ]
+      [ formField "title::Title (romaji)"
+        [ inputText "title" model.title Title (style "width" "500px" :: GVE.valTitle)
+        , if containsNonLatin model.title
+          then b [ class "standout" ] [ br [] [], text "This title field should only contain latin-alphabet characters, please put the \"actual\" title in the field below and the romanization above." ]
+          else text ""
+        ]
       , formField "original::Original title"
-        [ inputText "original" model.original Title GVE.valOriginal
+        [ inputText "original" model.original Original (style "width" "500px" :: GVE.valOriginal)
         , if model.title /= "" && model.title == model.original
           then b [ class "standout" ] [ br [] [], text "Should not be the same as the Title (romaji). Leave blank is the original title is already in the latin alphabet" ]
+          else if model.original /= "" && String.toLower model.title /= String.toLower model.original && not (containsNonLatin model.original)
+          then b [ class "standout" ] [ br [] [], text "Original title does not seem to contain any non-latin characters. Leave this field empty if the title is already in the latin alphabet" ]
           else text ""
         ]
       , formField "alias::Aliases"
         [ inputTextArea "alias" model.alias Alias (rows 3 :: GVE.valAlias)
         , br [] []
+        , if hasDuplicates <| String.lines <| String.toLower model.alias
+          then b [ class "standout" ] [ text "List contains duplicate aliases.", br [] [] ]
+          else text ""
+          -- TODO: Warn when release titles are entered?
         , text "List of alternative titles or abbreviations. One line for each alias. Can include both official (japanese/english) titles and unofficial titles used around net."
         , br [] []
         , text "Titles that are listed in the releases should not be added here!"
-        -- TODO: Compare & warn when release title is listed as alias
         ]
       , formField "desc::Description"
         [ TP.view "desc" model.desc Desc 600 (style "height" "180px" :: GVE.valDesc) [ b [ class "standout" ] [ text "English please!" ] ]

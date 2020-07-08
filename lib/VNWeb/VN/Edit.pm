@@ -143,6 +143,7 @@ elm_api VNEdit => $FORM_OUT, $FORM_IN, sub {
         $data->{locked} = $e->{locked}||0;
     }
     $data->{desc} = bb_subst_links $data->{desc};
+    $data->{alias} =~ s/\n\n+/\n/;
 
     validate_dbid 'SELECT id FROM anime WHERE id IN', map $_->{aid}, $data->{anime}->@*;
     validate_dbid 'SELECT id FROM images WHERE id IN', $data->{image} if $data->{image};
