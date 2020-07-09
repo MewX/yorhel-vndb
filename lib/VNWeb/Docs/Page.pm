@@ -15,6 +15,7 @@ sub _index_ {
         li_ sub { a_ href => '/d16', 'Staff' };
         li_ sub { a_ href => '/d12', 'Characters' };
         li_ sub { a_ href => '/d10', 'Tags & Traits' };
+        li_ sub { a_ href => '/d19', 'Image Flagging' };
         li_ sub { a_ href => '/d13', 'Capturing Screenshots' };
         li_ sub { b_ 'About VNDB' };
         li_ sub { a_ href => '/d9',  'Discussion Board' };
