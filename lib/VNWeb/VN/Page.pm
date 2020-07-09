@@ -2,7 +2,7 @@ package VNWeb::VN::Page;
 
 use VNWeb::Prelude;
 use VNWeb::Releases::Lib;
-use VNWeb::Images::Lib 'image_', 'enrich_image_obj';
+use VNWeb::Images::Lib qw/image_ enrich_image_obj/;
 use VNDB::Func 'fmtrating';
 use POSIX 'strftime';
 
@@ -35,13 +35,13 @@ sub enrich_item {
     enrich_vn $v;
     enrich_merge aid => 'SELECT id AS sid, aid, name, original FROM staff_alias WHERE aid IN', $v->{staff}, $v->{seiyuu};
     enrich_merge cid => 'SELECT id AS cid, name AS char_name, original AS char_original FROM chars WHERE id IN', $v->{seiyuu};
-    enrich_merge scr => 'SELECT id AS scr, width, height FROM images WHERE id IN', $v->{screenshots};
+    enrich_image_obj scr => $v->{screenshots};
 
     $v->{relations}   = [ sort { $a->{vid} <=> $b->{vid} } $v->{relations}->@* ];
     $v->{anime}       = [ sort { $a->{aid} <=> $b->{aid} } $v->{anime}->@* ];
     $v->{staff}       = [ sort { $a->{aid} <=> $b->{aid} || $a->{role} cmp $b->{role} } $v->{staff}->@* ];
     $v->{seiyuu}      = [ sort { $a->{aid} <=> $b->{aid} || $a->{cid} <=> $b->{cid} || $a->{note} cmp $b->{note} } $v->{seiyuu}->@* ];
-    $v->{screenshots} = [ sort { idcmp($a->{scr}, $b->{scr}) } $v->{screenshots}->@* ];
+    $v->{screenshots} = [ sort { idcmp($a->{scr}{id}, $b->{scr}{id}) } $v->{screenshots}->@* ];
 }
 
 
@@ -49,8 +49,8 @@ sub og {
     my($v) = @_;
     +{
         description => bb2text($v->{desc}),
-        image => $v->{image} && !$v->{img_nsfw} ? tuwf->imgurl($v->{image}) :
-                 [map $_->{nsfw}?():(tuwf->imgurl($_->{scr})), $v->{screenshots}->@*]->[0]
+        image => $v->{image} && !$v->{image}{sexual} && !$v->{image}{violence} ? tuwf->imgurl($v->{image}{id}) :
+                 [map $_->{sexual}||$_->{violence}?():(tuwf->imgurl($_->{scr}{id})), $v->{screenshots}->@*]->[0]
     }
 }
 
@@ -86,8 +86,8 @@ sub rev_ {
             a_ href => "/r$_->{rid}", "r$_->{rid}" if $_->{rid};
             txt_ 'no release' if !$_->{rid};
             txt_ '] ';
-            a_ href => tuwf->imgurl($_->{scr}), 'data-iv' => "$_->{width}x$_->{height}", $_->{scr};
-            txt_ $_->{nsfw} ? ' (Not safe)' : ' (Safe)';
+            a_ href => tuwf->imgurl($_->{scr}{id}), 'data-iv' => "$_->{scr}{width}x$_->{scr}{height}", $_->{scr}{id};
+            txt_ ' (Not safe)' if $_->{nsfw};
         }],
         [ image       => 'Image',         fmt => sub { image_ $_ } ],
         [ img_nsfw    => 'Image NSFW (unused)', fmt => sub { txt_ $_ ? 'Not safe' : 'Safe' } ],
@@ -323,7 +323,7 @@ sub infobox_ {
         h2_ class => 'alttitle', lang_attr($v->{c_olang}), $v->{original} if $v->{original};
 
         div_ class => 'vndetails', sub {
-            div_ class => 'vnimg', sub { image_ $v->{image}, $v->{title}; };
+            div_ class => 'vnimg', sub { image_ $v->{image}, alt => $v->{title}; };
 
             table_ class => 'stripe', sub {
                 tr_ sub {
@@ -614,19 +614,35 @@ sub screenshots_ {
     my $s = $v->{screenshots};
     return if !@$s;
 
+    my $sexp = auth->pref('max_sexual')||0;
+    my $viop = auth->pref('max_violence')||0;
+    $viop = 0 if $sexp < 0;
+
+    my(@sex, @vio);
+    for (@$s) { $sex[$_->{scr}{sexual}]++; $vio[$_->{scr}{violence}]++ }
+
     my %rel;
     push $rel{$_->{rid}}->@*, $_ for grep $_->{rid}, @$s;
 
-    input_ id => 'nsfwhide_chk', type => 'checkbox', class => 'visuallyhidden', auth->pref('show_nsfw') ? (checked => 'checked') : ();
+    # TODO: Display image flagging status of each image, somehow.
+
+    input_ name => 'scrhide_s', id => "scrhide_s$_", type => 'radio', class => 'visuallyhidden', $sexp == $_ ? (checked => 'checked') : () for 0..2;
+    input_ name => 'scrhide_v', id => "scrhide_v$_", type => 'radio', class => 'visuallyhidden', $viop == $_ ? (checked => 'checked') : () for 0..2;
     div_ class => 'mainbox', id => 'screenshots', sub {
 
-        p_ class => 'nsfwtoggle', sub {
-            txt_ 'Showing ';
-            i_ id => 'nsfwshown', scalar grep !$_->{nsfw}, @$s;
-            span_ class => 'nsfw', scalar @$s;
-            txt_ sprintf ' out of %d screenshot%s. ', scalar @$s, @$s == 1 ? '' : 's';
-            label_ for => 'nsfwhide_chk', class => 'fake_link', 'show/hide NSFW';
-        } if grep $_->{nsfw}, @$s;
+        p_ class => 'mainopts', sub {
+            if($sex[1] || $sex[2]) {
+                label_ for => 'scrhide_s0', class => 'fake_link', "Safe ($sex[0])";
+                label_ for => 'scrhide_s1', class => 'fake_link', "Suggestive ($sex[1])" if $sex[1];
+                label_ for => 'scrhide_s2', class => 'fake_link', "Explicit ($sex[2])" if $sex[2];
+            }
+            b_ class => 'grayedout', ' | ' if ($sex[1] || $sex[2]) && ($vio[1] || $vio[2]);
+            if($vio[1] || $vio[2]) {
+                label_ for => 'scrhide_v0', class => 'fake_link', "Tame ($vio[0])";
+                label_ for => 'scrhide_v1', class => 'fake_link', "Violent ($vio[1])" if $vio[1];
+                label_ for => 'scrhide_v2', class => 'fake_link', "Brutal ($vio[2])" if $vio[2];
+            }
+        } if $sex[1] || $sex[2] || $vio[1] || $vio[2];
 
         h1_ 'Screenshots';
 
@@ -637,9 +653,19 @@ sub screenshots_ {
                 a_ href => "/r$r->{id}", $r->{title};
             };
             div_ class => 'scr', sub {
-                a_ href => tuwf->imgurl($_->{scr}), class => sprintf('scrlnk%s', $_->{nsfw} ? ' nsfw':''), 'data-iv' => "$_->{width}x$_->{height}:scr", sub {
-                    my($w, $h) = imgsize $_->{width}, $_->{height}, tuwf->{scr_size}->@*;
-                    img_ src => tuwf->imgurl($_->{scr}, 1), width => $w, height => $h, alt => "Screenshot #$_->{scr}";
+                a_ href => tuwf->imgurl($_->{scr}{id}),
+                    'data-iv' => "$_->{scr}{width}x$_->{scr}{height}:scr",
+                    mkclass(
+                        scrlnk => 1,
+                        scrlnk_s0 => $_->{scr}{sexual} <= 0,
+                        scrlnk_s1 => $_->{scr}{sexual} <= 1,
+                        scrlnk_v0 => $_->{scr}{violence} >= 1,
+                        scrlnk_v1 => $_->{scr}{violence} >= 2,
+                        nsfw => $_->{scr}{sexual} || $_->{scr}{violence},
+                    ),
+                sub {
+                    my($w, $h) = imgsize $_->{scr}{width}, $_->{scr}{height}, tuwf->{scr_size}->@*;
+                    img_ src => tuwf->imgurl($_->{scr}{id}, 1), width => $w, height => $h, alt => "Screenshot $_->{scr}{id}";
                 } for $rel{$r->{id}}->@*;
             }
         }

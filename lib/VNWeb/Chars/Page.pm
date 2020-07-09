@@ -1,7 +1,7 @@
 package VNWeb::Chars::Page;
 
 use VNWeb::Prelude;
-use VNWeb::Images::Lib 'image_', 'enrich_image_obj';
+use VNWeb::Images::Lib qw/image_ enrich_image_obj/;
 
 
 sub enrich_seiyuu {
@@ -111,7 +111,7 @@ sub chartable_ {
     my $view = viewget;
 
     div_ mkclass(chardetails => 1, charsep => $sep), sub {
-        div_ class => 'charimg', sub { image_ $c->{image}, $c->{name} };
+        div_ class => 'charimg', sub { image_ $c->{image}, alt => $c->{name} };
         table_ class => 'stripe', sub {
             thead_ sub { tr_ sub { td_ colspan => 2, sub {
                 $link
@@ -252,7 +252,7 @@ TUWF::get qr{/$RE{crev}} => sub {
     framework_ title => $c->{name}, index => !tuwf->capture('rev'), type => 'c', dbobj => $c, hiddenmsg => 1,
         og => {
             description => bb2text($c->{desc}),
-            image => $c->{image} && $c->{image}{votecount} && $c->{image}{sexual_avg} < 0.4 && $c->{image}{violence_avg} < 0.4 ? tuwf->imgurl($c->{image}{id}) : undef,
+            image => $c->{image} && $c->{image}{votecount} && !$c->{image}{sexual} && !$c->{image}{violence} ? tuwf->imgurl($c->{image}{id}) : undef,
         },
     sub {
         _rev_ $c if tuwf->capture('rev');
