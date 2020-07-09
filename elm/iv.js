@@ -143,7 +143,7 @@ function show(ev) {
     ivimg.textContent = '';
     ivimg.appendChild(img);
 
-    let flag = opt[2] ? opt[2].match(/^([0-2])([0-2])([0-9]+)$/) : null;
+    var flag = opt[2] ? opt[2].match(/^([0-2])([0-2])([0-9]+)$/) : null;
     var imgid = u.match(/\/([a-z]{2})\/[0-9]{2}\/([0-9]+)\./);
     if(flag && imgid) {
         ivflag.href = '/img/'+imgid[1]+imgid[2];
