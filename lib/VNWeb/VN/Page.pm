@@ -86,7 +86,7 @@ sub rev_ {
             a_ href => "/r$_->{rid}", "r$_->{rid}" if $_->{rid};
             txt_ 'no release' if !$_->{rid};
             txt_ '] ';
-            a_ href => tuwf->imgurl($_->{scr}{id}), 'data-iv' => "$_->{scr}{width}x$_->{scr}{height}", $_->{scr}{id};
+            a_ href => tuwf->imgurl($_->{scr}{id}), 'data-iv' => "$_->{scr}{width}x$_->{scr}{height}::$_->{scr}{sexual}$_->{scr}{violence}$_->{scr}{votecount}", $_->{scr}{id};
             txt_ ' (Not safe)' if $_->{nsfw};
         }],
         [ image       => 'Image',         fmt => sub { image_ $_ } ],
@@ -624,8 +624,6 @@ sub screenshots_ {
     my %rel;
     push $rel{$_->{rid}}->@*, $_ for grep $_->{rid}, @$s;
 
-    # TODO: Display image flagging status of each image, somehow.
-
     input_ name => 'scrhide_s', id => "scrhide_s$_", type => 'radio', class => 'visuallyhidden', $sexp == $_ ? (checked => 'checked') : () for 0..2;
     input_ name => 'scrhide_v', id => "scrhide_v$_", type => 'radio', class => 'visuallyhidden', $viop == $_ ? (checked => 'checked') : () for 0..2;
     div_ class => 'mainbox', id => 'screenshots', sub {
@@ -654,7 +652,7 @@ sub screenshots_ {
             };
             div_ class => 'scr', sub {
                 a_ href => tuwf->imgurl($_->{scr}{id}),
-                    'data-iv' => "$_->{scr}{width}x$_->{scr}{height}:scr",
+                    'data-iv' => "$_->{scr}{width}x$_->{scr}{height}:scr:$_->{scr}{sexual}$_->{scr}{violence}$_->{scr}{votecount}",
                     mkclass(
                         scrlnk => 1,
                         scrlnk_s0 => $_->{scr}{sexual} <= 0,

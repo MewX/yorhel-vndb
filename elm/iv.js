@@ -1,12 +1,14 @@
 //order:8 - After all regular JS, as other files may modify pageVars or modules in the Elm.* namespace.
 /* Simple image viewer widget. Usage:
  *
- *   <a href="full_image.jpg" data-iv="{width}x{height}:{category}">..</a>
+ *   <a href="full_image.jpg" data-iv="{width}x{height}:{category}:{flagging}">..</a>
  *
  * Clicking on the above link will cause the image viewer to open
  * full_image.jpg. The {category} part can be empty or absent. If it is not
  * empty, next/previous links will show up to point to the other images within
- * the same category.
+ * the same category. The {flagging} part can also be empty or absent,
+ * otherwise it should be a string in the format "svn", where s and v indicate
+ * the sexual/violence scores (0-2) and n the number of votes.
  *
  * ivInit() should be called when links with "data-iv" attributes are
  * dynamically added or removed from the DOM.
@@ -23,7 +25,7 @@ var ivfull;
 var ivnext;
 var ivprev;
 var ivload;
-var ivclose;
+var ivflag;
 
 var imgw;
 var imgh;
@@ -47,11 +49,8 @@ function create_div() {
     ivfull = document.createElement('a');
     ivparent.appendChild(ivfull);
 
-    ivclose = document.createElement('a');
-    ivclose.href = '#';
-    ivclose.onclick = ivClose;
-    ivclose.textContent = 'close';
-    ivparent.appendChild(ivclose);
+    ivflag = document.createElement('a');
+    ivparent.appendChild(ivflag);
 
     ivprev = document.createElement('a');
     ivprev.onclick = show;
@@ -129,7 +128,7 @@ function resize() {
 
 function show(ev) {
     var u = this.href;
-    var opt = this.getAttribute('data-iv').split(':');
+    var opt = this.getAttribute('data-iv').split(':'); // 0:reso, 1:category, 2:flagging
     var idx = this.iv_i;
     imgw = Math.floor(opt[0].split('x')[0]);
     imgh = Math.floor(opt[0].split('x')[1]);
@@ -143,6 +142,17 @@ function show(ev) {
     img.onload = function() { ivload.style.display = 'none' };
     ivimg.textContent = '';
     ivimg.appendChild(img);
+
+    let flag = opt[2] ? opt[2].match(/^([0-2])([0-2])([0-9]+)$/) : null;
+    var imgid = u.match(/\/([a-z]{2})\/[0-9]{2}\/([0-9]+)\./);
+    if(flag && imgid) {
+        ivflag.href = '/img/'+imgid[1]+imgid[2];
+        ivflag.textContent = flag[3] == 0 ? 'Not flagged' :
+            (flag[1] == 0 ? 'Safe' : flag[1] == 1 ? 'Suggestive' : 'Explicit') + ' / ' +
+            (flag[2] == 0 ? 'Tame' : flag[2] == 1 ? 'Violent'    : 'Brutal'  ) + ' (' + flag[3] + ')';
+        ivflag.style.visibility = 'visible';
+    } else
+        ivflag.style.visibility = 'hidden';
 
     ivparent.style.display = 'block';
     ivload.style.display = 'block';
