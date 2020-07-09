@@ -369,6 +369,22 @@ sub splitarray {
 }
 
 
+# Returns an image flagging structure or undef if $image is false.
+# Assumes $obj has c_votecount, c_sexual_avg and c_violence_avg.
+# Those fields are removed from $obj.
+sub image_flagging {
+  my($image, $obj) = @_;
+  my $flag = {
+    votecount    => delete $obj->{c_votecount},
+    sexual_avg   => delete $obj->{c_sexual_avg},
+    violence_avg => delete $obj->{c_violence_avg},
+  };
+  $flag->{sexual_avg}   *= 1 if defined $flag->{sexual_avg};
+  $flag->{violence_avg} *= 1 if defined $flag->{violence_avg};
+  $image ? $flag : undef;
+}
+
+
 # sql     => str: Main sql query, three printf args: select, where part, order by and limit clauses
 # sqluser => str: Alternative to 'sql' if the user is logged in. One additional printf arg: user id.
 #            If sql is undef and sqluser isn't, the command is only available to logged in users.
@@ -390,7 +406,7 @@ sub splitarray {
 # }
 # filters => filters args for get_filters() (TODO: Document)
 my %GET_VN = (
-  sql     => 'SELECT %s FROM vn v WHERE NOT v.hidden AND (%s) %s',
+  sql     => 'SELECT %s FROM vn v LEFT JOIN images i ON i.id = v.image WHERE NOT v.hidden AND (%s) %s',
   select  => 'v.id',
   proc    => sub {
     $_[0]{id} *= 1
@@ -416,13 +432,12 @@ my %GET_VN = (
       },
     },
     details => {
-      select => 'vndbid_num(v.image) as image, v.img_nsfw, v.alias AS aliases, v.length, v.desc AS description, v.l_wp, v.l_encubed, v.l_renai, l_wikidata',
+      select => 'vndbid_num(v.image) as image, i.c_sexual_avg, i.c_violence_avg, i.c_votecount, v.alias AS aliases, v.length, v.desc AS description, v.l_wp, v.l_encubed, v.l_renai, l_wikidata',
       proc   => sub {
         $_[0]{aliases}     ||= undef;
         $_[0]{length}      *= 1;
         $_[0]{length}      ||= undef;
         $_[0]{description} ||= undef;
-        $_[0]{image_nsfw}  = delete($_[0]{img_nsfw}) =~ /t/ ? TRUE : FALSE;
         $_[0]{links} = {
           wikipedia => delete($_[0]{l_wp})     ||undef,
           encubed   => delete($_[0]{l_encubed})||undef,
@@ -430,6 +445,8 @@ my %GET_VN = (
           wikidata  => formatwd(delete $_[0]{l_wikidata}),
         };
         $_[0]{image} = $_[0]{image} ? sprintf '%s/cv/%02d/%d.jpg', config->{url_static}, $_[0]{image}%100, $_[0]{image} : undef;
+        $_[0]{image_nsfw}  = !$_[0]{image} ? FALSE : !$_[0]{c_votecount} || $_[0]{c_sexual_avg} > 0.4 || $_[0]{c_violence_avg} > 0.4 ? TRUE : FALSE;
+        $_[0]{image_flagging} = image_flagging $_[0]{image}, $_[0];
       },
     },
     stats => {
@@ -489,7 +506,7 @@ my %GET_VN = (
       ]],
     },
     screens => {
-      fetch => [[ 'id', 'SELECT vs.id AS vid, vndbid_num(vs.scr) AS image, vs.rid, vs.nsfw, s.width, s.height
+      fetch => [[ 'id', 'SELECT vs.id AS vid, vndbid_num(vs.scr) AS image, vs.rid, s.width, s.height, s.c_sexual_avg, s.c_violence_avg, s.c_votecount
                       FROM vn_screenshots vs JOIN images s ON s.id = vs.scr WHERE vs.id IN(%s)',
         sub { my($r, $n) = @_;
           for my $i (@$r) {
@@ -498,9 +515,10 @@ my %GET_VN = (
           for (@$n) {
             $_->{image} = sprintf '%s/sf/%02d/%d.jpg', config->{url_static}, $_->{image}%100, $_->{image};
             $_->{rid} *= 1;
-            $_->{nsfw} = $_->{nsfw} =~ /t/ ? TRUE : FALSE;
+            $_->{nsfw} = !$_->{c_votecount} || $_->{c_sexual_avg} > 0.4 || $_->{c_violence_avg} > 0.4 ? TRUE : FALSE;
             $_->{width} *= 1;
             $_->{height} *= 1;
+            $_->{flagging} = image_flagging(1, $_);
             delete $_->{vid};
           }
         },
@@ -797,7 +815,7 @@ my %GET_PRODUCER = (
 );
 
 my %GET_CHARACTER = (
-  sql     => 'SELECT %s FROM chars c WHERE NOT c.hidden AND (%s) %s',
+  sql     => 'SELECT %s FROM chars c LEFT JOIN images i ON i.id = c.image WHERE NOT c.hidden AND (%s) %s',
   select  => 'c.id',
   proc    => sub {
     $_[0]{id} *= 1
@@ -818,11 +836,12 @@ my %GET_CHARACTER = (
       },
     },
     details => {
-      select => 'c.alias AS aliases, vndbid_num(c.image) as image, c."desc" AS description',
+      select => 'c.alias AS aliases, vndbid_num(c.image) as image, i.c_sexual_avg, i.c_violence_avg, i.c_votecount, c."desc" AS description',
       proc => sub {
         $_[0]{aliases}     ||= undef;
-        $_[0]{image}       = $_[0]{image} ? sprintf '%s/ch/%02d/%d.jpg', config->{url_static}, $_[0]{image}%100, $_[0]{image} : undef;
         $_[0]{description} ||= undef;
+        $_[0]{image}       = $_[0]{image} ? sprintf '%s/ch/%02d/%d.jpg', config->{url_static}, $_[0]{image}%100, $_[0]{image} : undef;
+        $_[0]{image_flagging} = image_flagging $_[0]{image}, $_[0];
       },
     },
     meas => {
