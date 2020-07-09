@@ -617,6 +617,8 @@ sub screenshots_ {
     my $sexp = auth->pref('max_sexual')||0;
     my $viop = auth->pref('max_violence')||0;
     $viop = 0 if $sexp < 0;
+    my $sexs = min($sexp, max map $_->{scr}{sexual}, @$s);
+    my $vios = min($viop, max map $_->{scr}{violence}, @$s);
 
     my @sex = (0,0,0);
     my @vio = (0,0,0);
@@ -625,8 +627,8 @@ sub screenshots_ {
     my %rel;
     push $rel{$_->{rid}}->@*, $_ for grep $_->{rid}, @$s;
 
-    input_ name => 'scrhide_s', id => "scrhide_s$_", type => 'radio', class => 'visuallyhidden', $sexp == $_ ? (checked => 'checked') : () for 0..2;
-    input_ name => 'scrhide_v', id => "scrhide_v$_", type => 'radio', class => 'visuallyhidden', $viop == $_ ? (checked => 'checked') : () for 0..2;
+    input_ name => 'scrhide_s', id => "scrhide_s$_", type => 'radio', class => 'visuallyhidden', $sexs == $_ ? (checked => 'checked') : () for 0..2;
+    input_ name => 'scrhide_v', id => "scrhide_v$_", type => 'radio', class => 'visuallyhidden', $vios == $_ ? (checked => 'checked') : () for 0..2;
     div_ class => 'mainbox', id => 'screenshots', sub {
 
         p_ class => 'mainopts', sub {
