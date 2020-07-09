@@ -260,7 +260,7 @@ sub csrfcheck {
 # TODO: Measure global usage of the pref() and prefSet() calls to see if this cache is actually necessary.
 
 my @pref_columns = qw/
-    email_confirmed skin customcss filter_vn filter_release show_nsfw notify_dbedit notify_announce
+    email_confirmed skin customcss filter_vn filter_release notify_dbedit notify_announce
     vn_list_own vn_list_wish tags_all tags_cont tags_ero tags_tech spoilers traits_sexual
     max_sexual max_violence nodistract_can nodistract_noads nodistract_nofancy
 /;

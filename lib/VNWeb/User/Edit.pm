@@ -32,7 +32,6 @@ my $FORM = {
     # Settings that can only be read/modified by the user itself or a perm_usermod
     prefs => { required => 0, type => 'hash', keys => {
         email           => { email => 1 },
-        show_nsfw       => { anybool => 1 },
         max_sexual      => {  int => 1, range => [-1, 2 ] },
         max_violence    => { uint => 1, range => [ 0, 2 ] },
         traits_sexual   => { anybool => 1 },
@@ -81,7 +80,7 @@ TUWF::get qr{/$RE{uid}/edit}, sub {
 
     $u->{prefs} = $u->{id} == auth->uid || auth->permUsermod ?
         tuwf->dbRowi(
-            'SELECT show_nsfw, max_sexual, max_violence, traits_sexual, tags_all, tags_cont, tags_ero, tags_tech, spoilers, skin, customcss
+            'SELECT max_sexual, max_violence, traits_sexual, tags_all, tags_cont, tags_ero, tags_tech, spoilers, skin, customcss
                   , nodistract_noads, nodistract_nofancy, support_enabled, uniname, pubskin_enabled
                FROM users WHERE id =', \$u->{id}
         ) : undef;
@@ -118,7 +117,7 @@ elm_api UserEdit => $FORM_OUT, $FORM_IN, sub {
         return elm_Taken if $p->{uniname} && tuwf->dbVali('SELECT 1 FROM users WHERE id <>', \$data->{id}, 'AND username =', \lc($p->{uniname}));
 
         $set{$_} = $p->{$_} for qw/
-            show_nsfw max_sexual max_violence traits_sexual tags_all tags_cont tags_ero tags_tech spoilers skin customcss
+            max_sexual max_violence traits_sexual tags_all tags_cont tags_ero tags_tech spoilers skin customcss
             nodistract_noads nodistract_nofancy support_enabled uniname pubskin_enabled
         /;
     }

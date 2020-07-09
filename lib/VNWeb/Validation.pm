@@ -242,7 +242,7 @@ sub viewget {
         {
             spoilers      => $sp // auth->pref('spoilers') || 0,
             traits_sexual => !$ts ? auth->pref('traits_sexual') : $ts eq 's',
-            show_nsfw     => !$ns ? auth->pref('show_nsfw') : $ns eq 'n',
+            show_nsfw     => !$ns ? (auth->pref('max_sexual')||0)==2 && (auth->pref('max_violence')||0)>0 : $ns eq 'n',
         }
     };
     tuwf->req->{view}

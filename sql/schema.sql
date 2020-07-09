@@ -809,7 +809,7 @@ CREATE TABLE users (
   customcss       text NOT NULL DEFAULT '',
   filter_vn       text NOT NULL DEFAULT '',
   filter_release  text NOT NULL DEFAULT '',
-  show_nsfw       boolean NOT NULL DEFAULT FALSE,
+  show_nsfw       boolean NOT NULL DEFAULT FALSE, -- Not used anymore, replaced by max_sexual and max_violence
   notify_dbedit   boolean NOT NULL DEFAULT TRUE,
   notify_announce boolean NOT NULL DEFAULT FALSE,
   vn_list_own     boolean NOT NULL DEFAULT FALSE,
@@ -857,7 +857,7 @@ CREATE TABLE vn ( -- dbentry_type=v
   original   varchar(250) NOT NULL DEFAULT '', -- [pub]
   alias      varchar(500) NOT NULL DEFAULT '', -- [pub]
   length     smallint NOT NULL DEFAULT 0, -- [pub]
-  img_nsfw   boolean NOT NULL DEFAULT FALSE, -- [pub]
+  img_nsfw   boolean NOT NULL DEFAULT FALSE, -- [pub] (deprecated)
   image      vndbid CONSTRAINT vn_image_check CHECK(vndbid_type(image) = 'cv'), -- [pub]
   "desc"     text NOT NULL DEFAULT '', -- [pub]
   l_wp       varchar(150) NOT NULL DEFAULT '', -- [pub] (deprecated)
@@ -929,7 +929,7 @@ CREATE TABLE vn_screenshots (
   id         integer NOT NULL, -- [pub]
   scr        vndbid NOT NULL CONSTRAINT vn_screenshots_scr_check CHECK(vndbid_type(scr) = 'sf'), -- [pub] images.id
   rid        integer,          -- [pub] releases.id (only NULL for old revisions, nowadays not allowed anymore)
-  nsfw       boolean NOT NULL DEFAULT FALSE, -- [pub]
+  nsfw       boolean NOT NULL DEFAULT FALSE, -- [pub] (deprecated)
   PRIMARY KEY(id, scr)
 );
 

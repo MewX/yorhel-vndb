@@ -73,7 +73,6 @@ type AdminMsg
 
 type PrefMsg
   = EMail String
-  | ShowNsfw Bool
   | MaxSexual Int
   | MaxViolence Int
   | TraitsSexual Bool
@@ -123,7 +122,6 @@ updatePrefs : PrefMsg -> GUE.SendPrefs -> GUE.SendPrefs
 updatePrefs msg model =
   case msg of
     EMail n    -> { model | email = n }
-    ShowNsfw b -> { model | show_nsfw = b }
     MaxSexual n-> { model | max_sexual = n }
     MaxViolence n  -> { model | max_violence = n }
     TraitsSexual b -> { model | traits_sexual = b }
@@ -231,11 +229,8 @@ view model =
 
     prefsform m =
       [ tr [ class "newpart" ] [ td [ colspan 2 ] [ text "Preferences" ] ]
-      , formField "NSFW" [ label [] [ inputCheck "" m.show_nsfw (Prefs << ShowNsfw), text " Show NSFW images by default" ] ]
-      , formField ""
-        [ b [ class "grayedout" ] [ text "The two options below are only used for character images at the moment, they will eventually replace the above checkbox and apply to all images on the site." ]
-        , br [] []
-        , inputSelect "" m.max_sexual (Prefs << MaxSexual) [style "width" "400px"]
+      , formField "NSFW"
+        [ inputSelect "" m.max_sexual (Prefs << MaxSexual) [style "width" "400px"]
           [ (-1,"Hide all images")
           , (0, "Hide sexually suggestive or explicit images")
           , (1, "Hide only sexually explicit images")
