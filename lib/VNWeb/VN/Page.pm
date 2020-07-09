@@ -618,7 +618,8 @@ sub screenshots_ {
     my $viop = auth->pref('max_violence')||0;
     $viop = 0 if $sexp < 0;
 
-    my(@sex, @vio);
+    my @sex = (0,0,0);
+    my @vio = (0,0,0);
     for (@$s) { $sex[$_->{scr}{sexual}]++; $vio[$_->{scr}{violence}]++ }
 
     my %rel;
