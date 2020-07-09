@@ -15,6 +15,7 @@ sub enrich_vn {
     enrich_merge aid => 'SELECT id AS aid, title_romaji, title_kanji, year, type, ann_id, lastfetch FROM anime WHERE id IN', $v->{anime};
     enrich_extlinks v => $v;
     enrich_image_obj image => $v;
+    enrich_image_obj scr => $v->{screenshots};
 
     # This fetches rather more information than necessary for infobox_(), but it'll have to do.
     # (And we'll need it for the releases tab anyway)
@@ -35,7 +36,6 @@ sub enrich_item {
     enrich_vn $v;
     enrich_merge aid => 'SELECT id AS sid, aid, name, original FROM staff_alias WHERE aid IN', $v->{staff}, $v->{seiyuu};
     enrich_merge cid => 'SELECT id AS cid, name AS char_name, original AS char_original FROM chars WHERE id IN', $v->{seiyuu};
-    enrich_image_obj scr => $v->{screenshots};
 
     $v->{relations}   = [ sort { $a->{vid} <=> $b->{vid} } $v->{relations}->@* ];
     $v->{anime}       = [ sort { $a->{aid} <=> $b->{aid} } $v->{anime}->@* ];
