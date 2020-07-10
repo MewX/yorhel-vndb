@@ -348,14 +348,15 @@ sub dbScreenshotRandom {
 
   # this query is faster than it looks
   return $self->dbAll(join(' UNION ALL ', map
-    q|SELECT vndbid_num(s.id) AS scr, s.width, s.height, v.id AS vid, v.title, RANDOM() AS position
+    q|SELECT vndbid_num(vs.scr) AS scr, vs.width, vs.height, v.id AS vid, v.title, RANDOM() AS position
         FROM (
-         SELECT vs2.id, vs2.scr FROM vn_screenshots vs2
-          WHERE vs2.id = ? AND NOT vs2.nsfw
+         SELECT vs2.id, vs2.scr, s.width, s.height
+           FROM vn_screenshots vs2
+           JOIN images s ON s.id = vs2.scr
+          WHERE vs2.id = ? AND s.c_sexual_avg < 0.4 AND s.c_violence_avg < 0.4
           ORDER BY RANDOM() LIMIT 1
         ) vs
         JOIN vn v ON v.id = vs.id
-        JOIN images s ON s.id = vs.scr
      |, @vids).' ORDER BY position', @vids);
 }
 
