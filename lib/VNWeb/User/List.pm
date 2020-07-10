@@ -69,7 +69,7 @@ TUWF::get qr{/u/(?<char>[0a-z]|all)}, sub {
     my @where = (
         $char eq 'all' ? () : $char eq '0' ? "ascii(username) not between ascii('a') and ascii('z')" : "username like '$char%'",
         $opt->{q} ? sql_or(
-            $opt->{q} =~ /^u?([0-9]+)$/ ? sql 'id =', \"$1" : (),
+            $opt->{q} =~ /^u?([0-9]{1,6})$/ ? sql 'id =', \"$1" : (),
             sql 'position(', \$opt->{q}, 'in username) > 0'
         ) : ()
     );
