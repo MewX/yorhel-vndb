@@ -46,21 +46,24 @@ function create_div() {
     ivimg = document.createElement('div');
     ivparent.appendChild(ivimg);
 
-    ivfull = document.createElement('a');
-    ivparent.appendChild(ivfull);
+    var ivlinks = document.createElement('div');
+    ivparent.appendChild(ivlinks);
 
-    ivflag = document.createElement('a');
-    ivparent.appendChild(ivflag);
+    ivfull = document.createElement('a');
+    ivlinks.appendChild(ivfull);
 
     ivprev = document.createElement('a');
     ivprev.onclick = show;
     ivprev.textContent = '« previous';
-    ivparent.appendChild(ivprev);
+    ivlinks.appendChild(ivprev);
 
     ivnext = document.createElement('a');
     ivnext.onclick = show;
     ivnext.textContent = 'next »';
-    ivparent.appendChild(ivnext);
+    ivlinks.appendChild(ivnext);
+
+    ivflag = document.createElement('a');
+    ivlinks.appendChild(ivflag);
 
     document.querySelector('body').appendChild(ivparent);
 }
