@@ -476,7 +476,8 @@ view model =
         showrel r = "[" ++ (RDate.format (RDate.expand r.released)) ++ " " ++ (String.join "," r.lang) ++ "] " ++ r.title ++ " (r" ++ String.fromInt r.id ++ ")"
         rellist = List.map (\r -> (Just r.id, showrel r)) model.releases
         scr n (id, i, rel) = tr [] <|
-          let imgdim = Maybe.map (\nfo -> (nfo.width, nfo.height)) i.img |> Maybe.withDefault (0,0)
+          let getdim img = Maybe.map (\nfo -> (nfo.width, nfo.height)) img |> Maybe.withDefault (0,0)
+              imgdim = getdim i.img
               relnfo = List.filter (\r -> Just r.id == rel) model.releases |> List.head
               reldim = relnfo |> Maybe.andThen (\r -> if r.reso_x == 0 then Nothing else Just (r.reso_x, r.reso_y))
               dimstr (x,y) = String.fromInt x ++ "x" ++ String.fromInt y
@@ -491,12 +492,17 @@ view model =
             , br [] []
             , text <| Maybe.withDefault "" <| Maybe.map (\dim -> "Release resolution: " ++ dimstr dim) reldim
             , span [] <|
-              if reldim == Nothing then [ br [] [] ]
-              else if reldim == Just imgdim then [ text " ✔", br [] [] ]
-              else [ text " ❌"
+              if reldim == Just imgdim then [ text " ✔", br [] [] ]
+              else if reldim /= Nothing
+              then [ text " ❌"
                    , br [] []
                    , b [ class "standout" ] [ text "WARNING: Resolutions do not match, please take screenshots with the correct resolution and make sure to crop them correctly!" ]
                    ]
+              else if i.img /= Nothing && rel /= Nothing && List.any (\(_,si,sr) -> sr == rel && si.img /= Nothing && imgdim /= getdim si.img) model.screenshots
+              then [ b [ class "standout" ] [ text "WARNING: Inconsistent image resolutions for the same release, please take screenshots with the correct resolution and make sure to crop them correctly!" ]
+                   , br [] []
+                   ]
+              else [ br [] [] ]
             , br [] []
             , inputSelect "" rel (ScrRel id) [style "width" "500px"] <| rellist ++
               case (relnfo, rel) of
