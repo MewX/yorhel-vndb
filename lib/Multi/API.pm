@@ -375,7 +375,7 @@ sub splitarray {
 sub image_flagging {
   my($image, $obj) = @_;
   my $flag = {
-    votecount    => delete $obj->{c_votecount},
+    votecount    => 1*delete $obj->{c_votecount},
     sexual_avg   => delete $obj->{c_sexual_avg},
     violence_avg => delete $obj->{c_violence_avg},
   };
