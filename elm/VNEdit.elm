@@ -547,7 +547,7 @@ view model =
         if model.id == Nothing
         then text <| "Screenshots can be uploaded to this visual novel once it has a release entry associated with it. "
                   ++ "To do so, first create this entry without screenshots, then create the appropriate release entries, and finally come back to this form by editing the visual novel."
-        else if List.isEmpty model.releases
+        else if List.isEmpty model.screenshots && List.isEmpty model.releases
         then p []
              [ text "This visual novel does not have any releases associated with it (yet). Please "
              , a [ href <| "/v" ++ Maybe.withDefault "" (Maybe.map String.fromInt model.id) ++ "/add" ] [ text "add the appropriate release entries" ]
