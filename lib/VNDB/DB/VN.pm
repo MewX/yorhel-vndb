@@ -341,6 +341,7 @@ sub dbScreenshotRandom {
           ) i(id)
           JOIN vn_screenshots vs ON vs.scr = i.id
           JOIN vn v ON v.id = vs.id
+         WHERE NOT v.hidden
          ORDER BY random()
          LIMIT 4
     }, $sample);
