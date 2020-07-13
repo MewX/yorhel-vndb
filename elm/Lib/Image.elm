@@ -152,7 +152,7 @@ viewVote model =
       , required True
       , onCheck <| (if sex then MySex else MyVio) val
       , checked <| (if sex then i.my_sexual else i.my_violence) == Just val
-      , name <| "imgvote-" ++ (if sex then "sex" else "vio") ++ "-" ++ Maybe.withDefault "" (Maybe.map (\e -> e.id) i.entry)
+      , name <| "imgvote-" ++ (if sex then "sex" else "vio") ++ "-" ++ Maybe.withDefault "" model.id
       ] []
     vote i = table []
       [ thead [] [ tr []

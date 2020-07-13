@@ -475,7 +475,7 @@ view model =
       let
         showrel r = "[" ++ (RDate.format (RDate.expand r.released)) ++ " " ++ (String.join "," r.lang) ++ "] " ++ r.title ++ " (r" ++ String.fromInt r.id ++ ")"
         rellist = List.map (\r -> (Just r.id, showrel r)) model.releases
-        scr n (id, i, rel) = tr [] <|
+        scr n (id, i, rel) = (String.fromInt id, tr [] <|
           let getdim img = Maybe.map (\nfo -> (nfo.width, nfo.height)) img |> Maybe.withDefault (0,0)
               imgdim = getdim i.img
               relnfo = List.filter (\r -> Just r.id == rel) model.releases |> List.head
@@ -510,7 +510,7 @@ view model =
                 (Nothing, Just r) -> [(Just r, "[Deleted or unlinked release: r" ++ String.fromInt r ++ "]")]
                 _ -> []
             ]
-          ]
+          ])
 
         add =
           let free = 10 - List.length model.screenshots
@@ -553,8 +553,11 @@ view model =
              , a [ href <| "/v" ++ Maybe.withDefault "" (Maybe.map String.fromInt model.id) ++ "/add" ] [ text "add the appropriate release entries" ]
              , text " first and then come back to this form to upload screenshots."
              ]
-        else table [ class "vnedit_scr" ]
-             <| tfoot [] [ tr [] [ td [] [], td [ colspan 2 ] add ] ] :: List.indexedMap scr model.screenshots
+        else
+          table [ class "vnedit_scr" ]
+          [ tfoot [] [ tr [] [ td [] [], td [ colspan 2 ] add ] ]
+          , K.node "tbody" [] <| List.indexedMap scr model.screenshots
+          ]
 
     newform () =
       form_ DupSubmit (model.state == Api.Loading)
