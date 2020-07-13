@@ -146,6 +146,14 @@ viewImg image =
 viewVote : Image -> Maybe (Html Msg)
 viewVote model =
   let
+    rad i sex val = input
+      [ type_ "radio"
+      , tabindex 10
+      , required True
+      , onCheck <| (if sex then MySex else MyVio) val
+      , checked <| (if sex then i.my_sexual else i.my_violence) == Just val
+      , name <| "imgvote-" ++ (if sex then "sex" else "vio") ++ "-" ++ Maybe.withDefault "" (Maybe.map (\e -> e.id) i.entry)
+      ] []
     vote i = table []
       [ thead [] [ tr []
         [ td [] [ text "Sexual ", if model.saveState == Api.Loading then span [ class "spinner" ] [] else text "" ]
@@ -157,14 +165,14 @@ viewVote model =
           _ -> []
       , tr []
         [ td [ style "white-space" "nowrap" ]
-          [ label [] [ inputRadio "" (i.my_sexual == Just 0) (MySex 0), text " Safe" ], br [] []
-          , label [] [ inputRadio "" (i.my_sexual == Just 1) (MySex 1), text " Suggestive" ], br [] []
-          , label [] [ inputRadio "" (i.my_sexual == Just 2) (MySex 2), text " Explicit" ]
+          [ label [] [ rad i True 0, text " Safe" ], br [] []
+          , label [] [ rad i True 1, text " Suggestive" ], br [] []
+          , label [] [ rad i True 2, text " Explicit" ]
           ]
         , td [ style "white-space" "nowrap" ]
-          [ label [] [ inputRadio "" (i.my_violence == Just 0) (MyVio 0), text " Tame" ], br [] []
-          , label [] [ inputRadio "" (i.my_violence == Just 1) (MyVio 1), text " Violent" ], br [] []
-          , label [] [ inputRadio "" (i.my_violence == Just 2) (MyVio 2), text " Brutal" ]
+          [ label [] [ rad i False 0, text " Tame" ], br [] []
+          , label [] [ rad i False 1, text " Violent" ], br [] []
+          , label [] [ rad i False 2, text " Brutal" ]
           ]
         ]
       ]
