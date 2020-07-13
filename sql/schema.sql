@@ -857,7 +857,7 @@ CREATE TABLE vn ( -- dbentry_type=v
   original   varchar(250) NOT NULL DEFAULT '', -- [pub]
   alias      varchar(500) NOT NULL DEFAULT '', -- [pub]
   length     smallint NOT NULL DEFAULT 0, -- [pub]
-  img_nsfw   boolean NOT NULL DEFAULT FALSE, -- [pub] (deprecated)
+  img_nsfw   boolean NOT NULL DEFAULT FALSE, -- (deprecated)
   image      vndbid CONSTRAINT vn_image_check CHECK(vndbid_type(image) = 'cv'), -- [pub]
   "desc"     text NOT NULL DEFAULT '', -- [pub]
   l_wp       varchar(150) NOT NULL DEFAULT '', -- [pub] (deprecated)
@@ -929,7 +929,7 @@ CREATE TABLE vn_screenshots (
   id         integer NOT NULL, -- [pub]
   scr        vndbid NOT NULL CONSTRAINT vn_screenshots_scr_check CHECK(vndbid_type(scr) = 'sf'), -- [pub] images.id
   rid        integer,          -- [pub] releases.id (only NULL for old revisions, nowadays not allowed anymore)
-  nsfw       boolean NOT NULL DEFAULT FALSE, -- [pub] (deprecated)
+  nsfw       boolean NOT NULL DEFAULT FALSE, -- (deprecated)
   PRIMARY KEY(id, scr)
 );
 
