@@ -375,10 +375,11 @@ sub splitarray {
 sub image_flagging {
   my($image, $obj) = @_;
   my $flag = {
-    votecount    => 1*delete $obj->{c_votecount},
+    votecount    => delete $obj->{c_votecount},
     sexual_avg   => delete $obj->{c_sexual_avg},
     violence_avg => delete $obj->{c_violence_avg},
   };
+  $flag->{votecount}    *= 1 if defined $flag->{votecount};
   $flag->{sexual_avg}   *= 1 if defined $flag->{sexual_avg};
   $flag->{violence_avg} *= 1 if defined $flag->{violence_avg};
   $image ? $flag : undef;
