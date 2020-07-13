@@ -2,7 +2,7 @@ package VNWeb::VN::Page;
 
 use VNWeb::Prelude;
 use VNWeb::Releases::Lib;
-use VNWeb::Images::Lib qw/image_ enrich_image_obj/;
+use VNWeb::Images::Lib qw/image_flagging_display image_ enrich_image_obj/;
 use VNDB::Func 'fmtrating';
 use POSIX 'strftime';
 
@@ -87,7 +87,10 @@ sub rev_ {
             txt_ 'no release' if !$_->{rid};
             txt_ '] ';
             a_ href => tuwf->imgurl($_->{scr}{id}), 'data-iv' => "$_->{scr}{width}x$_->{scr}{height}::$_->{scr}{sexual}$_->{scr}{violence}$_->{scr}{votecount}", $_->{scr}{id};
-            txt_ ' (Not safe)' if $_->{nsfw};
+            txt_ ' [';
+            a_ href => "/img/$_->{scr}{id}", image_flagging_display $_->{scr};
+            txt_ '] ';
+            b_ class => 'grayedout', sprintf 'old flag: %s', $_->{nsfw} ? 'NSFW' : 'Safe';
         }],
         [ image       => 'Image',         fmt => sub { image_ $_ } ],
         [ img_nsfw    => 'Image NSFW (unused)', fmt => sub { txt_ $_ ? 'Not safe' : 'Safe' } ],
