@@ -77,6 +77,7 @@ sub filters_ {
             input_ type => 'submit', class => 'submit', tabindex => 10, value => 'Update filters';
             input_ type => 'button', class => 'submit', tabindex => 10, id => 'managelabels', value => 'Manage labels' if $own;
             input_ type => 'button', class => 'submit', tabindex => 10, id => 'savedefault', value => 'Save as default' if $own;
+            input_ type => 'button', class => 'submit', tabindex => 10, id => 'exportlist', value => 'Export' if $own;
         };
     };
 }
@@ -324,6 +325,15 @@ TUWF::get qr{/$RE{uid}/ulist}, sub {
                 filters_ $own, $filtlabels, $opt, $opt_labels, \&url;
                 elm_ 'UList.ManageLabels' if $own;
                 elm_ 'UList.SaveDefault', $VNWeb::ULists::Elm::SAVED_OPTS_OUT, { uid => $u->{id}, opts => $opt } if $own;
+                div_ class => 'hidden exportlist', sub {
+                    b_ 'Export your list';
+                    br_;
+                    txt_ 'This function will export all visual novels and releases in your list, even those marked as private ';
+                    txt_ '(there is currently no import function, more export options may be added later).';
+                    br_;
+                    br_;
+                    a_ href => "/u$u->{id}/list-export/xml", "Download XML export.";
+                };
             }
         };
         listing_ $u->{id}, $own, $opt, $labels, \&url if !$empty;
