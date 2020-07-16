@@ -333,7 +333,7 @@ TUWF::get qr{/$RE{uid}/ulist}, sub {
                     br_;
                     br_;
                     a_ href => "/u$u->{id}/list-export/xml", "Download XML export.";
-                };
+                } if $own;
             }
         };
         listing_ $u->{id}, $own, $opt, $labels, \&url if !$empty;
