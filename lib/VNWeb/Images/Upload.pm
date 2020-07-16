@@ -41,6 +41,7 @@ TUWF::post qr{/elm/ImageUpload.json}, sub {
     $im->Set(quality => 90);
 
     my($ow, $oh) = ($im->Get('width'), $im->Get('height'));
+    return elm_ImgFormat if !$ow || !$oh;
     my($nw, $nh) =
         $type eq 'ch' ? imgsize $ow, $oh, tuwf->{ch_size}->@* :
         $type eq 'cv' ? imgsize $ow, $oh, tuwf->{cv_size}->@* : ($ow, $oh);
