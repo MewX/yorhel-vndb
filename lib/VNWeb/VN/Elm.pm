@@ -25,7 +25,7 @@ elm_api VN => undef, {
             ') x(prio, id)
            JOIN vn v ON v.id = x.id
           WHERE', sql_and($data->{hidden} ? () : 'NOT v.hidden'), '
-          GROUP BY v.id, v.title, v.original
+          GROUP BY v.id, v.title, v.original, v.hidden
           ORDER BY MIN(x.prio), v.title
     ');
 };

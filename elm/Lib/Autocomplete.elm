@@ -140,7 +140,7 @@ vnSource =
 
 producerSource : SourceConfig m GApi.ApiProducerResult
 producerSource =
-  { source  = Endpoint (\s -> GP.send { search = s })
+  { source  = Endpoint (\s -> GP.send { search = [s], hidden = False })
     <| \x -> case x of
       GApi.ProducerResult e -> Just e
       _ -> Nothing

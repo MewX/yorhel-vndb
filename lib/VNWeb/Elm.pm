@@ -94,6 +94,7 @@ our %apis = (
         id       => { id => 1 },
         name     => {},
         original => { required => 0, default => '' },
+        hidden   => { anybool => 1 },
     } } ],
     StaffResult    => [ { aoh => { # Response to 'Staff'
         id       => { id => 1 },
@@ -413,6 +414,8 @@ sub write_types {
     $data .= def vnLengths  => 'List (Int, String)' => list map tuple($_, string $VN_LENGTH{$_}{txt}.($VN_LENGTH{$_}{time}?" ($VN_LENGTH{$_}{time})":'')), keys %VN_LENGTH;
     $data .= def vnRelations=> 'List (String, String)' => list map tuple(string $_, string $VN_RELATION{$_}{txt}), keys %VN_RELATION;
     $data .= def creditTypes=> 'List (String, String)' => list map tuple(string $_, string $CREDIT_TYPE{$_}), keys %CREDIT_TYPE;
+    $data .= def producerRelations=> 'List (String, String)' => list map tuple(string $_, string $PRODUCER_RELATION{$_}{txt}), keys %PRODUCER_RELATION;
+    $data .= def producerTypes=> 'List (String, String)' => list map tuple(string $_, string $PRODUCER_TYPE{$_}), keys %PRODUCER_TYPE;
     $data .= def curYear    => Int => (gmtime)[5]+1900;
 
     write_module Types => $data;

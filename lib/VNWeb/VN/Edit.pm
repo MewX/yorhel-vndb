@@ -71,7 +71,6 @@ TUWF::get qr{/$RE{vrev}/edit} => sub {
     my $e = db_entry v => tuwf->capture('id'), tuwf->capture('rev') or return tuwf->resNotFound;
     return tuwf->resDenied if !can_edit v => $e;
 
-    $e->{image_sex} = $e->{image_vio} = undef;
     $e->{authmod} = auth->permDbmod;
     $e->{editsum} = $e->{chrev} == $e->{maxrev} ? '' : "Reverted to revision v$e->{id}.$e->{chrev}";
 

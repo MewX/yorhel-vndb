@@ -9,8 +9,8 @@ use VNDB::Types;
 
 
 TUWF::register(
-  qr{p/add}                        => \&addform,
-  qr{p(?:([1-9]\d*)(?:\.([1-9]\d*))?/edit|/new)}
+  qr{old/p/add}                        => \&addform,
+  qr{old/p(?:([1-9]\d*)(?:\.([1-9]\d*))?/edit|/new)}
     => \&edit,
   qr{p/([a-z0]|all)}               => \&list,
   qr{xml/producers\.xml}           => \&pxml,
@@ -68,7 +68,7 @@ sub addform {
     end 'div';
   }
 
-  $self->htmlForm({ frm => $frm, action => '/p/add', continue => @$l ? 2 : 1 },
+  $self->htmlForm({ frm => $frm, action => '/old/p/add', continue => @$l ? 2 : 1 },
   vn_add => [ 'Add a new producer',
     [ input  => name => 'Name (romaji)', short => 'name' ],
     [ input  => name => 'Original name', short => 'original' ],
@@ -151,7 +151,7 @@ sub edit {
   $self->htmlHeader(title => $title, noindex => 1);
   $self->htmlMainTabs('p', $p, 'edit') if $pid;
   $self->htmlEditMessage('p', $p, $title);
-  $self->htmlForm({ frm => $frm, action => $pid ? "/p$pid/edit" : '/p/new', editsum => 1 },
+  $self->htmlForm({ frm => $frm, action => $pid ? "/old/p$pid/edit" : '/old/p/new', editsum => 1 },
   'pedit_geninfo' => [ 'General info',
     [ select => name => 'Type', short => 'type',
       options => [ map [ $_, $PRODUCER_TYPE{$_} ], keys %PRODUCER_TYPE ] ],
