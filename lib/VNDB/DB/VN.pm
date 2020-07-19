@@ -9,13 +9,13 @@ use POSIX 'strftime';
 use Exporter 'import';
 use VNDB::Func 'normalize_query', 'gtintype';
 
-our @EXPORT = qw|dbVNGet dbVNGetRev dbVNRevisionInsert dbScreenshotGet dbScreenshotRandom|;
+our @EXPORT = qw|dbVNGet dbVNGetRev dbScreenshotRandom|;
 
 
 # Options: id, char, search, gtin, length, lang, olang, plat, tag_inc, tag_exc, tagspoil,
 #   hasani, hasshot, ul_notblack, ul_onwish, results, page, what, sort,
 #   reverse, inc_hidden, date_before, date_after, released, release, character
-# What: extended anime staff seiyuu relations screenshots rating ranking vnlist
+# What: extended anime staff seiyuu relations rating ranking vnlist
 #  Note: vnlist is ignored (no db search) unless a user is logged in
 # Sort: id rel pop rating title tagscore rand
 sub dbVNGet {
@@ -111,7 +111,7 @@ sub dbVNGet {
   my @select = ( # see https://rt.cpan.org/Ticket/Display.html?id=54224 for the cast on c_languages and c_platforms
     qw|v.id v.locked v.hidden v.c_released v.c_languages::text[] v.c_olang::text[] v.c_platforms::text[] v.title v.original|,
     $o{what} =~ /extended/ ? (
-      qw|v.alias v.img_nsfw v.length v.desc v.l_wp v.l_encubed v.l_renai v.l_wikidata|, 'coalesce(vndbid_num(v.image),0) as image' ) : (),
+      qw|v.alias v.length v.desc v.l_wp v.l_encubed v.l_renai v.l_wikidata|, 'coalesce(vndbid_num(v.image),0) as image' ) : (),
     $o{what} =~ /rating/ ? (qw|v.c_popularity v.c_rating v.c_votecount|) : (),
     $o{what} =~ /ranking/ ? (
       '(SELECT COUNT(*)+1 FROM vn iv WHERE iv.hidden = false AND iv.c_popularity > COALESCE(v.c_popularity, 0.0)) AS p_ranking',
@@ -159,7 +159,7 @@ sub dbVNGetRev {
   my $select = 'c.itemid AS id, vo.c_released, vo.c_languages::text[], vo.c_olang::text[], vo.c_platforms::text[], v.title, v.original';
   $select .= ', extract(\'epoch\' from c.added) as added, c.comments, c.rev, c.ihid, c.ilock, '.VNWeb::DB::sql_user();
   $select .= ', c.id AS cid, NOT EXISTS(SELECT 1 FROM changes c2 WHERE c2.type = c.type AND c2.itemid = c.itemid AND c2.rev = c.rev+1) AS lastrev';
-  $select .= ', v.alias, coalesce(vndbid_num(v.image), 0) as image, v.img_nsfw, v.length, v.desc, v.l_wp, v.l_encubed, v.l_renai, v.l_wikidata, vo.hidden, vo.locked' if $o{what} =~ /extended/;
+  $select .= ', v.alias, coalesce(vndbid_num(v.image), 0) as image, v.length, v.desc, v.l_wp, v.l_encubed, v.l_renai, v.l_wikidata, vo.hidden, vo.locked' if $o{what} =~ /extended/;
   $select .= ', vo.c_popularity, vo.c_rating, vo.c_votecount' if $o{what} =~ /rating/;
   $select .= ', (SELECT COUNT(*)+1 FROM vn iv WHERE iv.hidden = false AND iv.c_popularity > COALESCE(vo.c_popularity, 0.0)) AS p_ranking'
             .', (SELECT COUNT(*)+1 FROM vn iv WHERE iv.hidden = false AND iv.c_rating > COALESCE(vo.c_rating, 0.0)) AS r_ranking' if $o{what} =~ /ranking/;
@@ -181,14 +181,13 @@ sub dbVNGetRev {
 sub _enrich {
   my($self, $r, $np, $rev, $what) = @_;
 
-  if(@$r && $what =~ /anime|relations|screenshots|staff|seiyuu/) {
+  if(@$r && $what =~ /anime|relations|staff|seiyuu/) {
     my($col, $hist, $colname) = $rev ? ('cid', '_hist', 'chid') : ('id', '', 'id');
     my %r = map {
       $r->[$_]{anime} = [];
       $r->[$_]{credits} = [];
       $r->[$_]{seiyuu} = [];
       $r->[$_]{relations} = [];
-      $r->[$_]{screenshots} = [];
       ($r->[$_]{$col}, $_)
     } 0..$#$r;
 
@@ -241,17 +240,6 @@ sub _enrich {
         [ keys %r ]
       )});
     }
-
-    if($what =~ /screenshots/) {
-      push(@{$r->[$r{ delete $_->{xid} }]{screenshots}}, $_) for (@{$self->dbAll("
-        SELECT vs.$colname AS xid, vndbid_num(s.id) as id, vs.nsfw, vs.rid, s.width, s.height
-          FROM vn_screenshots$hist vs
-          JOIN images s ON vs.scr = s.id
-          WHERE vs.$colname IN(!l)
-          ORDER BY vs.scr",
-        [ keys %r ]
-      )});
-    }
   }
 
   VNWeb::DB::enrich_flatten(vnlist_labels => id => vid => sub { VNWeb::DB::sql('
@@ -265,61 +253,6 @@ sub _enrich {
   return wantarray ? ($r, $np) : $r;
 }
 
-
-# Updates the edit_* tables, used from dbItemEdit()
-# Arguments: { columns in producers_rev + anime + relations + screenshots }
-#  screenshots = [ [ scrid, nsfw, rid ], .. ]
-#  relations   = [ [ rel, vid ], .. ]
-#  anime       = [ aid, .. ]
-sub dbVNRevisionInsert {
-  my($self, $o) = @_;
-
-  $o->{img_nsfw} = $o->{img_nsfw}?1:0 if exists $o->{img_nsfw};
-  my %set = map exists($o->{$_}) ? (qq|"$_" = ?| => $o->{$_}) : (),
-    qw|title original desc alias img_nsfw length l_wp l_encubed l_renai l_wikidata|;
-  $set{'image = vndbid(\'cv\',?)'} = $o->{image}||undef if exists $o->{image};
-  $self->dbExec('UPDATE edit_vn !H', \%set) if keys %set;
-
-  if($o->{screenshots}) {
-    $self->dbExec('DELETE FROM edit_vn_screenshots');
-    my $q = join ',', map '(vndbid(\'sf\', ?), ?, ?)', @{$o->{screenshots}};
-    my @val = map +($_->{id}, $_->{nsfw}?1:0, $_->{rid}), @{$o->{screenshots}};
-    $self->dbExec("INSERT INTO edit_vn_screenshots (scr, nsfw, rid) VALUES $q", @val) if @val;
-  }
-
-  if($o->{relations}) {
-    $self->dbExec('DELETE FROM edit_vn_relations');
-    my $q = join ',', map '(?, ?, ?)', @{$o->{relations}};
-    my @val = map +($_->[1], $_->[0], $_->[2]?1:0), @{$o->{relations}};
-    $self->dbExec("INSERT INTO edit_vn_relations (vid, relation, official) VALUES $q", @val) if @val;
-  }
-
-  if($o->{anime}) {
-    $self->dbExec('DELETE FROM edit_vn_anime');
-    my $q = join ',', map '(?)', @{$o->{anime}};
-    $self->dbExec("INSERT INTO edit_vn_anime (aid) VALUES $q", @{$o->{anime}}) if @{$o->{anime}};
-  }
-
-  if($o->{credits}) {
-    $self->dbExec('DELETE FROM edit_vn_staff');
-    my $q = join ',', ('(?, ?, ?)') x @{$o->{credits}};
-    my @val = map +($_->{aid}, $_->{role}, $_->{note}), @{$o->{credits}};
-    $self->dbExec("INSERT INTO edit_vn_staff (aid, role, note) VALUES $q", @val) if @val;
-  }
-
-  if($o->{seiyuu}) {
-    $self->dbExec('DELETE FROM edit_vn_seiyuu');
-    my $q = join ',', ('(?, ?, ?)') x @{$o->{seiyuu}};
-    my @val = map +($_->{aid}, $_->{cid}, $_->{note}), @{$o->{seiyuu}};
-    $self->dbExec("INSERT INTO edit_vn_seiyuu (aid, cid, note) VALUES $q", @val) if @val;
-  }
-}
-
-
-# arrayref of screenshot IDs as argument
-sub dbScreenshotGet {
-  return shift->dbAll(q|SELECT vndbid_num(id) AS id, width, height FROM images WHERE id IN(SELECT vndbid('sf', n::integer) FROM unnest(ARRAY[!l]) x(n))|, shift);
-}
 
 
 # Fetch random VN + screenshots

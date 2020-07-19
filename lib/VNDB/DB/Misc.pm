@@ -6,7 +6,7 @@ use warnings;
 use Exporter 'import';
 
 our @EXPORT = qw|
-  dbItemEdit dbRevisionGet dbWikidata dbImageAdd
+  dbItemEdit dbRevisionGet
 |;
 
 
@@ -26,7 +26,7 @@ sub dbItemEdit {
     exists($o{ilock}) ? ('ilock = ?' => $o{ilock}?1:0) : (),
   });
 
-  $self->dbVNRevisionInsert(      \%o) if $type eq 'v';
+  die if $type ne 'p';
   $self->dbProducerRevisionInsert(\%o) if $type eq 'p';
 
   return $self->dbRow('SELECT * FROM edit_!s_commit()', $type);
@@ -95,21 +95,6 @@ sub dbRevisionGet {
 
   return wantarray ? ($r, $np) : $r;
 }
-
-
-# Returns a row from wikidata
-sub dbWikidata {
-  return $_[0]->dbRow('SELECT * FROM wikidata WHERE id = ?', $_[1]);
-}
-
-
-# insert a new image and return its ID
-sub dbImageAdd {
-  my($s, $type, $width, $height) = @_;
-  my $seq = {qw/sf screenshots_seq cv covers_seq ch charimg_seq/}->{$type}||die;
-  return $s->dbRow(q|INSERT INTO images (id, width, height) VALUES (vndbid(?, nextval(?)::int), ?, ?) RETURNING vndbid_num(id) as id|, $type, $seq, $width, $height)->{id};
-}
-
 
 1;
 

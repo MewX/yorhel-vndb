@@ -28,7 +28,6 @@ VARS.resolutions = [
 //include lib.js
 
 // Reusable widgets
-//include iv.js
 //include dropdown.js
 //include dateselector.js
 //include dropdownsearch.js
@@ -37,12 +36,6 @@ VARS.resolutions = [
 // Page/functionality-specific widgets
 //include filter.js
 //include misc.js
-
-// VN editing (/v+/edit)
-//include vnrel.js
-//include vnscr.js
-//include vnstaff.js
-//include vncast.js
 
 // Producer editing (/p+/edit)
 //include prodrel.js
