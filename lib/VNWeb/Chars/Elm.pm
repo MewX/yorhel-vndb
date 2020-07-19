@@ -11,8 +11,8 @@ elm_api Chars => undef, { search => {} }, sub {
            FROM (SELECT MIN(prio), id FROM (',
 			sql_join('UNION ALL',
                 $q =~ /^$RE{cid}$/ ? sql('SELECT 1, id FROM chars WHERE id =', \"$+{id}") : (),
-                sql('SELECT  1+substr_score(lower(name),'    , \$qs, '), id FROM chars WHERE name     ILIKE', \"%$qs%"),
-                sql('SELECT 10+substr_score(lower(original),', \$qs, '), id FROM chars WHERE original ILIKE', \"%$qs%"),
+                sql('SELECT  1+substr_score(lower(name),'    , \$qs, '), id FROM chars WHERE name ILIKE', \"%$qs%"),
+                sql('SELECT 10+substr_score(lower(original),', \$qs, "), id FROM chars WHERE translate(original,' ','') ILIKE", \("%$qs%" =~ s/ //gr)),
                 sql('SELECT 100, id FROM chars WHERE alias ILIKE', \"%$qs%"),
             ), ') x(prio,id) GROUP BY id) x(prio, id)
            JOIN chars c ON c.id = x.id

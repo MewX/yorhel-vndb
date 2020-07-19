@@ -12,7 +12,7 @@ elm_api Staff => undef, { search => {} }, sub {
 			sql_join('UNION ALL',
                 $q =~ /^$RE{sid}$/ ? sql('SELECT 0, aid FROM staff_alias WHERE id =', \"$+{id}") : (),
                 sql('SELECT 1+substr_score(lower(name),', \$qs, ')+substr_score(lower(original),', \$qs, '), aid
-                       FROM staff_alias WHERE name ILIKE', \"%$qs%", 'OR original ILIKE', \"%$qs%"),
+                       FROM staff_alias WHERE name ILIKE', \"%$qs%", "OR translate(original,' ','') ILIKE", \("%$qs%" =~ s/ //gr)),
             ), ') x(prio, aid)
            JOIN staff_alias sa ON sa.aid = x.aid
            JOIN staff s ON s.id = sa.id
