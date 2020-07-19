@@ -125,7 +125,7 @@ TUWF::get qr{/img/$RE{imgid}}, sub {
     my $id = tuwf->capture('id');
 
     my $l = [{ id => $id }];
-    enrich_image defined($l->[0]{my_sexual}) || auth->permImgmod(), $l;
+    enrich_image auth->permImgmod() || sub { defined $_[0]{my_sexual} }, $l;
     return tuwf->resNotFound if !defined $l->[0]{width};
 
     framework_ title => "Image flagging for $id", sub {

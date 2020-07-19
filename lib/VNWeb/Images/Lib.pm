@@ -46,7 +46,6 @@ sub enrich_image {
     }, $l;
 
     for(@$l) {
-        $_->{token} = $canvote || ($_->{votecount} == 0 && auth->permImgvote) ? auth->csrftoken(0, "imgvote-$_->{id}") : undef;
         $_->{entry} = $_->{entry_id} ? { id => $_->{entry_id}, title => $_->{entry_title} } : undef;
         delete $_->{entry_id};
         delete $_->{entry_title};
@@ -54,6 +53,7 @@ sub enrich_image {
             $v->{user} = xml_string sub { user_ $v }; # Easier than duplicating user_() in Elm
             delete $v->{$_} for grep /^user_/, keys %$v;
         }
+        $_->{token} = ($_->{votecount} == 0 && auth->permImgvote) || (ref $canvote eq 'CODE' ? $canvote->($_) : $canvote) ? auth->csrftoken(0, "imgvote-$_->{id}") : undef;
     }
 }
 
