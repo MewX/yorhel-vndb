@@ -5,11 +5,11 @@ use VNWeb::Prelude;
 
 my $FORM = {
     id         => { required => 0, id => 1 },
-    ptype      => { enum => \%PRODUCER_TYPE },
+    ptype      => { default => 'co', enum => \%PRODUCER_TYPE },
     name       => { maxlength => 200 },
     original   => { required => 0, default => '', maxlength => 200 },
     alias      => { required => 0, default => '', maxlength => 500 },
-    lang       => { enum => \%LANGUAGE },
+    lang       => { default => 'ja', enum => \%LANGUAGE },
     website    => { required => 0, default => '', weburl => 1 },
     l_wikidata => { required => 0, uint => 1, max => (1<<31)-1 },
     desc       => { required => 0, default => '', maxlength => 5000 },
@@ -55,7 +55,7 @@ TUWF::get qr{/p/add}, sub {
     framework_ title => 'Add producer',
     sub {
         editmsg_ p => undef, 'Add producer';
-        elm_ ProducerEdit => $FORM_OUT, { elm_empty($FORM_OUT)->%*, lang => 'ja' };
+        elm_ ProducerEdit => $FORM_OUT, elm_empty $FORM_OUT;
     };
 };
 
