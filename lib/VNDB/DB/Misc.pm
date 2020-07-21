@@ -6,31 +6,8 @@ use warnings;
 use Exporter 'import';
 
 our @EXPORT = qw|
-  dbItemEdit dbRevisionGet
+  dbRevisionGet
 |;
-
-
-# Inserts a new revision into the database
-# Arguments: type [vrpcsd], itemid, rev, %options->{ editsum uid ihid ilock + db[item]RevisionInsert }
-#  rev = changes.rev of the revision this edit is based on, undef to create a new DB item
-# Returns: { itemid, chid, rev }
-sub dbItemEdit {
-  my($self, $type, $itemid, $rev, %o) = @_;
-
-  $self->dbExec('SELECT edit_!s_init(?, ?)', $type, $itemid, $rev);
-  $self->dbExec('UPDATE edit_revision !H', {
-    'requester = ?' => $o{uid}||$self->authInfo->{id},
-    'ip = ?'        => $self->reqIP,
-    'comments = ?'  => $o{editsum},
-    exists($o{ihid})  ? ('ihid = ?'  => $o{ihid} ?1:0) : (),
-    exists($o{ilock}) ? ('ilock = ?' => $o{ilock}?1:0) : (),
-  });
-
-  die if $type ne 'p';
-  $self->dbProducerRevisionInsert(\%o) if $type eq 'p';
-
-  return $self->dbRow('SELECT * FROM edit_!s_commit()', $type);
-}
 
 
 # Options: type, itemid, uid, auto, hidden, edit, page, results, releases

@@ -11,7 +11,6 @@ use VNDB::Types;
 TUWF::register(
   qr{r}                            => \&browse,
   qr{r/engines}                    => \&engines,
-  qr{xml/releases.xml}             => \&relxml,
   qr{xml/engines.xml}              => \&enginexml,
 );
 
@@ -160,30 +159,6 @@ sub engines {
     }
    end;
 
-  end;
-}
-
-
-sub relxml {
-  my $self = shift;
-
-  my $f = $self->formValidate(
-    { get => 'v', required => 1, multi => 1, mincount => 1, template => 'id' }
-  );
-  return $self->resNotFound if $f->{_err};
-
-  my $vns = $self->dbVNGet(id => $f->{v}, order => 'title', results => 100);
-  my $rel = $self->dbReleaseGet(vid => $f->{v}, results => 100, what => 'vn');
-
-  $self->resHeader('Content-type' => 'text/xml; charset=UTF-8');
-  xml;
-  tag 'vns';
-   for my $v (@$vns) {
-     tag 'vn', id => $v->{id}, title => $v->{title};
-      tag 'release', id => $_->{id}, lang => join(',', @{$_->{languages}}), $_->{title}
-        for (grep (grep $_->{vid} == $v->{id}, @{$_->{vn}}), @$rel);
-     end;
-   }
   end;
 }
 

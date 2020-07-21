@@ -31,13 +31,9 @@ VARS.resolutions = [
 //include dropdown.js
 //include dateselector.js
 //include dropdownsearch.js
-//include tabs.js
 
 // Page/functionality-specific widgets
 //include filter.js
 //include misc.js
-
-// Producer editing (/p+/edit)
-//include prodrel.js
 
 // @license-end

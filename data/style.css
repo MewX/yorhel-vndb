@@ -589,17 +589,6 @@ div.producerbrowse    { padding-bottom: 10px }
 .producerbrowse ul li abbr { margin-right: 5px; margin-top: 1px; }
 
 
-/***** Producer edit *****/
-
-#jt_box_pedit_rel table  { margin-bottom: 10px; }
-#jt_box_pedit_rel h2     { margin: 0 0 3px 0px; }
-#jt_box_pedit_rel td     { padding: 1px 2px; vertical-align: middle; }
-#jt_box_pedit_rel td.tc_prod { width: 290px; padding-left: 10px }
-#jt_box_pedit_rel td.tc_add  { width: 40px; text-align: left }
-#jt_box_pedit_rel td.tc_prod input { width: 280px; }
-#jt_box_pedit_rel td.tc_rel select { width: 130px; }
-
-
 
 
 /***** Release page *****/
@@ -711,34 +700,14 @@ div.charsum_list .charsum_bubble {
 
 /***** Staff edit *****/
 
-#jt_box_vn_cast  #cast_import { clear: right; float: right; }
-#jt_box_vn_cast  table,
-#jt_box_vn_staff table { margin-bottom: 10px; margin-left: 20px }
-#jt_box_vn_cast  h2,
-#jt_box_vn_staff h2 { margin: 0 0 3px 0px; }
-#jt_box_vn_cast  td,
-#jt_box_vn_staff td { padding: 1px 2px; vertical-align: middle; }
-#jt_box_vn_cast  td.tc_role,
-#jt_box_vn_cast  td.tc_role select,
-#jt_box_vn_staff td.tc_role,
-#jt_box_vn_staff td.tc_role select { width: 120px }
-#jt_box_vn_cast  td.tc_staff,
-#jt_box_vn_staff td.tc_staff,
-.staffedit       td.tc_name,
-.staffedit       td.tc_original { width: 200px }
-#jt_box_vn_cast  td.tc_staff input,
-#jt_box_vn_staff td.tc_staff input,
-.staffedit       td.tc_name input,
-.staffedit       td.tc_original input { width: 200px }
-#jt_box_vn_cast  td.tc_note,
-#jt_box_vn_cast  td.tc_note input,
-#jt_box_vn_staff td.tc_note,
-#jt_box_vn_staff td.tc_note input { width: 250px }
-#jt_box_vn_cast  td.tc_add,
-#jt_box_vn_staff td.tc_add,
-.staffedit       td.tc_add { width: 40px; text-align: left; white-space: nowrap }
+.staffedit td.tc_name,
+.staffedit td.tc_original { width: 200px }
+.staffedit td.tc_name input,
+.staffedit td.tc_original input { width: 200px }
+.staffedit td.tc_add { width: 40px; text-align: left; white-space: nowrap }
 .staffedit table.names td { padding: 1px 2px; vertical-align: middle; }
 .staffedit table.names tr.alias_new td { padding-top: 8px }
+
 
 /***** Documentation pages *****/
 

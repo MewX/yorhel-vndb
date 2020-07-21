@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Exporter 'import';
 
-our @EXPORT = qw|dbProducerGet dbProducerGetRev dbProducerRevisionInsert|;
+our @EXPORT = qw|dbProducerGet dbProducerGetRev|;
 
 
 # options: results, page, id, search, char, sort, inc_hidden
@@ -103,25 +103,6 @@ sub _enrich {
 
   return wantarray ? ($r, $np) : $r;
 }
-
-
-# Updates the edit_* tables, used from dbItemEdit()
-# Arguments: { columns in producers_rev + relations },
-sub dbProducerRevisionInsert {
-  my($self, $o) = @_;
-
-  my %set = map exists($o->{$_}) ? (qq|"$_" = ?|, $o->{$_}) : (),
-    qw|name original website l_wp l_wikidata type lang desc alias|;
-  $self->dbExec('UPDATE edit_producers !H', \%set) if keys %set;
-
-  if($o->{relations}) {
-    $self->dbExec('DELETE FROM edit_producers_relations');
-    my $q = join ',', map '(?,?)', @{$o->{relations}};
-    my @q = map +($_->[1], $_->[0]), @{$o->{relations}};
-    $self->dbExec("INSERT INTO edit_producers_relations (pid, relation) VALUES $q", @q) if @q;
-  }
-}
-
 
 1;
 

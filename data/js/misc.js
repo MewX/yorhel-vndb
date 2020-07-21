@@ -1,22 +1,3 @@
-// expand/collapse release listing (/p+)
-(function(){
-  var lnk = byId('expandprodrel');
-  if(!lnk)
-    return;
-  function setexpand() {
-    var exp = !(getCookie('prodrelexpand') == 1);
-    setText(lnk, exp ? 'collapse' : 'expand');
-    setClass(byId('prodrel'), 'collapse', !exp);
-  };
-  lnk.onclick = function () {
-    setCookie('prodrelexpand', getCookie('prodrelexpand') == 1 ? 0 : 1);
-    setexpand();
-    return false;
-  };
-  setexpand();
-})();
-
-
 // search tabs
 (function(){
   function click() {
