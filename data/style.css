@@ -211,7 +211,7 @@ span.spinner { width: 1em; height: 1em }
 @keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
 
 .textpreview > span { display: flex; justify-content: space-between; width: 100% }
-.textpreview > span > p { align-self: flex-end }
+.textpreview > span > p { align-self: flex-end; text-align: left }
 .textpreview > span > p.right > * { margin-left: 10px; font-style: normal }
 .textpreview textarea { width: 100%; box-sizing: border-box }
 .textpreview .preview { width: 100%; box-sizing: border-box; border: 1px solid $secborder$; margin: 1px; padding: 5px; text-align: left }
