@@ -308,7 +308,7 @@ sub infobox_useroptions_ {
                 uid      => 1*auth->uid,
                 vid      => 1*$v->{id},
                 onlist   => $lst->{vid}?\1:\0,
-                canvote  => $minreleased && $minreleased < strftime('%Y%m%d', gmtime) ? \1 : \0,
+                canvote  => $minreleased && $minreleased <= strftime('%Y%m%d', gmtime) ? \1 : \0,
                 vote     => fmtvote($lst->{vote}).'',
                 notes    => $lst->{notes}||'',
                 labels   => [ map +{ id => 1*$_->{id}, label => $_->{label}, private => $_->{private}?\1:\0 }, @$labels ],
