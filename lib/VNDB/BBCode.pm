@@ -8,6 +8,10 @@ use TUWF::XML 'xml_escape';
 our @EXPORT = qw/bb2html bb2text bb_subst_links/;
 
 # Supported BBCode:
+#  [b] .. [/b]
+#  [i] .. [/i]
+#  [u] .. [/u]
+#  [s] .. [/s]
 #  [spoiler] .. [/spoiler]
 #  [quote] .. [/quote]
 #  [code] .. [/code]
@@ -17,7 +21,8 @@ our @EXPORT = qw/bb2html bb2text bb_subst_links/;
 #  dblink: v+, v+.+, d+#+, d+#+.+
 #
 # Permitted nesting of formatting codes:
-#  spoiler -> url, raw, link, dblink
+#  inline = b,i,u,s,spoiler
+#  inline  -> inline, url, raw, link, dblink
 #  quote   -> anything
 #  code    -> nothing
 #  url     -> raw
@@ -29,10 +34,18 @@ our @EXPORT = qw/bb2html bb2text bb_subst_links/;
 # Returns: ($token, @arg) on successful parse, () otherwise.
 
 # Trivial open and close actions
+sub _b_start       { if(lc$_[1] eq '[b]')        { push @{$_[0]}, 'b';       ('b_start')       } else { () } }
+sub _i_start       { if(lc$_[1] eq '[i]')        { push @{$_[0]}, 'i';       ('i_start')       } else { () } }
+sub _u_start       { if(lc$_[1] eq '[u]')        { push @{$_[0]}, 'u';       ('u_start')       } else { () } }
+sub _s_start       { if(lc$_[1] eq '[s]')        { push @{$_[0]}, 's';       ('s_start')       } else { () } }
 sub _spoiler_start { if(lc$_[1] eq '[spoiler]')  { push @{$_[0]}, 'spoiler'; ('spoiler_start') } else { () } }
 sub _quote_start   { if(lc$_[1] eq '[quote]')    { push @{$_[0]}, 'quote';   ('quote_start')   } else { () } }
 sub _code_start    { if(lc$_[1] eq '[code]')     { push @{$_[0]}, 'code';    ('code_start')    } else { () } }
 sub _raw_start     { if(lc$_[1] eq '[raw]')      { push @{$_[0]}, 'raw';     ('raw_start')     } else { () } }
+sub _b_end         { if(lc$_[1] eq '[/b]')       { pop  @{$_[0]}; ('b_end'      ) } else { () } }
+sub _i_end         { if(lc$_[1] eq '[/i]')       { pop  @{$_[0]}; ('i_end'      ) } else { () } }
+sub _u_end         { if(lc$_[1] eq '[/u]')       { pop  @{$_[0]}; ('u_end'      ) } else { () } }
+sub _s_end         { if(lc$_[1] eq '[/s]')       { pop  @{$_[0]}; ('s_end'      ) } else { () } }
 sub _spoiler_end   { if(lc$_[1] eq '[/spoiler]') { pop  @{$_[0]}; ('spoiler_end') } else { () } }
 sub _quote_end     { if(lc$_[1] eq '[/quote]'  ) { pop  @{$_[0]}; ('quote_end'  ) } else { () } }
 sub _code_end      { if(lc$_[1] eq '[/code]'   ) { pop  @{$_[0]}; ('code_end'   ) } else { () } }
@@ -65,10 +78,15 @@ sub _link {
 # Permitted actions to take in each state. The actions are run in order, if
 # none succeed then the token is passed through as text.
 # The "current state" is the most recent tag in the stack, or '' if no tags are open.
+my @INLINE = (\&_link, \&_url_start, \&_raw_start, \&_b_start, \&_i_start, \&_u_start, \&_s_start, \&_spoiler_start);
 my %STATE = (
-  ''      => [                \&_link, \&_url_start, \&_raw_start, \&_spoiler_start, \&_quote_start, \&_code_start],
-  spoiler => [\&_spoiler_end, \&_link, \&_url_start, \&_raw_start],
-  quote   => [\&_quote_end,   \&_link, \&_url_start, \&_raw_start, \&_spoiler_start, \&_quote_start, \&_code_start],
+  ''      => [                @INLINE, \&_quote_start, \&_code_start],
+  b       => [\&_b_end,       @INLINE],
+  i       => [\&_i_end,       @INLINE],
+  u       => [\&_u_end,       @INLINE],
+  s       => [\&_s_end,       @INLINE],
+  spoiler => [\&_spoiler_end, @INLINE],
+  quote   => [\&_quote_end,   @INLINE, \&_quote_start, \&_code_start],
   code    => [\&_code_end     ],
   url     => [\&_url_end,     \&_raw_start],
   raw     => [\&_raw_end      ],
@@ -88,6 +106,14 @@ my %STATE = (
 #
 # Tags:
 #   text           -> literal text, $raw is the text to display
+#   b_start        -> start bold
+#   b_end          -> end
+#   i_start        -> start italic
+#   i_end          -> end
+#   u_start        -> start underline
+#   u_end          -> end
+#   s_start        -> start strike
+#   s_end          -> end
 #   spoiler_start  -> start a spoiler
 #   spoiler_end    -> end
 #   quote_start    -> start a quote
@@ -111,11 +137,11 @@ sub parse {
   my @stack;
 
   while($raw =~ m{(?:
-    \[ \/? (?i: spoiler|quote|code|url|raw ) [^\s\]]* \] |  # tag
-    d[1-9][0-9]* \# [1-9][0-9]* (?: \.[1-9][0-9]* )?     |  # d+#+[.+]
-    [tdvprcs][1-9][0-9]*\.[1-9][0-9]*                    |  # v+.+
-    [tdvprcsugi][1-9][0-9]*                              |  # v+
-    (?:https?|ftp)://[^><"\n\s\]\[]+[\d\w=/-]               # link
+    \[ \/? (?i: b|i|u|s|spoiler|quote|code|url|raw ) [^\s\]]* \] |  # tag
+    d[1-9][0-9]* \# [1-9][0-9]* (?: \.[1-9][0-9]* )?             |  # d+#+[.+]
+    [tdvprcs][1-9][0-9]*\.[1-9][0-9]*                            |  # v+.+
+    [tdvprcsugi][1-9][0-9]*                                      |  # v+
+    (?:https?|ftp)://[^><"\n\s\]\[]+[\d\w=/-]                       # link
   )}xg) {
     my $token = $&;
     my $pre = substr $raw, $last, $-[0]-$last;
@@ -149,7 +175,7 @@ FINAL:
 
 # charspoil:
 #   0/undef/missing: Output <b class="spoiler">..
-#   1: Output 'charspoil_*' classes
+#   1: Deprecated
 #   2: Just output 'hidden by spoiler setting' message
 #   3: Just output the spoilers, unmarked
 sub bb2html {
@@ -190,13 +216,20 @@ sub bb2html {
     if($tag eq 'text') {
       $ret .= $e->($raw);
 
+    } elsif($tag eq 'b_start') { $ret .= '<b>';
+    } elsif($tag eq 'b_end')   { $ret .= '</b>';
+    } elsif($tag eq 'i_start') { $ret .= '<em>';
+    } elsif($tag eq 'i_end')   { $ret .= '</em>';
+    } elsif($tag eq 'u_start') { $ret .= '<span class="underline">';
+    } elsif($tag eq 'u_end')   { $ret .= '</span>';
+    } elsif($tag eq 's_start') { $ret .= '<s>';
+    } elsif($tag eq 's_end')   { $ret .= '</s>';
+
     } elsif($tag eq 'spoiler_start') {
       $ret .= !$charspoil ? '<b class="spoiler">' :
-          $charspoil == 1 ? '<b class="grayedout charspoil charspoil_-1">&lt;hidden by spoiler settings&gt;</b><span class="charspoil charspoil_2">' :
-          $charspoil == 2 ? '<b class="grayedout charspoil charspoil_-1">&lt;hidden by spoiler settings&gt;</b><!--' : '';
+          $charspoil == 2 ? '<b class="grayedout">&lt;hidden by spoiler settings&gt;</b><!--' : '';
     } elsif($tag eq 'spoiler_end') {
       $ret .= !$charspoil ? '</b>' :
-          $charspoil == 1 ? '</span>' :
           $charspoil == 2 ? '-->' : '';
 
     } elsif($tag eq 'quote_start') {

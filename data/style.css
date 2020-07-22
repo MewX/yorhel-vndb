@@ -104,6 +104,7 @@ p.locked      { float: right; color: $standout$; font-style: italic; margin: 0!i
 .grayedout    { color: $grayedout$ }
 b.grayedout   { font-weight: normal }
 i.grayedout   { font-style: normal }
+.underline    { text-decoration: underline }
 #maincontent h2 b { font: 13px "Tahoma", "Arial", sans-serif; font-weight: normal; }
 p.description { margin: 10px 100px!important; }
 b.done        { font-weight: normal; color: $statok$ }

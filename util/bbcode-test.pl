@@ -40,6 +40,10 @@ my @tests = (
   '<b class="spoiler">some spoiler</b>',
   '',
 
+  '[b][i][u][s]Formatting![/s][/u][/i][/b]',
+  '<b><em><span class="underline"><s>Formatting!</s></span></em></b>',
+  'Formatting!',
+
   "[raw][quote]not parsed\n[url=https://vndb.org/]valid url[/url]\n[url=asdf]invalid url[/url][/quote][/raw]",
   "[quote]not parsed<br>[url=https://vndb.org/]valid url[/url]<br>[url=asdf]invalid url[/url][/quote]",
   "[quote]not parsed\n[url=https://vndb.org/]valid url[/url]\n[url=asdf]invalid url[/url][/quote]",
@@ -47,6 +51,18 @@ my @tests = (
   '[quote]basic [spoiler]single[/spoiler]-line [spoiler][url=/g]tag[/url] nesting [raw](without [url=/v3333]special[/url] cases)[/raw][/spoiler][/quote]',
   '<div class="quote">basic <b class="spoiler">single</b>-line <b class="spoiler"><a href="/g" rel="nofollow">tag</a> nesting (without [url=/v3333]special[/url] cases)</b></div>',
   'basic -line ',
+
+  '[quote][b]more [spoiler]nesting [code]mkay?',
+  '<div class="quote"><b>more <b class="spoiler">nesting [code]mkay?</b></b></div>',
+  'more ',
+
+  '[url=/v][b]does not work here[/b][/url]',
+  '<a href="/v" rel="nofollow">[b]does not work here[/b]</a>',
+  '[b]does not work here[/b]',
+
+  '[s] v5 [url=/p1]x[/url] [/s]',
+  '<s> <a href="/v5">v5</a> <a href="/p1" rel="nofollow">x</a> </s>',
+  ' v5 x ',
 
   "[quote]rmnewline after closing tag[/quote]\n",
   '<div class="quote">rmnewline after closing tag</div>',
