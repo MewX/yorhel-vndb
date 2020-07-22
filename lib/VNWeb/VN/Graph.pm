@@ -7,7 +7,7 @@ use VNWeb::Graph;
 TUWF::get qr{/$RE{vid}/rg}, sub {
     my $id = tuwf->capture(1);
     my $num = tuwf->validate(get => num => { uint => 1, onerror => 15 })->data;
-    my $unoff = tuwf->validate(get => unoff => { anybool => 1 })->data;
+    my $unoff = tuwf->validate(get => unoff => { default => 1, anybool => 1 })->data;
     my $v = tuwf->dbRowi('SELECT id, title, original, hidden AS entry_hidden, locked AS entry_locked FROM vn WHERE id =', \$id);
 
     my $has = tuwf->dbRowi('SELECT bool_or(official) AS official, bool_or(not official) AS unofficial FROM vn_relations WHERE id =', \$id, 'GROUP BY id');
