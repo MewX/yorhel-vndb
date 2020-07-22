@@ -83,7 +83,7 @@ sub _rev_ {
         [ weight     => 'Weight',        ],
         [ bloodt     => 'Blood type',    fmt => \%BLOOD_TYPE ],
         [ cup_size   => 'Cup size',      fmt => \%CUP_SIZE ],
-        [ age        => 'Age',           empty => 0 ],
+        [ age        => 'Age',           ],
         [ main       => 'Instance of',   empty => 0, fmt => sub {
             my $c = tuwf->dbRowi('SELECT id, name, original FROM chars WHERE id =', \$_);
             a_ href => "/c$c->{id}", title => $c->{name}, "c$c->{id}"
