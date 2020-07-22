@@ -3,7 +3,7 @@ userid       2
 
 // text
 maintext     #ddd  // primary text color (also used for the menu links)
-grayedout    #258  // color used for grayed-out/non-important things
+grayedout    #37a  // color used for grayed-out/non-important things
 standout     #e44  // color of 'stand-out' text
 link         #7bd  // primary link color (not used for the menu links)
 statok       #0c0  // generic 'ok' text color (used for vnlist statuses & category browser)
