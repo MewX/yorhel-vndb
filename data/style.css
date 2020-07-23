@@ -396,7 +396,9 @@ div.thread tr.deleted td { padding: 1px 10px; }
 div.thread tr:target     { outline: 1px dotted $standout$ }
 div.thread i.deleted     { font-style: normal; color: $grayedout$; }
 div.thread i.lastmod     { float: right; font-size: 11px; color: $grayedout$; margin: 0 -10px -5px 0; }
-div.thread i.edit        { float: right; color: $grayedout$; font-style: normal; margin: -10px -10px 0 0; }
+div.thread i.edit        { float: right; color: $grayedout$; font-style: normal; margin: -10px -10px 0 0; visibility: hidden }
+div.thread td:hover i.edit,
+div.thread td:active i.edit { visibility: visible }
 
 /* threads browser */
 div.mainbox.discussions td.tc4     { text-align: right; }
