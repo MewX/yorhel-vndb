@@ -63,6 +63,8 @@ CREATE TYPE platform          AS ENUM ('win', 'dos', 'lin', 'mac', 'ios', 'and',
 CREATE TYPE producer_type     AS ENUM ('co', 'in', 'ng');
 CREATE TYPE producer_relation AS ENUM ('old', 'new', 'sub', 'par', 'imp', 'ipa', 'spa', 'ori');
 CREATE TYPE release_type      AS ENUM ('complete', 'partial', 'trial');
+CREATE TYPE report_status     AS ENUM ('new', 'busy', 'done', 'dismissed');
+CREATE TYPE report_type       AS ENUM ('t');
 CREATE TYPE tag_category      AS ENUM('cont', 'ero', 'tech');
 CREATE TYPE vn_relation       AS ENUM ('seq', 'preq', 'set', 'alt', 'char', 'side', 'par', 'ser', 'fan', 'orig');
 CREATE TYPE session_type      AS ENUM ('web', 'pass', 'mail');
@@ -478,6 +480,21 @@ CREATE TABLE releases_vn_hist (
   chid       integer NOT NULL,
   vid        integer NOT NULL, -- vn.id
   PRIMARY KEY(chid, vid)
+);
+
+-- reports
+CREATE TABLE reports (
+  id         SERIAL PRIMARY KEY,
+  date       timestamptz NOT NULL DEFAULT NOW(),
+  lastmod    timestamptz,
+  uid        integer, -- user who created the report, if logged in
+  ip         inet, -- IP address of the visitor, if not logged in
+  reason     text NOT NULL,
+  rtype      report_type NOT NULL,
+  status     report_status NOT NULL DEFAULT 'new',
+  object     text NOT NULL, -- The id of the thing being reported
+  message    text NOT NULL,
+  log        text NOT NULL DEFAULT ''
 );
 
 -- rlists

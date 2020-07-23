@@ -62,6 +62,7 @@ use overload bool => sub { defined shift->{user}{user_id} };
 sub uid   { shift->{user}{user_id} }
 sub user  { shift->{user} }
 sub token { shift->{token} }
+sub isMod { auth->permUsermod || auth->permDbmod || auth->permImgmod || auth->permBoardmod || auth->permTagmod }
 
 
 

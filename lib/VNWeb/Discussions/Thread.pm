@@ -114,9 +114,13 @@ sub posts_ {
                 td_ class => 'tc2', sub {
                     i_ class => 'edit', sub {
                         txt_ '< ';
-                        a_ href => "/t$t->{id}.$_->{num}/edit", 'edit';
+                        if(can_edit t => $_) {
+                            a_ href => "/t$t->{id}.$_->{num}/edit", 'edit';
+                            txt_ ' - ';
+                        }
+                        a_ href => "/report/t/t$t->{id}.$_->{num}", 'report';
                         txt_ ' >';
-                    } if can_edit t => $_;
+                    };
                     if($_->{hidden}) {
                         i_ class => 'deleted', 'Post deleted.';
                     } else {

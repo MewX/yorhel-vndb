@@ -246,6 +246,9 @@ sub _menu_ {
                 a_ href => '/p/add', 'Add Producer'; br_;
                 a_ href => '/s/new', 'Add Staff'; br_;
             }
+            if(auth->isMod) {
+                a_ href => '/report/list?status=new', sprintf 'Reports (%d)', tuwf->dbVali('SELECT count(*) FROM reports WHERE status = \'new\''); br_;
+            }
             br_;
             form_ action => "$uid/logout", method => 'post', sub {
                 input_ type => 'hidden', class => 'hidden', name => 'csrf', value => auth->csrftoken;

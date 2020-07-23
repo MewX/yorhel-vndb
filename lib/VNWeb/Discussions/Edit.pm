@@ -97,7 +97,7 @@ elm_api DiscussionsEdit => $FORM_OUT, $FORM_IN, sub {
             hidden => $data->{hidden},
             locked => $data->{locked},
         ) : (),
-        auth->permBoardmod || auth->permDbmod || auth->permUsermod ? (
+        auth->isMod ? (
             private => $data->{private}
         ) : (),
     };
@@ -164,14 +164,14 @@ TUWF::get qr{(?:/t/(?<board>$BOARD_RE)/new|/$RE{postid}/edit)}, sub {
     }
 
     $t->{can_mod}     = auth->permBoardmod;
-    $t->{can_private} = auth->permBoardmod || auth->permDbmod || auth->permUsermod;
+    $t->{can_private} = auth->isMod;
 
     $t->{hidden}  = $tid && $num == 1 ? $t->{thread_hidden}//0 : $t->{hidden}//0;
     $t->{msg}     //= '';
     $t->{title}   //= tuwf->reqGet('title');
     $t->{tid}     //= undef;
     $t->{num}     //= undef;
-    $t->{private} //= 0;
+    $t->{private} //= auth->isMod && tuwf->reqGet('priv') ? 1 : 0;
     $t->{locked}  //= 0;
     $t->{delete}  =   0;
 

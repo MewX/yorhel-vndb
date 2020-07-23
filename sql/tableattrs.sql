@@ -117,6 +117,7 @@ CREATE        INDEX image_votes_id         ON image_votes (id);
 CREATE        INDEX notifications_uid      ON notifications (uid);
 CREATE        INDEX releases_producers_pid ON releases_producers (pid);
 CREATE        INDEX releases_vn_vid        ON releases_vn (vid);
+CREATE        INDEX reports_status         ON reports (status,id);
 CREATE        INDEX staff_alias_id         ON staff_alias (id);
 CREATE UNIQUE INDEX tags_vn_pkey           ON tags_vn (tag,vid,uid);
 CREATE        INDEX tags_vn_date           ON tags_vn (date);
