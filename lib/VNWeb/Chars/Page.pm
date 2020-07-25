@@ -258,7 +258,9 @@ TUWF::get qr{/$RE{crev}} => sub {
         _rev_ $c if tuwf->capture('rev');
         div_ class => 'mainbox', sub {
             itemmsg_ c => $c;
-            p_ class => 'mainopts', sub {
+            h1_ sub { txt_ $c->{name}; debug_ $c };
+            h2_ class => 'alttitle', $c->{original} if length $c->{original};
+            p_ class => 'chardetailopts', sub {
                 if($max_spoil) {
                     a_ mkclass(checked => $view->{spoilers} == 0), href => '?view='.viewset(spoilers=>0, traits_sexual => $view->{traits_sexual}), 'Hide spoilers';
                     a_ mkclass(checked => $view->{spoilers} == 1), href => '?view='.viewset(spoilers=>1, traits_sexual => $view->{traits_sexual}), 'Show minor spoilers';
@@ -267,8 +269,6 @@ TUWF::get qr{/$RE{crev}} => sub {
                 b_ class => 'grayedout', ' | ' if $has_sex && $max_spoil;
                 a_ mkclass(checked => $view->{traits_sexual}), href => '?view='.viewset(spoilers => $view->{spoilers}, traits_sexual=>!$view->{traits_sexual}), 'Show sexual traits' if $has_sex;
             };
-            h1_ sub { txt_ $c->{name}; debug_ $c };
-            h2_ class => 'alttitle', $c->{original} if length $c->{original};
             chartable_ $c;
         };
 

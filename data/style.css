@@ -100,7 +100,7 @@ div.warning h2, div.notice h2 { font-size: 13px; font-weight: bold; margin: 0; }
 /* general text formatting */
 
 ul, ol        { margin-left: 35px; }
-p.itemmsg     { float: right; color: $standout$; font-style: italic; margin: 0!important; padding-bottom: 10px }
+p.itemmsg     { float: right; color: $standout$; font-style: italic; margin: 0!important }
 .grayedout    { color: $grayedout$ }
 b.grayedout   { font-weight: normal }
 i.grayedout   { font-style: normal }
@@ -286,7 +286,7 @@ div.mainbox-overflow-hack { overflow: hidden; width: 100%; box-sizing: border-bo
 .mainbox table p     { margin: 0; }
 .mainbox h2          { font-weight: bold; font-size: 16px; margin: 10px 0 0 5px; }
 a.addnew, p.addnew   { float: right; margin: 0 }
-a.mainopts, p.mainopts { clear: right; float: right; margin: 0 }
+a.mainopts, p.mainopts { float: right; margin: 0 }
 p.mainopts a, p.mainopts label { margin: 0 5px }
 
 .mainbox.threelayout    { border-collapse: separate; border-spacing: 10px; margin: 10px -10px -20px -10px; min-width: 100%; }
@@ -624,6 +624,9 @@ div.producerbrowse    { padding-bottom: 10px }
 
 /***** Char page (also used on VN page) *****/
 
+p.chardetailopts { margin: -10px auto 7px auto; width: 800px; text-align: right }
+p.chardetailopts a { margin: 0 5px }
+p.chardetailopts a:last-child { margin: 0 0 0 5px }
 div.chardetails { margin: 0 auto; width: 800px; }
 div.charimg     { float: left; width: 250px; margin: 0 10px; text-align: center }
 div.charimg p   { text-align: center; padding: 0px; margin: 0; }
