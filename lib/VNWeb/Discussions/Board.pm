@@ -9,13 +9,10 @@ TUWF::get qr{/t/(all|$BOARD_RE)}, sub {
 
     my $page = tuwf->validate(get => p => { upage => 1 })->data;
 
-    my $obj =   !$id ? undef :
-        $type eq 'v' ? tuwf->dbRowi('SELECT id, title, original, hidden AS entry_hidden, locked AS entry_locked FROM vn        WHERE id =', \$id) :
-        $type eq 'p' ? tuwf->dbRowi('SELECT id, name,  original, hidden AS entry_hidden, locked AS entry_locked FROM producers WHERE id =', \$id) :
-        $type eq 'u' ? tuwf->dbRowi('SELECT id,', sql_user(), 'FROM users u WHERE id =', \$id) : undef;
+    my $obj = $id ? dbobj $type, $id : undef;
     return tuwf->resNotFound if $id && !$obj->{id};
 
-    my $ititle = $obj && ($obj->{title} || $obj->{name} || user_displayname $obj);
+    my $ititle = $obj && ($obj->{title} || user_displayname $obj);
     my $title = $obj ? "Related discussions for $ititle" : $type eq 'all' ? 'All boards' : $BOARD_TYPE{$type}{txt};
     my $createurl = '/t/'.($id ? $type.$id : $type eq 'db' ? 'db' : 'ge').'/new';
 

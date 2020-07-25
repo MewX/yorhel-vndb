@@ -159,7 +159,10 @@ TUWF::get qr{/$RE{prev}(?:/(?<tab>vn|rel))?}, sub {
     },
     sub {
         rev_ $p if tuwf->capture('rev');
-        div_ class => 'mainbox', sub { info_ $p };
+        div_ class => 'mainbox', sub {
+            itemmsg_ p => $p;
+            info_ $p;
+        };
         div_ class => 'maintabs right', sub {
             ul_ sub {
                 li_ mkclass(tabselected => $tab eq 'vn'),  sub { a_ href => "/p$p->{id}/vn",  'Visual Novels' };

@@ -752,14 +752,19 @@ sub searchbox_ {
 }
 
 
-# Generate a message to display on an entry page when the entry has been locked or the user can't edit it.
+# Generate a message to display on an entry page to report the entry and to indicate it has been locked or the user can't edit it.
 sub itemmsg_ {
     my($type, $obj) = @_;
-    if($obj->{entry_locked}) {
-        p_ class => 'locked', 'Locked for editing';
-    } elsif(auth && !can_edit $type => $obj) {
-        p_ class => 'locked', 'You can not edit this page';
-    }
+    p_ class => 'itemmsg', sub {
+        if($type ne 'd') {
+            if($obj->{entry_locked}) {
+                txt_ 'Locked for editing. ';
+            } elsif(auth && !can_edit $type => $obj) {
+                txt_ 'You can not edit this page. ';
+            }
+        }
+        a_ href => "/report/db/$type$obj->{id}", 'Report an issue on this page.';
+    };
 }
 
 

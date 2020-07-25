@@ -322,6 +322,7 @@ sub infobox_useroptions_ {
 sub infobox_ {
     my($v) = @_;
     div_ class => 'mainbox', sub {
+        itemmsg_ v => $v;
         h1_ $v->{title};
         h2_ class => 'alttitle', lang_attr($v->{c_olang}), $v->{original} if $v->{original};
 

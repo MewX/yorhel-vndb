@@ -64,7 +64,7 @@ CREATE TYPE producer_type     AS ENUM ('co', 'in', 'ng');
 CREATE TYPE producer_relation AS ENUM ('old', 'new', 'sub', 'par', 'imp', 'ipa', 'spa', 'ori');
 CREATE TYPE release_type      AS ENUM ('complete', 'partial', 'trial');
 CREATE TYPE report_status     AS ENUM ('new', 'busy', 'done', 'dismissed');
-CREATE TYPE report_type       AS ENUM ('t');
+CREATE TYPE report_type       AS ENUM ('t', 'db');
 CREATE TYPE tag_category      AS ENUM('cont', 'ero', 'tech');
 CREATE TYPE vn_relation       AS ENUM ('seq', 'preq', 'set', 'alt', 'char', 'side', 'par', 'ser', 'fan', 'orig');
 CREATE TYPE session_type      AS ENUM ('web', 'pass', 'mail');

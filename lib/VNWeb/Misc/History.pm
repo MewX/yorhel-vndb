@@ -170,19 +170,7 @@ sub filters_ {
 TUWF::get qr{/(?:([upvrcsd])([1-9]\d*)/)?hist} => sub {
     my($type, $id) = (tuwf->capture(1)||'', tuwf->capture(2));
 
-    my sub dbitem {
-        my($table, $title) = @_;
-        tuwf->dbRowi('SELECT id,', $title, ' AS title, hidden AS entry_hidden, locked AS entry_locked FROM', $table, 'WHERE id =', \$id);
-    };
-
-    my $obj = !$type ? undef :
-        $type eq 'u' ? tuwf->dbRowi('SELECT id, ', sql_user(), 'FROM users u WHERE id =', \$id) :
-        $type eq 'p' ? dbitem producers => 'name' :
-        $type eq 'v' ? dbitem vn        => 'title' :
-        $type eq 'r' ? dbitem releases  => 'title' :
-        $type eq 'c' ? dbitem chars     => 'name' :
-        $type eq 's' ? dbitem staff     => '(SELECT name FROM staff_alias WHERE aid = staff.aid)' :
-        $type eq 'd' ? dbitem docs      => 'title' : die;
+    my $obj = dbobj $type, $id;
 
     return tuwf->resNotFound if $type && !$obj->{id};
     $obj->{title} = user_displayname $obj if $type eq 'u';

@@ -16,16 +16,23 @@ sub enrich_object {
                   FROM threads t JOIN threads_posts tp ON tp.tid = t.id LEFT JOIN users u ON u.id = tp.uid
                  WHERE NOT t.hidden AND NOT t.private AND t.id =', \"$+{id}", 'AND tp.num =', \"$+{num}"
             );
-            if($post->{num}) {
-                $o->{title} = xml_string sub {
-                    txt_ 'Post ';
-                    a_ href => "/$o->{object}", "#$post->{num}";
-                    txt_ ' on ';
-                    a_ href => "/$o->{object}", $post->{title};
-                    txt_ ' by ';
-                    user_ $post;
-                };
-            }
+            $o->{title} = xml_string sub {
+                txt_ 'Post ';
+                a_ href => "/$o->{object}", "#$post->{num}";
+                txt_ ' on ';
+                a_ href => "/$o->{object}", $post->{title};
+                txt_ ' by ';
+                user_ $post;
+            } if $post->{num};
+
+        } elsif($o->{rtype} eq 'db' && $o->{object} =~ /^([vrpcsd])$RE{num}$/) {
+            my($t,$id) = ($1, $+{num});
+            my $obj = dbobj $t, $id;
+            $o->{title} = xml_string sub {
+                txt_ {qw/v VN r Release p Producer c Character s Staff d Doc/}->{$t};
+                txt_ ': ';
+                a_ href => "/$t$id", $obj->{title};
+            } if $obj->{id};
         }
     }
 }
@@ -63,7 +70,7 @@ elm_api Report => undef, $FORM, sub {
 };
 
 
-TUWF::get qr{/report/(?<rtype>t)/(?<object>.+)}, sub {
+TUWF::get qr{/report/(?<rtype>t|db)/(?<object>.+)}, sub {
     my $obj = { rtype => tuwf->capture('rtype'), object => tuwf->capture('object') };
     enrich_object $obj;
     return tuwf->resNotFound if !$obj->{title};

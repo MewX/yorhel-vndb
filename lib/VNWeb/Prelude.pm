@@ -72,6 +72,7 @@ sub import {
     *{$c.'::RE'} = *RE;
     *{$c.'::in'} = \&in;
     *{$c.'::idcmp'} = \&idcmp;
+    *{$c.'::dbobj'} = \&dbobj;
 }
 
 
@@ -120,6 +121,28 @@ sub idcmp($$) {
     my($a1, $a2) = $_[0] =~ /^([a-z]+)([0-9]+)$/;
     my($b1, $b2) = $_[1] =~ /^([a-z]+)([0-9]+)$/;
     $a1 cmp $b1 || $a2 <=> $b2
+}
+
+
+# Returns very generic information on a DB entry object.
+# Only { id, title, entry_hidden, entry_locked } for now.
+# Suitable for passing to HTML::framework_'s dbobj argument.
+sub dbobj {
+    my($type, $id) = @_;
+
+    my sub item {
+        my($table, $title) = @_;
+        tuwf->dbRowi('SELECT id,', $title, ' AS title, hidden AS entry_hidden, locked AS entry_locked FROM', $table, 'WHERE id =', \$id);
+    };
+
+    !$type ? undef :
+        $type eq 'u' ? tuwf->dbRowi('SELECT id, ', sql_user(), 'FROM users u WHERE id =', \$id) :
+        $type eq 'p' ? item producers => 'name' :
+        $type eq 'v' ? item vn        => 'title' :
+        $type eq 'r' ? item releases  => 'title' :
+        $type eq 'c' ? item chars     => 'name' :
+        $type eq 's' ? item staff     => '(SELECT name FROM staff_alias WHERE aid = staff.aid)' :
+        $type eq 'd' ? item docs      => 'title' : die;
 }
 
 1;

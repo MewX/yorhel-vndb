@@ -100,7 +100,7 @@ div.warning h2, div.notice h2 { font-size: 13px; font-weight: bold; margin: 0; }
 /* general text formatting */
 
 ul, ol        { margin-left: 35px; }
-p.locked      { float: right; color: $standout$; font-style: italic; margin: 0!important; }
+p.itemmsg     { float: right; color: $standout$; font-style: italic; margin: 0!important; }
 .grayedout    { color: $grayedout$ }
 b.grayedout   { font-weight: normal }
 i.grayedout   { font-style: normal }

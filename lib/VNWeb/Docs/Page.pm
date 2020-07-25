@@ -46,6 +46,7 @@ TUWF::get qr{/$RE{drev}} => sub {
     sub {
         _rev_ $d if tuwf->capture('rev');
         div_ class => 'mainbox', sub {
+            itemmsg_ d => $d;
             h1_ $d->{title};
             div_ class => 'docs', sub {
                 _index_;

@@ -29,14 +29,93 @@ type Msg
   | Submitted GApi.Response
 
 
--- These can be different depending on the rtype.
+type alias ReasonLabel =
+  { label  : String
+  , vis    : String -> String -> Bool -- Given an rtype & objectid, returns whether it should be listed
+  , submit : Bool -- Whether it allows submission of the form
+  , msg    : String -> String -> List (Html Msg) -- Message to display
+  }
+
+
+vis _ _ = True
+nomsg _ _ = []
+initial = { label = "-- Select --" , vis = vis, submit = False , msg = nomsg }
+
+reasons : List ReasonLabel
 reasons =
-  [ "Spam"
-  , "Links to piracy or illegal content"
-  , "Off-topic / wrong board"
-  , "Unmarked spoilers"
-  , "Unwelcome behavior"
-  , "Other"
+  [ initial
+  , { label  = "Spam"
+    , vis    = vis
+    , submit = True
+    , msg    = nomsg
+    }
+  , { label  = "Links to piracy or illegal content"
+    , vis    = vis
+    , submit = True
+    , msg    = nomsg
+    }
+  , { label  = "Off-topic / wrong board"
+    , vis    = \t _ -> t == "t"
+    , submit = True
+    , msg    = nomsg
+    }
+  , { label  = "Unwelcome behavior"
+    , vis    = \t _ -> t == "t"
+    , submit = True
+    , msg    = nomsg
+    }
+  , { label  = "Unmarked spoilers"
+    , vis    = vis
+    , submit = True
+    , msg    = \t o -> if not (t == "db" && not (String.startsWith "d" o)) then [] else
+        [ text "VNDB is an open wiki, it is often easier if you removed the spoilers yourself by "
+        , a [ href ("/" ++ o ++ "/edit") ] [ text " editing the entry" ]
+        , text ". You likely know more about this entry than our moderators, after all. "
+        , br [] []
+        , text "If you're not sure whether something is a spoiler or if you need help with editing, you can also report this issue on the "
+        , a [ href "/t/db" ] [ text "discussion board" ]
+        , text " so that others may be able to help you."
+        ]
+    }
+  , { label  = "Incorrect information"
+    , vis    = \t o -> t == "db" && not (String.startsWith "d" o)
+    , submit = False
+    , msg    = \_ o ->
+        [ text "VNDB is an open wiki, you can correct the information in this database yourself by "
+        , a [ href ("/" ++ o ++ "/edit") ] [ text " editing the entry" ]
+        , text ". You likely know more about this entry than our moderators, after all. "
+        , br [] []
+        , text "If you need help with editing, you can also report this issue on the "
+        , a [ href "/t/db" ] [ text "discussion board" ]
+        , text " so that others may be able to help you."
+        ]
+    }
+  , { label  = "Not a visual novel"
+    , vis    = \t o -> t == "db" && String.startsWith "v" o
+    , submit = False
+    , msg    = \_ _ ->
+        [ text "If you suspect that this entry does not adhere to our "
+        , a [ href "/d2#1" ] [ text "inclusion criteria" ]
+        , text ", please report it in "
+        , a [ href "/t2108" ] [ text "this thread" ]
+        , text ", so that other users have a chance to provide feedback before a moderator makes their final decision."
+        ]
+    }
+  , { label  = "Does not belong here"
+    , vis    = \t o -> t == "db" && not (String.startsWith "v" o || String.startsWith "d" o)
+    , submit = True
+    , msg    = nomsg
+    }
+  , { label  = "Duplicate entry"
+    , vis    = \t o -> t == "db" && not (String.startsWith "d" o)
+    , submit = True
+    , msg    = \_ _ -> [ text "Please include a link to the entry that this is a duplicate of." ]
+    }
+  , { label  = "Other"
+    , vis    = vis
+    , submit = True
+    , msg    = nomsg
+    }
   ]
 
 
@@ -51,6 +130,10 @@ update msg (state,model) =
 
 view : Model -> Html Msg
 view (state,model) =
+  let
+    lst = List.filter (\l -> l.vis model.rtype model.object) reasons
+    cur = List.filter (\l -> l.label == model.reason) lst |> List.head |> Maybe.withDefault initial
+  in
   form_ Submit (state == Api.Loading)
   [ div [ class "mainbox" ]
     [ h1 [] [ text "Submit report" ]
@@ -67,8 +150,9 @@ view (state,model) =
             then text "We generally do not provide feedback on reports, but a moderator may decide to contact you for clarification."
             else text "We generally do not provide feedback on reports, but you may leave your email address in the message if you wish to be available for clarification."
           ]
-        , formField "reason::Reason" [ inputSelect "reason" model.reason Reason [style "width" "300px"] (("","-- Select --") :: List.map (\s->(s,s)) reasons) ]
-        ] ++ if model.reason == "" then [] else
+        , formField "reason::Reason" [ inputSelect "reason" model.reason Reason [style "width" "300px"] <| List.map (\l->(l.label,l.label)) lst ]
+        , formField "" (cur.msg model.rtype model.object)
+        ] ++ if not cur.submit then [] else
         [ formField "message::Message" [ inputTextArea "message" model.message Message [] ]
         , formField "" [ submitButton "Submit" state True ]
         ]
