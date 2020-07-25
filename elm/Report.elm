@@ -7,6 +7,7 @@ import Browser
 import Browser.Navigation exposing (load)
 import Lib.Html exposing (..)
 import Lib.Api as Api
+import Lib.Ffi as Ffi
 import Gen.Api as GApi
 import Gen.Report as GR
 
@@ -56,7 +57,7 @@ view (state,model) =
     , if state == Api.Error GApi.Success
       then p [] [ text "Your report has been submitted, a moderator will look at it as soon as possible." ]
       else table [ class "formtable" ] <|
-        [ formField "Subject" [ a [ href model.path ] [ text model.title ] ]
+        [ formField "Subject" [ span [ Ffi.innerHtml model.title ] [] ]
         , formField ""
           [ text "Your report will be forwarded to a moderator."
           , br [] []

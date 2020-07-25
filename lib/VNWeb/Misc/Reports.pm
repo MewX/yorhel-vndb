@@ -6,17 +6,26 @@ my $reportsperday = 5;
 
 my @STATUS = qw/new busy done dismissed/;
 
-# Requires objects with {rtype,object} fields, adds {title,path} fields.
+# Requires objects with {rtype,object} fields, adds a HTML-formatted 'title' field, which formats and links to the entry.
 sub enrich_object {
-    for(@_) {
-        delete $_->@{'title','path'};
-        if($_->{rtype} eq 't' && $_->{object} =~ /^$RE{postid}$/) {
-            my $title = tuwf->dbVali(
-               "SELECT 'Post #'||tp.num||' on '||t.title
-                  FROM threads t JOIN threads_posts tp ON tp.tid = t.id
-                 WHERE NOT t.hidden AND NOT t.private AND t.id =", \"$+{id}", 'AND tp.num =', \"$+{num}"
+    for my $o (@_) {
+        delete $o->{title};
+        if($o->{rtype} eq 't' && $o->{object} =~ /^$RE{postid}$/) {
+            my $post = tuwf->dbRowi(
+               'SELECT tp.num, t.title, ', sql_user(), '
+                  FROM threads t JOIN threads_posts tp ON tp.tid = t.id LEFT JOIN users u ON u.id = tp.uid
+                 WHERE NOT t.hidden AND NOT t.private AND t.id =', \"$+{id}", 'AND tp.num =', \"$+{num}"
             );
-            $_->@{'title','path'} = ($title, "/$_->{object}") if $title;
+            if($post->{num}) {
+                $o->{title} = xml_string sub {
+                    txt_ 'Post ';
+                    a_ href => "/$o->{object}", "#$post->{num}";
+                    txt_ ' on ';
+                    a_ href => "/$o->{object}", $post->{title};
+                    txt_ ' by ';
+                    user_ $post;
+                };
+            }
         }
     }
 }
@@ -31,7 +40,6 @@ my $FORM = form_compile any => {
     rtype    => {},
     object   => {},
     title    => {},
-    path     => {},
     reason   => { maxlength => 50 },
     message  => { required => 0, default => '', maxlength => 50000 },
     loggedin => { anybool => 1 },
@@ -88,7 +96,7 @@ sub report_ {
             txt_ $r->{ip}||'[anonymous]';
         }
         br_;
-        a_ href => $r->{path}, $r->{title};
+        lit_ $r->{title};
         br_;
         txt_ $r->{reason};
         div_ class => 'quote', sub { lit_ TUWF::XML::html_escape $r->{message} } if $r->{message};
