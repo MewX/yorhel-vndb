@@ -33,6 +33,7 @@ use feature ':5.26';
 use utf8;
 use VNWeb::Elm;
 use VNWeb::Auth;
+use VNWeb::DB;
 use TUWF;
 use JSON::XS;
 
