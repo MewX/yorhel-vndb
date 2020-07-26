@@ -90,6 +90,18 @@ reasons =
         , text " so that others may be able to help you."
         ]
     }
+  , { label  = "Missing information"
+    , vis    = \t o -> t == "db" && not (String.startsWith "d" o)
+    , submit = False
+    , msg    = \_ o ->
+        [ text "VNDB is an open wiki, you can add any missing information to this database yourself. "
+        , text "You likely know more about this entry than our moderators, after all. "
+        , br [] []
+        , text "If you need help with contributing information, feel free to ask around on the "
+        , a [ href "/t/db" ] [ text "discussion board" ]
+        , text "."
+        ]
+    }
   , { label  = "Not a visual novel"
     , vis    = \t o -> t == "db" && String.startsWith "v" o
     , submit = False
