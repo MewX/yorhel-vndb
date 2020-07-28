@@ -70,7 +70,7 @@ elm_api DiscussionsReply => $REPLY_OUT, $REPLY_IN, sub {
 sub metabox_ {
     my($t) = @_;
     div_ class => 'mainbox', sub {
-        h1_ $t->{title};
+        h1_ sub { lit_ bb2html $t->{title} };
         h2_ 'Hidden' if $t->{hidden};
         h2_ 'Private' if $t->{private};
         h2_ 'Locked' if $t->{locked};
