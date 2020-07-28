@@ -36,7 +36,10 @@ PG_MODULE_MAGIC;
     X( 8, "v" , 'v', 0)\
     X( 9, "ch", 'c', 'h')\
     X(10, "cv", 'c', 'v')\
-    X(11, "sf", 's', 'f')
+    X(11, "sf", 's', 'f')\
+    X(12, "w",  'w', 0)\
+    X(13, "u",  'u', 0)\
+    X(14, "t",  't', 0)
 
 #define VNDBID_TYPE(_x) ((_x) >> 26)
 #define VNDBID_NUM(_x)  ((_x) & 0x03FFFFFF)
