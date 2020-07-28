@@ -61,6 +61,7 @@ init d =
 
 type AdminMsg
   = PermBoard Bool
+  | PermReview Bool
   | PermBoardmod Bool
   | PermEdit Bool
   | PermImgvote Bool
@@ -108,6 +109,7 @@ updateAdmin : AdminMsg -> GUE.SendAdmin -> GUE.SendAdmin
 updateAdmin msg model =
   case msg of
     PermBoard b    -> { model | perm_board    = b }
+    PermReview b   -> { model | perm_review   = b }
     PermBoardmod b -> { model | perm_boardmod = b }
     PermEdit b     -> { model | perm_edit     = b }
     PermImgvote b  -> { model | perm_imgvote  = b }
@@ -189,6 +191,7 @@ view model =
       , formField "Permissions"
         [ text "Fields marked with * indicate permissions assigned to new users by default", br_ 1
         , perm opts.perm_boardmod <| label [] [ inputCheck "" m.perm_board    (Admin << PermBoard),    text " board*", br_ 1 ]
+        , perm opts.perm_boardmod <| label [] [ inputCheck "" m.perm_review   (Admin << PermReview),   text " review*", br_ 1 ]
         , perm False              <| label [] [ inputCheck "" m.perm_boardmod (Admin << PermBoardmod), text " boardmod", br_ 1 ]
         , perm opts.perm_dbmod    <| label [] [ inputCheck "" m.perm_edit     (Admin << PermEdit),     text " edit*", br_ 1 ]
         , perm opts.perm_imgmod   <| label [] [ inputCheck "" m.perm_imgvote  (Admin << PermImgvote),  text " imgvote* (existing votes will stop counting when unset)", br_ 1 ]

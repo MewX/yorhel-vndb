@@ -130,6 +130,7 @@ elm_api UserEdit => $FORM_OUT, $FORM_IN, sub {
         $set{"perm_$_"} = $data->{admin}{"perm_$_"} for grep $_ ne 'usermod', auth->listPerms;
     }
     $set{perm_board}   = $data->{admin}{perm_board}   if auth->permBoardmod;
+    $set{perm_review}  = $data->{admin}{perm_review}  if auth->permBoardmod;
     $set{perm_edit}    = $data->{admin}{perm_edit}    if auth->permDbmod;
     $set{perm_imgvote} = $data->{admin}{perm_imgvote} if auth->permImgmod;
     $set{perm_tag}     = $data->{admin}{perm_tag}     if auth->permTagmod;

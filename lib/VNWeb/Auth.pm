@@ -66,7 +66,7 @@ sub isMod { auth->permUsermod || auth->permDbmod || auth->permImgmod || auth->pe
 
 
 
-my @perms = qw/board boardmod edit imgvote imgmod tag dbmod tagmod usermod/;
+my @perms = qw/board boardmod edit imgvote imgmod tag dbmod tagmod usermod review/;
 
 sub listPerms { @perms }
 

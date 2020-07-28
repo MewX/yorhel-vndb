@@ -38,6 +38,8 @@ GRANT SELECT, INSERT                 ON releases_producers_hist  TO vndb_site;
 GRANT SELECT, INSERT,         DELETE ON releases_vn              TO vndb_site;
 GRANT SELECT, INSERT                 ON releases_vn_hist         TO vndb_site;
 GRANT SELECT, INSERT, UPDATE         ON reports                  TO vndb_site;
+GRANT SELECT, INSERT, UPDATE, DELETE ON reviews                  TO vndb_site;
+GRANT SELECT, INSERT, UPDATE, DELETE ON reviews_votes            TO vndb_site;
 GRANT SELECT, INSERT, UPDATE, DELETE ON rlists                   TO vndb_site;
 -- No access to the 'sessions' table, managed by the user_* functions.
 GRANT SELECT                         ON shop_denpa               TO vndb_site;
@@ -71,7 +73,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON ulist_vns_labels         TO vndb_site;
 -- users table is special; The 'perm_usermod', 'passwd' and 'mail' columns are
 -- protected and can only be accessed through the user_* functions.
 GRANT SELECT ( id, username, registered, ip, ign_votes, email_confirmed, last_reports
-             , perm_board, perm_boardmod, perm_dbmod, perm_edit, perm_imgvote, perm_tag, perm_tagmod, perm_usermod, perm_imgmod
+             , perm_board, perm_boardmod, perm_dbmod, perm_edit, perm_imgvote, perm_tag, perm_tagmod, perm_usermod, perm_imgmod, perm_review
              , skin, customcss, show_nsfw, notify_dbedit, notify_announce
              , tags_all, tags_cont, tags_ero, tags_tech, spoilers, traits_sexual, max_sexual, max_violence
              , filter_vn, filter_release, vn_list_own, vn_list_wish
@@ -80,7 +82,7 @@ GRANT SELECT ( id, username, registered, ip, ign_votes, email_confirmed, last_re
              , c_vns, c_wish, c_votes, c_changes, c_imgvotes, c_tags),
       INSERT ( username, mail, ip),
       UPDATE ( username, ign_votes, email_confirmed, last_reports
-             , perm_board, perm_boardmod, perm_dbmod, perm_edit, perm_imgvote, perm_tag, perm_tagmod, perm_imgmod
+             , perm_board, perm_boardmod, perm_dbmod, perm_edit, perm_imgvote, perm_tag, perm_tagmod, perm_imgmod, perm_review
              , skin, customcss, show_nsfw, notify_dbedit, notify_announce
              , tags_all, tags_cont, tags_ero, tags_tech, spoilers, traits_sexual, max_sexual, max_violence
              , filter_vn, filter_release, vn_list_own, vn_list_wish
