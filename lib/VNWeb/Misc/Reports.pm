@@ -103,7 +103,7 @@ sub report_ {
             txt_ $r->{ip}||'[anonymous]';
         }
         br_;
-        lit_ $r->{title};
+        lit_ $r->{title} || '[deleted]';
         br_;
         txt_ $r->{reason};
         div_ class => 'quote', sub { lit_ bb2html $r->{message} } if $r->{message};
@@ -170,6 +170,11 @@ TUWF::get qr{/report/list}, sub {
             };
             p_ q{
               Changing the status and/or adding a comment will add an entry to the log, so other mods can see what is going on. Everything on this page is only visible to moderators.
+            };
+            p_ q{
+              BUG: Deleting a post from a thread (not "hiding", but actually deleting it) will cause reports
+              on that thread to refer to innocent posts that happen to get the same post number as the deleted post.
+              Not a huge problem, but something to be aware of when browsing through handled reports.
             };
             br_;
             br_;
