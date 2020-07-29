@@ -4,7 +4,7 @@ use VNWeb::Prelude;
 
 elm_api Tags => undef, { search => {} }, sub {
     my $q = shift->{search};
-    my $qs = $q =~ s/[%_]//gr;
+    my $qs = sql_like $q;
 
     elm_TagResult tuwf->dbPagei({ results => 15, page => 1 },
         'SELECT t.id, t.name, t.searchable, t.applicable, t.state

@@ -9,7 +9,7 @@ elm_api Boards => undef, {
 }, sub {
     return elm_Unauth if !auth->permBoard;
     my $q = shift->{search};
-    my $qs = $q =~ s/[%_]//gr;
+    my $qs = sql_like $q;
 
     my sub subq {
         my($prio, $where) = @_;

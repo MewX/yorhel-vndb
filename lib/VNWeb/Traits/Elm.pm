@@ -4,7 +4,7 @@ use VNWeb::Prelude;
 
 elm_api Traits => undef, { search => {} }, sub {
     my $q = shift->{search};
-    my $qs = $q =~ s/[%_]//gr;
+    my $qs = sql_like $q;
 
     elm_TraitResult tuwf->dbPagei({ results => 15, page => 1 },
         'SELECT t.id, t.name, t.searchable, t.applicable, t.defaultspoil, t.state, g.id AS group_id, g.name AS group_name

@@ -14,7 +14,7 @@ elm_api VN => undef, {
         'SELECT v.id, v.title, v.original, v.hidden
            FROM (',
 			sql_join('UNION ALL', map {
-                my $qs = s/[%_]//gr;
+                my $qs = sql_like $_;
                 my @qs = normalize_query $_;
                 (
                     /^$RE{vid}$/ ? sql('SELECT 1, id FROM vn WHERE id =', \"$+{id}") : (),

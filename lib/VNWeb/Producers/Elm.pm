@@ -14,7 +14,7 @@ elm_api Producers => undef, {
         'SELECT p.id, p.name, p.original, p.hidden
            FROM (',
 			sql_join('UNION ALL', map {
-                my $qs = s/[%_]//gr;
+                my $qs = sql_like $_;
                 (
                     /^$RE{pid}$/ ? sql('SELECT 1, id FROM producers WHERE id =', \"$+{id}") : (),
                     sql('SELECT  1+substr_score(lower(name),'    , \$qs, '), id FROM producers WHERE name     ILIKE', \"%$qs%"),

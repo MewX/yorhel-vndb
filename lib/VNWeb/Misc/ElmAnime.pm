@@ -4,7 +4,7 @@ use VNWeb::Prelude;
 
 elm_api Anime => undef, { search => {} }, sub {
     my $q = shift->{search};
-    my $qs = $q =~ s/[%_]//gr;
+    my $qs = sql_like $q;
 
     elm_AnimeResult tuwf->dbPagei({ results => 15, page => 1 },
         'SELECT a.id, a.title_romaji AS title, coalesce(a.title_kanji, \'\') AS original

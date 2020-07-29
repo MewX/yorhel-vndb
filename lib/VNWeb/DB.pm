@@ -10,7 +10,7 @@ use VNDB::Schema;
 
 our @EXPORT = qw/
     sql
-    sql_identifier sql_join sql_comma sql_and sql_or sql_array sql_func sql_fromhex sql_tohex sql_fromtime sql_totime sql_user
+    sql_identifier sql_join sql_comma sql_and sql_or sql_array sql_func sql_fromhex sql_tohex sql_fromtime sql_totime sql_like sql_user
     enrich enrich_merge enrich_flatten enrich_obj
     db_entry db_edit
 /;
@@ -93,6 +93,11 @@ sub sql_fromtime($) {
 # Convert a Postgres timestamp into a Perl time value
 sub sql_totime($) {
     sql "extract('epoch' from ", $_[0], ')';
+}
+
+# Escape a string to be used as a literal match in a LIKE pattern.
+sub sql_like($) {
+    $_[0] =~ s/([%_\\])/\\$1/rg
 }
 
 # Returns a list of column names to fetch for displaying a username with HTML::user_().

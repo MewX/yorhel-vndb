@@ -4,7 +4,7 @@ use VNWeb::Prelude;
 
 elm_api Chars => undef, { search => {} }, sub {
     my $q = shift->{search};
-    my $qs = $q =~ s/[%_]//gr;
+    my $qs = sql_like $q;
 
     my $l = tuwf->dbPagei({ results => 15, page => 1 },
         'SELECT c.id, c.name, c.original, c.main, cm.name AS main_name, cm.original AS main_original
