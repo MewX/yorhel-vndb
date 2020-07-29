@@ -131,21 +131,23 @@ TUWF::get qr{/report/list}, sub {
 
     my $opt = tuwf->validate(get =>
         p      => { upage => 1 },
+        s      => { enum => ['id','lastmod'], required => 0, default => 'id' },
         status => { enum => \@STATUS, required => 0 },
         id     => { id => 1, required => 0 },
     )->data;
 
     my $where = sql_and
         $opt->{id} ? sql 'r.id =', \$opt->{id} : (),
-        $opt->{status} ? sql 'r.status =', \$opt->{status} : ();
+        $opt->{status} ? sql 'r.status =', \$opt->{status} : (),
+        $opt->{s} eq 'lastmod' ? 'r.lastmod IS NOT NULL' : ();
 
     my $cnt = tuwf->dbVali('SELECT count(*) FROM reports r WHERE', $where);
-    my $lst = tuwf->dbPagei({results => 50, page => $opt->{p}},
+    my $lst = tuwf->dbPagei({results => 25, page => $opt->{p}},
        'SELECT r.id,', sql_totime('r.date'), 'as date, r.uid, u.username, r.ip, r.reason, r.rtype, r.object, r.status, r.message, r.log
           FROM reports r
           LEFT JOIN users u ON u.id = r.uid
          WHERE', $where, '
-         ORDER BY r.id DESC'
+         ORDER BY', {id => 'r.id DESC', lastmod => 'r.lastmod DESC'}->{$opt->{s}}
     );
     enrich_object @$lst;
 
@@ -182,9 +184,14 @@ TUWF::get qr{/report/list}, sub {
                 a_ href => url(p => undef, status => undef), !$opt->{status} ? (class => 'optselected') : (), 'All';
                 a_ href => url(p => undef, status => $_), $opt->{status} && $opt->{status} eq $_ ? (class => 'optselected') : (), ucfirst $_ for @STATUS;
             };
+            p_ class => 'browseopts', sub {
+                txt_ 'Sort by ';
+                a_ href => url(p => undef, s => 'id'),      $opt->{s} eq 'id'      ? (class => 'optselected') : (), 'newest';
+                a_ href => url(p => undef, s => 'lastmod'), $opt->{s} eq 'lastmod' ? (class => 'optselected') : (), 'last updated';
+            };
         };
 
-        paginate_ \&url, $opt->{p}, [$cnt, 50], 't';
+        paginate_ \&url, $opt->{p}, [$cnt, 25], 't';
         div_ class => 'mainbox thread', sub {
             table_ class => 'stripe', sub {
                 my $url = '/report/list'.url;
@@ -192,7 +199,7 @@ TUWF::get qr{/report/list}, sub {
                 tr_ sub { td_ style => 'text-align: center', 'Nothing to report! (heh)' } if !@$lst;
             };
         };
-        paginate_ \&url, $opt->{p}, [$cnt, 50], 'b';
+        paginate_ \&url, $opt->{p}, [$cnt, 25], 'b';
     };
 };
 
