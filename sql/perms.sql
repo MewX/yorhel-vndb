@@ -70,7 +70,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON ulist_vns_labels         TO vndb_site;
 
 -- users table is special; The 'perm_usermod', 'passwd' and 'mail' columns are
 -- protected and can only be accessed through the user_* functions.
-GRANT SELECT ( id, username, registered, ip, ign_votes, email_confirmed
+GRANT SELECT ( id, username, registered, ip, ign_votes, email_confirmed, last_reports
              , perm_board, perm_boardmod, perm_dbmod, perm_edit, perm_imgvote, perm_tag, perm_tagmod, perm_usermod, perm_imgmod
              , skin, customcss, show_nsfw, notify_dbedit, notify_announce
              , tags_all, tags_cont, tags_ero, tags_tech, spoilers, traits_sexual, max_sexual, max_violence
@@ -79,7 +79,7 @@ GRANT SELECT ( id, username, registered, ip, ign_votes, email_confirmed
              , ulist_votes, ulist_vnlist, ulist_wish
              , c_vns, c_wish, c_votes, c_changes, c_imgvotes, c_tags),
       INSERT ( username, mail, ip),
-      UPDATE ( username, ign_votes, email_confirmed
+      UPDATE ( username, ign_votes, email_confirmed, last_reports
              , perm_board, perm_boardmod, perm_dbmod, perm_edit, perm_imgvote, perm_tag, perm_tagmod, perm_imgmod
              , skin, customcss, show_nsfw, notify_dbedit, notify_announce
              , tags_all, tags_cont, tags_ero, tags_tech, spoilers, traits_sexual, max_sexual, max_violence

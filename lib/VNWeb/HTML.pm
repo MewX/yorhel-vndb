@@ -247,7 +247,15 @@ sub _menu_ {
                 a_ href => '/s/new', 'Add Staff'; br_;
             }
             if(auth->isMod) {
-                a_ href => '/report/list?status=new', sprintf 'Reports (%d)', tuwf->dbVali('SELECT count(*) FROM reports WHERE status = \'new\''); br_;
+                my $stats = tuwf->dbRowi("SELECT
+                    (SELECT count(*) FROM reports WHERE status = 'new') as new,
+                    (SELECT count(*) FROM reports WHERE status = 'new' AND date > (SELECT last_reports FROM users WHERE id =", \auth->uid, ")) AS unseen,
+                    (SELECT count(*) FROM reports WHERE lastmod > (SELECT last_reports FROM users WHERE id =", \auth->uid, ")) AS upd
+                ");
+                a_ $stats->{unseen} ? (class => 'standout') : (), href => '/report/list?status=new', sprintf 'Reports %d/%d', $stats->{unseen}, $stats->{new};
+                b_ class => 'grayedout', ' | ';
+                a_ href => '/report/list?s=lastmod', sprintf '%d upd', $stats->{upd};
+                br_;
             }
             br_;
             form_ action => "$uid/logout", method => 'post', sub {

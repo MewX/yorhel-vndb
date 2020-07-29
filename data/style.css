@@ -111,7 +111,7 @@ b.done        { font-weight: normal; color: $statok$ }
 b.todo        { font-weight: normal; color: $statnok$ }
 b.neutral     { font-weight: normal }
 p.center      { text-align: center; }
-.standout     { color: $standout$ }
+.standout     { color: $standout$!important }
 b.future,
 b.standout    { font-weight: normal; color: $standout$; }
 .clearfloat   { clear: both; height: 0; }

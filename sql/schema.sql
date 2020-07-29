@@ -862,7 +862,8 @@ CREATE TABLE users (
   perm_usermod    boolean NOT NULL DEFAULT false,
   perm_imgmod     boolean NOT NULL DEFAULT false,
   max_sexual      smallint NOT NULL DEFAULT 0,
-  max_violence    smallint NOT NULL DEFAULT 0
+  max_violence    smallint NOT NULL DEFAULT 0,
+  last_reports    timestamptz -- For mods: Most recent activity seen on the reports listing
 );
 
 -- vn
