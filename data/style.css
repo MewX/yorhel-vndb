@@ -720,6 +720,8 @@ div.charsum_list .charsum_bubble {
 .docs               { padding: 0 15% 20px 15%; line-height: 1.4 }
 .docs h3            { margin: 30px 0 5px; font-size: 16px }
 .docs h4            { margin-top: 15px; font-size: 14px }
+.docs h3 a:target,
+.docs h4 a:target   { color: $standout$ }
 .docs dd            { margin: 5px 0 5px 120px }
 .docs dt            { float: left }
 .docs ul, .docs ol  { margin: 5px 0 5px 20px }
