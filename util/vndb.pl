@@ -130,8 +130,8 @@ if(config->{trace_log}) {
         }
     }
     no warnings 'redefine';
-    my $x = \&TUWF::register; *TUWF::register = wrap($x);# sub { $x->(map ref($_) eq 'CODE' ? wrap($_) : $_, @_) };
-    my $y = \&TUWF::any;      *TUWF::any      = wrap($y);# sub { $y->(map ref($_) eq 'CODE' ? wrap($_) : $_, @_) };
+    my $x = \&TUWF::register; *TUWF::register = wrap($x);
+    my $y = \&TUWF::any;      *TUWF::any      = wrap($y);
 }
 
 TUWF::load_recursive('VNDB::Util', 'VNDB::DB', 'VNDB::Handler');
@@ -151,6 +151,7 @@ TUWF::hook after => sub {
         sql_num   => scalar grep($_->[0] ne 'ping/rollback' && $_->[0] ne 'commit', tuwf->{_TUWF}{DB}{queries}->@*),
         sql_time  => $sqlt,
         perl_time => time() - tuwf->req->{trace_start},
+        has_txn   => VNWeb::DB::sql('txid_current_if_assigned() IS NOT NULL'),
         loggedin  => auth?1:0,
         elm_mods  => '{'.join(',', sort keys %elm).'}'
     });

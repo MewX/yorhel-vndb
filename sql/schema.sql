@@ -732,6 +732,7 @@ CREATE TABLE trace_log (
   sql_num   integer,
   sql_time  float,
   perl_time float,
+  has_txn   boolean,
   loggedin  boolean,
   elm_mods  text[]
 );
