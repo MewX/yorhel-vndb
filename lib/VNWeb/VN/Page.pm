@@ -55,6 +55,14 @@ sub og {
 }
 
 
+# The voting and review options are hidden if nothing has been released yet.
+sub canvote {
+    my($v) = @_;
+    my $minreleased = min grep $_, map $_->{released}, $v->{releases}->@*;
+    $minreleased && $minreleased <= strftime('%Y%m%d', gmtime)
+}
+
+
 sub rev_ {
     my($v) = @_;
     revision_ v => $v, \&enrich_item,
@@ -290,9 +298,6 @@ sub infobox_useroptions_ {
     my($v) = @_;
     return if !auth;
 
-    # Voting option is hidden if nothing has been released yet
-    my $minreleased = min grep $_, map $_->{released}, $v->{releases}->@*;
-
     my $labels = tuwf->dbAlli('
         SELECT l.id, l.label, l.private, uvl.vid IS NOT NULL as assigned
           FROM ulist_labels l
@@ -308,7 +313,7 @@ sub infobox_useroptions_ {
                 uid      => 1*auth->uid,
                 vid      => 1*$v->{id},
                 onlist   => $lst->{vid}?\1:\0,
-                canvote  => $minreleased && $minreleased <= strftime('%Y%m%d', gmtime) ? \1 : \0,
+                canvote  => canvote($v)?\1:\0,
                 vote     => fmtvote($lst->{vote}).'',
                 notes    => $lst->{notes}||'',
                 labels   => [ map +{ id => 1*$_->{id}, label => $_->{label}, private => $_->{private}?\1:\0 }, @$labels ],
@@ -390,6 +395,11 @@ sub tabs_ {
             }
         };
         ul_ sub {
+            if(auth && canvote $v) {
+                my $id = tuwf->dbVali('SELECT id FROM reviews WHERE vid =', \$v->{id}, 'AND uid =', \auth->uid);
+                li_ sub { a_ href => "/v$v->{id}/addreview", 'add review' } if !$id && can_edit w => {};
+                li_ sub { a_ href => "/$id/edit", 'edit review' } if $id;
+            }
             if(auth->permEdit) {
                 li_ sub { a_ href => "/v$v->{id}/add", 'add release' };
                 li_ sub { a_ href => "/v$v->{id}/addchar", 'add character' };

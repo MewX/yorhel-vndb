@@ -173,6 +173,11 @@ sub validate_dbid {
 #     Otherwise, checks if the user can edit the post.
 #       Requires the 'user_id', 'date' and 'hidden' fields.
 #
+#   w:
+#     If no 'id' field, checks if the user can submit a new review.
+#     Otherwise, checks if the user can edit the review.
+#       Requires the 'uid' field.
+#
 #   'dbentry_type's:
 #     If no 'id' field, checks whether the user can create a new entry.
 #     Otherwise, requires 'entry_hidden' and 'entry_locked' fields.
@@ -197,6 +202,12 @@ sub can_edit {
                 if !exists $entry->{hidden} || !exists $entry->{date} || !exists $entry->{user_id};
             return auth && $entry->{user_id} == auth->uid && !$entry->{hidden} && $entry->{date} > time-config->{board_edit_time};
         }
+    }
+
+    if($type eq 'w') {
+        return 1 if auth->permBoardmod;
+        return auth->permReview if !$entry->{id};
+        return auth && auth->uid == $entry->{uid};
     }
 
     die "Can't do authorization test when entry_hidden/entry_locked fields aren't present"
