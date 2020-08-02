@@ -32,7 +32,7 @@ sub enrich_item {
 
 
 # Fetch multiple character entries with a format suitable for chartable_()
-# Also used by VN::Page
+# Also used by Chars::VNTab.
 sub fetch_chars {
     my($vid, $where) = @_;
     my $l = tuwf->dbAlli('
@@ -105,7 +105,7 @@ sub _rev_ {
 }
 
 
-# Also used by VN::Page
+# Also used by Chars::VNTab
 sub chartable_ {
     my($c, $link, $sep, $vn) = @_;
     my $view = viewget;

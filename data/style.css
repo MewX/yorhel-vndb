@@ -7,7 +7,7 @@ table th     { vertical-align: top; padding: 3px; }
 img          { border: none; }
 
 a,
-.fake_link       { color: $link$; text-decoration: none; cursor:pointer; }
+.fake_link       { color: $link$; text-decoration: none; cursor:pointer; border-bottom: 1px solid transparent }
 
 a:hover,
 .fake_link:hover { border-bottom: 1px dotted $maintext$; }
@@ -513,6 +513,18 @@ div#vntags                    { margin: 0 30px 0 30px; border-top: 1px solid $bo
   text-align: center
 }
 
+.reviews { display: flex; justify-content: center; flex-wrap: wrap }
+.reviewbox { margin: 10px }
+.reviewbox > div:nth-child(2) > span:first-child  { float: right; color: $grayedout$; font-style: normal; margin: -5px 0 0 0; visibility: hidden }
+.reviewbox > div:nth-child(2):hover  > span:first-child,
+.reviewbox > div:nth-child(2):active > span:first-child { visibility: visible }
+.reviewbox .review_spoil input:checked       ~ span { display: none }
+.reviewbox .review_spoil input:not(:checked) ~ div  { display: none }
+.reviewbox > div { width: 500px }
+.reviewbox > div:first-child { display: flex; justify-content: space-between; background: $secbg$; font-weight: bold }
+.reviewbox > div:first-child > span:first-child { font-weight: bold }
+.reviewbox > div:nth-child(2) { box-sizing: border-box; padding: 5px 0 }
+.reviewbox > div:last-child { display: flex; justify-content: space-between; border-top: 1px solid $border$ }
 
 
 /***** Vote stats ****/
@@ -674,6 +686,7 @@ table.aliases td.key { padding: 0 5px 0 0; width: auto }
 
 
 /***** Staff display on VN pages *****/
+
 .vnstaff { width: 97%; margin: -15px auto 5px auto; justify-content: space-between }
 .vnstaff ul { list-style: none; margin: 0 }
 .vnstaff-2 ul { width: 100% } .vnstaff-2 { flex-wrap: wrap }

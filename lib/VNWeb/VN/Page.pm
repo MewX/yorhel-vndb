@@ -8,6 +8,7 @@ use POSIX 'strftime';
 
 
 # Enrich everything necessary to at least render infobox_().
+# Also used by Chars::VNTab & Reviews::VNTab
 sub enrich_vn {
     my($v) = @_;
     enrich_merge id => 'SELECT id, c_votecount, c_olang::text[] AS c_olang FROM vn WHERE id IN', $v;
@@ -324,6 +325,7 @@ sub infobox_useroptions_ {
 }
 
 
+# Also used by Chars::VNTab & Reviews::VNTab
 sub infobox_ {
     my($v) = @_;
     div_ class => 'mainbox', sub {
@@ -381,18 +383,20 @@ sub infobox_ {
 }
 
 
+# Also used by Chars::VNTab & Reviews::VNTab
 sub tabs_ {
-    my($v, $char) = @_;
+    my($v, $tab) = @_;
     # XXX: This query is kind of silly because we'll be fetching a list of characters regardless of which tab we have open.
     my $haschars = tuwf->dbVali('SELECT 1 FROM chars c JOIN chars_vns cv ON cv.id = c.id WHERE NOT c.hidden AND cv.vid =', \$v->{id}, 'LIMIT 1');
+    my $hasreviews = tuwf->dbVali('SELECT 1 FROM reviews WHERE vid =', \$v->{id}, 'LIMIT 1');
 
-    return if !$haschars && !auth->permEdit;
+    return if !$haschars && !$hasreviews && !auth->permEdit && !auth->permReview;
+    $tab ||= '';
     div_ class => 'maintabs', sub {
         ul_ sub {
-            if($haschars) {
-                li_ class => (!$char ? ' tabselected' : ''), sub { a_ href => "/v$v->{id}#main", name => 'main', 'main' };
-                li_ class => ($char  ? ' tabselected' : ''), sub { a_ href => "/v$v->{id}/chars#chars", name => 'chars', 'characters' };
-            }
+            li_ class => ($tab eq ''        ? ' tabselected' : ''), sub { a_ href => "/v$v->{id}#main", name => 'main', 'main' } if $haschars || $hasreviews;
+            li_ class => ($tab eq 'chars'   ? ' tabselected' : ''), sub { a_ href => "/v$v->{id}/chars#chars", name => 'chars', 'characters' } if $haschars;
+            li_ class => ($tab eq 'reviews' ? ' tabselected' : ''), sub { a_ href => "/v$v->{id}/reviews#review", name => 'review', 'reviews' } if $hasreviews;
         };
         ul_ sub {
             if(auth && canvote $v) {
@@ -688,47 +692,6 @@ sub screenshots_ {
 }
 
 
-sub chars_ {
-    my($v) = @_;
-    my $view = viewget;
-    my $chars = VNWeb::Chars::Page::fetch_chars($v->{id}, sql('id IN(SELECT id FROM chars_vns WHERE vid =', \$v->{id}, ')'));
-    return if !@$chars;
-
-    my $max_spoil = max(
-        map max(
-            (map $_->{spoil}, $_->{traits}->@*),
-            (map $_->{spoil}, $_->{vns}->@*),
-            defined $_->{spoil_gender} ? 2 : 0,
-            $_->{desc} =~ /\[spoiler\]/i ? 2 : 0,
-        ), @$chars
-    );
-    $chars = [ grep +grep($_->{spoil} <= $view->{spoilers}, $_->{vns}->@*), @$chars ];
-    my $has_sex = grep $_->{spoil} <= $view->{spoilers} && $_->{sexual}, map $_->{traits}->@*, @$chars;
-
-    my %done;
-    my $first = 0;
-    for my $r (keys %CHAR_ROLE) {
-        my @c = grep grep($_->{role} eq $r, $_->{vns}->@*) && !$done{$_->{id}}++, @$chars;
-        next if !@c;
-        div_ class => 'mainbox', sub {
-
-            p_ class => 'mainopts', sub {
-                if($max_spoil) {
-                    a_ mkclass(checked => $view->{spoilers} == 0), href => '?view='.viewset(spoilers=>0,traits_sexual=>$view->{traits_sexual}).'#chars', 'Hide spoilers';
-                    a_ mkclass(checked => $view->{spoilers} == 1), href => '?view='.viewset(spoilers=>1,traits_sexual=>$view->{traits_sexual}).'#chars', 'Show minor spoilers';
-                    a_ mkclass(standout =>$view->{spoilers} == 2), href => '?view='.viewset(spoilers=>2,traits_sexual=>$view->{traits_sexual}).'#chars', 'Spoil me!' if $max_spoil == 2;
-                }
-                b_ class => 'grayedout', ' | ' if $has_sex && $max_spoil;
-                a_ mkclass(checked => $view->{traits_sexual}), href => '?view='.viewset(spoilers=>$view->{spoilers},traits_sexual=>!$view->{traits_sexual}).'#chars', 'Show sexual traits' if $has_sex;
-            } if !$first++;
-
-            h1_ $CHAR_ROLE{$r}{ @c > 1 ? 'plural' : 'txt' };
-            VNWeb::Chars::Page::chartable_($_, 1, $_ != $c[0], 1) for @c;
-        }
-    }
-}
-
-
 TUWF::get qr{/$RE{vrev}}, sub {
     my $v = db_entry v => tuwf->capture('id'), tuwf->capture('rev');
     return tuwf->resNotFound if !$v;
@@ -745,21 +708,6 @@ TUWF::get qr{/$RE{vrev}}, sub {
         charsum_ $v;
         stats_ $v;
         screenshots_ $v;
-    };
-};
-
-
-TUWF::get qr{/$RE{vid}/chars}, sub {
-    my $v = db_entry v => tuwf->capture('id');
-    return tuwf->resNotFound if !$v;
-
-    enrich_vn $v;
-
-    framework_ title => $v->{title}, index => 1, type => 'v', dbobj => $v, hiddenmsg => 1, og => og($v),
-    sub {
-        infobox_ $v;
-        tabs_ $v, 1;
-        chars_ $v;
     };
 };
 
