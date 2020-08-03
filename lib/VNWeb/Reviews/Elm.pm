@@ -1,0 +1,29 @@
+package VNWeb::Reviews::Elm;
+
+use VNWeb::Prelude;
+
+my $VOTE = {
+    id   => { vndbid => 'w' },
+    my   => { required => 0, jsonbool => 1 },
+    can  => { _when => 'out', anybool => 1 },
+    up   => { _when => 'out', uint => 1 },
+    down => { _when => 'out', uint => 1 },
+};
+
+my  $VOTE_IN  = form_compile in  => $VOTE;
+our $VOTE_OUT = form_compile out => $VOTE;
+
+elm_api ReviewsVote => $VOTE_OUT, $VOTE_IN, sub {
+    return elm_Unauth if !auth;
+    my($data) = @_;
+    my %id = (uid => auth->uid, id => $data->{id});
+    my %val = (vote => $data->{my}?1:0, date => sql 'NOW()');
+    tuwf->dbExeci(
+        defined $data->{my}
+        ? sql 'INSERT INTO reviews_votes', {%id,%val}, 'ON CONFLICT (id,uid) DO UPDATE SET', \%val
+        : sql 'DELETE FROM reviews_votes WHERE', \%id
+    );
+    elm_Success
+};
+
+1;

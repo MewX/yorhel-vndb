@@ -21,8 +21,9 @@ CREATE TABLE reviews_votes (
   vote    boolean NOT NULL -- true = upvote, false = downvote
 );
 
-CREATE UNIQUE INDEX reviews_vid_uid ON reviews (vid,uid);
-CREATE        INDEX reviews_uid     ON reviews (uid);
+CREATE UNIQUE INDEX reviews_vid_uid      ON reviews (vid,uid);
+CREATE        INDEX reviews_uid          ON reviews (uid);
+CREATE UNIQUE INDEX reviews_votes_id_uid ON reviews_votes (id,uid);
 
 ALTER TABLE reviews       ADD CONSTRAINT reviews_vid_fkey       FOREIGN KEY (vid) REFERENCES vn       (id) ON DELETE CASCADE;
 ALTER TABLE reviews       ADD CONSTRAINT reviews_uid_fkey       FOREIGN KEY (uid) REFERENCES users    (id) ON DELETE SET DEFAULT;

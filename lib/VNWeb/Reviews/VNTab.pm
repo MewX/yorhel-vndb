@@ -10,12 +10,14 @@ sub reviews_ {
 
     # TODO: Order
     my $lst = tuwf->dbAlli(
-        'SELECT r.id, r.rid, r.summary, r.text <> \'\' AS isfull, r.spoiler, uv.vote, s.up, s.down
+        'SELECT r.id, r.rid, r.summary, r.text <> \'\' AS isfull, r.spoiler, uv.vote
+              , COALESCE(s.up,0) AS up, COALESCE(s.down,0) AS down, rv.vote AS my
               , ', sql_totime('r.date'), 'AS date, ', sql_user(), '
            FROM reviews r
            LEFT JOIN users u ON r.uid = u.id
            LEFT JOIN ulist_vns uv ON uv.uid = r.uid AND uv.vid = r.vid
            LEFT JOIN (SELECT id, COUNT(*) FILTER(WHERE vote), COUNT(*) FILTER(WHERE NOT vote) FROM reviews_votes GROUP BY id) AS s(id,up,down) ON s.id = r.id
+           LEFT JOIN reviews_votes rv ON rv.uid =', \auth->uid, ' AND rv.id = r.id
           WhERE r.vid =', \$v->{id}
     );
 
@@ -27,7 +29,7 @@ sub reviews_ {
                 my $r = $_;
                 div_ sub {
                     span_ sub { txt_ 'By '; user_ $r; txt_ ' on '.fmtdate $r->{date}, 'compact' };
-                    a_ href => "/r$r->{rid}", "release" if $r->{rid};
+                    a_ href => "/r$r->{rid}", "r$r->{rid}" if $r->{rid};
                     span_ "Vote: ".fmtvote($r->{vote}) if $r->{vote};
                 };
                 div_ sub {
@@ -44,17 +46,18 @@ sub reviews_ {
                         label_ class => 'review_spoil', sub {
                             input_ type => 'checkbox', class => 'visuallyhidden';
                             div_ sub { lit_ bb2html $r->{summary} };
-                            span_ class => 'fake_link', 'This review contains spoilers, click here to view.';
+                            span_ class => 'fake_link', 'This review contains spoilers, click to view.';
                         }
                     } else {
                         lit_ bb2html $r->{summary};
                     }
                 };
-                # placeholder
                 div_ sub {
                     span_ '' if !$r->{isfull};
                     a_ href => "/$r->{id}", 'Full review »' if $r->{isfull};
-                    span_ sprintf '👍 %d 👎 %d', $r->{up}||0, $r->{down}||0;
+                    elm_ 'Reviews.Vote' => $VNWeb::Reviews::Elm::VOTE_OUT, { %$r, can => !!auth }, sub {
+                        span_ sprintf '👍 %d 👎 %d', $r->{up}, $r->{down};
+                    };
                 };
             } for @$lst;
         }
