@@ -280,9 +280,17 @@ update msg model =
     Submitted r -> ({ model | state = Api.Error r }, Cmd.none)
 
 
+-- TODO: Fuzzier matching? Exclude stuff like 'x Edition', etc.
+relAlias : Model -> Maybe GVE.RecvReleases
+relAlias model =
+  let a = String.toLower model.alias |> String.lines |> List.filter (\l -> l /= "") |> Set.fromList
+  in List.filter (\r -> Set.member (String.toLower r.title) a || Set.member (String.toLower r.original) a) model.releases |> List.head
+
+
 isValid : Model -> Bool
 isValid model = not
   (  (model.title /= "" && model.title == model.original)
+  || relAlias model /= Nothing
   || not (Img.isValid model.image)
   || List.any (\(_,i,r) -> r == Nothing || not (Img.isValid i)) model.screenshots
   || hasDuplicates (List.map (\s -> (s.aid, s.role)) model.staff)
@@ -313,8 +321,16 @@ view model =
         , br [] []
         , if hasDuplicates <| String.lines <| String.toLower model.alias
           then b [ class "standout" ] [ text "List contains duplicate aliases.", br [] [] ]
-          else text ""
-          -- TODO: Warn when release titles are entered?
+          else
+            case relAlias model of
+              Nothing -> text ""
+              Just r  -> span []
+                [ b [ class "standout" ] [ text "Release titles should not be added as alias." ]
+                , br [] []
+                , text "Release: "
+                , a [ href <| "/r"++String.fromInt r.id ] [ text r.title ]
+                , br [] [], br [] []
+                ]
         , text "List of alternative titles or abbreviations. One line for each alias. Can include both official (japanese/english) titles and unofficial titles used around net."
         , br [] []
         , text "Titles that are listed in the releases should not be added here!"
