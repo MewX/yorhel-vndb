@@ -125,7 +125,7 @@ update msg model =
         Just p ->
           if List.any (\l -> l.pid == p.id) model.rel
           then ({ model | relSearch = A.clear nm "" }, c)
-          else ({ model | relSearch = A.clear nm "", rel = model.rel ++ [{ pid = p.id, name = p.name, original = p.original, relation = "old" }] }, Cmd.none)
+          else ({ model | relSearch = A.clear nm "", rel = model.rel ++ [{ pid = p.id, name = p.name, original = p.original, relation = "old" }] }, c)
 
     DupSubmit ->
       if List.isEmpty model.dupProds

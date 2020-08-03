@@ -207,7 +207,7 @@ update msg model =
         Just v ->
           if List.any (\l -> l.vid == v.id) model.vns
           then ({ model | vnSearch = A.clear nm "" }, c)
-          else ({ model | vnSearch = A.clear nm "", vns = model.vns ++ [{ vid = v.id, title = v.title, original = v.original, relation = "seq", official = True }] }, Cmd.none)
+          else ({ model | vnSearch = A.clear nm "", vns = model.vns ++ [{ vid = v.id, title = v.title, original = v.original, relation = "seq", official = True }] }, c)
 
     AnimeDel i -> ({ model | anime = delidx i model.anime }, Cmd.none)
     AnimeSearch m ->
@@ -217,7 +217,7 @@ update msg model =
         Just a ->
           if List.any (\l -> l.aid == a.id) model.anime
           then ({ model | animeSearch = A.clear nm "" }, c)
-          else ({ model | animeSearch = A.clear nm "", anime = model.anime ++ [{ aid = a.id, title = a.title, original = a.original }] }, Cmd.none)
+          else ({ model | animeSearch = A.clear nm "", anime = model.anime ++ [{ aid = a.id, title = a.title, original = a.original }] }, c)
 
     ImageSet s b -> let (nm, nc) = Img.new b s in ({ model | image = nm }, Cmd.map ImageMsg nc)
     ImageSelect -> (model, FSel.file ["image/png", "image/jpg"] ImageSelected)
@@ -231,7 +231,7 @@ update msg model =
       let (nm, c, res) = A.update staffConfig m model.staffSearch
       in case res of
         Nothing -> ({ model | staffSearch = nm }, c)
-        Just s -> ({ model | staffSearch = A.clear nm "", staff = model.staff ++ [{ id = s.id, aid = s.aid, name = s.name, original = s.original, role = "staff", note = "" }] }, Cmd.none)
+        Just s -> ({ model | staffSearch = A.clear nm "", staff = model.staff ++ [{ id = s.id, aid = s.aid, name = s.name, original = s.original, role = "staff", note = "" }] }, c)
 
     SeiyuuDef c      -> ({ model | seiyuuDef = c }, Cmd.none)
     SeiyuuDel idx    -> ({ model | seiyuu = delidx idx model.seiyuu }, Cmd.none)
@@ -241,7 +241,7 @@ update msg model =
       let (nm, c, res) = A.update seiyuuConfig m model.seiyuuSearch
       in case res of
         Nothing -> ({ model | seiyuuSearch = nm }, c)
-        Just s -> ({ model | seiyuuSearch = A.clear nm "", seiyuu = model.seiyuu ++ [{ id = s.id, aid = s.aid, name = s.name, original = s.original, cid = model.seiyuuDef, note = "" }] }, Cmd.none)
+        Just s -> ({ model | seiyuuSearch = A.clear nm "", seiyuu = model.seiyuu ++ [{ id = s.id, aid = s.aid, name = s.name, original = s.original, cid = model.seiyuuDef, note = "" }] }, c)
 
     ScrUplRel s -> ({ model | scrUplRel = s }, Cmd.none)
     ScrUplSel -> (model, FSel.files ["image/png", "image/jpg"] ScrUpl)

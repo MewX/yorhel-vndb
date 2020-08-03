@@ -244,7 +244,7 @@ update msg model =
         Just t ->
           if not t.applicable || t.state /= 2 || List.any (\l -> l.tid == t.id) model.traits
           then ({ model | traitSearch = A.clear nm "" }, c)
-          else ({ model | traitSearch = A.clear nm "", traits = model.traits ++ [{ tid = t.id, spoil = t.defaultspoil, name = t.name, group = t.group_name, applicable = t.applicable, new = True }] }, Cmd.none)
+          else ({ model | traitSearch = A.clear nm "", traits = model.traits ++ [{ tid = t.id, spoil = t.defaultspoil, name = t.name, group = t.group_name, applicable = t.applicable, new = True }] }, c)
 
     VnRel   idx r -> ({ model | vns = modidx idx (\v -> { v | rid   = r }) model.vns }, Cmd.none)
     VnRole  idx s -> ({ model | vns = modidx idx (\v -> { v | role  = s }) model.vns }, Cmd.none)
@@ -261,7 +261,7 @@ update msg model =
           if List.any (\v -> v.vid == vn.id) model.vns
           then ({ model | vnSearch = A.clear nm "" }, c)
           else ({ model | vnSearch = A.clear nm "", vns = model.vns ++ [{ vid = vn.id, title = vn.title, rid = Nothing, spoil = 0, role = "primary" }] }
-               , if Dict.member vn.id model.releases then Cmd.none else GR.send { vid = vn.id } (VnRelGet vn.id))
+               , Cmd.batch [c, if Dict.member vn.id model.releases then Cmd.none else GR.send { vid = vn.id } (VnRelGet vn.id)])
     VnRelGet vid (GApi.Releases r) -> ({ model | releases = Dict.insert vid r model.releases }, Cmd.none)
     VnRelGet _ r -> ({ model | state = Api.Error r }, Cmd.none) -- XXX
 
