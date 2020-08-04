@@ -2,6 +2,7 @@ package VNWeb::Chars::Edit;
 
 use VNWeb::Prelude;
 use VNWeb::Images::Lib 'enrich_image';
+use VNWeb::Releases::Lib;
 
 
 my $FORM = {
@@ -59,23 +60,6 @@ my $FORM_IN  = form_compile in  => $FORM;
 my $FORM_CMP = form_compile cmp => $FORM;
 
 
-sub enrich_releases {
-    my($e) = @_;
-    my %vns;
-    $e->{releases} = [ map !$vns{$_->{vid}}++ ? { id => $_->{vid} } : (), $e->{vns}->@* ];
-
-    enrich rels => id => vid => sub { sql '
-        SELECT rv.vid, r.id, r.title, r.original, r.released, r.type as rtype, r.reso_x, r.reso_y
-          FROM releases r
-          JOIN releases_vn rv ON rv.id = r.id
-         WHERE NOT r.hidden AND rv.vid IN', $_, '
-         ORDER BY r.released, r.title, r.id'
-    }, $e->{releases};
-    enrich_flatten lang => id => id => sub { sql('SELECT id, lang FROM releases_lang WHERE id IN', $_, 'ORDER BY lang') }, map $_->{rels}, $e->{releases}->@*;
-    enrich_flatten platforms => id => id => sub { sql('SELECT id, platform FROM releases_platforms WHERE id IN', $_, 'ORDER BY platform') }, map $_->{rels}, $e->{releases}->@*;
-}
-
-
 TUWF::get qr{/$RE{crev}/(?<action>edit|copy)} => sub {
     my $e = db_entry c => tuwf->capture('id'), tuwf->capture('rev') or return tuwf->resNotFound;
     my $copy = tuwf->capture('action') eq 'copy';
@@ -89,7 +73,9 @@ TUWF::get qr{/$RE{crev}/(?<action>edit|copy)} => sub {
 
     enrich_merge vid => 'SELECT id AS vid, title FROM vn WHERE id IN', $e->{vns};
     $e->{vns} = [ sort { $a->{title} cmp $b->{title} || $a->{vid} <=> $b->{vid} || ($a->{rid}||0) <=> ($b->{rid}||0) } $e->{vns}->@* ];
-    enrich_releases $e;
+
+    my %vns;
+    $e->{releases} = [ map !$vns{$_->{vid}}++ ? { id => $_->{vid}, rels => releases_by_vn $_->{vid} } : (), $e->{vns}->@* ];
 
     if($e->{image}) {
         $e->{image_info} = { id => $e->{image} };
@@ -117,7 +103,7 @@ TUWF::get qr{/$RE{vid}/addchar}, sub {
 
     my $e = elm_empty($FORM_OUT);
     $e->{vns} = [{ vid => $v->{id}, title => $v->{title}, rid => undef, spoil => 0, role => 'primary' }];
-    enrich_releases $e;
+    $e->{releases} = [{ id => $v->{id}, rels => rels => releases_by_vn $v->{id} }];
 
     framework_ title => 'Add character',
     sub {

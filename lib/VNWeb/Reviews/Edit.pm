@@ -1,6 +1,7 @@
 package VNWeb::Reviews::Edit;
 
 use VNWeb::Prelude;
+use VNWeb::Releases::Lib;
 
 
 my $FORM = {
@@ -19,21 +20,6 @@ my $FORM_IN  = form_compile in  => $FORM;
 my $FORM_OUT = form_compile out => $FORM;
 
 
-sub _releases {
-    my($id) = @_;
-    my $r = tuwf->dbAlli('
-        SELECT rv.vid, r.id, r.title, r.original, r.released, r.type as rtype, r.reso_x, r.reso_y
-          FROM releases r
-          JOIN releases_vn rv ON rv.id = r.id
-         WHERE NOT r.hidden AND rv.vid =', \$id, '
-         ORDER BY r.released, r.title, r.id'
-    );
-    enrich_flatten lang => id => id => sub { sql('SELECT id, lang FROM releases_lang WHERE id IN', $_, 'ORDER BY lang') }, $r;
-    enrich_flatten platforms => id => id => sub { sql('SELECT id, platform FROM releases_platforms WHERE id IN', $_, 'ORDER BY platform') }, $r;
-    $r
-}
-
-
 TUWF::get qr{/$RE{vid}/addreview}, sub {
     my $v = tuwf->dbRowi('SELECT id, title FROM vn WHERE NOT hidden AND id =', \tuwf->capture('id'));
     return tuwf->resNotFound if !$v->{id};
@@ -43,7 +29,7 @@ TUWF::get qr{/$RE{vid}/addreview}, sub {
     return tuwf->resDenied if !can_edit w => {};
 
     framework_ title => "Write review for $v->{title}", sub {
-        elm_ 'Reviews.Edit' => $FORM_OUT, { elm_empty($FORM_OUT)->%*, vid => $v->{id}, vntitle => $v->{title}, releases => _releases $v->{id} };
+        elm_ 'Reviews.Edit' => $FORM_OUT, { elm_empty($FORM_OUT)->%*, vid => $v->{id}, vntitle => $v->{title}, releases => releases_by_vn $v->{id} };
     };
 };
 
@@ -56,7 +42,7 @@ TUWF::get qr{/$RE{wid}/edit}, sub {
     return tuwf->resNotFound if !$e->{id};
     return tuwf->resDenied if !can_edit w => $e;
 
-    $e->{releases} = _releases $e->{vid};
+    $e->{releases} = releases_by_vn $e->{vid};
     framework_ title => "Edit review for $e->{vntitle}", sub {
         elm_ 'Reviews.Edit' => $FORM_OUT, $e;
     };

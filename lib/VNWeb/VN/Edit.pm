@@ -2,6 +2,7 @@ package VNWeb::VN::Edit;
 
 use VNWeb::Prelude;
 use VNWeb::Images::Lib 'enrich_image';
+use VNWeb::Releases::Lib;
 
 
 my $FORM = {
@@ -93,15 +94,7 @@ TUWF::get qr{/$RE{vrev}/edit} => sub {
     $e->{staff}  = [ grep $_->{id}, $e->{staff}->@* ];
     $e->{seiyuu} = [ grep $_->{id}, $e->{seiyuu}->@* ];
 
-    $e->{releases} = tuwf->dbAlli('
-        SELECT rv.vid, r.id, r.title, r.original, r.released, r.type as rtype, r.reso_x, r.reso_y
-          FROM releases r
-          JOIN releases_vn rv ON rv.id = r.id
-         WHERE NOT r.hidden AND rv.vid =', \$e->{id}, '
-         ORDER BY r.released, r.title, r.id'
-    );
-    enrich_flatten lang => id => id => sub { sql('SELECT id, lang FROM releases_lang WHERE id IN', $_, 'ORDER BY lang') }, $e->{releases};
-    enrich_flatten platforms => id => id => sub { sql('SELECT id, platform FROM releases_platforms WHERE id IN', $_, 'ORDER BY platform') }, $e->{releases};
+    $e->{releases} = releases_by_vn $e->{id};
 
     $e->{chars} = tuwf->dbAlli('
         SELECT id, name, original FROM chars

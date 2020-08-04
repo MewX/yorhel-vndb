@@ -2,6 +2,7 @@ package VNWeb::ULists::Main;
 
 use VNWeb::Prelude;
 use VNWeb::ULists::Lib;
+use VNWeb::Releases::Lib;
 use POSIX 'strftime';
 
 
@@ -209,17 +210,15 @@ sub listing_ {
     enrich_flatten labels => id => vid => sql('SELECT vid, lbl FROM ulist_vns_labels WHERE uid =', \$uid, 'AND vid IN'), $lst;
 
     enrich rels => id => vid => sub { sql '
-        SELECT rv.vid, r.id, r.title, r.original, r.released, r.type as rtype, rl.status, r.reso_x, r.reso_y
+        SELECT rv.vid, r.id, rl.status
           FROM rlists rl
           JOIN releases r ON rl.rid = r.id
           JOIN releases_vn rv ON rv.id = r.id
          WHERE rl.uid =', \$uid, '
            AND rv.vid IN', $_, '
-         ORDER BY r.released ASC'
+         ORDER BY r.released, r.title, r.id'
     }, $lst;
-
-    enrich_flatten lang => id => id => sub { sql('SELECT id, lang FROM releases_lang WHERE id IN', $_, 'ORDER BY lang') }, map $_->{rels}, @$lst;
-    enrich_flatten platforms => id => id => sub { sql('SELECT id, platform FROM releases_platforms WHERE id IN', $_, 'ORDER BY platform') }, map $_->{rels}, @$lst;
+    enrich_release_elm map $_->{rels}, @$lst;
 
     # TODO: Thumbnail view?
     paginate_ $url, $opt->{p}, [ $count, 50 ], 't', sub {

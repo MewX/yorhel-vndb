@@ -3,7 +3,23 @@ package VNWeb::Releases::Lib;
 use VNWeb::Prelude;
 use Exporter 'import';
 
-our @EXPORT = qw/enrich_release release_row_/;
+our @EXPORT = qw/enrich_release_elm releases_by_vn enrich_release release_row_/;
+
+
+# Enrich a list of releases so that it's suitable as 'Releases' Elm response.
+sub enrich_release_elm {
+    enrich_merge id => 'SELECT id, title, original, released, type as rtype, reso_x, reso_y FROM releases WHERE id IN', @_;
+    enrich_flatten lang => id => id => sub { sql('SELECT id, lang FROM releases_lang WHERE id IN', $_, 'ORDER BY lang') }, @_;
+    enrich_flatten platforms => id => id => sub { sql('SELECT id, platform FROM releases_platforms WHERE id IN', $_, 'ORDER BY platform') }, @_;
+}
+
+# Return the list of releases associated with a VN in the format suitable as 'Releases' Elm response.
+sub releases_by_vn {
+    my($id) = @_;
+    my $l = tuwf->dbAlli('SELECT r.id FROM releases r JOIN releases_vn rv ON rv.id = r.id WHERE NOT r.hidden AND rv.vid =', \$id, 'ORDER BY r.released, r.title, r.id');
+    enrich_release_elm $l;
+    $l
+}
 
 
 # Enrich a list of releases so that it's suitable for release_row_().
