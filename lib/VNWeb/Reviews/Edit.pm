@@ -57,9 +57,6 @@ TUWF::get qr{/$RE{wid}/edit}, sub {
     return tuwf->resDenied if !can_edit w => $e;
 
     $e->{releases} = _releases $e->{vid};
-
-    # TODO: Option to delete the review.
-
     framework_ title => "Edit review for $e->{vntitle}", sub {
         elm_ 'Reviews.Edit' => $FORM_OUT, $e;
     };
@@ -80,6 +77,7 @@ elm_api ReviewsEdit => $FORM_OUT, $FORM_IN, sub {
     if($id) {
         $data->{lastmod} = sql 'NOW()';
         tuwf->dbExeci('UPDATE reviews SET', $data, 'WHERE id =', \$id) if $id;
+        auth->audit($review->{uid}, 'review edit', "edited $review->{id}") if auth->uid != $review->{uid};
 
     } else {
         return elm_Unauth if tuwf->dbVali('SELECT 1 FROM reviews WHERE vid =', \$data->{vid}, 'AND uid =', \auth->uid);
@@ -88,6 +86,16 @@ elm_api ReviewsEdit => $FORM_OUT, $FORM_IN, sub {
     }
 
     elm_Redirect "/$id"
+};
+
+
+elm_api ReviewsDelete => undef, { id => { vndbid => 'w' } }, sub {
+    my($data) = @_;
+    my $review = tuwf->dbRowi('SELECT id, uid FROM reviews WHERE id =', \$data->{id});
+    return elm_Unauth if !can_edit w => $review;
+    auth->audit($review->{uid}, 'review delete', "deleted $review->{id}");
+    tuwf->dbExeci('DELETE FROM reviews WHERE id =', \$data->{id});
+    elm_Success
 };
 
 

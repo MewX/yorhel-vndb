@@ -11,6 +11,7 @@ import Lib.Util exposing (..)
 import Lib.RDate as RDate
 import Gen.Api as GApi
 import Gen.ReviewsEdit as GRE
+import Gen.ReviewsDelete as GRD
 
 
 maxChars = 700
@@ -35,6 +36,8 @@ type alias Model =
   , summary     : TP.Model
   , text        : TP.Model
   , releases    : List GRE.RecvReleases
+  , delete      : Bool
+  , delState    : Api.State
   }
 
 
@@ -50,6 +53,8 @@ init d =
   , summary     = TP.bbcode d.summary
   , text        = TP.bbcode d.text
   , releases    = d.releases
+  , delete      = False
+  , delState    = Api.Normal
   }
 
 
@@ -72,6 +77,9 @@ type Msg
   | Text TP.Msg
   | Submit
   | Submitted GApi.Response
+  | Delete Bool
+  | DoDelete
+  | Deleted GApi.Response
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -86,6 +94,11 @@ update msg model =
     Submit -> ({ model | state = Api.Loading }, GRE.send (encode model) Submitted)
     Submitted (GApi.Redirect s) -> (model, load s)
     Submitted r -> ({ model | state = Api.Error r }, Cmd.none)
+
+    Delete b   -> ({ model | delete   = b }, Cmd.none)
+    DoDelete -> ({ model | delState = Api.Loading }, GRD.send ({ id = Maybe.withDefault "" model.id }) Deleted)
+    Deleted GApi.Success -> (model, load <| "/v" ++ String.fromInt model.vid)
+    Deleted r -> ({ model | delState = Api.Error r }, Cmd.none)
 
 
 showrel r = "[" ++ (RDate.format (RDate.expand r.released)) ++ " " ++ (String.join "," r.lang) ++ "] " ++ r.title ++ " (r" ++ String.fromInt r.id ++ ")"
@@ -143,5 +156,27 @@ view model =
       ]
     ]
   , div [ class "mainbox" ]
-    [ fieldset [ class "submit" ] [ submitButton "Submit" model.state (String.length model.summary.data <= maxChars) ] ]
+    [ fieldset [ class "submit" ]
+      [ submitButton "Submit" model.state (String.length model.summary.data <= maxChars)
+      ]
+    ]
+  , if model.id == Nothing then text "" else
+    div [ class "mainbox" ]
+    [ h1 [] [ text "Delete review" ]
+    , table [ class "formtable" ] [ formField ""
+      [ label [] [ inputCheck "" model.delete Delete, text " Delete this review." ]
+      , if not model.delete then text "" else span []
+        [ br [] []
+        , b [ class "standout" ] [ text "WARNING:" ]
+        , text " Deleting this review is a permanent action and can not be reverted!"
+        , br [] []
+        , br [] []
+        , inputButton "Confirm delete" DoDelete []
+        , case model.delState of
+            Api.Loading -> span [ class "spinner" ] []
+            Api.Error e -> b [ class "standout" ] [ text <| Api.showResponse e ]
+            Api.Normal  -> text ""
+        ]
+      ] ]
+    ]
   ]
