@@ -126,7 +126,17 @@ reasons =
   , { label  = "Other"
     , vis    = vis
     , submit = True
-    , msg    = nomsg
+    , msg    = \t o ->
+        if t == "db" && not (String.startsWith "d" o)
+        then [ text "Keep in mind that VNDB is an open wiki, you can edit most of the information in this database."
+             , br [] []
+             , text "Reports for issues that do not require a moderator to get involved will most likely be ignored."
+             , br [] []
+             , text "If you need help with contributing to the database, feel free to ask around on the "
+             , a [ href "/t/db" ] [ text "discussion board" ]
+             , text "."
+             ]
+        else []
     }
   ]
 
