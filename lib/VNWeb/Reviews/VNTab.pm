@@ -44,7 +44,7 @@ sub reviews_ {
                     };
                     if($r->{spoiler}) {
                         label_ class => 'review_spoil', sub {
-                            input_ type => 'checkbox', class => 'visuallyhidden';
+                            input_ type => 'checkbox', class => 'visuallyhidden', (auth->pref('spoilers')||0) == 2 ? ('checked', 'checked') : (), undef;
                             div_ sub { lit_ bb2html $r->{summary} };
                             span_ class => 'fake_link', 'This review contains spoilers, click to view.';
                         }
