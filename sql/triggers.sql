@@ -230,7 +230,7 @@ CREATE TRIGGER vn_vnsearch_notify AFTER UPDATE ON vn FOR EACH ROW WHEN (OLD.c_se
 CREATE OR REPLACE FUNCTION notify_pm() RETURNS trigger AS $$
 BEGIN
   INSERT INTO notifications (ntype, ltype, uid, iid, subid, c_title, c_byuser)
-    SELECT 'pm', 't', tb.iid, t.id, NEW.num, t.title, NEw.uid
+    SELECT 'pm', 't', tb.iid, vndbid_num(t.id), NEW.num, t.title, NEW.uid
       FROM threads t
       JOIN threads_boards tb ON tb.tid = t.id
      WHERE t.id = NEW.tid
@@ -241,7 +241,7 @@ BEGIN
            FROM notifications n
           WHERE n.uid = tb.iid
             AND n.ntype = 'pm'
-            AND n.iid = t.id
+            AND n.iid = vndbid_num(t.id)
             AND n.read IS NULL
        );
   RETURN NULL;
@@ -258,7 +258,7 @@ CREATE TRIGGER notify_pm AFTER INSERT ON threads_posts FOR EACH ROW EXECUTE PROC
 CREATE OR REPLACE FUNCTION notify_announce() RETURNS trigger AS $$
 BEGIN
   INSERT INTO notifications (ntype, ltype, uid, iid, subid, c_title, c_byuser)
-    SELECT 'announce', 't', u.id, t.id, 1, t.title, NEW.uid
+    SELECT 'announce', 't', u.id, vndbid_num(t.id), 1, t.title, NEW.uid
       FROM threads t
       JOIN threads_boards tb ON tb.tid = t.id
       -- get the users who want this announcement

@@ -18,8 +18,8 @@ sub listing_ {
                 td_ class => 'tc4', 'Title';
             }};
             tr_ sub {
-                my $url = "/t$_->{tid}.$_->{num}";
-                td_ class => 'tc1', sub { a_ href => $url, 't'.$_->{tid} };
+                my $url = "/$_->{tid}.$_->{num}";
+                td_ class => 'tc1', sub { a_ href => $url, $_->{tid} };
                 td_ class => 'tc2', sub { a_ href => $url, '.'.$_->{num} };
                 td_ class => 'tc3', fmtdate $_->{date};
                 td_ class => 'tc4', sub {

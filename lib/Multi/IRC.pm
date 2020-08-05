@@ -293,7 +293,7 @@ sub handleid {
     $t eq 'p' ? 'p.name AS title FROM producers p WHERE p.id = $2' :
     $t eq 'c' ? 'c.name AS title FROM chars c WHERE c.id = $2' :
     $t eq 's' ? 'sa.name AS title FROM staff s JOIN staff_alias sa ON sa.aid = s.aid AND sa.id = s.id WHERE s.id = $2' :
-    $t eq 't' ? 'title, '.$GETBOARDS.' FROM threads t WHERE NOT t.hidden AND NOT t.private AND t.id = $2' :
+    $t eq 't' ? 'title, '.$GETBOARDS.' FROM threads t WHERE NOT t.hidden AND NOT t.private AND t.id = vndbid(\'t\',$2)' :
     $t eq 'g' ? 'name AS title FROM tags WHERE id = $2' :
     $t eq 'i' ? 'name AS title FROM traits WHERE id = $2' :
     $t eq 'd' ? 'title FROM docs WHERE id = $2' :
@@ -308,7 +308,7 @@ sub handleid {
     $t eq 'c' ? 'ch.name AS title, u.username, c.comments FROM changes c JOIN chars_hist ch ON c.id = ch.chid JOIN users u ON u.id = c.requester WHERE c.type = \'c\' AND c.itemid = $2 AND c.rev = $3' :
     $t eq 's' ? 'sah.name AS title, u.username, c.comments FROM changes c JOIN staff_hist sh ON c.id = sh.chid JOIN users u ON u.id = c.requester JOIN staff_alias_hist sah ON sah.chid = c.id AND sah.aid = sh.aid WHERE c.type = \'s\' AND c.itemid = $2 AND c.rev = $3' :
     $t eq 'd' ? 'dh.title, u.username, c.comments FROM changes c JOIN docs_hist dh ON c.id = dh.chid JOIN users u ON u.id = c.requester WHERE c.type = \'d\' AND c.itemid = $2 AND c.rev = $3' :
-                't.title, u.username, '.$GETBOARDS.' FROM threads t JOIN threads_posts tp ON tp.tid = t.id JOIN users u ON u.id = tp.uid WHERE NOT t.hidden AND NOT t.private AND t.id = $2 AND tp.num = $3'),
+                't.title, u.username, '.$GETBOARDS.' FROM threads t JOIN threads_posts tp ON tp.tid = t.id JOIN users u ON u.id = tp.uid WHERE NOT t.hidden AND NOT t.private AND t.id = vndbid(\'t\',$2) AND tp.num = $3'),
     [ $t, $id, $rev], $c if $rev && $t =~ /[dvprtcs]/;
 }
 
@@ -351,7 +351,7 @@ sub notify {
     WHERE c.id > $1 AND c.requester <> 1
     ORDER BY c.id},
   post => q{
-    SELECT 't' AS type, tp.tid AS id, tp.num AS rev, t.title, u.username, tp.date AS lastid, }.$GETBOARDS.q{
+    SELECT 't' AS type, vndbid_num(tp.tid) AS id, tp.num AS rev, t.title, u.username, tp.date AS lastid, }.$GETBOARDS.q{
     FROM threads_posts tp
     JOIN threads t ON t.id = tp.tid
     JOIN users u ON u.id = tp.uid

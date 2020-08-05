@@ -25,7 +25,7 @@ main = Browser.element
 
 type alias Model =
   { state       : Api.State
-  , tid         : Maybe Int
+  , tid         : Maybe String
   , num         : Maybe Int
   , can_mod     : Bool
   , can_private : Bool
@@ -215,7 +215,7 @@ view model =
     , table [ class "formtable" ] <|
       [ if thread
         then formField "title::Thread title" [ inputText "title" (Maybe.withDefault "" model.title) Title (style "width" "400px" :: required True :: GDE.valTitle) ]
-        else formField "Topic" [ a [ href <| "/t" ++ String.fromInt (Maybe.withDefault 0 model.tid) ] [ text (Maybe.withDefault "" model.title) ] ]
+        else formField "Topic" [ a [ href <| "/" ++ Maybe.withDefault "" model.tid ] [ text (Maybe.withDefault "" model.title) ] ]
       , if thread && model.can_mod
         then formField "" [ label [] [ inputCheck "" model.locked Locked, text " Locked" ] ]
         else text ""

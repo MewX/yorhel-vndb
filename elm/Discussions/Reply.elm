@@ -22,7 +22,7 @@ main = Browser.element
 
 type alias Model =
   { state  : Api.State
-  , tid    : Int
+  , tid    : String
   , old    : Bool
   , msg    : TP.Model
   }

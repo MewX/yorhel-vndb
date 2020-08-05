@@ -99,8 +99,8 @@ sub posts_ {
             }};
             tr_ sub {
                 my $l = $_;
-                my $link = "/t$l->{tid}.$l->{num}";
-                td_ class => 'tc1_1', sub { a_ href => $link, 't'.$l->{tid} };
+                my $link = "/$l->{tid}.$l->{num}";
+                td_ class => 'tc1_1', sub { a_ href => $link, $l->{tid} };
                 td_ class => 'tc1_2', sub { a_ href => $link, '.'.$l->{num} };
                 td_ class => 'tc2', fmtdate $l->{date};
                 td_ class => 'tc3', sub { user_ $l };

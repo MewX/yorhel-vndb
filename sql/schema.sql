@@ -69,9 +69,10 @@ CREATE TYPE tag_category      AS ENUM('cont', 'ero', 'tech');
 CREATE TYPE vn_relation       AS ENUM ('seq', 'preq', 'set', 'alt', 'char', 'side', 'par', 'ser', 'fan', 'orig');
 CREATE TYPE session_type      AS ENUM ('web', 'pass', 'mail');
 
--- Sequences used for ID generation of items not in the DB
+-- Sequences used for ID generation
 CREATE SEQUENCE covers_seq;
 CREATE SEQUENCE charimg_seq;
+CREATE SEQUENCE threads_id_seq;
 CREATE SEQUENCE screenshots_seq;
 
 
@@ -673,7 +674,7 @@ CREATE TABLE tags_vn_inherit (
 
 -- threads
 CREATE TABLE threads (
-  id SERIAL NOT NULL PRIMARY KEY,
+  id vndbid PRIMARY KEY CONSTRAINT threads_id_check CHECK(vndbid_type(id) = 't'),
   title varchar(50) NOT NULL DEFAULT '',
   locked boolean NOT NULL DEFAULT FALSE,
   hidden boolean NOT NULL DEFAULT FALSE,
@@ -688,22 +689,21 @@ CREATE TABLE threads (
 -- threads_poll_options
 CREATE TABLE threads_poll_options (
   id     SERIAL PRIMARY KEY,
-  tid    integer NOT NULL,
+  tid    vndbid NOT NULL,
   option varchar(100) NOT NULL
 );
 
 -- threads_poll_votes
 CREATE TABLE threads_poll_votes (
-  tid   integer NOT NULL,
   uid   integer NOT NULL,
   optid integer NOT NULL,
   date  timestamptz DEFAULT NOW(),
-  PRIMARY KEY (tid, uid, optid)
+  PRIMARY KEY (optid, uid)
 );
 
 -- threads_posts
 CREATE TABLE threads_posts (
-  tid integer NOT NULL DEFAULT 0,
+  tid vndbid NOT NULL,
   num smallint NOT NULL DEFAULT 0,
   uid integer NOT NULL DEFAULT 0,
   date timestamptz NOT NULL DEFAULT NOW(),
@@ -715,7 +715,7 @@ CREATE TABLE threads_posts (
 
 -- threads_boards
 CREATE TABLE threads_boards (
-  tid integer NOT NULL DEFAULT 0,
+  tid vndbid NOT NULL,
   type board_type NOT NULL,
   iid integer NOT NULL DEFAULT 0,
   PRIMARY KEY(tid, type, iid)

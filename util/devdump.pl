@@ -137,7 +137,7 @@ sub copy_entry {
     copy image_votes => "SELECT DISTINCT ON (id,uid%10) * FROM image_votes WHERE id IN($image_ids)", { uid => 'user' };
 
     # Threads (announcements)
-    my $threads = join ',', @{ $db->selectcol_arrayref("SELECT tid FROM threads_boards b WHERE b.type = 'an'") };
+    my $threads = join ',', map "'$_'", @{ $db->selectcol_arrayref("SELECT tid FROM threads_boards b WHERE b.type = 'an'") };
     copy threads        => "SELECT * FROM threads WHERE id IN($threads)";
     copy threads_boards => "SELECT * FROM threads_boards WHERE tid IN($threads)";
     copy threads_posts  => "SELECT * FROM threads_posts WHERE tid IN($threads)", { uid => 'user' };

@@ -91,7 +91,7 @@ our %RE = (
     pid  => qr{p$id},
     iid  => qr{i$id},
     did  => qr{d$id},
-    tid  => qr{t$id},
+    tid  => qr{(?<id>t$num)},
     gid  => qr{g$id},
     imgid=> qr{(?<id>(?:ch|cv|sf)$num)},
     vrev => qr{v$id$rev?},
@@ -100,7 +100,7 @@ our %RE = (
     srev => qr{s$id$rev?},
     crev => qr{c$id$rev?},
     drev => qr{d$id$rev?},
-    postid => qr{t$id\.(?<num>$num)},
+    postid => qr{(?<id>t$num)\.(?<num>$num)},
 );
 
 

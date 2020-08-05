@@ -12,7 +12,7 @@ our $BOARD_RE = join '|', map $_.($BOARD_TYPE{$_}{dbitem}?'(?:[1-9][0-9]{0,5})?'
 # Returns the URL to the thread page holding the given post (with optional location.hash)
 sub post_url {
     my($id, $num, $hash) = @_;
-    "/t$id".($num > 25 ? '/'.ceil($num/25) : '').($hash ? "#$hash" : '');
+    "/$id".($num > 25 ? '/'.ceil($num/25) : '').($hash ? "#$hash" : '');
 }
 
 
@@ -92,7 +92,7 @@ sub threadlist_ {
             tr_ sub {
                 my $l = $_;
                 td_ class => 'tc1', sub {
-                    a_ mkclass(locked => $l->{locked}), href => "/t$l->{id}", sub {
+                    a_ mkclass(locked => $l->{locked}), href => "/$l->{id}", sub {
                         span_ class => 'pollflag', '[poll]' if $l->{haspoll};
                         span_ class => 'pollflag', '[private]' if $l->{private};
                         span_ class => 'pollflag', '[hidden]' if $l->{hidden};

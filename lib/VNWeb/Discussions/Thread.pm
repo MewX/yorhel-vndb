@@ -10,7 +10,7 @@ my $POLL_OUT = form_compile any => {
     num_votes   => { uint => 1 },
     can_vote    => { anybool => 1 },
     preview     => { anybool => 1 },
-    tid         => { id => 1 },
+    tid         => { vndbid => 't' },
     options     => { aoh => {
         id     => { id => 1 },
         option => {},
@@ -20,7 +20,7 @@ my $POLL_OUT = form_compile any => {
 };
 
 my $POLL_IN = form_compile any => {
-    tid     => { id => 1 },
+    tid     => { vndbid => 't' },
     options => { type => 'array', values => { id => 1 } },
 };
 
@@ -32,10 +32,11 @@ elm_api DiscussionsPoll => $POLL_OUT, $POLL_IN, sub {
     return tuwf->resNotFound if !$t->{poll_question};
 
     die 'Too many options' if $data->{options}->@* > $t->{poll_max_options};
-    validate_dbid sql('SELECT id FROM threads_poll_options WHERE tid =', \$data->{tid}, 'AND id IN'), $data->{options}->@*;
+    my %opt = map +($_->{id},1), tuwf->dbAlli('SELECT id FROM threads_poll_options WHERE tid =', \$data->{tid})->@*;
+    die 'Invalid option' if grep !$opt{$_}, $data->{options}->@*;
 
-    tuwf->dbExeci('DELETE FROM threads_poll_votes WHERE tid =', \$data->{tid}, 'AND uid =', \auth->uid);
-    tuwf->dbExeci('INSERT INTO threads_poll_votes', { tid => $data->{tid}, uid => auth->uid, optid => $_ }) for $data->{options}->@*;
+    tuwf->dbExeci('DELETE FROM threads_poll_votes WHERE optid IN', [ keys %opt ], 'AND uid =', \auth->uid);
+    tuwf->dbExeci('INSERT INTO threads_poll_votes', { uid => auth->uid, optid => $_ }) for $data->{options}->@*;
     elm_Success
 };
 
@@ -43,7 +44,7 @@ elm_api DiscussionsPoll => $POLL_OUT, $POLL_IN, sub {
 
 
 my $REPLY = {
-    tid => { id => 1 },
+    tid => { vndbid => 't' },
     old => { _when => 'out', anybool => 1 },
     msg => { _when => 'in', maxlength => 32768 }
 };
@@ -96,14 +97,14 @@ sub metabox_ {
 
 sub posts_ {
     my($t, $posts, $page) = @_;
-    my sub url { "/t$t->{id}".($_?"/$_":'') }
+    my sub url { "/$t->{id}".($_?"/$_":'') }
 
     paginate_ \&url, $page, [ $t->{count}, 25 ], 't';
     div_ class => 'mainbox thread', sub {
         table_ class => 'stripe', sub {
             tr_ mkclass(deleted => $_->{hidden}), id => $_->{num}, sub {
                 td_ class => 'tc1', $t->{count} == $_->{num} ? (id => 'last') : (), sub {
-                    a_ href => "/t$t->{id}.$_->{num}", "#$_->{num}";
+                    a_ href => "/$t->{id}.$_->{num}", "#$_->{num}";
                     if(!$_->{hidden} || auth->permBoard) {
                         txt_ ' by ';
                         user_ $_;
@@ -115,10 +116,10 @@ sub posts_ {
                     i_ class => 'edit', sub {
                         txt_ '< ';
                         if(can_edit t => $_) {
-                            a_ href => "/t$t->{id}.$_->{num}/edit", 'edit';
+                            a_ href => "/$t->{id}.$_->{num}/edit", 'edit';
                             txt_ ' - ';
                         }
-                        a_ href => "/report/t/t$t->{id}.$_->{num}", 'report';
+                        a_ href => "/report/t/$t->{id}.$_->{num}", 'report';
                         txt_ ' >';
                     };
                     if($_->{hidden}) {
@@ -188,7 +189,7 @@ TUWF::get qr{/$RE{tid}(?:/$RE{num})?}, sub {
 
     # Mark a notification for this thread as read, if there is one.
     tuwf->dbExeci(
-        'UPDATE notifications SET read = NOW() WHERE uid =', \auth->uid, 'AND ltype = \'t\' AND iid = ', \$id, 'AND read IS NULL'
+        'UPDATE notifications SET read = NOW() WHERE uid =', \auth->uid, 'AND ltype = \'t\' AND iid = vndbid_num(', \$id, ') AND read IS NULL'
     ) if auth && $t->{count} <= $page*25;
 
     framework_ title => $t->{title}, sub {
@@ -196,7 +197,12 @@ TUWF::get qr{/$RE{tid}(?:/$RE{num})?}, sub {
         elm_ 'Discussions.Poll' => $POLL_OUT, {
             question    => $t->{poll_question},
             max_options => $t->{poll_max_options},
-            num_votes   => tuwf->dbVali('SELECT COUNT(DISTINCT tpv.uid) FROM threads_poll_votes tpv JOIN users u ON tpv.uid = u.id WHERE NOT u.ign_votes AND tid =', \$id),
+            num_votes   => tuwf->dbVali(
+                'SELECT COUNT(DISTINCT tpv.uid)
+                  FROM threads_poll_votes tpv
+                  JOIN threads_poll_options tpo ON tpo.id = tpv.optid
+                  JOIN users u ON tpv.uid = u.id
+                 WHERE NOT u.ign_votes AND tpo.tid =', \$id),
             preview     => !!tuwf->reqGet('pollview'), # Old non-Elm way to preview poll results
             can_vote    => !!auth,
             tid         => $id,

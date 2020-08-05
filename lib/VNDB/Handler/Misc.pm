@@ -102,7 +102,7 @@ sub homepage {
      for (@$an) {
        my $post = $self->dbPostGet(tid => $_->{id}, num => 1)->[0];
        h2;
-        a href => "/t$_->{id}", $_->{title};
+        a href => "/$_->{id}", $_->{title};
        end;
        p;
         lit bb2html $post->{msg}, 150;

@@ -5,7 +5,7 @@ use VNWeb::Discussions::Lib;
 
 
 my $FORM = {
-    tid         => { required => 0, id => 1 }, # Thread ID, only when editing a post
+    tid         => { required => 0, vndbid => 't' }, # Thread ID, only when editing a post
     num         => { required => 0, id => 1 }, # Post number, only when editing
 
     # Only when num = 1 || tid = undef
@@ -51,24 +51,21 @@ elm_api DiscussionsEdit => $FORM_OUT, $FORM_IN, sub {
     return elm_Unauth if !can_edit t => $t;
 
     if($data->{delete} && auth->permBoardmod) {
-        auth->audit($t->{user_id}, 'post delete', "deleted t$tid.$num");
+        auth->audit($t->{user_id}, 'post delete', "deleted $tid.$num");
         if($num == 1) {
-            # (This could be a single query if there were proper ON DELETE CASCADE in the DB, though that's hard for notifications...)
-            tuwf->dbExeci('DELETE FROM threads_posts WHERE tid =', \$tid);
-            tuwf->dbExeci('DELETE FROM threads_boards WHERE tid =', \$tid);
             tuwf->dbExeci('DELETE FROM threads WHERE id =', \$tid);
-            tuwf->dbExeci(q{DELETE FROM notifications WHERE ltype = 't' AND iid =}, \$tid);
+            tuwf->dbExeci(q{DELETE FROM notifications WHERE ltype = 't' AND iid = vndbid_num(}, \$tid, ')');
             return elm_Redirect '/t';
         } else {
             tuwf->dbExeci('DELETE FROM threads_posts WHERE tid =', \$tid, 'AND num =', \$num);
             tuwf->dbExeci('UPDATE threads_posts SET num = num - 1 WHERE tid =', \$tid, 'AND num >', \$num);
             tuwf->dbExeci('UPDATE threads SET count = count - 1 WHERE id =', \$tid);
-            tuwf->dbExeci(q{DELETE FROM notifications WHERE ltype = 't' AND iid =}, \$tid, 'AND subid =', \$num);
-            tuwf->dbExeci(q{UPDATE notifications SET subid = subid - 1 WHERE ltype = 't' AND iid =}, \$tid, 'AND subid >', \$num);
-            return elm_Redirect "/t$tid";
+            tuwf->dbExeci(q{DELETE FROM notifications WHERE ltype = 't' AND iid = vndbid_num(}, \$tid, ') AND subid =', \$num);
+            tuwf->dbExeci(q{UPDATE notifications SET subid = subid - 1 WHERE ltype = 't' AND iid = vndbid_num(}, \$tid, ') AND subid >', \$num);
+            return elm_Redirect "/$tid";
         }
     }
-    auth->audit($t->{user_id}, 'post edit', "edited t$tid.$num") if $tid && $t->{user_id} != auth->uid;
+    auth->audit($t->{user_id}, 'post edit', "edited $tid.$num") if $tid && $t->{user_id} != auth->uid;
 
     my $pollchanged = !$data->{tid} && $data->{poll};
     if($num == 1) {

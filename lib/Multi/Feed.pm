@@ -31,7 +31,7 @@ sub run {
 sub generate {
   # announcements
   pg_cmd q{
-      SELECT '/t'||t.id AS id, t.title, extract('epoch' from tp.date) AS published,
+      SELECT '/'||t.id AS id, t.title, extract('epoch' from tp.date) AS published,
          extract('epoch' from tp.edited) AS updated, u.username, u.id AS uid, tp.msg AS summary
        FROM threads t
        JOIN threads_posts tp ON tp.tid = t.id AND tp.num = 1
@@ -65,7 +65,7 @@ sub generate {
 
   # posts
   pg_cmd q{
-      SELECT '/t'||t.id||'.'||tp.num AS id, t.title||' (#'||tp.num||')' AS title, extract('epoch' from tp.date) AS published,
+      SELECT '/'||t.id||'.'||tp.num AS id, t.title||' (#'||tp.num||')' AS title, extract('epoch' from tp.date) AS published,
          extract('epoch' from tp.edited) AS updated, u.username, u.id AS uid, tp.msg AS summary
        FROM threads_posts tp
        JOIN threads t ON t.id = tp.tid
