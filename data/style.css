@@ -614,6 +614,17 @@ div.producerbrowse    { padding-bottom: 10px }
 
 
 
+/***** Review page *****/
+
+.fullreview td { padding: 0 0 15px 10px }
+.fullreview tr > td:first-child { width: 140px; text-align: right; font-weight: bold }
+.fullreview tr > td:last-child { max-width: 700px }
+.fullreview .myvote { font-weight: bold }
+
+#reviewspoil:not(:checked) ~ .fullreview .reviewspoil     { display: none }
+#reviewspoil:checked       ~ .fullreview .reviewnotspoil  { display: none }
+
+
 /***** Release browser *****/
 
 .relbrowse .tc1 { width: 80px }

@@ -54,7 +54,7 @@ sub reviews_ {
                 };
                 div_ sub {
                     span_ '' if !$r->{isfull};
-                    a_ href => "/$r->{id}", 'Full review »' if $r->{isfull};
+                    a_ href => "/$r->{id}#review", 'Full review »' if $r->{isfull};
                     elm_ 'Reviews.Vote' => $VNWeb::Reviews::Elm::VOTE_OUT, { %$r, can => !!auth }, sub {
                         span_ sprintf '👍 %d 👎 %d', $r->{up}, $r->{down};
                     };
