@@ -40,14 +40,14 @@ sub dbThreadGet {
   }
 
   my @select = (
-    qw|t.id t.title t.count t.locked t.hidden t.private|, 't.poll_question IS NOT NULL AS haspoll',
+    qw|t.id t.c_lastnum t.title t.locked t.hidden t.private|, 't.poll_question IS NOT NULL AS haspoll',
     $o{what} =~ /lastpost/  ? (q|EXTRACT('epoch' from tpl.date) AS lastpost_date|, VNWeb::DB::sql_user('ul', 'lastpost_')) : (),
     $o{what} =~ /poll/      ? (qw|t.poll_question t.poll_max_options t.poll_preview t.poll_recast|) : (),
   );
 
   my @join = (
     $o{what} =~ /lastpost/ ? (
-      'JOIN threads_posts tpl ON tpl.tid = t.id AND tpl.num = t.count',
+      'JOIN threads_posts tpl ON tpl.tid = t.id AND tpl.num = t.c_lastnum',
       'JOIN users ul ON ul.id = tpl.uid'
     ) : (),
     $o{type} && $o{iid} ?

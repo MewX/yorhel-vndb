@@ -275,6 +275,24 @@ CREATE TRIGGER notify_announce AFTER INSERT ON threads_posts FOR EACH ROW WHEN (
 
 
 
+-- Update threads.c_count and c_lastnum
+
+CREATE OR REPLACE FUNCTION update_threads_cache() RETURNS trigger AS $$
+BEGIN
+  UPDATE threads
+     SET c_count   = (SELECT COUNT(*) FROM threads_posts WHERE NOT hidden AND tid = threads.id)
+       , c_lastnum = (SELECT MAX(num) FROM threads_posts WHERE NOT hidden AND tid = threads.id)
+   WHERE id IN(OLD.tid,NEW.tid);
+  RETURN NULL;
+END
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_threads_cache AFTER INSERT OR UPDATE OR DELETE ON threads_posts FOR EACH ROW EXECUTE PROCEDURE update_threads_cache();
+
+
+
+
+
 -- Call update_images_cache() for every change on image_votes
 
 CREATE OR REPLACE FUNCTION update_images_cache() RETURNS trigger AS $$

@@ -180,8 +180,8 @@ TUWF::get qr{/report/list}, sub {
               Changing the status and/or adding a comment will add an entry to the log, so other mods can see what is going on. Everything on this page is only visible to moderators.
             };
             p_ q{
-              BUG: Deleting a post from a thread (not "hiding", but actually deleting it) will cause reports
-              on that thread to refer to innocent posts that happen to get the same post number as the deleted post.
+              BUG: Deleting the last post from a thread (not "hiding", but actually deleting it) will cause the report
+              to refer to an innocent post when someone adds a new post to that thread, as the reply will get the same number as the deleted post.
               Not a huge problem, but something to be aware of when browsing through handled reports.
             };
             br_;

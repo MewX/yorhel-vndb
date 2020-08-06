@@ -58,7 +58,6 @@ ALTER TABLE tags_parents             ADD CONSTRAINT tags_parents_parent_fkey    
 ALTER TABLE tags_vn                  ADD CONSTRAINT tags_vn_tag_fkey                   FOREIGN KEY (tag)       REFERENCES tags          (id);
 ALTER TABLE tags_vn                  ADD CONSTRAINT tags_vn_vid_fkey                   FOREIGN KEY (vid)       REFERENCES vn            (id);
 ALTER TABLE tags_vn                  ADD CONSTRAINT tags_vn_uid_fkey                   FOREIGN KEY (uid)       REFERENCES users         (id) ON DELETE SET DEFAULT;
-ALTER TABLE threads                  ADD CONSTRAINT threads_id_fkey                    FOREIGN KEY (id, count) REFERENCES threads_posts (tid, num) DEFERRABLE INITIALLY DEFERRED;
 ALTER TABLE threads_poll_options     ADD CONSTRAINT threads_poll_options_tid_fkey      FOREIGN KEY (tid)       REFERENCES threads       (id) ON DELETE CASCADE;
 ALTER TABLE threads_poll_votes       ADD CONSTRAINT threads_poll_votes_uid_fkey        FOREIGN KEY (uid)       REFERENCES users         (id) ON DELETE CASCADE;
 ALTER TABLE threads_poll_votes       ADD CONSTRAINT threads_poll_votes_optid_fkey      FOREIGN KEY (optid)     REFERENCES threads_poll_options (id) ON DELETE CASCADE;

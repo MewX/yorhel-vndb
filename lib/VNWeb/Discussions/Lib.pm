@@ -58,12 +58,12 @@ sub threadlist_ {
     return 0 if $opt{paginate} && !$count;
 
     my $lst = tuwf->dbPagei(\%opt, q{
-        SELECT t.id, t.title, t.count, t.locked, t.private, t.hidden, t.poll_question IS NOT NULL AS haspoll
+        SELECT t.id, t.title, t.c_count, t.c_lastnum, t.locked, t.private, t.hidden, t.poll_question IS NOT NULL AS haspoll
              , }, sql_user('tfu', 'firstpost_'), ',', sql_totime('tf.date'), q{ as firstpost_date
              , }, sql_user('tlu', 'lastpost_'),  ',', sql_totime('tl.date'), q{ as lastpost_date
           FROM threads t
           JOIN threads_posts tf ON tf.tid = t.id AND tf.num = 1
-          JOIN threads_posts tl ON tl.tid = t.id AND tl.num = t.count
+          JOIN threads_posts tl ON tl.tid = t.id AND tl.num = t.c_lastnum
           JOIN users tfu ON tfu.id = tf.uid
           JOIN users tlu ON tlu.id = tl.uid
          WHERE }, $where, q{
@@ -100,12 +100,12 @@ sub threadlist_ {
                         txt_ ', ...' if $l->{boards}->@* > 4;
                     };
                 };
-                td_ class => 'tc2', $l->{count}-1;
+                td_ class => 'tc2', $l->{c_count}-1;
                 td_ class => 'tc3', sub { user_ $l, 'firstpost_' };
                 td_ class => 'tc4', sub {
                     user_ $l, 'lastpost_';
                     txt_ ' @ ';
-                    a_ href => "/$l->{id}.$l->{count}#last", fmtdate $l->{lastpost_date}, 'full';
+                    a_ href => "/$l->{id}.$l->{c_lastnum}#last", fmtdate $l->{lastpost_date}, 'full';
                 };
             } for @$lst;
         }

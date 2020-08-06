@@ -54,14 +54,13 @@ my $REPLY_OUT = form_compile out => $REPLY;
 
 elm_api DiscussionsReply => $REPLY_OUT, $REPLY_IN, sub {
     my($data) = @_;
-    my $t = tuwf->dbRowi('SELECT id, locked, count FROM threads t WHERE id =', \$data->{tid}, 'AND', sql_visible_threads());
+    my $t = tuwf->dbRowi('SELECT id, locked FROM threads t WHERE id =', \$data->{tid}, 'AND', sql_visible_threads());
     return tuwf->resNotFound if !$t->{id};
     return elm_Unauth if !can_edit t => $t;
 
-    my $num = $t->{count}+1;
+    my $num = sql '(SELECT MAX(num)+1 FROM threads_posts WHERE tid =', \$data->{tid}, ')';
     my $msg = bb_subst_links $data->{msg};
-    tuwf->dbExeci('INSERT INTO threads_posts', { tid => $t->{id}, num => $num, uid => auth->uid, msg => $msg });
-    tuwf->dbExeci('UPDATE threads SET count =', \$num, 'WHERE id =', \$t->{id});
+    $num = tuwf->dbVali('INSERT INTO threads_posts', { tid => $t->{id}, num => $num, uid => auth->uid, msg => $msg }, 'RETURNING num');
     elm_Redirect "/$t->{id}.$num#last";
 };
 
@@ -103,7 +102,7 @@ sub posts_ {
     div_ class => 'mainbox thread', sub {
         table_ class => 'stripe', sub {
             tr_ mkclass(deleted => $_->{hidden}), id => $_->{num}, sub {
-                td_ class => 'tc1', $t->{count} == $_->{num} ? (id => 'last') : (), sub {
+                td_ class => 'tc1', $_ == $posts->[$#$posts] ? (id => 'last') : (), sub {
                     a_ href => "/$t->{id}.$_->{num}", "#$_->{num}";
                     if(!$_->{hidden} || auth->permBoard) {
                         txt_ ' by ';
@@ -156,8 +155,9 @@ TUWF::get qr{/$RE{tid}(?:(?<sep>[\./])$RE{num})?}, sub {
     my($id, $sep, $num) = (tuwf->capture('id'), tuwf->capture('sep')||'', tuwf->capture('num'));
 
     my $t = tuwf->dbRowi(
-        'SELECT id, title, count, hidden, locked, private
+        'SELECT id, title, hidden, locked, private
               , poll_question, poll_max_options
+              , (SELECT COUNT(*) FROM threads_posts WHERE tid = id) AS count
            FROM threads t
           WHERE', sql_visible_threads(), 'AND id =', \$id
     );
@@ -165,7 +165,8 @@ TUWF::get qr{/$RE{tid}(?:(?<sep>[\./])$RE{num})?}, sub {
 
     enrich_boards '', $t;
 
-    my $page = $sep eq '/' ? $num||1 : $sep eq '.' ? ceil($num/25) : 1;
+    my $page = $sep eq '/' ? $num||1 : $sep ne '.' ? 1
+        : ceil((tuwf->dbVali('SELECT COUNT(*) FROM threads_posts WHERE num <=', \$num, 'AND tid =', \$id)||9999)/25);
     $num = 0 if $sep ne '.';
 
     my $posts = tuwf->dbPagei({ results => 25, page => $page },

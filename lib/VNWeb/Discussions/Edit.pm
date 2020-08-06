@@ -58,10 +58,7 @@ elm_api DiscussionsEdit => $FORM_OUT, $FORM_IN, sub {
             return elm_Redirect '/t';
         } else {
             tuwf->dbExeci('DELETE FROM threads_posts WHERE tid =', \$tid, 'AND num =', \$num);
-            tuwf->dbExeci('UPDATE threads_posts SET num = num - 1 WHERE tid =', \$tid, 'AND num >', \$num);
-            tuwf->dbExeci('UPDATE threads SET count = count - 1 WHERE id =', \$tid);
             tuwf->dbExeci(q{DELETE FROM notifications WHERE ltype = 't' AND iid = vndbid_num(}, \$tid, ') AND subid =', \$num);
-            tuwf->dbExeci(q{UPDATE notifications SET subid = subid - 1 WHERE ltype = 't' AND iid = vndbid_num(}, \$tid, ') AND subid >', \$num);
             return elm_Redirect "/$tid";
         }
     }
@@ -89,7 +86,6 @@ elm_api DiscussionsEdit => $FORM_OUT, $FORM_IN, sub {
         title            => $data->{title},
         poll_question    => $data->{poll} ? $data->{poll}{question} : undef,
         poll_max_options => $data->{poll} ? $data->{poll}{max_options} : 1,
-        $tid ? () : (count => 1),
         auth->permBoardmod ? (
             hidden => $data->{hidden},
             locked => $data->{locked},

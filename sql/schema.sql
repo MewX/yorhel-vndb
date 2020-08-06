@@ -678,12 +678,13 @@ CREATE TABLE threads (
   title varchar(50) NOT NULL DEFAULT '',
   locked boolean NOT NULL DEFAULT FALSE,
   hidden boolean NOT NULL DEFAULT FALSE,
-  count smallint NOT NULL DEFAULT 0,
   poll_question varchar(100),
   poll_max_options smallint NOT NULL DEFAULT 1,
   poll_preview boolean NOT NULL DEFAULT FALSE, -- deprecated
   poll_recast boolean NOT NULL DEFAULT FALSE, -- deprecated
-  private boolean NOT NULL DEFAULT FALSE
+  private boolean NOT NULL DEFAULT FALSE,
+  c_count smallint NOT NULL DEFAULT 0, -- Number of non-hidden posts
+  c_lastnum smallint NOT NULL DEFAULT 1 -- 'num' of the most recent non-hidden post
 );
 
 -- threads_poll_options
@@ -704,13 +705,14 @@ CREATE TABLE threads_poll_votes (
 -- threads_posts
 CREATE TABLE threads_posts (
   tid vndbid NOT NULL,
-  num smallint NOT NULL DEFAULT 0,
-  uid integer NOT NULL DEFAULT 0,
+  num smallint NOT NULL,
+  uid integer NOT NULL,
   date timestamptz NOT NULL DEFAULT NOW(),
   edited timestamptz,
   msg text NOT NULL DEFAULT '',
   hidden boolean NOT NULL DEFAULT FALSE,
-  PRIMARY KEY(tid, num)
+  PRIMARY KEY(tid, num),
+  CONSTRAINT threads_posts_first_nonhidden CHECK(num > 1 OR NOT hidden)
 );
 
 -- threads_boards
