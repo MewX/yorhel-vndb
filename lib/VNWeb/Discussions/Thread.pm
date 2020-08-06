@@ -196,7 +196,7 @@ TUWF::get qr{/$RE{tid}(?:(?<sep>[\./])$RE{num})?}, sub {
         'UPDATE notifications SET read = NOW() WHERE uid =', \auth->uid, 'AND ltype = \'t\' AND iid = vndbid_num(', \$id, ') AND read IS NULL'
     ) if auth && $t->{count} <= $page*25;
 
-    framework_ title => $t->{title}, $num ? (js => 1, pagevars => {sethash=>"#$num"}) : (), sub {
+    framework_ title => $t->{title}, $num ? (js => 1, pagevars => {sethash=>$num}) : (), sub {
         metabox_ $t;
         elm_ 'Discussions.Poll' => $POLL_OUT, {
             question    => $t->{poll_question},
