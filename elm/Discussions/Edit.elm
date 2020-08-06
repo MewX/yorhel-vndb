@@ -240,7 +240,7 @@ view model =
         ]
       ]
       ++ (if thread then poll () else [])
-      ++ (if not model.can_mod then [] else
+      ++ (if not model.can_mod || model.tid == Nothing then [] else
       [ tr [ class "newpart" ] [ td [ colspan 2 ] [ text "DANGER ZONE" ] ]
       , formField ""
         [ inputCheck "" model.delete Delete

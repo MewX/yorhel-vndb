@@ -50,7 +50,7 @@ elm_api DiscussionsEdit => $FORM_OUT, $FORM_IN, sub {
     return tuwf->resNotFound if $tid && !$t->{id};
     return elm_Unauth if !can_edit t => $t;
 
-    if($data->{delete} && auth->permBoardmod) {
+    if($tid && $data->{delete} && auth->permBoardmod) {
         auth->audit($t->{user_id}, 'post delete', "deleted $tid.$num");
         if($num == 1) {
             tuwf->dbExeci('DELETE FROM threads WHERE id =', \$tid);
