@@ -122,7 +122,7 @@ elm_api DiscussionsEdit => $FORM_OUT, $FORM_IN, sub {
     tuwf->dbExeci('INSERT INTO threads_posts', $post) if !$data->{tid};
     tuwf->dbExeci('UPDATE threads_posts SET', $post, 'WHERE', { tid => $tid, num => $num }) if $data->{tid};
 
-    elm_Redirect post_url $tid, $num, $num;
+    elm_Redirect "/$tid.$num";
 };
 
 

@@ -3,17 +3,10 @@ package VNWeb::Discussions::Lib;
 use VNWeb::Prelude;
 use Exporter 'import';
 
-our @EXPORT = qw/$BOARD_RE post_url sql_visible_threads sql_boards enrich_boards threadlist_ boardsearch_ boardtypes_/;
+our @EXPORT = qw/$BOARD_RE sql_visible_threads sql_boards enrich_boards threadlist_ boardsearch_ boardtypes_/;
 
 
 our $BOARD_RE = join '|', map $_.($BOARD_TYPE{$_}{dbitem}?'(?:[1-9][0-9]{0,5})?':''), keys %BOARD_TYPE;
-
-
-# Returns the URL to the thread page holding the given post (with optional location.hash)
-sub post_url {
-    my($id, $num, $hash) = @_;
-    "/$id".($num > 25 ? '/'.ceil($num/25) : '').($hash ? "#$hash" : '');
-}
 
 
 # Returns a WHERE condition to filter threads that the current user is allowed to see.
@@ -112,7 +105,7 @@ sub threadlist_ {
                 td_ class => 'tc4', sub {
                     user_ $l, 'lastpost_';
                     txt_ ' @ ';
-                    a_ href => post_url($l->{id}, $l->{count}, 'last'), fmtdate $l->{lastpost_date}, 'full';
+                    a_ href => "/$l->{id}.$l->{count}#last", fmtdate $l->{lastpost_date}, 'full';
                 };
             } for @$lst;
         }

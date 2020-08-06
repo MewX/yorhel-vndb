@@ -62,7 +62,7 @@ elm_api DiscussionsReply => $REPLY_OUT, $REPLY_IN, sub {
     my $msg = bb_subst_links $data->{msg};
     tuwf->dbExeci('INSERT INTO threads_posts', { tid => $t->{id}, num => $num, uid => auth->uid, msg => $msg });
     tuwf->dbExeci('UPDATE threads SET count =', \$num, 'WHERE id =', \$t->{id});
-    elm_Redirect post_url $t->{id}, $num, 'last';
+    elm_Redirect "/$t->{id}.$num#last";
 };
 
 
@@ -152,8 +152,8 @@ sub reply_ {
 }
 
 
-TUWF::get qr{/$RE{tid}(?:/$RE{num})?}, sub {
-    my($id, $page) = (tuwf->capture('id'), tuwf->capture('num')||1);
+TUWF::get qr{/$RE{tid}(?:(?<sep>[\./])$RE{num})?}, sub {
+    my($id, $sep, $num) = (tuwf->capture('id'), tuwf->capture('sep')||'', tuwf->capture('num'));
 
     my $t = tuwf->dbRowi(
         'SELECT id, title, count, hidden, locked, private
@@ -164,6 +164,9 @@ TUWF::get qr{/$RE{tid}(?:/$RE{num})?}, sub {
     return tuwf->resNotFound if !$t->{id};
 
     enrich_boards '', $t;
+
+    my $page = $sep eq '/' ? $num||1 : $sep eq '.' ? ceil($num/25) : 1;
+    $num = 0 if $sep ne '.';
 
     my $posts = tuwf->dbPagei({ results => 25, page => $page },
         'SELECT tp.tid as id, tp.num, tp.hidden, tp.msg',
@@ -192,7 +195,7 @@ TUWF::get qr{/$RE{tid}(?:/$RE{num})?}, sub {
         'UPDATE notifications SET read = NOW() WHERE uid =', \auth->uid, 'AND ltype = \'t\' AND iid = vndbid_num(', \$id, ') AND read IS NULL'
     ) if auth && $t->{count} <= $page*25;
 
-    framework_ title => $t->{title}, sub {
+    framework_ title => $t->{title}, $num ? (js => 1, pagevars => {sethash=>"#$num"}) : (), sub {
         metabox_ $t;
         elm_ 'Discussions.Poll' => $POLL_OUT, {
             question    => $t->{poll_question},
@@ -211,12 +214,6 @@ TUWF::get qr{/$RE{tid}(?:/$RE{num})?}, sub {
         posts_ $t, $posts, $page;
         reply_ $t, $posts, $page;
     }
-};
-
-
-TUWF::get qr{/$RE{postid}}, sub {
-    my($id, $num) = (tuwf->capture('id'), tuwf->capture('num'));
-    tuwf->resRedirect(post_url($id, $num, $num), 'perm')
 };
 
 1;
