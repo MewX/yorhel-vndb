@@ -34,10 +34,13 @@ ALTER TABLE threads ADD COLUMN c_lastnum smallint NOT NULL DEFAULT 1; -- 'num' o
 
 ALTER TABLE threads_posts ALTER COLUMN num DROP DEFAULT;
 ALTER TABLE threads_posts ALTER COLUMN uid DROP DEFAULT;
+ALTER TABLE threads_posts ALTER COLUMN uid DROP NOT NULL;
 ALTER TABLE threads_posts ADD CONSTRAINT threads_posts_first_nonhidden CHECK(num > 1 OR NOT hidden);
 
 UPDATE threads
    SET c_count   = (SELECT COUNT(*) FROM threads_posts WHERE NOT hidden AND tid = threads.id)
      , c_lastnum = (SELECT MAX(num) FROM threads_posts WHERE NOT hidden AND tid = threads.id);
+
+UPDATE threads_posts SET uid = NULL WHERE uid = 0;
 
 \i sql/triggers.sql

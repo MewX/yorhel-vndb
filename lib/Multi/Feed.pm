@@ -36,7 +36,7 @@ sub generate {
        FROM threads t
        JOIN threads_posts tp ON tp.tid = t.id AND tp.num = 1
        JOIN threads_boards tb ON tb.tid = t.id AND tb.type = 'an'
-       JOIN users u ON u.id = tp.uid
+       LEFT JOIN users u ON u.id = tp.uid
       WHERE NOT t.hidden AND NOT t.private
       ORDER BY t.id DESC
       LIMIT $1},
@@ -69,7 +69,7 @@ sub generate {
          extract('epoch' from tp.edited) AS updated, u.username, u.id AS uid, tp.msg AS summary
        FROM threads_posts tp
        JOIN threads t ON t.id = tp.tid
-       JOIN users u ON u.id = tp.uid
+       LEFT JOIN users u ON u.id = tp.uid
       WHERE NOT tp.hidden AND NOT t.hidden AND NOT t.private
       ORDER BY tp.date DESC
       LIMIT $1},

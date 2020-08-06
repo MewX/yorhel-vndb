@@ -64,8 +64,8 @@ sub threadlist_ {
           FROM threads t
           JOIN threads_posts tf ON tf.tid = t.id AND tf.num = 1
           JOIN threads_posts tl ON tl.tid = t.id AND tl.num = t.c_lastnum
-          JOIN users tfu ON tfu.id = tf.uid
-          JOIN users tlu ON tlu.id = tl.uid
+          LEFT JOIN users tfu ON tfu.id = tf.uid
+          LEFT JOIN users tlu ON tlu.id = tl.uid
          WHERE }, $where, q{
          ORDER BY}, $opt{sort}||'tl.date DESC'
     );

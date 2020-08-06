@@ -706,7 +706,7 @@ CREATE TABLE threads_poll_votes (
 CREATE TABLE threads_posts (
   tid vndbid NOT NULL,
   num smallint NOT NULL,
-  uid integer NOT NULL,
+  uid integer,
   date timestamptz NOT NULL DEFAULT NOW(),
   edited timestamptz,
   msg text NOT NULL DEFAULT '',

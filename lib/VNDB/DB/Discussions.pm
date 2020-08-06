@@ -48,7 +48,7 @@ sub dbThreadGet {
   my @join = (
     $o{what} =~ /lastpost/ ? (
       'JOIN threads_posts tpl ON tpl.tid = t.id AND tpl.num = t.c_lastnum',
-      'JOIN users ul ON ul.id = tpl.uid'
+      'LEFT JOIN users ul ON ul.id = tpl.uid'
     ) : (),
     $o{type} && $o{iid} ?
       'JOIN threads_boards tb ON tb.tid = t.id' : (),
@@ -97,7 +97,7 @@ sub dbThreadGet {
       do { my $idx = $r{ delete $_->{tid} }; $r->[$idx] = { $r->[$idx]->%*, %$_ } } for (@{$self->dbAll(q|
         SELECT tpf.tid, EXTRACT('epoch' from tpf.date) AS firstpost_date, !s
           FROM threads_posts tpf
-          JOIN users uf ON tpf.uid = uf.id
+          LEFT JOIN users uf ON tpf.uid = uf.id
           WHERE tpf.num = 1 AND tpf.tid IN(!l)|,
          VNWeb::DB::sql_user('uf', 'firstpost_'), [ keys %r ]
       )});
@@ -152,7 +152,7 @@ sub dbPostGet {
     $o{what} =~ /thread/ ? ('t.title', 't.hidden AS thread_hidden') : (),
   );
   my @join = (
-    $o{what} =~ /user/ ? 'JOIN users u ON u.id = tp.uid' : (),
+    $o{what} =~ /user/ ? 'LEFT JOIN users u ON u.id = tp.uid' : (),
     $o{what} =~ /thread/ ? 'JOIN threads t ON t.id = tp.tid' : (),
   );
 

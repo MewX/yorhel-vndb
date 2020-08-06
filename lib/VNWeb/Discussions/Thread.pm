@@ -175,7 +175,7 @@ TUWF::get qr{/$RE{tid}(?:(?<sep>[\./])$RE{num})?}, sub {
              ',', sql_totime('tp.date'), ' as date',
              ',', sql_totime('tp.edited'), ' as edited
            FROM threads_posts tp
-           JOIN users u ON tp.uid = u.id
+           LEFT JOIN users u ON tp.uid = u.id
           WHERE tp.tid =', \$id, '
           ORDER BY tp.num'
     );
