@@ -455,7 +455,7 @@ CREATE TABLE releases_producers (
   pid        integer NOT NULL, -- [pub] producers.id
   developer  boolean NOT NULL DEFAULT FALSE, -- [pub]
   publisher  boolean NOT NULL DEFAULT TRUE, -- [pub]
-  CHECK(developer OR publisher),
+  CONSTRAINT releases_producers_check1 CHECK(developer OR publisher),
   PRIMARY KEY(id, pid)
 );
 
@@ -674,7 +674,7 @@ CREATE TABLE tags_vn_inherit (
 
 -- threads
 CREATE TABLE threads (
-  id vndbid PRIMARY KEY CONSTRAINT threads_id_check CHECK(vndbid_type(id) = 't'),
+  id vndbid PRIMARY KEY DEFAULT vndbid('t', nextval('threads_id_seq')::int) CONSTRAINT threads_id_check CHECK(vndbid_type(id) = 't'),
   title varchar(50) NOT NULL DEFAULT '',
   locked boolean NOT NULL DEFAULT FALSE,
   hidden boolean NOT NULL DEFAULT FALSE,
@@ -709,8 +709,8 @@ CREATE TABLE threads_posts (
   uid integer,
   date timestamptz NOT NULL DEFAULT NOW(),
   edited timestamptz,
-  msg text NOT NULL DEFAULT '',
   hidden boolean NOT NULL DEFAULT FALSE,
+  msg text NOT NULL DEFAULT '',
   PRIMARY KEY(tid, num),
   CONSTRAINT threads_posts_first_nonhidden CHECK(num > 1 OR NOT hidden)
 );
