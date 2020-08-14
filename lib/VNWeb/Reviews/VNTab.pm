@@ -11,12 +11,13 @@ sub reviews_ {
     # TODO: Order
     my $lst = tuwf->dbAlli(
         'SELECT r.id, r.rid, r.summary, r.text <> \'\' AS isfull, r.spoiler, uv.vote
-              , COALESCE(s.up,0) AS up, COALESCE(s.down,0) AS down, rv.vote AS my
+              , COALESCE(c.count,0) AS count, COALESCE(s.up,0) AS up, COALESCE(s.down,0) AS down, rv.vote AS my
               , ', sql_totime('r.date'), 'AS date, ', sql_user(), '
            FROM reviews r
            LEFT JOIN users u ON r.uid = u.id
            LEFT JOIN ulist_vns uv ON uv.uid = r.uid AND uv.vid = r.vid
            LEFT JOIN (SELECT id, COUNT(*) FILTER(WHERE vote), COUNT(*) FILTER(WHERE NOT vote) FROM reviews_votes GROUP BY id) AS s(id,up,down) ON s.id = r.id
+           LEFT JOIN (SELECT id, COUNT(*) FROM reviews_posts GROUP BY id) AS c(id,count) ON c.id = r.id
            LEFT JOIN reviews_votes rv ON rv.uid =', \auth->uid, ' AND rv.id = r.id
           WhERE r.vid =', \$v->{id}
     );
@@ -53,8 +54,8 @@ sub reviews_ {
                     }
                 };
                 div_ sub {
-                    span_ '' if !$r->{isfull};
                     a_ href => "/$r->{id}#review", 'Full review »' if $r->{isfull};
+                    a_ href => "/$r->{id}#threadstart", $r->{count} == 1 ? '1 comment' : "$r->{count} comments";
                     elm_ 'Reviews.Vote' => $VNWeb::Reviews::Elm::VOTE_OUT, { %$r, can => !!auth }, sub {
                         span_ sprintf '👍 %d 👎 %d', $r->{up}, $r->{down};
                     };

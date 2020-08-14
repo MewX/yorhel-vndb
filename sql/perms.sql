@@ -39,6 +39,7 @@ GRANT SELECT, INSERT,         DELETE ON releases_vn              TO vndb_site;
 GRANT SELECT, INSERT                 ON releases_vn_hist         TO vndb_site;
 GRANT SELECT, INSERT, UPDATE         ON reports                  TO vndb_site;
 GRANT SELECT, INSERT, UPDATE, DELETE ON reviews                  TO vndb_site;
+GRANT SELECT, INSERT, UPDATE, DELETE ON reviews_posts            TO vndb_site;
 GRANT SELECT, INSERT, UPDATE, DELETE ON reviews_votes            TO vndb_site;
 GRANT SELECT, INSERT, UPDATE, DELETE ON rlists                   TO vndb_site;
 -- No access to the 'sessions' table, managed by the user_* functions.

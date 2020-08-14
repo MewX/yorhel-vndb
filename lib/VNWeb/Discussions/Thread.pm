@@ -94,12 +94,13 @@ sub metabox_ {
 }
 
 
+# Also used by Reviews::Page for review comments.
 sub posts_ {
     my($t, $posts, $page) = @_;
     my sub url { "/$t->{id}".($_?"/$_":'') }
 
     paginate_ \&url, $page, [ $t->{count}, 25 ], 't';
-    div_ class => 'mainbox thread', sub {
+    div_ class => 'mainbox thread', id => 'threadstart', sub {
         table_ class => 'stripe', sub {
             tr_ mkclass(deleted => $_->{hidden}), id => $_->{num}, sub {
                 td_ class => 'tc1', $_ == $posts->[$#$posts] ? (id => 'last') : (), sub {

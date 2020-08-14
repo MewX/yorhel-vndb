@@ -14,6 +14,17 @@ CREATE TABLE reviews (
   spoiler boolean NOT NULL
 );
 
+CREATE TABLE reviews_posts (
+  id      vndbid NOT NULL,
+  num     smallint NOT NULL,
+  uid     integer,
+  date    timestamptz NOT NULL DEFAULT NOW(),
+  edited  timestamptz,
+  hidden  boolean NOT NULL DEFAULT FALSE,
+  msg     text NOT NULL DEFAULT '',
+  PRIMARY KEY(id, num)
+);
+
 CREATE TABLE reviews_votes (
   id      vndbid NOT NULL,
   uid     int,
@@ -28,6 +39,8 @@ CREATE UNIQUE INDEX reviews_votes_id_uid ON reviews_votes (id,uid);
 ALTER TABLE reviews       ADD CONSTRAINT reviews_vid_fkey       FOREIGN KEY (vid) REFERENCES vn       (id) ON DELETE CASCADE;
 ALTER TABLE reviews       ADD CONSTRAINT reviews_uid_fkey       FOREIGN KEY (uid) REFERENCES users    (id) ON DELETE SET DEFAULT;
 ALTER TABLE reviews       ADD CONSTRAINT reviews_rid_fkey       FOREIGN KEY (rid) REFERENCES releases (id) ON DELETE SET DEFAULT;
+ALTER TABLE reviews_posts ADD CONSTRAINT reviews_posts_id_fkey  FOREIGN KEY (id)  REFERENCES reviews  (id) ON DELETE CASCADE;
+ALTER TABLE reviews_posts ADD CONSTRAINT reviews_posts_uid_fkey FOREIGN KEY (uid) REFERENCES users    (id) ON DELETE SET DEFAULT;
 ALTER TABLE reviews_votes ADD CONSTRAINT reviews_votes_id_fkey  FOREIGN KEY (id)  REFERENCES reviews  (id) ON DELETE CASCADE;
 ALTER TABLE reviews_votes ADD CONSTRAINT reviews_votes_uid_fkey FOREIGN KEY (uid) REFERENCES users    (id) ON DELETE CASCADE;
 

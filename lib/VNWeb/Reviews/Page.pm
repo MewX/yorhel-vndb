@@ -15,9 +15,9 @@ sub review_ {
             td_ sub {
                 b_ style => 'float: right', 'Vote: '.fmtvote($w->{vote}) if $w->{vote};
                 user_ $w;
-                my($date, $lastmod) = map fmtdate($_,'compact'), $w->@{'date', 'lastmod'};
+                my($date, $lastmod) = map $_&&fmtdate($_,'compact'), $w->@{'date', 'lastmod'};
                 txt_ " on $date";
-                b_ class => 'grayedout', " last updated on $lastmod" if $date ne $lastmod;
+                b_ class => 'grayedout', " last updated on $lastmod" if $lastmod && $date ne $lastmod;
             }
         };
         tr_ sub {
@@ -55,32 +55,51 @@ sub review_ {
 }
 
 
-TUWF::get qr{/$RE{wid}}, sub {
+TUWF::get qr{/$RE{wid}(?:(?<sep>[\./])$RE{num})?}, sub {
+    my($id, $sep, $num) = (tuwf->capture('id'), tuwf->capture('sep')||'', tuwf->capture('num'));
     my $w = tuwf->dbRowi(
         'SELECT r.id, r.vid, r.rid, r.summary, r.text, r.spoiler, uv.vote
               , rel.title AS rtitle, rel.original AS roriginal, rel.type AS rtype
-              , COALESCE(s.up,0) AS up, COALESCE(s.down,0) AS down, rv.vote AS my
+              , COALESCE(c.count,0) AS count, COALESCE(s.up,0) AS up, COALESCE(s.down,0) AS down, rv.vote AS my
               , ', sql_user(), ',', sql_totime('r.date'), 'AS date,', sql_totime('r.lastmod'), 'AS lastmod
            FROM reviews r
            LEFT JOIN releases rel ON rel.id = r.rid
            LEFT JOIN users u ON u.id = r.uid
            LEFT JOIN ulist_vns uv ON uv.uid = r.uid AND uv.vid = r.vid
            LEFT JOIN (SELECT id, COUNT(*) FILTER(WHERE vote), COUNT(*) FILTER(WHERE NOT vote) FROM reviews_votes GROUP BY id) AS s(id,up,down) ON s.id = r.id
+           LEFT JOIN (SELECT id, COUNT(*) FROM reviews_posts GROUP BY id) AS c(id,count) ON c.id = r.id
            LEFT JOIN reviews_votes rv ON rv.id = r.id AND rv.uid =', \auth->uid, '
-          WHERE r.id =', \tuwf->capture('id')
+          WHERE r.id =', \$id
     );
     return tuwf->resNotFound if !$w->{id};
 
     enrich_flatten lang => rid => id => sub { sql 'SELECT id, lang FROM releases_lang WHERE id IN', $_, 'ORDER BY id, lang' }, $w;
     enrich_flatten platforms => rid => id => sub { sql 'SELECT id, platform FROM releases_platforms WHERE id IN', $_, 'ORDER BY id, platform' }, $w;
 
+    my $page = $sep eq '/' ? $num||1 : $sep ne '.' ? 1
+        : ceil((tuwf->dbVali('SELECT COUNT(*) FROM reviews_posts WHERE num <=', \$num, 'AND id =', \$id)||9999)/25);
+    $num = 0 if $sep ne '.';
+
+    my $posts = tuwf->dbPagei({ results => 25, page => $page },
+        'SELECT rp.id, rp.num, rp.hidden, rp.msg',
+             ',', sql_user(),
+             ',', sql_totime('rp.date'), ' as date',
+             ',', sql_totime('rp.edited'), ' as edited
+           FROM reviews_posts rp
+           LEFT JOIN users u ON rp.uid = u.id
+          WHERE rp.id =', \$id, '
+          ORDER BY rp.num'
+    );
+
     my $v = db_entry v => $w->{vid};
     VNWeb::VN::Page::enrich_vn($v);
 
-    framework_ title => "Review of $v->{title}", index => 1, type => 'v', dbobj => $v, hiddenmsg => 1, sub {
+    framework_ title => "Review of $v->{title}", index => 1, type => 'v', dbobj => $v, hiddenmsg => 1,
+        js => 1, pagevars => {sethash=>$num?$num:$page>1?'threadstart':'review'},
+    sub {
         VNWeb::VN::Page::infobox_($v);
         VNWeb::VN::Page::tabs_($v, 'reviews');
-        div_ class => 'mainbox', sub {
+        div_ class => 'mainbox', id => 'review', sub {
             p_ class => 'mainopts', sub {
                 if(can_edit w => $w) {
                     a_ href => "/$w->{id}/edit", 'Edit';
@@ -88,9 +107,14 @@ TUWF::get qr{/$RE{wid}}, sub {
                 }
                 a_ href => "/report/w/$w->{id}", 'Report'; # TODO
             };
-            h1_ "Review";
+            h1_ 'Review';
             review_ $w;
         };
+        if(grep !$_->{hidden}, @$posts) {
+            h1_ class => 'boxtitle', 'Comments'; # XXX: How does this look with pagination?
+            VNWeb::Discussions::Thread::posts_($w, $posts, $page);
+        }
+        # TODO: "Add comment" form + fix post editing and reporting.
     };
 };
 
