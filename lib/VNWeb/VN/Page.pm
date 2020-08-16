@@ -386,17 +386,16 @@ sub infobox_ {
 # Also used by Chars::VNTab & Reviews::{Page,VNTab}
 sub tabs_ {
     my($v, $tab) = @_;
-    # XXX: This query is kind of silly because we'll be fetching a list of characters regardless of which tab we have open.
-    my $haschars = tuwf->dbVali('SELECT 1 FROM chars c JOIN chars_vns cv ON cv.id = c.id WHERE NOT c.hidden AND cv.vid =', \$v->{id}, 'LIMIT 1');
-    my $hasreviews = tuwf->dbVali('SELECT 1 FROM reviews WHERE vid =', \$v->{id}, 'LIMIT 1');
+    my $chars = tuwf->dbVali('SELECT COUNT(DISTINCT c.id) FROM chars c JOIN chars_vns cv ON cv.id = c.id WHERE NOT c.hidden AND cv.vid =', \$v->{id});
+    my $reviews = tuwf->dbVali('SELECT COUNT(*) FROM reviews WHERE vid =', \$v->{id});
 
-    return if !$haschars && !$hasreviews && !auth->permEdit && !auth->permReview;
+    return if !$chars && !$reviews && !auth->permEdit && !auth->permReview;
     $tab ||= '';
     div_ class => 'maintabs', sub {
         ul_ sub {
-            li_ class => ($tab eq ''        ? ' tabselected' : ''), sub { a_ href => "/v$v->{id}#main", name => 'main', 'main' } if $haschars || $hasreviews;
-            li_ class => ($tab eq 'chars'   ? ' tabselected' : ''), sub { a_ href => "/v$v->{id}/chars#chars", name => 'chars', 'characters' } if $haschars;
-            li_ class => ($tab eq 'reviews' ? ' tabselected' : ''), sub { a_ href => "/v$v->{id}/reviews#review", name => 'review', 'reviews' } if $hasreviews;
+            li_ class => ($tab eq ''        ? ' tabselected' : ''), sub { a_ href => "/v$v->{id}#main", name => 'main', 'main' } if $chars || $reviews;
+            li_ class => ($tab eq 'chars'   ? ' tabselected' : ''), sub { a_ href => "/v$v->{id}/chars#chars", name => 'chars', "characters ($chars)" } if $chars;
+            li_ class => ($tab eq 'reviews' ? ' tabselected' : ''), sub { a_ href => "/v$v->{id}/reviews#review", name => 'review', "reviews ($reviews)" } if $reviews;
         };
         ul_ sub {
             if(auth && canvote $v) {
