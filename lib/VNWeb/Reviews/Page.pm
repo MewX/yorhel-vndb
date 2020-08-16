@@ -4,6 +4,25 @@ use VNWeb::Prelude;
 use VNWeb::Releases::Lib;
 
 
+my $COMMENT = form_compile any => {
+    id  => { vndbid => 'w' },
+    msg => { maxlength => 32768 }
+};
+
+elm_api ReviewsComment => undef, $COMMENT, sub {
+    my($data) = @_;
+    my $w = tuwf->dbRowi('SELECT id, false AS locked FROM reviews WHERE id =', \$data->{id});
+    return tuwf->resNotFound if !$w->{id};
+    return elm_Unauth if !can_edit t => $w;
+
+    my $num = sql 'COALESCE((SELECT MAX(num)+1 FROM reviews_posts WHERE id =', \$data->{id}, '),1)';
+    my $msg = bb_subst_links $data->{msg};
+    $num = tuwf->dbVali('INSERT INTO reviews_posts', { id => $w->{id}, num => $num, uid => auth->uid, msg => $msg }, 'RETURNING num');
+    elm_Redirect "/$w->{id}.$num#last";
+};
+
+
+
 sub review_ {
     my($w) = @_;
 
@@ -111,10 +130,10 @@ TUWF::get qr{/$RE{wid}(?:(?<sep>[\./])$RE{num})?}, sub {
             review_ $w;
         };
         if(grep !$_->{hidden}, @$posts) {
-            h1_ class => 'boxtitle', 'Comments'; # XXX: How does this look with pagination?
+            h1_ class => 'boxtitle', 'Comments';
             VNWeb::Discussions::Thread::posts_($w, $posts, $page);
         }
-        # TODO: "Add comment" form + fix post reporting.
+        elm_ 'Reviews.Comment' => $COMMENT, { id => $w->{id}, msg => '' } if $w->{count} <= $page*25 && can_edit t => $w;
     };
 };
 
