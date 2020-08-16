@@ -26,7 +26,6 @@ main = Browser.element
 type alias Model =
   { state       : Api.State
   , tid         : Maybe String
-  , num         : Maybe Int
   , can_mod     : Bool
   , can_private : Bool
   , locked      : Bool
@@ -50,7 +49,6 @@ init d =
   , can_mod     = d.can_mod
   , can_private = d.can_private
   , tid         = d.tid
-  , num         = d.num
   , locked      = d.locked
   , hidden      = d.hidden
   , private     = d.private
@@ -73,7 +71,6 @@ searchConfig = { wrap = BoardSearch, id = "boardadd", source = A.boardSource }
 encode : Model -> GDE.Send
 encode m =
   { tid       = m.tid
-  , num       = m.num
   , locked    = m.locked
   , hidden    = m.hidden
   , private   = m.private
@@ -148,8 +145,6 @@ update msg model =
 view : Model -> Html Msg
 view model =
   let
-    thread = model.tid == Nothing || model.num == Just 1
-
     board n bd =
       li [] <|
         [ text "["
@@ -184,7 +179,7 @@ view model =
         else text ""
       ]
 
-    poll () =
+    poll =
       [ tr [ class "newpart" ] [ td [ colspan 2 ] [ text "" ] ]
       , formField "" [ label [] [ inputCheck "" model.pollEnabled PollEnabled, text " Add poll" ] ]
       ] ++
@@ -211,26 +206,22 @@ view model =
   in
   form_ Submit (model.state == Api.Loading)
   [ div [ class "mainbox" ]
-    [ h1 [] [ text <| if model.tid == Nothing then "Create new thread" else "Edit post" ]
+    [ h1 [] [ text <| if model.tid == Nothing then "Create new thread" else "Edit thread" ]
     , table [ class "formtable" ] <|
-      [ if thread
-        then formField "title::Thread title" [ inputText "title" (Maybe.withDefault "" model.title) Title (style "width" "400px" :: required True :: GDE.valTitle) ]
-        else formField "Topic" [ a [ href <| "/" ++ Maybe.withDefault "" model.tid ] [ text (Maybe.withDefault "" model.title) ] ]
-      , if thread && model.can_mod
+      [ formField "title::Thread title" [ inputText "title" (Maybe.withDefault "" model.title) Title (style "width" "400px" :: required True :: GDE.valTitle) ]
+      , if model.can_mod
         then formField "" [ label [] [ inputCheck "" model.locked Locked, text " Locked" ] ]
         else text ""
       , if model.can_mod
         then formField "" [ label [] [ inputCheck "" model.hidden Hidden, text " Hidden" ] ]
         else text ""
-      , if thread && model.can_private
+      , if model.can_private
         then formField "" [ label [] [ inputCheck "" model.private Private, text " Private" ] ]
         else text ""
       , if model.tid /= Nothing && model.can_mod
         then formField "" [ label [] [ inputCheck "" model.nolastmod Nolastmod, text " Don't update last modification timestamp" ] ]
         else text ""
-      , if thread
-        then formField "boardadd::Boards" (boards ())
-        else text ""
+      , formField "boardadd::Boards" (boards ())
       , tr [ class "newpart" ] [ td [ colspan 2 ] [ text "" ] ]
       , formField "msg::Message"
         [ TP.view "msg" model.msg Content 700 ([rows 12, cols 50] ++ GDE.valMsg)
@@ -239,15 +230,10 @@ view model =
           ]
         ]
       ]
-      ++ (if thread then poll () else [])
+      ++ poll
       ++ (if not model.can_mod || model.tid == Nothing then [] else
       [ tr [ class "newpart" ] [ td [ colspan 2 ] [ text "DANGER ZONE" ] ]
-      , formField ""
-        [ inputCheck "" model.delete Delete
-        , text <| " Permanently delete this " ++ if thread then "thread and all replies." else "post."
-        , text <| if thread then "" else " This causes all replies after this one to be renumbered."
-        , text <| " This action can not be reverted, only do this with obvious spam!"
-        ]
+      , formField "" [ inputCheck "" model.delete Delete, text " Permanently delete this thread and all replies. This action can not be reverted, only do this with obvious spam!" ]
       ])
     ]
   , div [ class "mainbox" ]

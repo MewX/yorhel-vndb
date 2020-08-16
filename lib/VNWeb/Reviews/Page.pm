@@ -114,7 +114,7 @@ TUWF::get qr{/$RE{wid}(?:(?<sep>[\./])$RE{num})?}, sub {
             h1_ class => 'boxtitle', 'Comments'; # XXX: How does this look with pagination?
             VNWeb::Discussions::Thread::posts_($w, $posts, $page);
         }
-        # TODO: "Add comment" form + fix post editing and reporting.
+        # TODO: "Add comment" form + fix post reporting.
     };
 };
 
