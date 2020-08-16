@@ -124,7 +124,7 @@ TUWF::get qr{/$RE{wid}(?:(?<sep>[\./])$RE{num})?}, sub {
                     a_ href => "/$w->{id}/edit", 'Edit';
                     b_ class => 'grayedout', ' | ';
                 }
-                a_ href => "/report/w/$w->{id}", 'Report'; # TODO
+                a_ href => "/report/$w->{id}", 'Report';
             };
             h1_ 'Review';
             review_ $w;

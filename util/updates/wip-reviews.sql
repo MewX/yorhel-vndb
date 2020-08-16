@@ -1,3 +1,10 @@
+ALTER TABLE reports ADD COLUMN objectnum integer;
+UPDATE reports SET objectnum = regexp_replace(object, '^.+\.([0-9]+)$', '\1')::integer WHERE object LIKE '%.%';
+ALTER TABLE reports ALTER COLUMN object TYPE vndbid USING regexp_replace(object, '\.[0-9]+$','')::vndbid;
+ALTER TABLE reports DROP COLUMN rtype;
+DROP TYPE report_type;
+
+
 -- WIP: The modifications in this file are not final and haven't been integrated in sql/ yet.
 
 CREATE SEQUENCE reviews_seq;

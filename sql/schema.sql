@@ -64,7 +64,6 @@ CREATE TYPE producer_type     AS ENUM ('co', 'in', 'ng');
 CREATE TYPE producer_relation AS ENUM ('old', 'new', 'sub', 'par', 'imp', 'ipa', 'spa', 'ori');
 CREATE TYPE release_type      AS ENUM ('complete', 'partial', 'trial');
 CREATE TYPE report_status     AS ENUM ('new', 'busy', 'done', 'dismissed');
-CREATE TYPE report_type       AS ENUM ('t', 'db');
 CREATE TYPE tag_category      AS ENUM('cont', 'ero', 'tech');
 CREATE TYPE vn_relation       AS ENUM ('seq', 'preq', 'set', 'alt', 'char', 'side', 'par', 'ser', 'fan', 'orig');
 CREATE TYPE session_type      AS ENUM ('web', 'pass', 'mail');
@@ -491,11 +490,11 @@ CREATE TABLE reports (
   uid        integer, -- user who created the report, if logged in
   ip         inet, -- IP address of the visitor, if not logged in
   reason     text NOT NULL,
-  rtype      report_type NOT NULL,
   status     report_status NOT NULL DEFAULT 'new',
-  object     text NOT NULL, -- The id of the thing being reported
+  object     vndbid NOT NULL, -- The id of the thing being reported
   message    text NOT NULL,
-  log        text NOT NULL DEFAULT ''
+  log        text NOT NULL DEFAULT '',
+  objectnum  integer -- The sub-id of the thing to be reported
 );
 
 -- rlists

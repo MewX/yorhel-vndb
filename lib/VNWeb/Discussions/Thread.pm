@@ -119,7 +119,7 @@ sub posts_ {
                             a_ href => "/$t->{id}.$_->{num}/edit", 'edit';
                             txt_ ' - ';
                         }
-                        a_ href => "/report/t/$t->{id}.$_->{num}", 'report';
+                        a_ href => "/report/$t->{id}.$_->{num}", 'report';
                         txt_ ' >';
                     };
                     if($_->{hidden}) {

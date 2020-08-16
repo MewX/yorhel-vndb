@@ -40,7 +40,7 @@ sub reviews_ {
                             a_ href => "/$r->{id}/edit", 'edit';
                             txt_ ' - ';
                         }
-                        a_ href => "/report/w/$r->{id}", 'report'; # TODO
+                        a_ href => "/report/$r->{id}", 'report';
                         txt_ '>';
                     };
                     if($r->{spoiler}) {

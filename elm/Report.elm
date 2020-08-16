@@ -31,14 +31,16 @@ type Msg
 
 type alias ReasonLabel =
   { label  : String
-  , vis    : String -> String -> Bool -- Given an rtype & objectid, returns whether it should be listed
+  , vis    : String -> Bool -- Given an objectid, returns whether it should be listed
   , submit : Bool -- Whether it allows submission of the form
-  , msg    : String -> String -> List (Html Msg) -- Message to display
+  , msg    : String -> List (Html Msg) -- Message to display
   }
 
 
-vis _ _ = True
-nomsg _ _ = []
+vis _ = True
+nomsg _ = []
+objtype s o = String.any (\c -> String.startsWith (String.fromChar c) o) s
+editable = objtype "vrpcs"
 initial = { label = "-- Select --" , vis = vis, submit = False , msg = nomsg }
 
 reasons : List ReasonLabel
@@ -55,19 +57,19 @@ reasons =
     , msg    = nomsg
     }
   , { label  = "Off-topic / wrong board"
-    , vis    = \t _ -> t == "t"
+    , vis    = objtype "tw"
     , submit = True
     , msg    = nomsg
     }
   , { label  = "Unwelcome behavior"
-    , vis    = \t _ -> t == "t"
+    , vis    = objtype "tw"
     , submit = True
     , msg    = nomsg
     }
   , { label  = "Unmarked spoilers"
     , vis    = vis
     , submit = True
-    , msg    = \t o -> if not (t == "db" && not (String.startsWith "d" o)) then [] else
+    , msg    = \o -> if editable o then [] else
         [ text "VNDB is an open wiki, it is often easier if you removed the spoilers yourself by "
         , a [ href ("/" ++ o ++ "/edit") ] [ text " editing the entry" ]
         , text ". You likely know more about this entry than our moderators, after all. "
@@ -78,9 +80,9 @@ reasons =
         ]
     }
   , { label  = "Incorrect information"
-    , vis    = \t o -> t == "db" && not (String.startsWith "d" o)
+    , vis    = editable
     , submit = False
-    , msg    = \_ o ->
+    , msg    = \o ->
         [ text "VNDB is an open wiki, you can correct the information in this database yourself by "
         , a [ href ("/" ++ o ++ "/edit") ] [ text " editing the entry" ]
         , text ". You likely know more about this entry than our moderators, after all. "
@@ -91,9 +93,9 @@ reasons =
         ]
     }
   , { label  = "Missing information"
-    , vis    = \t o -> t == "db" && not (String.startsWith "d" o)
+    , vis    = editable
     , submit = False
-    , msg    = \_ o ->
+    , msg    = \o ->
         [ text "VNDB is an open wiki, you can add any missing information to this database yourself. "
         , text "You likely know more about this entry than our moderators, after all. "
         , br [] []
@@ -103,9 +105,9 @@ reasons =
         ]
     }
   , { label  = "Not a visual novel"
-    , vis    = \t o -> t == "db" && String.startsWith "v" o
+    , vis    = objtype "v"
     , submit = False
-    , msg    = \_ _ ->
+    , msg    = \_ ->
         [ text "If you suspect that this entry does not adhere to our "
         , a [ href "/d2#1" ] [ text "inclusion criteria" ]
         , text ", please report it in "
@@ -114,20 +116,20 @@ reasons =
         ]
     }
   , { label  = "Does not belong here"
-    , vis    = \t o -> t == "db" && not (String.startsWith "v" o || String.startsWith "d" o)
+    , vis    = \o -> editable o && not (objtype "v" o)
     , submit = True
     , msg    = nomsg
     }
   , { label  = "Duplicate entry"
-    , vis    = \t o -> t == "db" && not (String.startsWith "d" o)
+    , vis    = editable
     , submit = True
-    , msg    = \_ _ -> [ text "Please include a link to the entry that this is a duplicate of." ]
+    , msg    = \_ -> [ text "Please include a link to the entry that this is a duplicate of." ]
     }
   , { label  = "Other"
     , vis    = vis
     , submit = True
-    , msg    = \t o ->
-        if t == "db" && not (String.startsWith "d" o)
+    , msg    = \o ->
+        if editable o
         then [ text "Keep in mind that VNDB is an open wiki, you can edit most of the information in this database."
              , br [] []
              , text "Reports for issues that do not require a moderator to get involved will most likely be ignored."
@@ -153,7 +155,7 @@ update msg (state,model) =
 view : Model -> Html Msg
 view (state,model) =
   let
-    lst = List.filter (\l -> l.vis model.rtype model.object) reasons
+    lst = List.filter (\l -> l.vis model.object) reasons
     cur = List.filter (\l -> l.label == model.reason) lst |> List.head |> Maybe.withDefault initial
   in
   form_ Submit (state == Api.Loading)
@@ -173,7 +175,7 @@ view (state,model) =
             else text "We generally do not provide feedback on reports, but you may leave your email address in the message if you wish to be available for clarification."
           ]
         , formField "reason::Reason" [ inputSelect "reason" model.reason Reason [style "width" "300px"] <| List.map (\l->(l.label,l.label)) lst ]
-        , formField "" (cur.msg model.rtype model.object)
+        , formField "" (cur.msg model.object)
         ] ++ if not cur.submit then [] else
         [ formField "message::Message" [ inputTextArea "message" model.message Message [] ]
         , formField "" [ submitButton "Submit" state True ]

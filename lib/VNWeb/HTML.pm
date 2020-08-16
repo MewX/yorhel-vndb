@@ -771,7 +771,7 @@ sub itemmsg_ {
                 txt_ 'You can not edit this page. ';
             }
         }
-        a_ href => "/report/db/$type$obj->{id}", 'Report an issue on this page.';
+        a_ href => "/report/$type$obj->{id}", 'Report an issue on this page.';
     };
 }
 
