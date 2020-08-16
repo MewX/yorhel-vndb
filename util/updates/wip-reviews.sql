@@ -5,7 +5,7 @@ CREATE SEQUENCE reviews_seq;
 CREATE TABLE reviews (
   id      vndbid PRIMARY KEY DEFAULT vndbid('w', nextval('reviews_seq')::int) CONSTRAINT reviews_id_check CHECK(vndbid_type(id) = 'w'),
   vid     int NOT NULL,
-  uid     int NOT NULL,
+  uid     int,
   rid     int,
   date    timestamptz NOT NULL DEFAULT NOW(),
   lastmod timestamptz,
