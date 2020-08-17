@@ -113,6 +113,7 @@ TUWF::get qr{/report/(?<object>[vrpcsdtw]$RE{num})(?:\.(?<subid>$RE{num}))?}, su
 
 sub report_ {
     my($r, $url) = @_;
+    my $objid = $r->{object}.(defined $r->{objectnum} ? ".$r->{objectnum}" : '');
     td_ style => 'padding: 3px 5px 5px 20px', sub {
         a_ href => "?id=$r->{id}", "#$r->{id}";
         b_ class => 'grayedout', ' '.fmtdate $r->{date}, 'full';
@@ -120,7 +121,7 @@ sub report_ {
         if($r->{uid}) {
             a_ href => "/u$r->{uid}", $r->{username};
             txt_ ' (';
-            a_ href => "/t/u$r->{uid}/new?title=Regarding your report&priv=1", 'pm';
+            a_ href => "/t/u$r->{uid}/new?title=Regarding your report on $objid&priv=1", 'pm';
             txt_ ')';
         } else {
             txt_ $r->{ip}||'[anonymous]';
