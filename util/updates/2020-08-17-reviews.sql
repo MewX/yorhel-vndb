@@ -5,7 +5,6 @@ ALTER TABLE reports DROP COLUMN rtype;
 DROP TYPE report_type;
 
 
--- WIP: The modifications in this file are not final and haven't been integrated in sql/ yet.
 
 CREATE SEQUENCE reviews_seq;
 
@@ -51,8 +50,8 @@ ALTER TABLE reviews_posts ADD CONSTRAINT reviews_posts_uid_fkey FOREIGN KEY (uid
 ALTER TABLE reviews_votes ADD CONSTRAINT reviews_votes_id_fkey  FOREIGN KEY (id)  REFERENCES reviews  (id) ON DELETE CASCADE;
 ALTER TABLE reviews_votes ADD CONSTRAINT reviews_votes_uid_fkey FOREIGN KEY (uid) REFERENCES users    (id) ON DELETE CASCADE;
 
-ALTER TABLE users ADD COLUMN perm_review boolean NOT NULL DEFAULT true;
-UPDATE users SET perm_review = false WHERE not perm_board;
+ALTER TABLE users ADD COLUMN perm_review boolean NOT NULL DEFAULT false;
+UPDATE users SET perm_review = false WHERE not perm_dbmod;
 
 \i sql/perms.sql
 

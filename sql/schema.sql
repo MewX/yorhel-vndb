@@ -69,10 +69,11 @@ CREATE TYPE vn_relation       AS ENUM ('seq', 'preq', 'set', 'alt', 'char', 'sid
 CREATE TYPE session_type      AS ENUM ('web', 'pass', 'mail');
 
 -- Sequences used for ID generation
-CREATE SEQUENCE covers_seq;
 CREATE SEQUENCE charimg_seq;
-CREATE SEQUENCE threads_id_seq;
+CREATE SEQUENCE covers_seq;
+CREATE SEQUENCE reviews_seq;
 CREATE SEQUENCE screenshots_seq;
+CREATE SEQUENCE threads_id_seq;
 
 
 
@@ -497,6 +498,39 @@ CREATE TABLE reports (
   objectnum  integer -- The sub-id of the thing to be reported
 );
 
+-- reviews
+CREATE TABLE reviews (
+  id      vndbid PRIMARY KEY DEFAULT vndbid('w', nextval('reviews_seq')::int) CONSTRAINT reviews_id_check CHECK(vndbid_type(id) = 'w'),
+  vid     int NOT NULL,
+  uid     int,
+  rid     int,
+  date    timestamptz NOT NULL DEFAULT NOW(),
+  lastmod timestamptz,
+  summary text NOT NULL,
+  text    text,
+  spoiler boolean NOT NULL
+);
+
+-- reviews_posts
+CREATE TABLE reviews_posts (
+  id      vndbid NOT NULL,
+  num     smallint NOT NULL,
+  uid     integer,
+  date    timestamptz NOT NULL DEFAULT NOW(),
+  edited  timestamptz,
+  hidden  boolean NOT NULL DEFAULT FALSE,
+  msg     text NOT NULL DEFAULT '',
+  PRIMARY KEY(id, num)
+);
+
+-- reviews_votes
+CREATE TABLE reviews_votes (
+  id      vndbid NOT NULL,
+  uid     int,
+  date    timestamptz NOT NULL,
+  vote    boolean NOT NULL -- true = upvote, false = downvote
+);
+
 -- rlists
 CREATE TABLE rlists (
   uid integer NOT NULL DEFAULT 0, -- [pub]
@@ -865,7 +899,8 @@ CREATE TABLE users (
   perm_imgmod     boolean NOT NULL DEFAULT false,
   max_sexual      smallint NOT NULL DEFAULT 0,
   max_violence    smallint NOT NULL DEFAULT 0,
-  last_reports    timestamptz -- For mods: Most recent activity seen on the reports listing
+  last_reports    timestamptz, -- For mods: Most recent activity seen on the reports listing
+  perm_review     boolean NOT NULL DEFAULT false -- TODO: DEFAULT true when out of beta.
 );
 
 -- vn

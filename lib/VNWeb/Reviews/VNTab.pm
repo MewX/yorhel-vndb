@@ -69,6 +69,7 @@ sub reviews_ {
 
 
 TUWF::get qr{/$RE{vid}/reviews}, sub {
+    return tuwf->resNotFound if !auth->permReview; #XXX:While in beta
     my $v = db_entry v => tuwf->capture('id');
     return tuwf->resNotFound if !$v;
     VNWeb::VN::Page::enrich_vn($v);

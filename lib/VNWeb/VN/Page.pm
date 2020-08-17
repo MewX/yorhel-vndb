@@ -387,7 +387,7 @@ sub infobox_ {
 sub tabs_ {
     my($v, $tab) = @_;
     my $chars = tuwf->dbVali('SELECT COUNT(DISTINCT c.id) FROM chars c JOIN chars_vns cv ON cv.id = c.id WHERE NOT c.hidden AND cv.vid =', \$v->{id});
-    my $reviews = tuwf->dbVali('SELECT COUNT(*) FROM reviews WHERE vid =', \$v->{id});
+    my $reviews = auth->permReview ? tuwf->dbVali('SELECT COUNT(*) FROM reviews WHERE vid =', \$v->{id}) : 0;
 
     return if !$chars && !$reviews && !auth->permEdit && !auth->permReview;
     $tab ||= '';
