@@ -103,7 +103,7 @@ TUWF::get qr{/$RE{vid}/addchar}, sub {
 
     my $e = elm_empty($FORM_OUT);
     $e->{vns} = [{ vid => $v->{id}, title => $v->{title}, rid => undef, spoil => 0, role => 'primary' }];
-    $e->{releases} = [{ id => $v->{id}, rels => rels => releases_by_vn $v->{id} }];
+    $e->{releases} = [{ id => $v->{id}, rels => releases_by_vn $v->{id} }];
 
     framework_ title => 'Add character',
     sub {
