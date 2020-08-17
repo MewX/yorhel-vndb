@@ -85,7 +85,9 @@ TUWF::get qr{/$RE{wid}(?:(?<sep>[\./])$RE{num})?}, sub {
            LEFT JOIN releases rel ON rel.id = r.rid
            LEFT JOIN users u ON u.id = r.uid
            LEFT JOIN ulist_vns uv ON uv.uid = r.uid AND uv.vid = r.vid
-           LEFT JOIN (SELECT id, COUNT(*) FILTER(WHERE vote), COUNT(*) FILTER(WHERE NOT vote) FROM reviews_votes GROUP BY id) AS s(id,up,down) ON s.id = r.id
+           LEFT JOIN (SELECT rv.id, COUNT(*) FILTER(WHERE rv.vote), COUNT(*) FILTER(WHERE NOT rv.vote)
+                        FROM reviews_votes rv JOIN users u ON u.id = rv.uid WHERE NOT u.ign_votes GROUP BY rv.id
+                     ) AS s(id,up,down) ON s.id = r.id
            LEFT JOIN (SELECT id, COUNT(*) FROM reviews_posts GROUP BY id) AS c(id,count) ON c.id = r.id
            LEFT JOIN reviews_votes rv ON rv.id = r.id AND rv.uid =', \auth->uid, '
           WHERE r.id =', \$id
@@ -132,6 +134,8 @@ TUWF::get qr{/$RE{wid}(?:(?<sep>[\./])$RE{num})?}, sub {
         if(grep !$_->{hidden}, @$posts) {
             h1_ class => 'boxtitle', 'Comments';
             VNWeb::Discussions::Thread::posts_($w, $posts, $page);
+        } else {
+            div_ id => 'threadstart', '';
         }
         elm_ 'Reviews.Comment' => $COMMENT, { id => $w->{id}, msg => '' } if $w->{count} <= $page*25 && can_edit t => $w;
     };
