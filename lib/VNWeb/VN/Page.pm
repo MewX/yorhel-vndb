@@ -51,7 +51,7 @@ sub og {
     +{
         description => bb2text($v->{desc}),
         image => $v->{image} && !$v->{image}{sexual} && !$v->{image}{violence} ? tuwf->imgurl($v->{image}{id}) :
-                 [map $_->{sexual}||$_->{violence}?():(tuwf->imgurl($_->{scr}{id})), $v->{screenshots}->@*]->[0]
+                 [map $_->{scr}{sexual}||$_->{scr}{violence}?():(tuwf->imgurl($_->{scr}{id})), $v->{screenshots}->@*]->[0]
     }
 }
 
