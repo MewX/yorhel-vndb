@@ -39,7 +39,7 @@ elm_api DiscussionsEdit => $FORM_OUT, $FORM_IN, sub {
     my $tid = $data->{tid};
 
     my $t = !$tid ? {} : tuwf->dbRowi('
-        SELECT t.id, t.poll_question, t.poll_max_options, t.hidden, tp.uid AS user_id,', sql_totime('tp.date'), 'AS date
+        SELECT t.id, t.poll_question, t.poll_max_options, t.hidden, tp.num, tp.uid AS user_id,', sql_totime('tp.date'), 'AS date
           FROM threads t
           JOIN threads_posts tp ON tp.tid = t.id AND tp.num = 1
          WHERE t.id =', \$tid,
