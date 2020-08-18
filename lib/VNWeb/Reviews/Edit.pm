@@ -36,7 +36,7 @@ TUWF::get qr{/$RE{vid}/addreview}, sub {
 
 TUWF::get qr{/$RE{wid}/edit}, sub {
     my $e = tuwf->dbRowi(
-        'SELECT r.id, r.uid, r.vid, r.rid, r.summary, r.text, r.spoiler, v.title AS vntitle
+        'SELECT r.id, r.uid AS user_id, r.vid, r.rid, r.summary, r.text, r.spoiler, v.title AS vntitle
           FROM reviews r JOIN vn v ON v.id = r.vid WHERE r.id =', \tuwf->capture('id')
     );
     return tuwf->resNotFound if !$e->{id};
@@ -54,7 +54,7 @@ elm_api ReviewsEdit => $FORM_OUT, $FORM_IN, sub {
     my($data) = @_;
     my $id = delete $data->{id};
 
-    my $review = $id ? tuwf->dbRowi('SELECT id, uid FROM reviews WHERE id =', \$id) : {};
+    my $review = $id ? tuwf->dbRowi('SELECT id, uid AS user_id FROM reviews WHERE id =', \$id) : {};
     return elm_Unauth if !can_edit w => $review;
 
     validate_dbid 'SELECT id FROM vn WHERE id IN', $data->{vid};

@@ -207,7 +207,7 @@ sub can_edit {
     if($type eq 'w') {
         return 1 if auth->permBoardmod;
         return auth->permReview if !$entry->{id};
-        return auth && auth->uid == $entry->{uid};
+        return auth && auth->uid == $entry->{user_id};
     }
 
     die "Can't do authorization test when entry_hidden/entry_locked fields aren't present"
