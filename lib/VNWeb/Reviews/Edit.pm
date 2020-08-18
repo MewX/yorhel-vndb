@@ -77,7 +77,7 @@ elm_api ReviewsEdit => $FORM_OUT, $FORM_IN, sub {
 
 elm_api ReviewsDelete => undef, { id => { vndbid => 'w' } }, sub {
     my($data) = @_;
-    my $review = tuwf->dbRowi('SELECT id, uid FROM reviews WHERE id =', \$data->{id});
+    my $review = tuwf->dbRowi('SELECT id, uid AS user_id FROM reviews WHERE id =', \$data->{id});
     return elm_Unauth if !can_edit w => $review;
     auth->audit($review->{uid}, 'review delete', "deleted $review->{id}");
     tuwf->dbExeci('DELETE FROM reviews WHERE id =', \$data->{id});
