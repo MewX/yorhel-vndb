@@ -58,7 +58,7 @@ sub reviews_ {
                 div_ sub {
                     a_ href => "/$r->{id}#review", 'Full review »' if $r->{isfull};
                     a_ href => "/$r->{id}#threadstart", $r->{count} == 1 ? '1 comment' : "$r->{count} comments";
-                    elm_ 'Reviews.Vote' => $VNWeb::Reviews::Elm::VOTE_OUT, { %$r, can => !!auth }, sub {
+                    elm_ 'Reviews.Vote' => $VNWeb::Reviews::Elm::VOTE_OUT, { %$r, can => auth && $r->{user_id} != auth->uid }, sub {
                         span_ sprintf '👍 %d 👎 %d', $r->{up}, $r->{down};
                     };
                 };

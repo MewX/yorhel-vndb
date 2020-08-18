@@ -65,7 +65,7 @@ sub review_ {
         tr_ sub {
             td_ '';
             td_ style => 'text-align: right', sub {
-                elm_ 'Reviews.Vote' => $VNWeb::Reviews::Elm::VOTE_OUT, { %$w, can => !!auth }, sub {
+                elm_ 'Reviews.Vote' => $VNWeb::Reviews::Elm::VOTE_OUT, { %$w, can => auth && $w->{user_id} != auth->uid }, sub {
                     span_ sprintf '👍 %d 👎 %d', $w->{up}, $w->{down};
                 };
             }
