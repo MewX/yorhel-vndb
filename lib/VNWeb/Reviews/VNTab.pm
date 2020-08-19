@@ -10,16 +10,11 @@ sub reviews_ {
 
     # TODO: Order
     my $lst = tuwf->dbAlli(
-        'SELECT r.id, r.rid, r.summary, r.text <> \'\' AS isfull, r.spoiler, uv.vote
-              , COALESCE(c.count,0) AS count, COALESCE(s.up,0) AS up, COALESCE(s.down,0) AS down, rv.vote AS my
+        'SELECT r.id, r.rid, r.summary, r.text <> \'\' AS isfull, r.spoiler, r.c_up, r.c_down, r.c_count, uv.vote, rv.vote AS my
               , ', sql_totime('r.date'), 'AS date, ', sql_user(), '
            FROM reviews r
            LEFT JOIN users u ON r.uid = u.id
            LEFT JOIN ulist_vns uv ON uv.uid = r.uid AND uv.vid = r.vid
-           LEFT JOIN (SELECT rv.id, COUNT(*) FILTER(WHERE rv.vote), COUNT(*) FILTER(WHERE NOT rv.vote)
-                        FROM reviews_votes rv JOIN users u ON u.id = rv.uid WHERE NOT u.ign_votes GROUP BY rv.id
-                     ) AS s(id,up,down) ON s.id = r.id
-           LEFT JOIN (SELECT id, COUNT(*) FROM reviews_posts GROUP BY id) AS c(id,count) ON c.id = r.id
            LEFT JOIN reviews_votes rv ON rv.uid =', \auth->uid, ' AND rv.id = r.id
           WhERE r.vid =', \$v->{id}
     );
@@ -57,9 +52,9 @@ sub reviews_ {
                 };
                 div_ sub {
                     a_ href => "/$r->{id}#review", 'Full review »' if $r->{isfull};
-                    a_ href => "/$r->{id}#threadstart", $r->{count} == 1 ? '1 comment' : "$r->{count} comments";
+                    a_ href => "/$r->{id}#threadstart", $r->{c_count} == 1 ? '1 comment' : "$r->{c_count} comments";
                     elm_ 'Reviews.Vote' => $VNWeb::Reviews::Elm::VOTE_OUT, { %$r, can => auth && $r->{user_id} != auth->uid }, sub {
-                        span_ sprintf '👍 %d 👎 %d', $r->{up}, $r->{down};
+                        span_ sprintf '👍 %d 👎 %d', $r->{c_up}, $r->{c_down};
                     };
                 };
             } for @$lst;

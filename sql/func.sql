@@ -179,6 +179,23 @@ END; $$ LANGUAGE plpgsql;
 
 
 
+-- Update reviews.c_up and c_down.
+CREATE OR REPLACE FUNCTION update_reviews_votes_cache(vndbid) RETURNS void AS $$
+BEGIN
+  WITH stats(id,up,down) AS (
+    SELECT r.id, COUNT(*) FILTER(WHERE rv.vote AND NOT u.ign_votes), COUNT(*) FILTER(WHERE NOT rv.vote AND NOT u.ign_votes)
+      FROM reviews r
+      LEFT JOIN reviews_votes rv ON rv.id = r.id
+      LEFT JOIN users u ON u.id = rv.uid
+     WHERE $1 IS NULL OR r.id = $1
+     GROUP BY r.id
+  )
+  UPDATE reviews SET c_up = up, c_down = down
+    FROM stats WHERE reviews.id = stats.id AND (reviews.c_up,reviews.c_down) <> (stats.up,stats.down);
+END; $$ LANGUAGE plpgsql;
+
+
+
 -- Update users.c_vns, c_votes and c_wish for one user (when given an id) or all users (when given NULL)
 CREATE OR REPLACE FUNCTION update_users_ulist_stats(integer) RETURNS void AS $$
 BEGIN

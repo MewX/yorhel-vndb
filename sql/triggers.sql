@@ -292,6 +292,23 @@ CREATE TRIGGER update_threads_cache AFTER INSERT OR UPDATE OR DELETE ON threads_
 
 
 
+-- Update reviews.c_count and c_lastnum
+
+CREATE OR REPLACE FUNCTION update_reviews_cache() RETURNS trigger AS $$
+BEGIN
+  UPDATE reviews
+     SET c_count   = COALESCE((SELECT COUNT(*) FROM reviews_posts WHERE NOT hidden AND id = reviews.id), 0)
+       , c_lastnum = (SELECT MAX(num) FROM reviews_posts WHERE NOT hidden AND id = reviews.id)
+   WHERE id IN(OLD.tid,NEW.tid);
+  RETURN NULL;
+END
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_reviews_cache AFTER INSERT OR UPDATE OR DELETE ON reviews_posts FOR EACH ROW EXECUTE PROCEDURE update_reviews_cache();
+
+
+
+
 
 -- Call update_images_cache() for every change on image_votes
 
@@ -304,3 +321,17 @@ $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER image_votes_cache1 AFTER INSERT OR DELETE ON image_votes FOR EACH ROW EXECUTE PROCEDURE update_images_cache();
 CREATE TRIGGER image_votes_cache2 AFTER UPDATE ON image_votes FOR EACH ROW WHEN ((OLD.id, OLD.sexual, OLD.violence, OLD.ignore) IS DISTINCT FROM (NEW.id, NEW.sexual, NEW.violence, NEW.ignore)) EXECUTE PROCEDURE update_images_cache();
+
+
+
+
+-- Call update_reviews_votes_cache() for every change on reviews_votes
+
+CREATE OR REPLACE FUNCTION update_reviews_votes_cache() RETURNS trigger AS $$
+BEGIN
+  PERFORM update_reviews_votes_cache(id) FROM (SELECT OLD.id UNION SELECT NEW.id) AS x(id) WHERE id IS NOT NULL;
+  RETURN NULL;
+END
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER reviews_votes_cache AFTER INSERT OR UPDATE OR DELETE ON reviews_votes FOR EACH ROW EXECUTE PROCEDURE update_reviews_votes_cache();

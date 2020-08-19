@@ -66,7 +66,7 @@ sub review_ {
             td_ '';
             td_ style => 'text-align: right', sub {
                 elm_ 'Reviews.Vote' => $VNWeb::Reviews::Elm::VOTE_OUT, { %$w, can => auth && $w->{user_id} != auth->uid }, sub {
-                    span_ sprintf '👍 %d 👎 %d', $w->{up}, $w->{down};
+                    span_ sprintf '👍 %d 👎 %d', $w->{c_up}, $w->{c_down};
                 };
             }
         };
@@ -78,17 +78,13 @@ TUWF::get qr{/$RE{wid}(?:(?<sep>[\./])$RE{num})?}, sub {
     return tuwf->resNotFound if !auth->permReview; #XXX:While in beta
     my($id, $sep, $num) = (tuwf->capture('id'), tuwf->capture('sep')||'', tuwf->capture('num'));
     my $w = tuwf->dbRowi(
-        'SELECT r.id, r.vid, r.rid, r.summary, r.text, r.spoiler, uv.vote
-              , rel.title AS rtitle, rel.original AS roriginal, rel.type AS rtype
-              , COALESCE(c.count,0) AS count, COALESCE(s.up,0) AS up, COALESCE(s.down,0) AS down, rv.vote AS my
+        'SELECT r.id, r.vid, r.rid, r.summary, r.text, r.spoiler, c.count, r.c_up, r.c_down, uv.vote
+              , rel.title AS rtitle, rel.original AS roriginal, rel.type AS rtype, rv.vote AS my
               , ', sql_user(), ',', sql_totime('r.date'), 'AS date,', sql_totime('r.lastmod'), 'AS lastmod
            FROM reviews r
            LEFT JOIN releases rel ON rel.id = r.rid
            LEFT JOIN users u ON u.id = r.uid
            LEFT JOIN ulist_vns uv ON uv.uid = r.uid AND uv.vid = r.vid
-           LEFT JOIN (SELECT rv.id, COUNT(*) FILTER(WHERE rv.vote), COUNT(*) FILTER(WHERE NOT rv.vote)
-                        FROM reviews_votes rv JOIN users u ON u.id = rv.uid WHERE NOT u.ign_votes GROUP BY rv.id
-                     ) AS s(id,up,down) ON s.id = r.id
            LEFT JOIN (SELECT id, COUNT(*) FROM reviews_posts GROUP BY id) AS c(id,count) ON c.id = r.id
            LEFT JOIN reviews_votes rv ON rv.id = r.id AND rv.uid =', \auth->uid, '
           WHERE r.id =', \$id

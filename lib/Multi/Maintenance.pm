@@ -77,6 +77,8 @@ my %dailies = (
   # takes about 10 seconds, OK
   imagecache => 'SELECT update_images_cache(NULL)',
 
+  reviewcache => 'SELECT update_reviews_votes_cache(NULL)',
+
   cleansessions      => q|DELETE FROM sessions       WHERE expires    < NOW()|,
   cleannotifications => q|DELETE FROM notifications  WHERE read       < NOW()-'1 month'::interval|,
   cleannotifications2=> q|DELETE FROM notifications  WHERE id IN (
