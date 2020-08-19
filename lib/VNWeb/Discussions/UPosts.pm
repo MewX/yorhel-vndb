@@ -18,8 +18,8 @@ sub listing_ {
                 td_ class => 'tc4', 'Title';
             }};
             tr_ sub {
-                my $url = "/$_->{tid}.$_->{num}";
-                td_ class => 'tc1', sub { a_ href => $url, $_->{tid} };
+                my $url = "/$_->{id}.$_->{num}";
+                td_ class => 'tc1', sub { a_ href => $url, $_->{id} };
                 td_ class => 'tc2', sub { a_ href => $url, '.'.$_->{num} };
                 td_ class => 'tc3', fmtdate $_->{date};
                 td_ class => 'tc4', sub {
@@ -40,17 +40,23 @@ TUWF::get qr{/$RE{uid}/posts}, sub {
 
     my $page = tuwf->validate(get => p => { upage => 1 })->data;
 
-    my $from_and_where = sql
-        'FROM threads_posts tp
-         JOIN threads t ON t.id = tp.tid
-        WHERE NOT t.private AND NOT t.hidden AND NOT tp.hidden AND tp.uid =', \$u->{id};
+    my $sql = sql '(
+        SELECT tp.tid, tp.num, tp.msg, t.title, tp.date
+          FROM threads_posts tp
+          JOIN threads t ON t.id = tp.tid
+         WHERE NOT t.private AND NOT t.hidden AND NOT tp.hidden AND tp.uid =', \$u->{id}, '
+       UNION ALL
+        SELECT rp.id, rp.num, rp.msg, v.title, rp.date
+          FROM reviews_posts rp
+          JOIN reviews r ON r.id = rp.id
+          JOIN vn v ON v.id = r.vid
+         WHERE NOT rp.hidden AND rp.uid =', \$u->{id}, '
+       ) p(id,num,msg,title,date)';
 
-    my $count = tuwf->dbVali('SELECT count(*)', $from_and_where);
-    my $list = $count && tuwf->dbPagei(
-        { results => 50, page => $page },
-        'SELECT tp.tid, tp.num, substring(tp.msg from 1 for 1000) as msg, t.title
-              , ', sql_totime('tp.date'), 'as date',
-          $from_and_where, 'ORDER BY tp.date DESC'
+    my $count = tuwf->dbVali('SELECT count(*) FROM', $sql);
+    my $list = $count && tuwf->dbPagei({ results => 50, page => $page },
+        'SELECT id, num, substring(msg from 1 for 1000) as msg, title, ', sql_totime('date'), 'as date
+           FROM ', $sql, 'ORDER BY date DESC'
     );
 
     my $own = auth && $u->{id} == auth->uid;

@@ -85,6 +85,7 @@ sub _info_table_ {
     } if $u->{c_imgvotes};
     tr_ sub {
         my $stats = tuwf->dbRowi('SELECT COUNT(*) AS posts, COUNT(*) FILTER (WHERE num = 1) AS threads FROM threads_posts WHERE uid =', \$u->{id});
+        $stats->{posts} += tuwf->dbVali('SELECT COUNT(*) FROM reviews_posts WHERE uid =', \$u->{id});
         td_ 'Forum stats';
         td_ !$stats->{posts} ? '-' : sub {
             txt_ sprintf '%d post%s, %d new thread%s. ',
