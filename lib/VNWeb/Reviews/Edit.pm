@@ -60,6 +60,9 @@ elm_api ReviewsEdit => $FORM_OUT, $FORM_IN, sub {
     validate_dbid 'SELECT id FROM vn WHERE id IN', $data->{vid};
     validate_dbid 'SELECT id FROM releases WHERE id IN', $data->{rid} if defined $data->{rid};
 
+    $data->{summary} = bb_subst_links $data->{summary};
+    $data->{text} = bb_subst_links $data->{text};
+
     if($id) {
         $data->{lastmod} = sql 'NOW()';
         tuwf->dbExeci('UPDATE reviews SET', $data, 'WHERE id =', \$id) if $id;
