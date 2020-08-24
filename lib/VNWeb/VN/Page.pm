@@ -387,15 +387,16 @@ sub infobox_ {
 sub tabs_ {
     my($v, $tab) = @_;
     my $chars = tuwf->dbVali('SELECT COUNT(DISTINCT c.id) FROM chars c JOIN chars_vns cv ON cv.id = c.id WHERE NOT c.hidden AND cv.vid =', \$v->{id});
-    my $reviews = auth->permReview ? tuwf->dbVali('SELECT COUNT(*) FROM reviews WHERE vid =', \$v->{id}) : 0;
+    my $reviews = auth->permReview ? tuwf->dbRowi('SELECT COUNT(*) FILTER(WHERE isfull) AS full, COUNT(*) FILTER(WHERE NOT isfull) AS mini FROM reviews WHERE vid =', \$v->{id}) : {};
 
-    return if !$chars && !$reviews && !auth->permEdit && !auth->permReview;
+    return if !$chars && !$reviews->{full} && !$reviews->{mini} && !auth->permEdit && !auth->permReview;
     $tab ||= '';
     div_ class => 'maintabs', sub {
         ul_ sub {
             li_ class => ($tab eq ''        ? ' tabselected' : ''), sub { a_ href => "/v$v->{id}#main", name => 'main', 'main' } if $chars || $reviews;
             li_ class => ($tab eq 'chars'   ? ' tabselected' : ''), sub { a_ href => "/v$v->{id}/chars#chars", name => 'chars', "characters ($chars)" } if $chars;
-            li_ class => ($tab eq 'reviews' ? ' tabselected' : ''), sub { a_ href => "/v$v->{id}/reviews#review", name => 'review', "reviews ($reviews)" } if $reviews;
+            li_ class => ($tab eq 'minireviews'?' tabselected':''), sub { a_ href => "/v$v->{id}/minireviews#review", name => 'review', "mini reviews ($reviews->{mini})" } if $reviews->{mini};
+            li_ class => ($tab eq 'reviews' ? ' tabselected' : ''), sub { a_ href => "/v$v->{id}/reviews#review", name => 'review', "full reviews ($reviews->{full})" } if $reviews->{full};
         };
         ul_ sub {
             if(auth && canvote $v) {

@@ -105,7 +105,7 @@ sub homepage {
         a href => "/$_->{id}", $_->{title};
        end;
        p;
-        lit bb2html $post->{msg}, 150;
+        lit bb2html $post->{msg}, 150, 0, 1;
        end;
      }
     end 'td';

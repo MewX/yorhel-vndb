@@ -10,7 +10,7 @@ my $FORM = {
     vntitle => { _when => 'out' },
     rid     => { id => 1, required => 0 },
     spoiler => { anybool => 1 },
-    summary => { maxlength => 700 },
+    isfull  => { anybool => 1 },
     text    => { maxlength => 100_000, required => 0, default => '' },
 
     releases => { _when => 'out', $VNWeb::Elm::apis{Releases}[0]->%* },
@@ -36,7 +36,7 @@ TUWF::get qr{/$RE{vid}/addreview}, sub {
 
 TUWF::get qr{/$RE{wid}/edit}, sub {
     my $e = tuwf->dbRowi(
-        'SELECT r.id, r.uid AS user_id, r.vid, r.rid, r.summary, r.text, r.spoiler, v.title AS vntitle
+        'SELECT r.id, r.uid AS user_id, r.vid, r.rid, r.isfull, r.text, r.spoiler, v.title AS vntitle
           FROM reviews r JOIN vn v ON v.id = r.vid WHERE r.id =', \tuwf->capture('id')
     );
     return tuwf->resNotFound if !$e->{id};
@@ -60,7 +60,7 @@ elm_api ReviewsEdit => $FORM_OUT, $FORM_IN, sub {
     validate_dbid 'SELECT id FROM vn WHERE id IN', $data->{vid};
     validate_dbid 'SELECT id FROM releases WHERE id IN', $data->{rid} if defined $data->{rid};
 
-    $data->{summary} = bb_subst_links $data->{summary};
+    die "Review too long" if !$data->{isfull} && length $data->{text} > 700;
     $data->{text} = bb_subst_links $data->{text};
 
     if($id) {

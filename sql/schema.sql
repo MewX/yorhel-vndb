@@ -506,13 +506,13 @@ CREATE TABLE reviews (
   rid     int,
   date    timestamptz NOT NULL DEFAULT NOW(),
   lastmod timestamptz,
-  summary text NOT NULL,
   text    text,
   spoiler boolean NOT NULL,
   c_up    int NOT NULL DEFAULT 0,
   c_down  int NOT NULL DEFAULT 0,
   c_count smallint NOT NULL DEFAULT 0,
-  c_lastnum smallint
+  c_lastnum smallint,
+  isfull  boolean NOT NULL
 );
 
 -- reviews_posts

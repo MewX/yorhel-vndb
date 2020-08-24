@@ -32,8 +32,7 @@ type alias Model =
   , vntitle     : String
   , rid         : Maybe Int
   , spoiler     : Bool
-  , full        : Bool
-  , summary     : TP.Model
+  , isfull      : Bool
   , text        : TP.Model
   , releases    : List GRE.RecvReleases
   , delete      : Bool
@@ -49,8 +48,7 @@ init d =
   , vntitle     = d.vntitle
   , rid         = d.rid
   , spoiler     = d.spoiler
-  , full        = d.text /= ""
-  , summary     = TP.bbcode d.summary
+  , isfull      = d.isfull
   , text        = TP.bbcode d.text
   , releases    = d.releases
   , delete      = False
@@ -64,8 +62,8 @@ encode m =
   , vid         = m.vid
   , rid         = m.rid
   , spoiler     = m.spoiler
-  , summary     = m.summary.data
-  , text        = if m.full then m.text.data else ""
+  , isfull      = m.isfull
+  , text        = m.text.data
   }
 
 
@@ -73,7 +71,6 @@ type Msg
   = Release (Maybe Int)
   | Full Bool
   | Spoiler Bool
-  | Summary TP.Msg
   | Text TP.Msg
   | Submit
   | Submitted GApi.Response
@@ -86,10 +83,9 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     Release i  -> ({ model | rid      = i }, Cmd.none)
-    Full b     -> ({ model | full     = b }, Cmd.none)
+    Full b     -> ({ model | isfull   = b }, Cmd.none)
     Spoiler b  -> ({ model | spoiler  = b }, Cmd.none)
-    Summary m  -> let (nm,nc) = TP.update m model.summary in ({ model | summary = nm }, Cmd.map Summary nc)
-    Text m     -> let (nm,nc) = TP.update m model.text    in ({ model | text    = nm }, Cmd.map Text    nc)
+    Text m     -> let (nm,nc) = TP.update m model.text in ({ model | text = nm }, Cmd.map Text nc)
 
     Submit -> ({ model | state = Api.Loading }, GRE.send (encode model) Submitted)
     Submitted (GApi.Redirect s) -> (model, load s)
@@ -120,14 +116,11 @@ view model =
         ]
       , tr [ class "newpart" ] [ td [ colspan 2 ] [ text "" ] ]
       , formField "Review type"
-        [ label [] [ inputRadio "type" (model.full == False) (\_ -> Full False), b [] [ text " Short review" ]
+        [ label [] [ inputRadio "type" (model.isfull == False) (\_ -> Full False), b [] [ text " Mini review" ]
         , text <| " - Recommendation-style, maximum " ++ String.fromInt maxChars ++ " characters." ]
         , br [] []
-        , label [] [ inputRadio "type" (model.full == True ) (\_ -> Full True ), b [] [ text " Full review" ]
+        , label [] [ inputRadio "type" (model.isfull == True ) (\_ -> Full True ), b [] [ text " Full review" ]
         , text " - Longer, more detailed." ]
-        , if not model.full && model.text.data /= ""
-          then span [] [ br [] [], b [ class "standout" ] [ text "Warning: " ], text "existing content from the \"Full review\" mode will be lost when saving this form." ]
-          else text ""
         , br [] []
         , b [ class "grayedout" ] [ text "You can always switch between review types later." ]
         ]
@@ -138,26 +131,21 @@ view model =
         , b [ class "grayedout" ] [ text "You do not have to check this option if all spoilers in your review are marked with [spoiler] tags." ]
         ]
       , tr [ class "newpart" ] [ td [ colspan 2 ] [ text "" ] ]
-      , formField (if model.full then "sum::Summary" else "sum::Review")
-        [ TP.view "sum" model.summary Summary 700 ([rows 5, cols 50] ++ GRE.valSummary)
+      , formField "text::Review"
+        [ TP.view "sum" model.text Text 700 ([rows (if model.isfull then 15 else 5), cols 50] ++ GRE.valText)
           [ a [ href "/d9#3" ] [ text "BBCode formatting supported" ] ]
-        , div [ style "width" "700px", style "text-align" "right" ]
+        , if model.isfull then text "" else div [ style "width" "700px", style "text-align" "right" ]
           [ let
-              len = String.length model.summary.data
+              len = String.length model.text.data
               lbl = String.fromInt len ++ "/" ++ String.fromInt maxChars
             in if len > maxChars then b [ class "standout" ] [ text lbl ] else text lbl
           ]
-        ]
-      , if not model.full then text "" else
-        formField "text::Full review"
-        [ TP.view "text" model.text Text 700 ([rows 15, cols 50, required True] ++ GRE.valText)
-          [ a [ href "/d9#3" ] [ text "BBCode formatting supported" ] ]
         ]
       ]
     ]
   , div [ class "mainbox" ]
     [ fieldset [ class "submit" ]
-      [ submitButton "Submit" model.state (String.length model.summary.data <= maxChars)
+      [ submitButton "Submit" model.state (model.isfull || String.length model.text.data <= maxChars)
       ]
     ]
   , if model.id == Nothing then text "" else

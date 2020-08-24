@@ -179,7 +179,7 @@ FINAL:
 #   2: Just output 'hidden by spoiler setting' message
 #   3: Just output the spoilers, unmarked
 sub bb2html {
-  my($input, $maxlength, $charspoil) = @_;
+  my($input, $maxlength, $charspoil, $nobreak) = @_;
 
   my $incode = 0;
   my $rmnewline = 0;
@@ -202,8 +202,8 @@ sub bb2html {
     s/&/&amp;/g;
     s/>/&gt;/g;
     s/</&lt;/g;
-    s/\n/<br>/g if !$maxlength;
-    s/\n/ /g       if $maxlength;
+    s/\n/<br>/g if !$nobreak;
+    s/\n/ /g    if $nobreak;
     $_;
   };
 
@@ -233,18 +233,18 @@ sub bb2html {
           $charspoil == 2 ? '-->' : '';
 
     } elsif($tag eq 'quote_start') {
-      $ret .= '<div class="quote">' if !$maxlength;
+      $ret .= '<div class="quote">' if !$nobreak;
       $rmnewline = 1;
     } elsif($tag eq 'quote_end') {
-      $ret .= '</div>' if !$maxlength;
+      $ret .= '</div>' if !$nobreak;
       $rmnewline = 1;
 
     } elsif($tag eq 'code_start') {
-      $ret .= '<pre>' if !$maxlength;
+      $ret .= '<pre>' if !$nobreak;
       $rmnewline = 1;
       $incode = 1;
     } elsif($tag eq 'code_end') {
-      $ret .= '</pre>' if !$maxlength;
+      $ret .= '</pre>' if !$nobreak;
       $rmnewline = 1;
       $incode = 0;
 

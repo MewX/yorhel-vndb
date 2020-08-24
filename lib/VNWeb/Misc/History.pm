@@ -80,7 +80,7 @@ sub tablebox_ {
                 td_ class => 'tc3', sub { user_ $i };
                 td_ class => 'tc4', sub {
                     a_ href => $revurl, title => $i->{original}, shorten $i->{title}, 80;
-                    b_ class => 'grayedout', sub { lit_ bb2html $i->{comments}, 150 };
+                    b_ class => 'grayedout', sub { lit_ bb2html $i->{comments}, 150, 0, 1 };
                 };
             } for @$lst;
         };

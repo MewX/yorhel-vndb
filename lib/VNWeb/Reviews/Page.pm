@@ -56,13 +56,9 @@ sub review_ {
             };
         } if $w->{spoiler};
         tr_ @spoil, sub {
-            td_ length $w->{text} ? 'Summary' : 'Review';
-            td_ sub { lit_ bb2html $w->{summary} }
-        };
-        tr_ @spoil, sub {
-            td_ 'Full review';
+            td_ 'Review';
             td_ sub { lit_ bb2html $w->{text} }
-        } if length $w->{text};
+        };
         tr_ sub {
             td_ '';
             td_ style => 'text-align: right', sub { review_vote_ $w };
@@ -75,7 +71,7 @@ TUWF::get qr{/$RE{wid}(?:(?<sep>[\./])$RE{num})?}, sub {
     return tuwf->resNotFound if !auth->permReview; #XXX:While in beta
     my($id, $sep, $num) = (tuwf->capture('id'), tuwf->capture('sep')||'', tuwf->capture('num'));
     my $w = tuwf->dbRowi(
-        'SELECT r.id, r.vid, r.rid, r.summary, r.text, r.spoiler, COALESCE(c.count,0) AS count, r.c_up, r.c_down, uv.vote, r2.id IS NULL AS can
+        'SELECT r.id, r.vid, r.rid, r.isfull, r.text, r.spoiler, COALESCE(c.count,0) AS count, r.c_up, r.c_down, uv.vote, r2.id IS NULL AS can
               , rel.title AS rtitle, rel.original AS roriginal, rel.type AS rtype, rv.vote AS my
               , ', sql_user(), ',', sql_totime('r.date'), 'AS date,', sql_totime('r.lastmod'), 'AS lastmod
            FROM reviews r
@@ -114,7 +110,7 @@ TUWF::get qr{/$RE{wid}(?:(?<sep>[\./])$RE{num})?}, sub {
         pagevars => {sethash=>$num?$num:$page>1?'threadstart':'review'},
     sub {
         VNWeb::VN::Page::infobox_($v);
-        VNWeb::VN::Page::tabs_($v, 'reviews');
+        VNWeb::VN::Page::tabs_($v, $w->{isfull}?'reviews':'minireviews');
         div_ class => 'mainbox', id => 'review', sub {
             p_ class => 'mainopts', sub {
                 if(can_edit w => $w) {

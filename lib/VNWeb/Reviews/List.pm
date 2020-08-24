@@ -15,20 +15,22 @@ sub tablebox_ {
             thead_ sub { tr_ sub {
                 td_ class => 'tc1', sub { txt_ 'Date'; sortable_ 'id', $opt, \&url };
                 td_ class => 'tc2', 'By';
-                td_ class => 'tc3', 'Review';
-                td_ class => 'tc4', 'Vote';
-                td_ class => 'tc5', sub { txt_ 'Score';  sortable_ 'rating', $opt, \&url if auth->isMod };
-                td_ class => 'tc6', 'C#';
-                td_ class => 'tc7', sub { txt_ 'Last comment'; sortable_ 'lastpost', $opt, \&url };
+                td_ class => 'tc3', 'Vote';
+                td_ class => 'tc4', 'Type';
+                td_ class => 'tc5', 'Review';
+                td_ class => 'tc6', sub { txt_ 'Score';  sortable_ 'rating', $opt, \&url if auth->isMod };
+                td_ class => 'tc7', 'C#';
+                td_ class => 'tc8', sub { txt_ 'Last comment'; sortable_ 'lastpost', $opt, \&url };
             } };
             tr_ sub {
                 td_ class => 'tc1', fmtdate $_->{date}, 'compact';
                 td_ class => 'tc2', sub { user_ $_ };
-                td_ class => 'tc3', sub { a_ href => "/$_->{id}", $_->{title} };
-                td_ class => 'tc4', fmtvote $_->{vote};
-                td_ class => 'tc5', sub { review_vote_ $_ };
-                td_ class => 'tc6', $_->{c_count};
-                td_ class => 'tc7', $_->{c_lastnum} ? sub {
+                td_ class => 'tc3', fmtvote $_->{vote};
+                td_ class => 'tc4', $_->{isfull} ? 'Full' : 'Mini';
+                td_ class => 'tc5', sub { a_ href => "/$_->{id}", $_->{title} };
+                td_ class => 'tc6', sub { review_vote_ $_ };
+                td_ class => 'tc7', $_->{c_count};
+                td_ class => 'tc8', $_->{c_lastnum} ? sub {
                     user_ $_, 'lu_';
                     txt_ ' @ ';
                     a_ href => "/$_->{id}.$_->{c_lastnum}#last", fmtdate $_->{ldate}, 'full';
@@ -55,7 +57,7 @@ TUWF::get qr{/w}, sub {
 
     my $count = tuwf->dbVali('SELECT COUNT(*) FROM reviews');
     my $lst = tuwf->dbPagei({results => 50, page => $opt->{p}}, '
-        SELECT w.id, w.vid, w.c_up, w.c_down, w.c_count, w.c_lastnum, v.title, uv.vote
+        SELECT w.id, w.vid, w.isfull, w.c_up, w.c_down, w.c_count, w.c_lastnum, v.title, uv.vote
              , ', sql_user(), ',', sql_totime('w.date'), 'as date
              , ', sql_user('wpu','lu_'), ',', sql_totime('wp.date'), 'as ldate
           FROM reviews w
