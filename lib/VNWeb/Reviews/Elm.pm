@@ -5,7 +5,6 @@ use VNWeb::Prelude;
 my $VOTE = {
     id   => { vndbid => 'w' },
     my   => { required => 0, jsonbool => 1 },
-    can  => { _when => 'out', anybool => 1 },
     up   => { _when => 'out', uint => 1 },
     down => { _when => 'out', uint => 1 },
 };

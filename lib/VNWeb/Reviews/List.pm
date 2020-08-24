@@ -1,6 +1,7 @@
 package VNWeb::Reviews::List;
 
 use VNWeb::Prelude;
+use VNWeb::Reviews::Lib;
 
 
 sub tablebox_ {
@@ -25,7 +26,7 @@ sub tablebox_ {
                 td_ class => 'tc2', sub { user_ $_ };
                 td_ class => 'tc3', sub { a_ href => "/$_->{id}", $_->{title} };
                 td_ class => 'tc4', fmtvote $_->{vote};
-                td_ class => 'tc5', sprintf '👍 %d 👎 %d', $_->{c_up}, $_->{c_down};
+                td_ class => 'tc5', sub { review_vote_ $_ };
                 td_ class => 'tc6', $_->{c_count};
                 td_ class => 'tc7', $_->{c_lastnum} ? sub {
                     user_ $_, 'lu_';

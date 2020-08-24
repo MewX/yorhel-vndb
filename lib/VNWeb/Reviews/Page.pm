@@ -2,6 +2,7 @@ package VNWeb::Reviews::Page;
 
 use VNWeb::Prelude;
 use VNWeb::Releases::Lib;
+use VNWeb::Reviews::Lib;
 
 
 my $COMMENT = form_compile any => {
@@ -64,11 +65,7 @@ sub review_ {
         } if length $w->{text};
         tr_ sub {
             td_ '';
-            td_ style => 'text-align: right', sub {
-                elm_ 'Reviews.Vote' => $VNWeb::Reviews::Elm::VOTE_OUT, { %$w, can => auth && $w->{user_id} != auth->uid }, sub {
-                    span_ sprintf '👍 %d 👎 %d', $w->{c_up}, $w->{c_down};
-                };
-            }
+            td_ style => 'text-align: right', sub { review_vote_ $w };
         };
     }
 }
@@ -78,7 +75,7 @@ TUWF::get qr{/$RE{wid}(?:(?<sep>[\./])$RE{num})?}, sub {
     return tuwf->resNotFound if !auth->permReview; #XXX:While in beta
     my($id, $sep, $num) = (tuwf->capture('id'), tuwf->capture('sep')||'', tuwf->capture('num'));
     my $w = tuwf->dbRowi(
-        'SELECT r.id, r.vid, r.rid, r.summary, r.text, r.spoiler, COALESCE(c.count,0) AS count, r.c_up, r.c_down, uv.vote
+        'SELECT r.id, r.vid, r.rid, r.summary, r.text, r.spoiler, COALESCE(c.count,0) AS count, r.c_up, r.c_down, uv.vote, r2.id IS NULL AS can
               , rel.title AS rtitle, rel.original AS roriginal, rel.type AS rtype, rv.vote AS my
               , ', sql_user(), ',', sql_totime('r.date'), 'AS date,', sql_totime('r.lastmod'), 'AS lastmod
            FROM reviews r
@@ -87,6 +84,7 @@ TUWF::get qr{/$RE{wid}(?:(?<sep>[\./])$RE{num})?}, sub {
            LEFT JOIN ulist_vns uv ON uv.uid = r.uid AND uv.vid = r.vid
            LEFT JOIN (SELECT id, COUNT(*) FROM reviews_posts GROUP BY id) AS c(id,count) ON c.id = r.id
            LEFT JOIN reviews_votes rv ON rv.id = r.id AND rv.uid =', \auth->uid, '
+           LEFT JOIN reviews r2 ON r2.vid = r.vid AND r2.uid =', \auth->uid, '
           WHERE r.id =', \$id
     );
     return tuwf->resNotFound if !$w->{id};
@@ -113,7 +111,7 @@ TUWF::get qr{/$RE{wid}(?:(?<sep>[\./])$RE{num})?}, sub {
     VNWeb::VN::Page::enrich_vn($v);
 
     framework_ title => "Review of $v->{title}", index => 1, type => 'v', dbobj => $v, hiddenmsg => 1,
-        js => 1, pagevars => {sethash=>$num?$num:$page>1?'threadstart':'review'},
+        pagevars => {sethash=>$num?$num:$page>1?'threadstart':'review'},
     sub {
         VNWeb::VN::Page::infobox_($v);
         VNWeb::VN::Page::tabs_($v, 'reviews');

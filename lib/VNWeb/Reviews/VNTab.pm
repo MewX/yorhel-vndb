@@ -1,6 +1,7 @@
 package VNWeb::Reviews::VNTab;
 
 use VNWeb::Prelude;
+use VNWeb::Reviews::Lib;
 
 
 sub reviews_ {
@@ -10,12 +11,13 @@ sub reviews_ {
 
     # TODO: Order
     my $lst = tuwf->dbAlli(
-        'SELECT r.id, r.rid, r.summary, r.text <> \'\' AS isfull, r.spoiler, r.c_up, r.c_down, r.c_count, uv.vote, rv.vote AS my
+        'SELECT r.id, r.rid, r.summary, r.text <> \'\' AS isfull, r.spoiler, r.c_up, r.c_down, r.c_count, uv.vote, rv.vote AS my, r2.id IS NULL AS can
               , ', sql_totime('r.date'), 'AS date, ', sql_user(), '
            FROM reviews r
            LEFT JOIN users u ON r.uid = u.id
            LEFT JOIN ulist_vns uv ON uv.uid = r.uid AND uv.vid = r.vid
            LEFT JOIN reviews_votes rv ON rv.uid =', \auth->uid, ' AND rv.id = r.id
+           LEFT JOIN reviews r2 ON r2.vid = r.vid AND r2.uid =', \auth->uid, '
           WhERE r.vid =', \$v->{id}
     );
 
@@ -53,9 +55,7 @@ sub reviews_ {
                 div_ sub {
                     a_ href => "/$r->{id}#review", 'Full review »' if $r->{isfull};
                     a_ href => "/$r->{id}#threadstart", $r->{c_count} == 1 ? '1 comment' : "$r->{c_count} comments";
-                    elm_ 'Reviews.Vote' => $VNWeb::Reviews::Elm::VOTE_OUT, { %$r, can => auth && $r->{user_id} != auth->uid }, sub {
-                        span_ sprintf '👍 %d 👎 %d', $r->{c_up}, $r->{c_down};
-                    };
+                    review_vote_ $r;
                 };
             } for @$lst;
         }

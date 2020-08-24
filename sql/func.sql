@@ -183,10 +183,11 @@ END; $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION update_reviews_votes_cache(vndbid) RETURNS void AS $$
 BEGIN
   WITH stats(id,up,down) AS (
-    SELECT r.id, COUNT(*) FILTER(WHERE rv.vote AND NOT u.ign_votes), COUNT(*) FILTER(WHERE NOT rv.vote AND NOT u.ign_votes)
+    SELECT r.id, COUNT(*) FILTER(WHERE rv.vote AND NOT u.ign_votes AND r2.id IS NULL), COUNT(*) FILTER(WHERE NOT rv.vote AND NOT u.ign_votes AND r2.id IS NULL)
       FROM reviews r
       LEFT JOIN reviews_votes rv ON rv.id = r.id
       LEFT JOIN users u ON u.id = rv.uid
+      LEFT JOIN reviews r2 ON r2.vid = r.vid AND r2.uid = rv.uid
      WHERE $1 IS NULL OR r.id = $1
      GROUP BY r.id
   )

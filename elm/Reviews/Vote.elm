@@ -23,7 +23,6 @@ type alias Model =
   { state    : Api.State
   , id       : String
   , my       : Maybe Bool
-  , can      : Bool
   , up       : Int
   , down     : Int
   }
@@ -33,7 +32,6 @@ init d =
   { state    = Api.Normal
   , id       = d.id
   , my       = d.my
-  , can      = d.can
   , up       = d.up
   , down     = d.down
   }
@@ -62,16 +60,13 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-  let but opt lbl =
-        if not model.can
-        then span [] [ text lbl ]
-        else a [ href "#", onClickD (Vote opt), classList [("votebut", True), ("myvote", model.my == Just opt)] ] [ text lbl ]
+  let but opt lbl = a [ href "#", onClickD (Vote opt), classList [("votebut", True), ("myvote", model.my == Just opt)] ] [ text lbl ]
   in
   span []
   [ case model.state of
       Api.Loading -> span [ class "spinner" ] []
       Api.Error e -> b [ class "standout" ] [ text (Api.showResponse e) ]
-      Api.Normal  -> if model.can && model.my == Nothing then text "Was this review helpful? " else text ""
+      Api.Normal  -> if model.my == Nothing then text "Was this review helpful? " else text ""
   , but True ("👍 " ++ String.fromInt model.up)
   , text " "
   , but False ("👎 " ++ String.fromInt model.down)
