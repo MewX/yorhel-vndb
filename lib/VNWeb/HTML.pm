@@ -342,7 +342,7 @@ sub _maintabs_ {
     return if !$t || !$o;
     return if $t eq 'g' && !auth->permTagmod;
 
-    my $id = $t.$o->{id};
+    my $id = $o->{id} =~ /^[0-9]$/ ? $t.$o->{id} : $o->{id};
 
     my sub t {
         my($tabname, $url, $text) = @_;
@@ -766,14 +766,15 @@ sub searchbox_ {
 sub itemmsg_ {
     my($type, $obj) = @_;
     p_ class => 'itemmsg', sub {
-        if($type ne 'd') {
+        if($type ne 'd' && $type ne 'w') {
             if($obj->{entry_locked}) {
                 txt_ 'Locked for editing. ';
             } elsif(auth && !can_edit $type => $obj) {
                 txt_ 'You can not edit this page. ';
             }
         }
-        a_ href => "/report/$type$obj->{id}", 'Report an issue on this page.';
+        my $id = $obj->{id} =~ /^[0-9]*$/ ? "$type$obj->{id}" : $obj->{id};
+        a_ href => "/report/$id", 'Report an issue on this page.';
     };
 }
 

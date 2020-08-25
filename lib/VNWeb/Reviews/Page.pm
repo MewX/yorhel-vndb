@@ -31,6 +31,19 @@ sub review_ {
     my @spoil = $w->{spoiler} ? (class => 'reviewspoil') : ();
     table_ class => 'fullreview', sub {
         tr_ sub {
+            td_ 'Subject';
+            td_ sub {
+                a_ href => "/v$w->{vid}", $w->{title};
+                if($w->{rid}) {
+                    br_;
+                    abbr_ class => "icons $_", title => $PLATFORM{$_}, '' for grep $_ ne 'oth', $w->{platforms}->@*;
+                    abbr_ class => "icons lang $_", title => $LANGUAGE{$_}, '' for $w->{lang}->@*;
+                    abbr_ class => "icons rt$w->{rtype}", title => $w->{rtype}, '';
+                    a_ href => "/r$w->{rid}", title => $w->{roriginal}||$w->{rtitle}, $w->{rtitle};
+                }
+            };
+        };
+        tr_ sub {
             td_ 'By';
             td_ sub {
                 b_ style => 'float: right', 'Vote: '.fmtvote($w->{vote}) if $w->{vote};
@@ -40,15 +53,6 @@ sub review_ {
                 b_ class => 'grayedout', " last updated on $lastmod" if $lastmod && $date ne $lastmod;
             }
         };
-        tr_ sub {
-            td_ 'Release';
-            td_ sub {
-                abbr_ class => "icons $_", title => $PLATFORM{$_}, '' for grep $_ ne 'oth', $w->{platforms}->@*;
-                abbr_ class => "icons lang $_", title => $LANGUAGE{$_}, '' for $w->{lang}->@*;
-                abbr_ class => "icons rt$w->{rtype}", title => $w->{rtype}, '';
-                a_ href => "/r$w->{rid}", title => $w->{roriginal}||$w->{rtitle}, $w->{rtitle};
-            };
-        } if $w->{rid};
         tr_ class => 'reviewnotspoil', sub {
             td_ '';
             td_ sub {
@@ -72,9 +76,10 @@ TUWF::get qr{/$RE{wid}(?:(?<sep>[\./])$RE{num})?}, sub {
     my($id, $sep, $num) = (tuwf->capture('id'), tuwf->capture('sep')||'', tuwf->capture('num'));
     my $w = tuwf->dbRowi(
         'SELECT r.id, r.vid, r.rid, r.isfull, r.text, r.spoiler, COALESCE(c.count,0) AS count, r.c_up, r.c_down, uv.vote, rm.id IS NULL AS can
-              , rel.title AS rtitle, rel.original AS roriginal, rel.type AS rtype, rv.vote AS my
+              , v.title, rel.title AS rtitle, rel.original AS roriginal, rel.type AS rtype, rv.vote AS my
               , ', sql_user(), ',', sql_totime('r.date'), 'AS date,', sql_totime('r.lastmod'), 'AS lastmod
            FROM reviews r
+           JOIN vn v ON v.id = r.vid
            LEFT JOIN releases rel ON rel.id = r.rid
            LEFT JOIN users u ON u.id = r.uid
            LEFT JOIN ulist_vns uv ON uv.uid = r.uid AND uv.vid = r.vid
@@ -103,23 +108,13 @@ TUWF::get qr{/$RE{wid}(?:(?<sep>[\./])$RE{num})?}, sub {
           ORDER BY rp.num'
     );
 
-    my $v = db_entry v => $w->{vid};
-    VNWeb::VN::Page::enrich_vn($v);
-
-    framework_ title => "Review of $v->{title}", index => 1, type => 'v', dbobj => $v, hiddenmsg => 1,
-        pagevars => {sethash=>$num?$num:$page>1?'threadstart':'review'},
+    my $title = "Review of $w->{title}";
+    framework_ title => $title, index => 1, type => 'w', dbobj => $w,
+        $num||$page>1 ? (pagevars => {sethash=>$num?$num:'threadstart'}) : (),
     sub {
-        VNWeb::VN::Page::infobox_($v);
-        VNWeb::VN::Page::tabs_($v, $w->{isfull}?'reviews':'minireviews');
-        div_ class => 'mainbox', id => 'review', sub {
-            p_ class => 'mainopts', sub {
-                if(can_edit w => $w) {
-                    a_ href => "/$w->{id}/edit", 'Edit';
-                    b_ class => 'grayedout', ' | ';
-                }
-                a_ href => "/report/$w->{id}", 'Report';
-            };
-            h1_ 'Review';
+        div_ class => 'mainbox', sub {
+            itemmsg_ w => $w;
+            h1_ $title;
             review_ $w;
         };
         if(grep !$_->{hidden}, @$posts) {

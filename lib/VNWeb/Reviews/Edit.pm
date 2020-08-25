@@ -43,7 +43,7 @@ TUWF::get qr{/$RE{wid}/edit}, sub {
     return tuwf->resDenied if !can_edit w => $e;
 
     $e->{releases} = releases_by_vn $e->{vid};
-    framework_ title => "Edit review for $e->{vntitle}", sub {
+    framework_ title => "Edit review for $e->{vntitle}", type => 'w', dbobj => $e, tab => 'edit', sub {
         elm_ 'Reviews.Edit' => $FORM_OUT, $e;
     };
 };

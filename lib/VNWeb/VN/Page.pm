@@ -8,7 +8,7 @@ use POSIX 'strftime';
 
 
 # Enrich everything necessary to at least render infobox_().
-# Also used by Chars::VNTab & Reviews::{Page,VNTab}
+# Also used by Chars::VNTab & Reviews::VNTab
 sub enrich_vn {
     my($v) = @_;
     enrich_merge id => 'SELECT id, c_votecount, c_olang::text[] AS c_olang FROM vn WHERE id IN', $v;
@@ -328,7 +328,7 @@ sub infobox_useroptions_ {
 }
 
 
-# Also used by Chars::VNTab & Reviews::{Page,VNTab}
+# Also used by Chars::VNTab & Reviews::VNTab
 sub infobox_ {
     my($v) = @_;
     div_ class => 'mainbox', sub {
@@ -386,7 +386,7 @@ sub infobox_ {
 }
 
 
-# Also used by Chars::VNTab & Reviews::{Page,VNTab}
+# Also used by Chars::VNTab & Reviews::VNTab
 sub tabs_ {
     my($v, $tab) = @_;
     my $chars = tuwf->dbVali('SELECT COUNT(DISTINCT c.id) FROM chars c JOIN chars_vns cv ON cv.id = c.id WHERE NOT c.hidden AND cv.vid =', \$v->{id});
