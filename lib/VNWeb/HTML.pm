@@ -342,7 +342,7 @@ sub _maintabs_ {
     return if !$t || !$o;
     return if $t eq 'g' && !auth->permTagmod;
 
-    my $id = $o->{id} =~ /^[0-9]$/ ? $t.$o->{id} : $o->{id};
+    my $id = $o->{id} =~ /^[0-9]*$/ ? $t.$o->{id} : $o->{id};
 
     my sub t {
         my($tabname, $url, $text) = @_;
