@@ -307,6 +307,7 @@ sub infobox_useroptions_ {
          ORDER BY CASE WHEN l.id < 10 THEN l.id ELSE 10 END, l.label'
     );
     my $lst = tuwf->dbRowi('SELECT vid, vote, notes FROM ulist_vns WHERE uid =', \auth->uid, 'AND vid =', \$v->{id});
+    my $review = tuwf->dbVali('SELECT id FROM reviews WHERE uid =', \auth->uid, 'AND vid =', \$v->{id});
 
     tr_ class => 'nostripe', sub {
         td_ colspan => 2, sub {
@@ -317,6 +318,8 @@ sub infobox_useroptions_ {
                 canvote  => canvote($v),
                 vote     => fmtvote($lst->{vote}),
                 notes    => $lst->{notes}||'',
+                review   => $review,
+                canreview=> canvote($v) && can_edit(w => {}),
                 labels   => $labels,
                 selected => [ map $_->{id}, grep $_->{assigned}, @$labels ],
             };

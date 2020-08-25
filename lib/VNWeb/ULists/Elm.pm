@@ -172,6 +172,8 @@ our $VNPAGE = form_compile any => {
     canvote  => { anybool => 1 },
     vote     => { vnvote => 1 },
     notes    => { required => 0, default => '' },
+    review   => { required => 0, vndbid => 'w' },
+    canreview=> { anybool => 1 },
     labels   => { aoh => { id => { int => 1 }, label => {}, private => { anybool => 1 } } },
     selected => { type => 'array', values => { id => 1 } },
 };

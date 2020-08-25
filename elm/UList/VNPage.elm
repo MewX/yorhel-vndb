@@ -146,9 +146,11 @@ view model =
            , td []
              [ a [ href "#", onClickD NotesToggle ] [ text "💬" ]
              , span [ class "spinner", classList [("hidden", model.notesState /= Api.Loading)] ] []
-             , case model.notesState of
-                 Api.Error e -> b [ class "standout" ] [ text <| Api.showResponse e ]
-                 _ -> text ""
+             , case (model.notesState, model.vote.vote /= Nothing && model.flags.canreview, model.flags.review) of
+                 (Api.Error e, _, _) -> b [ class "standout" ] [ text <| Api.showResponse e ]
+                 (_, False, _)  -> text ""
+                 (_, True, Nothing) -> a [ href ("/v" ++ String.fromInt model.flags.vid ++ "/addreview") ] [ text " write a review »" ]
+                 (_, True, Just w)  -> a [ href ("/" ++ w ++ "/edit") ] [ text " edit review »" ]
              ]
            ]
       else text ""
