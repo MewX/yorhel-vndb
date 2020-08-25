@@ -7,9 +7,7 @@ use VNWeb::Reviews::Lib;
 sub reviews_ {
     my($v, $mini) = @_;
 
-    # TODO: Filters for upvote threshold
-
-    # TODO: Order
+    # TODO: Order, pagination
     my $lst = tuwf->dbAlli(
         'SELECT r.id, r.rid, r.text, r.spoiler, r.c_up, r.c_down, r.c_count, uv.vote, rv.vote AS my, NOT r.isfull AND r2.id IS NULL AS can
               , ', sql_totime('r.date'), 'AS date, ', sql_user(), '
@@ -42,18 +40,20 @@ sub reviews_ {
                         a_ href => "/report/$r->{id}", 'report';
                         txt_ '>';
                     };
+                    my $html = bb2html $r->{text}, $mini ? undef : 700;
+                    $html .= '...' if !$mini;
                     if($r->{spoiler}) {
                         label_ class => 'review_spoil', sub {
                             input_ type => 'checkbox', class => 'visuallyhidden', (auth->pref('spoilers')||0) == 2 ? ('checked', 'checked') : (), undef;
-                            div_ sub { lit_ bb2html $r->{text}, 700 };
+                            div_ sub { lit_ $html };
                             span_ class => 'fake_link', 'This review contains spoilers, click to view.';
                         }
                     } else {
-                        lit_ bb2html $r->{text}, 700;
+                        lit_ $html;
                     }
                 };
                 div_ sub {
-                    a_ href => "/$r->{id}#review", 'Full review »' if $r->{isfull};
+                    a_ href => "/$r->{id}#review", 'Full review »' if !$mini;
                     a_ href => "/$r->{id}#threadstart", $r->{c_count} == 1 ? '1 comment' : "$r->{c_count} comments";
                     review_vote_ $r;
                 };
