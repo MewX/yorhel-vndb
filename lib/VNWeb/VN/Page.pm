@@ -310,14 +310,14 @@ sub infobox_useroptions_ {
 
     tr_ class => 'nostripe', sub {
         td_ colspan => 2, sub {
-            elm_ 'UList.VNPage', undef, { # TODO: Go through a TUWF::Validation schema
-                uid      => 1*auth->uid,
-                vid      => 1*$v->{id},
-                onlist   => $lst->{vid}?\1:\0,
-                canvote  => canvote($v)?\1:\0,
-                vote     => fmtvote($lst->{vote}).'',
+            elm_ 'UList.VNPage', $VNWeb::ULists::Elm::VNPAGE, {
+                uid      => auth->uid,
+                vid      => $v->{id},
+                onlist   => $lst->{vid}||0,
+                canvote  => canvote($v),
+                vote     => fmtvote($lst->{vote}),
                 notes    => $lst->{notes}||'',
-                labels   => [ map +{ id => 1*$_->{id}, label => $_->{label}, private => $_->{private}?\1:\0 }, @$labels ],
+                labels   => $labels,
                 selected => [ map $_->{id}, grep $_->{assigned}, @$labels ],
             };
         }

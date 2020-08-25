@@ -222,7 +222,7 @@ sub listing_ {
 
     # TODO: Thumbnail view?
     paginate_ $url, $opt->{p}, [ $count, 50 ], 't', sub {
-        elm_ ColSelect => undef, [ $url->(), [
+        elm_ ColSelect => 'raw', [ $url->(), [
             [ voted    => 'Vote date'    ],
             [ vote     => 'Vote'         ],
             [ rating   => 'Rating'       ],

@@ -165,8 +165,19 @@ our $VNOPT = form_compile any => {
 };
 
 
+our $VNPAGE = form_compile any => {
+    uid      => { id => 1 },
+    vid      => { id => 1 },
+    onlist   => { anybool => 1 },
+    canvote  => { anybool => 1 },
+    vote     => { vnvote => 1 },
+    notes    => { required => 0, default => '' },
+    labels   => { aoh => { id => { int => 1 }, label => {}, private => { anybool => 1 } } },
+    selected => { type => 'array', values => { id => 1 } },
+};
 
-# UListVNNotes module is abused for the UList.Opts flag definition
+
+# UListVNNotes module is abused for the UList.Opts and UList.VNPage flag definition
 elm_api UListVNNotes => $VNOPT, {
     uid   => { id => 1 },
     vid   => { id => 1 },
@@ -179,7 +190,7 @@ elm_api UListVNNotes => $VNOPT, {
     );
     # Doesn't need `updcache()`
     elm_Success
-};
+}, VNPage => $VNPAGE;
 
 
 

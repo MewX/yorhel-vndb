@@ -116,10 +116,12 @@ sub spoil_ {
 }
 
 
-# Instantiate an Elm module
+# Instantiate an Elm module.
+# $schema can be set to the string 'raw' to encode the JSON directly, without a normalizing through a schema.
 sub elm_ {
     my($mod, $schema, $data, $placeholder) = @_;
-    push tuwf->req->{pagevars}{elm}->@*, [ $mod, $data ? ($schema ? $schema->analyze->coerce_for_json($data, unknown => 'remove') : $data) : () ];
+    die "Elm data without a schema" if defined $data && !defined $schema;
+    push tuwf->req->{pagevars}{elm}->@*, [ $mod, $data ? ($schema eq 'raw' ? $data : $schema->analyze->coerce_for_json($data, unknown => 'remove')) : () ];
     div_ id => sprintf('elm%d', $#{ tuwf->req->{pagevars}{elm} }), $placeholder//'';
 }
 

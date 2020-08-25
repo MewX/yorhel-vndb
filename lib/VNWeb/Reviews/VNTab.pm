@@ -9,13 +9,13 @@ sub reviews_ {
 
     # TODO: Order, pagination
     my $lst = tuwf->dbAlli(
-        'SELECT r.id, r.rid, r.text, r.spoiler, r.c_up, r.c_down, r.c_count, uv.vote, rv.vote AS my, NOT r.isfull AND r2.id IS NULL AS can
+        'SELECT r.id, r.rid, r.text, r.spoiler, r.c_up, r.c_down, r.c_count, uv.vote, rv.vote AS my, NOT r.isfull AND rm.id IS NULL AS can
               , ', sql_totime('r.date'), 'AS date, ', sql_user(), '
            FROM reviews r
            LEFT JOIN users u ON r.uid = u.id
            LEFT JOIN ulist_vns uv ON uv.uid = r.uid AND uv.vid = r.vid
            LEFT JOIN reviews_votes rv ON rv.uid =', \auth->uid, ' AND rv.id = r.id
-           LEFT JOIN reviews r2 ON r2.vid = r.vid AND r2.uid =', \auth->uid, '
+           LEFT JOIN reviews rm ON rm.vid = r.vid AND rm.uid =', \auth->uid, '
           WhERE r.vid =', \$v->{id}, 'AND', ($mini ? 'NOT' : ''), 'r.isfull'
     );
 

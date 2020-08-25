@@ -18,26 +18,7 @@ import Gen.UListDel as GDE
 import UList.LabelEdit as LE
 import UList.VoteEdit as VE
 
--- We don't have a Gen.* module for this (yet), so define these manually
-type alias RecvLabels =
-  { id       : Int
-  , label    : String
-  , private  : Bool
-  }
-
-type alias Recv =
-  { uid      : Int
-  , vid      : Int
-  , onlist   : Bool
-  , canvote  : Bool
-  , vote     : Maybe String
-  , labels   : List RecvLabels
-  , selected : List Int
-  , notes    : String
-  }
-
-
-main : Program Recv Model Msg
+main : Program GVN.VNPage Model Msg
 main = Browser.element
   { init = \f -> (init f, Cmd.none)
   , subscriptions = \model -> Sub.batch [ Sub.map Labels (DD.sub model.labels.dd), Sub.map Vote (DD.sub model.vote.dd) ]
@@ -46,7 +27,7 @@ main = Browser.element
   }
 
 type alias Model =
-  { flags      : Recv
+  { flags      : GVN.VNPage
   , onlist     : Bool
   , del        : Bool
   , state      : Api.State -- For adding/deleting; Vote and label edit widgets have their own state
@@ -58,7 +39,7 @@ type alias Model =
   , notesVis   : Bool
   }
 
-init : Recv -> Model
+init : GVN.VNPage -> Model
 init f =
   { flags      = f
   , onlist     = f.onlist
