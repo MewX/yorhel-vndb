@@ -299,7 +299,7 @@ BEGIN
   UPDATE reviews
      SET c_count   = COALESCE((SELECT COUNT(*) FROM reviews_posts WHERE NOT hidden AND id = reviews.id), 0)
        , c_lastnum = (SELECT MAX(num) FROM reviews_posts WHERE NOT hidden AND id = reviews.id)
-   WHERE id IN(OLD.tid,NEW.tid);
+   WHERE id IN(OLD.id,NEW.id);
   RETURN NULL;
 END
 $$ LANGUAGE plpgsql;

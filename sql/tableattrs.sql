@@ -126,7 +126,7 @@ CREATE        INDEX reports_new            ON reports (date) WHERE status = 'new
 CREATE        INDEX reports_lastmod        ON reports (lastmod);
 CREATE UNIQUE INDEX reviews_vid_uid        ON reviews (vid,uid);
 CREATE        INDEX reviews_uid            ON reviews (uid);
-CREATE UNIQUE INDEX reviews_posts_uid      ON reviews_posts (uid);
+CREATE        INDEX reviews_posts_uid      ON reviews_posts (uid);
 CREATE UNIQUE INDEX reviews_votes_id_uid   ON reviews_votes (id,uid);
 CREATE        INDEX staff_alias_id         ON staff_alias (id);
 CREATE UNIQUE INDEX tags_vn_pkey           ON tags_vn (tag,vid,uid);
