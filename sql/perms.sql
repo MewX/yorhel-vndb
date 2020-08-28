@@ -139,7 +139,7 @@ GRANT SELECT                         ON releases_media           TO vndb_multi;
 GRANT SELECT                         ON releases_platforms       TO vndb_multi;
 GRANT SELECT                         ON releases_producers       TO vndb_multi;
 GRANT SELECT                         ON releases_vn              TO vndb_multi;
-GRANT SELECT          UPDATE         ON reviews                  TO vndb_site;
+GRANT SELECT,         UPDATE         ON reviews                  TO vndb_site;
 GRANT SELECT                         ON reviews_posts            TO vndb_site;
 GRANT SELECT                         ON reviews_votes            TO vndb_site;
 GRANT SELECT, INSERT, UPDATE, DELETE ON rlists                   TO vndb_multi;
