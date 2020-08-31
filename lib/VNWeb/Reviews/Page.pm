@@ -107,6 +107,7 @@ TUWF::get qr{/$RE{wid}(?:(?<sep>[\./])$RE{num})?}, sub {
           WHERE rp.id =', \$id, '
           ORDER BY rp.num'
     );
+    return tuwf->resNotFound if $num && !grep $_->{num} == $num, @$posts;
 
     my $title = "Review of $w->{title}";
     framework_ title => $title, index => 1, type => 'w', dbobj => $w,
