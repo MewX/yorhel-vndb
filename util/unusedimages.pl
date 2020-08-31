@@ -62,6 +62,8 @@ sub cleandb {
                 UNION ALL SELECT description FROM traits
                 UNION ALL SELECT comments FROM changes
                 UNION ALL SELECT msg FROM threads_posts
+                UNION ALL SELECT msg FROM reviews_posts
+                UNION ALL SELECT text FROM reviews
               ) x(text), regexp_matches(text, '}.$fnmatch.q{', 'g') as y(img)
           )
         ) x
