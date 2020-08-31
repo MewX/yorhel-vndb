@@ -55,7 +55,7 @@ sub config {
         $c->{tuwf}{$_}  = $config_file->{tuwf}{$_}  for keys %{ $config_file->{tuwf}  || {} };
 
         $c->{url_static} ||= $c->{url};
-        $c->{version} ||= `git -C "$ROOT" describe` =~ /^(.+)\-g[0-9a-f]+$/ && $1;
+        $c->{version} ||= `git -C "$ROOT" describe` =~ s/\-g[0-9a-f]+$//rg =~ s/\r?\n//rg;
         $c->{root} = $ROOT;
         $c->{Multi}{Core}{log_level} ||= 'debug';
         $c->{Multi}{Core}{log_dir}   ||= $ROOT.'/data/log';
