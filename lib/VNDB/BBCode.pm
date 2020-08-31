@@ -139,8 +139,8 @@ sub parse {
   while($raw =~ m{(?:
     \[ \/? (?i: b|i|u|s|spoiler|quote|code|url|raw ) [^\s\]]* \] |  # tag
     d[1-9][0-9]* \# [1-9][0-9]* (?: \.[1-9][0-9]* )?             |  # d+#+[.+]
-    [tdvprcs][1-9][0-9]*\.[1-9][0-9]*                            |  # v+.+
-    [tdvprcsugi][1-9][0-9]*                                      |  # v+
+    [tdvprcsw][1-9][0-9]*\.[1-9][0-9]*                           |  # v+.+
+    [tdvprcsugiw][1-9][0-9]*                                     |  # v+
     (?:https?|ftp)://[^><"\n\s\]\[]+[\d\w=/-]                       # link
   )}xg) {
     my $token = $&;

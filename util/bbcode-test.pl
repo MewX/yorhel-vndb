@@ -117,17 +117,17 @@ my @tests = (
   'some text <b class="spoiler">with (<a href="/v17">v17</a>) tags</b> and internal ids such as <a href="/s1">s1</a>',
   'some text  and internal ids such as s1',
 
-  'r12.1 v6.3 s1.2',
-  '<a href="/r12.1">r12.1</a> <a href="/v6.3">v6.3</a> <a href="/s1.2">s1.2</a>',
-  'r12.1 v6.3 s1.2',
+  'r12.1 v6.3 s1.2 w5.3',
+  '<a href="/r12.1">r12.1</a> <a href="/v6.3">v6.3</a> <a href="/s1.2">s1.2</a> <a href="/w5.3">w5.3</a>',
+  'r12.1 v6.3 s1.2 w5.3',
 
   'd3 d1.3 d2#4 d5#6.7',
   '<a href="/d3">d3</a> <a href="/d1.3">d1.3</a> <a href="/d2#4">d2#4</a> <a href="/d5#6.7">d5#6.7</a>',
   'd3 d1.3 d2#4 d5#6.7',
 
-  'v17 text dds16v21 more text1 v9 _d5_ d3-',
-  '<a href="/v17">v17</a> text dds16v21 more text1 <a href="/v9">v9</a> _d5_ d3-',
-  'v17 text dds16v21 more text1 v9 _d5_ d3-',
+  'v17 text dds16v21 more text1 v9 _d5_ d3- m10',
+  '<a href="/v17">v17</a> text dds16v21 more text1 <a href="/v9">v9</a> _d5_ d3- m10',
+  'v17 text dds16v21 more text1 v9 _d5_ d3- m10',
 
   # https://vndb.org/t2520.233
   '[From[url=http://densetsu.com/display.php?id=468&style=alphabetical] Anime Densetsu[/url]]',
