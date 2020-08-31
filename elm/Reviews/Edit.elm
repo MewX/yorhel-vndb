@@ -104,7 +104,16 @@ view model =
   form_ Submit (model.state == Api.Loading)
   [ div [ class "mainbox" ]
     [ h1 [] [ text <| if model.id == Nothing then "Submit a review" else "Edit review" ]
-    , table [ class "formtable" ]
+    , p [] [ b [] [ text "Rules" ] ]
+    , ul []
+      [ li [] [ text "Submit only reviews you have written yourself!" ]
+      , li [] [ text "If you have published the review elsewhere (e.g. a personal blog), feel free to include a link at the end of the review. Formatting tip: ", em [] [ text "[Originally published at <link>]" ] ]
+      , li [] [ text "Your vote (if any) will be displayed alongside the review, even if you have marked your list as private." ]
+      ]
+    , br [] []
+    ]
+  , div [ class "mainbox" ]
+    [ table [ class "formtable" ]
       [ formField "Subject" [ a [ href <| "/v"++String.fromInt model.vid ] [ text model.vntitle ] ]
       , formField ""
         [ inputSelect "" model.rid Release [style "width" "500px" ] <|
