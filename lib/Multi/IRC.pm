@@ -201,17 +201,18 @@ sub set_notify {
     (SELECT id FROM changes ORDER BY id DESC LIMIT 1) AS rev,
     (SELECT id FROM tags ORDER BY id DESC LIMIT 1) AS tag,
     (SELECT id FROM traits ORDER BY id DESC LIMIT 1) AS trait,
-    (SELECT date FROM threads_posts ORDER BY date DESC LIMIT 1) AS post
+    (SELECT date FROM threads_posts ORDER BY date DESC LIMIT 1) AS post,
+    (SELECT id FROM reviews ORDER BY id DESC LIMIT 1) AS review
   }, undef, sub {
     return if pg_expect $_[0], 1;
     %lastnotify = %{($_[0]->rowsAsHashes())[0]};
-    push_watcher pg->listen($_, on_notify => \&notify) for qw{newrevision newpost newtag newtrait};
+    push_watcher pg->listen($_, on_notify => \&notify) for qw{newrevision newpost newtag newtrait newreview};
   };
 }
 
 
 # formats and posts database items listed in @res, where each item is a hashref with:
-#   type      database item in [dvprtug]
+#   type      database item in [dvprtugw]
 #   id        database id
 #   title     main name or title of the DB entry
 #   rev       (optional) revision, post number
@@ -234,16 +235,19 @@ sub formatid {
     i => 'trait',
     t => 'thread',
     d => 'doc',
+    w => 'review',
   );
 
   for (@$res) {
-    my $id = $_->{type}.$_->{id} . ($_->{rev} ? '.'.$_->{rev} : '');
+    my $id = ($_->{id} =~ /^[a-z]/ ? '' : $_->{type}) . $_->{id} . ($_->{rev} ? '.'.$_->{rev} : '');
 
     # (always) [x+.+]
     my @msg = ("$BOLD$c"."[$NORMAL$BOLD$id$c]$NORMAL");
 
     # (only if username key is present) Edit of / New item / reply to / whatever
     push @msg, $c.(
+      $_->{type} eq 'w' && !$_->{rev} ? 'Review of' :
+      $_->{type} eq 'w' ? 'Comment to review of' :
       ($_->{rev}||1) == 1 ? "New $types{$_->{type}}" :
       $_->{type} eq 't' ? 'Reply to' : 'Edit of'
     ).$NORMAL if exists $_->{username};
@@ -297,8 +301,9 @@ sub handleid {
     $t eq 'g' ? 'name AS title FROM tags WHERE id = $2' :
     $t eq 'i' ? 'name AS title FROM traits WHERE id = $2' :
     $t eq 'd' ? 'title FROM docs WHERE id = $2' :
+    $t eq 'w' ? 'v.title, u.username FROM reviews w JOIN vn v ON v.id = w.vid LEFT JOIN users u ON u.id = w.uid WHERE w.id = vndbid(\'w\',$2)' :
                 'r.title FROM releases r WHERE r.id = $2'),
-    [ $t, $id ], $c if !$rev && $t =~ /[dvprtugics]/;
+    [ $t, $id ], $c if !$rev && $t =~ /[dvprtugicsw]/;
 
   # edit/insert of vn/release/producer or discussion board post
   pg_cmd 'SELECT $1::text AS type, $2::integer AS id, $3::integer AS rev, '.(
@@ -308,8 +313,9 @@ sub handleid {
     $t eq 'c' ? 'ch.name AS title, u.username, c.comments FROM changes c JOIN chars_hist ch ON c.id = ch.chid JOIN users u ON u.id = c.requester WHERE c.type = \'c\' AND c.itemid = $2 AND c.rev = $3' :
     $t eq 's' ? 'sah.name AS title, u.username, c.comments FROM changes c JOIN staff_hist sh ON c.id = sh.chid JOIN users u ON u.id = c.requester JOIN staff_alias_hist sah ON sah.chid = c.id AND sah.aid = sh.aid WHERE c.type = \'s\' AND c.itemid = $2 AND c.rev = $3' :
     $t eq 'd' ? 'dh.title, u.username, c.comments FROM changes c JOIN docs_hist dh ON c.id = dh.chid JOIN users u ON u.id = c.requester WHERE c.type = \'d\' AND c.itemid = $2 AND c.rev = $3' :
+    $t eq 'w' ? 'v.title, u.username FROM reviews_posts wp JOIN reviews w ON w.id = wp.id JOIN vn v ON v.id = w.vid LEFT JOIN users u ON u.id = wp.uid WHERE wp.id = vndbid(\'w\',$2) AND wp.num = $3' :
                 't.title, u.username, '.$GETBOARDS.' FROM threads t JOIN threads_posts tp ON tp.tid = t.id LEFT JOIN users u ON u.id = tp.uid WHERE NOT t.hidden AND NOT t.private AND t.id = vndbid(\'t\',$2) AND tp.num = $3'),
-    [ $t, $id, $rev], $c if $rev && $t =~ /[dvprtcs]/;
+    [ $t, $id, $rev], $c if $rev && $t =~ /[dvprtcsw]/;
 }
 
 
@@ -321,8 +327,8 @@ sub vndbid {
   my @id; # [ type, id, ref ]
   for (split /[, ]/, $msg) {
     next if length > 15 or m{[a-z]{3,6}://}i; # weed out URLs and too long things
-    push @id, /^(?:.*[^\w]|)([dvprtcs])([1-9][0-9]*)\.([1-9][0-9]*)(?:[^\w].*|)$/ ? [ $1, $2, $3 ] # x+.+
-            : /^(?:.*[^\w]|)([dvprtugics])([1-9][0-9]*)(?:[^\w].*|)$/ ? [ $1, $2, '' ] : ();       # x+
+    push @id, /^(?:.*[^\w]|)([wdvprtcs])([1-9][0-9]*)\.([1-9][0-9]*)(?:[^\w].*|)$/ ? [ $1, $2, $3 ] # x+.+
+            : /^(?:.*[^\w]|)([wdvprtugics])([1-9][0-9]*)(?:[^\w].*|)$/ ? [ $1, $2, '' ] : ();       # x+
   }
   handleid($chan, @$_) for @id;
 }
@@ -332,7 +338,7 @@ sub vndbid {
 
 sub notify {
   my(undef, $sel) = @_;
-  my $k = {qw|newrevision rev  newpost post  newtrait trait  newtag tag|}->{$sel};
+  my $k = {qw|newrevision rev  newpost post  newtrait trait  newtag tag  newreview review|}->{$sel};
   return if !$k || !$lastnotify{$k};
 
   my $q = {
@@ -368,7 +374,14 @@ sub notify {
     FROM tags t
     JOIN users u ON u.id = t.addedby
     WHERE t.id > $1
-    ORDER BY t.id}
+    ORDER BY t.id},
+  review => q{
+    SELECT 'w' AS type, w.id, v.title, u.username, w.id AS lastid
+    FROM reviews w
+    JOIN vn v ON v.id = w.vid
+    LEFT JOIN users u ON u.id = w.uid
+    WHERE w.id > $1
+    ORDER BY w.id}
   }->{$k};
 
   pg_cmd $q, [ $lastnotify{$k} ], sub {

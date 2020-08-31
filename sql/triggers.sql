@@ -191,7 +191,7 @@ CREATE TRIGGER ulist_voted_label AFTER INSERT OR UPDATE ON ulist_vns FOR EACH RO
 
 
 
--- NOTIFY on insert into changes/posts/tags/trait
+-- NOTIFY on insert into changes/posts/tags/trait/reviews
 
 CREATE OR REPLACE FUNCTION insert_notify() RETURNS trigger AS $$
 BEGIN
@@ -203,6 +203,8 @@ BEGIN
     NOTIFY newtag;
   ELSIF TG_TABLE_NAME = 'traits' THEN
     NOTIFY newtrait;
+  ELSIF TG_TABLE_NAME = 'reviews' THEN
+    NOTIFY newreview;
   END IF;
   RETURN NULL;
 END;
@@ -212,6 +214,7 @@ CREATE TRIGGER insert_notify AFTER INSERT ON changes       FOR EACH STATEMENT EX
 CREATE TRIGGER insert_notify AFTER INSERT ON threads_posts FOR EACH STATEMENT EXECUTE PROCEDURE insert_notify();
 CREATE TRIGGER insert_notify AFTER INSERT ON tags          FOR EACH STATEMENT EXECUTE PROCEDURE insert_notify();
 CREATE TRIGGER insert_notify AFTER INSERT ON traits        FOR EACH STATEMENT EXECUTE PROCEDURE insert_notify();
+CREATE TRIGGER insert_notify AFTER INSERT ON reviews       FOR EACH STATEMENT EXECUTE PROCEDURE insert_notify();
 
 
 
