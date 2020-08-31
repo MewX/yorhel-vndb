@@ -367,6 +367,7 @@ sub _maintabs_ {
                 t list  => "/$id/ulist?vnlist=1", 'list';
                 t votes => "/$id/ulist?votes=1", 'votes';
                 t wish  => "/$id/ulist?wishlist=1", 'wishlist';
+                t reviews => "/w?u=$o->{id}", 'reviews';
                 t posts => "/$id/posts", 'posts';
             } if $t eq 'u';
 

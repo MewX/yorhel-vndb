@@ -66,6 +66,15 @@ sub _info_table_ {
         };
     };
     tr_ sub {
+        my $stats = tuwf->dbRowi('SELECT COUNT(*) AS cnt, SUM(c_up) AS up, SUM(c_down) AS down FROM reviews WHERE uid =', \$u->{id});
+        td_ 'Reviews';
+        td_ !$stats->{cnt} ? '-' : sub {
+            txt_ sprintf '%d review%s', $stats->{cnt}, $stats->{cnt} == 1 ? '' : 's';
+            txt_ !$stats->{up} && !$stats->{down} ? '. ' : sprintf ', %.0f%% approval. ', $stats->{up}/($stats->{up}+$stats->{down})*100;
+            a_ href => "/w?u=$u->{id}", 'Browse reviews »';
+        };
+    };
+    tr_ sub {
         my $stats = tuwf->dbRowi('SELECT COUNT(DISTINCT tag) AS tags, COUNT(DISTINCT vid) AS vns FROM tags_vn WHERE uid =', \$u->{id});
         td_ 'Tags';
         td_ !$u->{c_tags} ? '-' : !$stats->{tags} ? '-' : sub {
