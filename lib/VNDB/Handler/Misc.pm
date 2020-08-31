@@ -133,16 +133,21 @@ sub homepage {
    end 'tr';
    Tr;
 
-    # Random visual novels
+    # New Reviews
     td;
      h1;
-      a href => '/v/rand', 'Random visual novels';
+      a href => '/w', 'New Reviews';
      end;
-     my $random = $self->filFetchDB(vn => undef, undef, {results => 10, sort => 'rand'});
+     my $reviews = tuwf->dbAlli('
+         SELECT w.id, v.title,', VNWeb::DB::sql_user(), ',', VNWeb::DB::sql_totime('w.date'), 'AS date
+           FROM reviews w JOIN vn v ON v.id = w.vid LEFT JOIN users u ON u.id = w.uid ORDER BY w.id DESC LIMIT 10');
      ul;
-      for (@$random) {
+      for (@$reviews) {
         li;
-         a href => "/v$_->{id}", title => $_->{original}||$_->{title}, shorten $_->{title}, 40;
+         txt fmtage($_->{date}).' ';
+         a href => "/$_->{id}", title => $_->{title}, shorten $_->{title}, 25;
+         lit ' by ';
+         VNWeb::HTML::user_($_);
         end;
       }
      end;
@@ -151,7 +156,7 @@ sub homepage {
     # Upcoming releases
     td;
      h1;
-      a href => '/r?fil=released-0;o=a;s=released', 'Upcoming releases';
+      a href => '/r?fil=released-0;o=a;s=released', 'Upcoming Releases';
      end;
      my $upcoming = $self->filFetchDB(release => undef, undef, {results => 10, released => 0, what => 'platforms'});
      ul;
@@ -171,7 +176,7 @@ sub homepage {
     # Just released
     td;
      h1;
-      a href => '/r?fil=released-1;o=d;s=released', 'Just released';
+      a href => '/r?fil=released-1;o=d;s=released', 'Just Released';
      end;
      my $justrel = $self->filFetchDB(release => undef, undef, {results => 10, sort => 'released', reverse => 1, released => 1, what => 'platforms'});
      ul;
