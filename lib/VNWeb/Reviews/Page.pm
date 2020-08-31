@@ -72,7 +72,6 @@ sub review_ {
 
 
 TUWF::get qr{/$RE{wid}(?:(?<sep>[\./])$RE{num})?}, sub {
-    return tuwf->resNotFound if !auth->permReview; #XXX:While in beta
     my($id, $sep, $num) = (tuwf->capture('id'), tuwf->capture('sep')||'', tuwf->capture('num'));
     my $w = tuwf->dbRowi(
         'SELECT r.id, r.vid, r.rid, r.isfull, r.text, r.spoiler, COALESCE(c.count,0) AS count, r.c_up, r.c_down, uv.vote, rm.id IS NULL AS can

@@ -72,6 +72,7 @@ elm_api ReviewsEdit => $FORM_OUT, $FORM_IN, sub {
         return elm_Unauth if tuwf->dbVali('SELECT 1 FROM reviews WHERE vid =', \$data->{vid}, 'AND uid =', \auth->uid);
         $data->{uid} = auth->uid;
         $id = tuwf->dbVali('INSERT INTO reviews', $data, 'RETURNING id');
+        tuwf->dbExeci('UPDATE users SET perm_review = false WHERE id =', \auth->uid) if !auth->isMod; # XXX: While in beta, 1 review per user.
     }
 
     elm_Redirect "/$id"

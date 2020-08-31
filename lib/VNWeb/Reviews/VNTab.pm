@@ -7,7 +7,7 @@ use VNWeb::Reviews::Lib;
 sub reviews_ {
     my($v, $mini) = @_;
 
-    # TODO: Order, pagination
+    # TODO: Better order, pagination
     my $lst = tuwf->dbAlli(
         'SELECT r.id, r.rid, r.text, r.spoiler, r.c_up, r.c_down, r.c_count, uv.vote, rv.vote AS my, NOT r.isfull AND rm.id IS NULL AS can
               , ', sql_totime('r.date'), 'AS date, ', sql_user(), '
@@ -16,7 +16,8 @@ sub reviews_ {
            LEFT JOIN ulist_vns uv ON uv.uid = r.uid AND uv.vid = r.vid
            LEFT JOIN reviews_votes rv ON rv.uid =', \auth->uid, ' AND rv.id = r.id
            LEFT JOIN reviews rm ON rm.vid = r.vid AND rm.uid =', \auth->uid, '
-          WhERE r.vid =', \$v->{id}, 'AND', ($mini ? 'NOT' : ''), 'r.isfull'
+          WhERE r.vid =', \$v->{id}, 'AND', ($mini ? 'NOT' : ''), 'r.isfull
+          ORDER BY r.c_up-r.c_down DESC'
     );
 
     div_ class => 'mainbox', sub {
@@ -64,7 +65,6 @@ sub reviews_ {
 
 
 TUWF::get qr{/$RE{vid}/(?<mini>mini)?reviews}, sub {
-    return tuwf->resNotFound if !auth->permReview; #XXX:While in beta
     my $mini = !!tuwf->capture('mini');
     my $v = db_entry v => tuwf->capture('id');
     return tuwf->resNotFound if !$v;

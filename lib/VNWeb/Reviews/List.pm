@@ -43,8 +43,6 @@ sub tablebox_ {
 
 
 TUWF::get qr{/w}, sub {
-    return tuwf->resNotFound if !auth->permReview; #XXX:While in beta
-
     my $opt = tuwf->validate(get =>
         p => { page => 1 },
         s => { onerror => 'id', enum => [qw[id lastpost rating]] },
