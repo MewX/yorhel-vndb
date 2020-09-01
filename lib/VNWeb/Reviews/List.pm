@@ -1,7 +1,6 @@
 package VNWeb::Reviews::List;
 
 use VNWeb::Prelude;
-use VNWeb::Reviews::Lib;
 
 
 sub tablebox_ {
@@ -18,7 +17,7 @@ sub tablebox_ {
                 td_ class => 'tc3', 'Vote';
                 td_ class => 'tc4', 'Type';
                 td_ class => 'tc5', 'Review';
-                td_ class => 'tc6', sub { txt_ 'Score';  sortable_ 'rating', $opt, \&url if auth->isMod };
+                td_ class => 'tc6', sub { txt_ 'Score*';  sortable_ 'rating', $opt, \&url } if auth->isMod;
                 td_ class => 'tc7', 'C#';
                 td_ class => 'tc8', sub { txt_ 'Last comment'; sortable_ 'lastpost', $opt, \&url };
             } };
@@ -28,7 +27,7 @@ sub tablebox_ {
                 td_ class => 'tc3', fmtvote $_->{vote};
                 td_ class => 'tc4', $_->{isfull} ? 'Full' : 'Mini';
                 td_ class => 'tc5', sub { a_ href => "/$_->{id}", $_->{title} };
-                td_ class => 'tc6', sub { review_vote_ $_ };
+                td_ class => 'tc6', sprintf '👍 %d 👎 %d', $_->{c_up}, $_->{c_down} if auth->isMod;
                 td_ class => 'tc7', $_->{c_count};
                 td_ class => 'tc8', $_->{c_lastnum} ? sub {
                     user_ $_, 'lu_';
@@ -77,6 +76,7 @@ TUWF::get qr{/w}, sub {
             if($u && !$count) {
                 p_ +(auth && $u->{id} == auth->uid ? 'You have' : user_displayname($u).' has').' not submitted any reviews yet.';
             }
+            p_ 'Note: The score column is only visible to moderators.' if auth->isMod;
         };
         tablebox_ $opt, $lst, $count if $count;
     };

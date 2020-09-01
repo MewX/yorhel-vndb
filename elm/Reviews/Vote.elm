@@ -23,8 +23,6 @@ type alias Model =
   { state    : Api.State
   , id       : String
   , my       : Maybe Bool
-  , up       : Int
-  , down     : Int
   }
 
 init : GRV.Recv -> Model
@@ -32,8 +30,6 @@ init d =
   { state    = Api.Normal
   , id       = d.id
   , my       = d.my
-  , up       = d.up
-  , down     = d.down
   }
 
 type Msg
@@ -45,14 +41,8 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     Vote b ->
-      let nm = case (model.my, b) of
-                (Nothing,    True)  -> { model | my = Just b,  up = model.up+1                      }
-                (Nothing,    False) -> { model | my = Just b                  , down = model.down+1 }
-                (Just True,  False) -> { model | my = Just b,  up = model.up-1, down = model.down+1 }
-                (Just False, True)  -> { model | my = Just b,  up = model.up+1, down = model.down-1 }
-                (Just True,  True)  -> { model | my = Nothing, up = model.up-1                      }
-                (Just False, False) -> { model | my = Nothing                 , down = model.down-1 }
-      in ({ nm | state = Api.Loading }, GRV.send { id = nm.id, my = nm.my } Saved)
+      let my = if model.my == Just b then Nothing else Just b
+      in ({ model | my = my, state = Api.Loading }, GRV.send { id = model.id, my = my } Saved)
 
     Saved GApi.Success -> ({ model | state = Api.Normal }, Cmd.none)
     Saved e -> ({ model | state = Api.Error e }, Cmd.none)
@@ -66,8 +56,8 @@ view model =
   [ case model.state of
       Api.Loading -> span [ class "spinner" ] []
       Api.Error e -> b [ class "standout" ] [ text (Api.showResponse e) ]
-      Api.Normal  -> if model.my == Nothing then text "Was this review helpful? " else text ""
-  , but True ("👍 " ++ String.fromInt model.up)
-  , text " "
-  , but False ("👎 " ++ String.fromInt model.down)
+      Api.Normal  -> text "Was this review helpful? "
+  , but True "yes"
+  , text " / "
+  , but False "no"
   ]

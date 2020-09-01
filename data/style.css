@@ -525,7 +525,7 @@ div#vntags                    { margin: 0 30px 0 30px; border-top: 1px solid $bo
 .reviewbox > div:first-child > span:first-child { font-weight: bold }
 .reviewbox > div:nth-child(2) { box-sizing: border-box; padding: 5px 0 }
 .reviewbox > div:last-child { display: flex; justify-content: space-between; border-top: 1px solid $border$ }
-.reviewbox .myvote { font-weight: bold }
+.reviewbox .myvote { font-weight: bold; text-decoration: underline }
 
 
 /***** Vote stats ****/
@@ -619,7 +619,7 @@ div.producerbrowse    { padding-bottom: 10px }
 .fullreview td { padding: 0 0 15px 10px }
 .fullreview tr > td:first-child { width: 140px; text-align: right; font-weight: bold }
 .fullreview tr > td:last-child { max-width: 700px }
-.fullreview .myvote { font-weight: bold }
+.fullreview .myvote { font-weight: bold; text-decoration: underline }
 
 #reviewspoil:not(:checked) ~ .fullreview .reviewspoil     { display: none }
 #reviewspoil:checked       ~ .fullreview .reviewnotspoil  { display: none }
