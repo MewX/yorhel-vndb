@@ -133,25 +133,20 @@ sub homepage {
    end 'tr';
    Tr;
 
-    # New Reviews
+    # Random visual novels
     td;
      h1;
-      a href => '/w', 'New Reviews';
+      a href => '/v/rand', 'Random visual novels';
      end;
-     my $reviews = tuwf->dbAlli('
-         SELECT w.id, v.title,', VNWeb::DB::sql_user(), ',', VNWeb::DB::sql_totime('w.date'), 'AS date
-           FROM reviews w JOIN vn v ON v.id = w.vid LEFT JOIN users u ON u.id = w.uid ORDER BY w.id DESC LIMIT 10');
+     my $random = $self->filFetchDB(vn => undef, undef, {results => 10, sort => 'rand'});
      ul;
-      for (@$reviews) {
+      for (@$random) {
         li;
-         txt fmtage($_->{date}).' ';
-         a href => "/$_->{id}", title => $_->{title}, shorten $_->{title}, 25;
-         lit ' by ';
-         VNWeb::HTML::user_($_);
+         a href => "/v$_->{id}", title => $_->{original}||$_->{title}, shorten $_->{title}, 40;
         end;
       }
      end;
-    end 'td';
+    end;
 
     # Upcoming releases
     td;
@@ -193,6 +188,68 @@ sub homepage {
      end;
     end 'td';
 
+   end 'tr';
+   Tr;
+
+    # Latest Mini Reviews
+    td;
+     h1;
+      a href => '/w', 'Latest Mini Reviews';
+     end;
+     my $minireviews = tuwf->dbAlli('
+         SELECT w.id, v.title,', VNWeb::DB::sql_user(), ',', VNWeb::DB::sql_totime('w.date'), 'AS date
+           FROM reviews w JOIN vn v ON v.id = w.vid LEFT JOIN users u ON u.id = w.uid WHERE NOT w.isfull ORDER BY w.id DESC LIMIT 10');
+     ul;
+      for (@$minireviews) {
+        li;
+         txt fmtage($_->{date}).' ';
+         a href => "/$_->{id}", title => $_->{title}, shorten $_->{title}, 25;
+         lit ' by ';
+         VNWeb::HTML::user_($_);
+        end;
+      }
+     end;
+    end 'td';
+
+    # Latest Full Reviews
+    td;
+     h1;
+      a href => '/w', 'Latest Full Reviews';
+     end;
+     my $fullreviews = tuwf->dbAlli('
+         SELECT w.id, v.title,', VNWeb::DB::sql_user(), ',', VNWeb::DB::sql_totime('w.date'), 'AS date
+           FROM reviews w JOIN vn v ON v.id = w.vid LEFT JOIN users u ON u.id = w.uid WHERE w.isfull ORDER BY w.id DESC LIMIT 10');
+     ul;
+      for (@$fullreviews) {
+        li;
+         txt fmtage($_->{date}).' ';
+         a href => "/$_->{id}", title => $_->{title}, shorten $_->{title}, 25;
+         lit ' by ';
+         VNWeb::HTML::user_($_);
+        end;
+      }
+     end;
+    end 'td';
+
+    # Recent Review Comments
+    td;
+     h1;
+      a href => '/w?s=lastpost', 'Recent Review Comments';
+     end;
+     my $comments = tuwf->dbAlli('
+         SELECT w.id, wp.num, v.title,', VNWeb::DB::sql_user(), ',', VNWeb::DB::sql_totime('wp.date'), 'AS date
+           FROM reviews w JOIN reviews_posts wp ON wp.id = w.id AND wp.num = w.c_lastnum JOIN vn v ON v.id = w.vid LEFT JOIN users u ON u.id = wp.uid ORDER BY wp.date DESC LIMIT 10');
+     ul;
+      for (@$comments) {
+        li;
+         txt fmtage($_->{date}).' ';
+         a href => "/$_->{id}.$_->{num}#last", title => $_->{title}, shorten $_->{title}, 25;
+         lit ' by ';
+         VNWeb::HTML::user_($_);
+        end;
+      }
+     end;
+    end 'td';
    end 'tr';
   end 'table';
 
