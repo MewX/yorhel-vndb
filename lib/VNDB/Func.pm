@@ -10,7 +10,7 @@ use JSON::XS;
 use VNDBUtil;
 use VNDB::Types;
 use VNDB::BBCode;
-our @EXPORT = (@VNDBUtil::EXPORT, 'bb2html', 'bb2text', qw|
+our @EXPORT = (@VNDBUtil::EXPORT, 'bb_format', qw|
   clearfloat cssicon minage fil_parse fil_serialize parenttags
   childtags charspoil imgpath imgurl
   fmtvote fmtmedia fmtvnlen fmtage fmtdatestr fmtdate fmtrating fmtspoil

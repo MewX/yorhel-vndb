@@ -12,7 +12,7 @@ use Benchmark 'timethese';
 our($ROOT, %S);
 BEGIN { ($ROOT = abs_path $0) =~ s{/util/bbcode-test\.pl$}{}; }
 use lib "$ROOT/lib";
-use VNDB::BBCode qw/bb2html bb2text/;
+use VNDB::BBCode;
 
 
 my @tests = (
@@ -30,11 +30,11 @@ my @tests = (
 
   '[quote]some quote[/quote]',
   '<div class="quote">some quote</div>',
-  'some quote',
+  '"some quote"',
 
   "[code]some code\n\nalso newlines;[/code]",
   '<pre>some code<br><br>also newlines;</pre>',
-  "some code\n\nalso newlines;",
+  "`some code\n\nalso newlines;`",
 
   '[spoiler]some spoiler[/spoiler]',
   '<b class="spoiler">some spoiler</b>',
@@ -42,7 +42,7 @@ my @tests = (
 
   '[b][i][u][s]Formatting![/s][/u][/i][/b]',
   '<b><em><span class="underline"><s>Formatting!</s></span></em></b>',
-  'Formatting!',
+  '*/_-Formatting!-_/*',
 
   "[raw][quote]not parsed\n[url=https://vndb.org/]valid url[/url]\n[url=asdf]invalid url[/url][/quote][/raw]",
   "[quote]not parsed<br>[url=https://vndb.org/]valid url[/url]<br>[url=asdf]invalid url[/url][/quote]",
@@ -50,11 +50,11 @@ my @tests = (
 
   '[quote]basic [spoiler]single[/spoiler]-line [spoiler][url=/g]tag[/url] nesting [raw](without [url=/v3333]special[/url] cases)[/raw][/spoiler][/quote]',
   '<div class="quote">basic <b class="spoiler">single</b>-line <b class="spoiler"><a href="/g" rel="nofollow">tag</a> nesting (without [url=/v3333]special[/url] cases)</b></div>',
-  'basic -line ',
+  '"basic -line "',
 
   '[quote][b]more [spoiler]nesting [code]mkay?',
   '<div class="quote"><b>more <b class="spoiler">nesting [code]mkay?</b></b></div>',
-  'more ',
+  '"*more *"',
 
   '[url=/v][b]does not work here[/b][/url]',
   '<a href="/v" rel="nofollow">[b]does not work here[/b]</a>',
@@ -62,11 +62,11 @@ my @tests = (
 
   '[s] v5 [url=/p1]x[/url] [/s]',
   '<s> <a href="/v5">v5</a> <a href="/p1" rel="nofollow">x</a> </s>',
-  ' v5 x ',
+  '- v5 x -',
 
   "[quote]rmnewline after closing tag[/quote]\n",
   '<div class="quote">rmnewline after closing tag</div>',
-  "rmnewline after closing tag\n",
+  "\"rmnewline after closing tag\"",
 
   '[url=/v19]some vndb url[/url]',
   '<a href="/v19" rel="nofollow">some vndb url</a>',
@@ -74,20 +74,20 @@ my @tests = (
 
   "quite\n\n\n\n\n\n\na\n\n\n\n\n            lot             of\n\n\n\nunneeded             whitespace",
   'quite<br><br>a<br><br> lot of<br><br><br><br>unneeded whitespace',
-  "quite\n\n\n\n\n\n\na\n\n\n\n\n            lot             of\n\n\n\nunneeded             whitespace",
+  "quite\n\na\n\n lot of\n\n\n\nunneeded whitespace",
 
   "[quote]\nsimple\nrmnewline\ntest\n[/quote]",
   '<div class="quote">simple<br>rmnewline<br>test<br></div>',
-  "\nsimple\nrmnewline\ntest\n",
+  "\"simple\nrmnewline\ntest\n\"",
 
   # the new implementation doesn't special-case [code], as the first newline shouldn't matter either way
   "[quote]\n\nhello, rmnewline test[code]\n#!/bin/sh\n\nfunction random_username() {\n    </dev/urandom tr -cd 'a-zA-Z0-9' | dd bs=1 count=16 2>/dev/null\n}\n[/code]\nsome text after the code tag\n[/quote]\n\n[spoiler]\nsome newlined spoiler\n[/spoiler]",
   '<div class="quote"><br>hello, rmnewline test<pre>#!/bin/sh<br><br>function random_username() {<br>    &lt;/dev/urandom tr -cd \'a-zA-Z0-9\' | dd bs=1 count=16 2&gt;/dev/null<br>}<br></pre>some text after the code tag<br></div><br><b class="spoiler"><br>some newlined spoiler<br></b>',
-  "\n\nhello, rmnewline test\n#!/bin/sh\n\nfunction random_username() {\n    </dev/urandom tr -cd 'a-zA-Z0-9' | dd bs=1 count=16 2>/dev/null\n}\n\nsome text after the code tag\n\n\n",
+  "\"\nhello, rmnewline test`#!/bin/sh\n\nfunction random_username() {\n    </dev/urandom tr -cd 'a-zA-Z0-9' | dd bs=1 count=16 2>/dev/null\n}\n`some text after the code tag\n\"\n",
 
   "[quote]\n[raw]\nrmnewline test with made-up elements\n[/raw]\nwelp\n[dumbtag]\nnone\n[/dumbtag]\n[/quote]",
   '<div class="quote"><br>rmnewline test with made-up elements<br><br>welp<br>[dumbtag]<br>none<br>[/dumbtag]<br></div>',
-  "\n\nrmnewline test with made-up elements\n\nwelp\n[dumbtag]\nnone\n[/dumbtag]\n",
+  "\"\nrmnewline test with made-up elements\n\nwelp\n[dumbtag]\nnone\n[/dumbtag]\n\"",
 
   '[url=http://example.com/]markup in [raw][url][/raw][/url]',
   '<a href="http://example.com/" rel="nofollow">markup in [url]</a>',
@@ -111,7 +111,7 @@ my @tests = (
 
   '[Quote]non-lowercase tags [SpOILER]here[/sPOilER][/qUOTe]',
   '<div class="quote">non-lowercase tags <b class="spoiler">here</b></div>',
-  'non-lowercase tags ',
+  '"non-lowercase tags "',
 
   'some text [spoiler]with (v17) tags[/spoiler] and internal ids such as s1',
   'some text <b class="spoiler">with (<a href="/v17">v17</a>) tags</b> and internal ids such as <a href="/s1">s1</a>',
@@ -152,11 +152,11 @@ my @tests = (
   # TODO: This isn't ideal
   '[quote][spoiler]stray open tag (nested)[/quote]',
   '<div class="quote"><b class="spoiler">stray open tag (nested)[/quote]</b></div>',
-  '',
+  '""',
 
   '[quote][spoiler]two stray open tags',
   '<div class="quote"><b class="spoiler">two stray open tags</b></div>',
-  '',
+  '""',
 
   "[url=https://cat.xyz/]that's [spoiler]some [quote]uncommon[/quote][/spoiler] combination[/url]",
   '<a href="https://cat.xyz/" rel="nofollow">that\'s [spoiler]some [quote]uncommon[/quote][/spoiler] combination</a>',
@@ -170,13 +170,21 @@ my @tests = (
   #'<a href="http://[fedc:ba98:7654:3210:fedc:ba98:7654:3210]/some/path" rel="nofollow">link</a> (literal ipv6 address)',
 
   # test shortening
-  [ "[url=https://cat.xyz/]that's [spoiler]some [quote]uncommon[/quote][/spoiler] combination[/url]", 10 ],
+  [ "[url=https://cat.xyz/]that's [spoiler]some [quote]uncommon[/quote][/spoiler] combination[/url]", maxlength => 10 ],
   '<a href="https://cat.xyz/" rel="nofollow">that\'s </a>',
-  "that's [spoiler]some [quote]uncommon[/quote][/spoiler] combination",
+  "that's ",
 
-  [ "A https://blicky.net/ only takes 4 characters", 8 ],
+  [ "A https://blicky.net/ only takes 4 characters", maxlength => 8 ],
   'A <a href="https://blicky.net/" rel="nofollow">link</a>',
-  "A https://blicky.net/ only takes 4 characters",
+  "A https", # Yeah, uh... word boundary
+
+  [ 'vndbids only [url=/v9]nothing[/url] [b] [spoiler]p5', idonly => 1 ],
+  'vndbids only [url=/v9]nothing[/url] [b] [spoiler]<a href="/p5">p5</a>',
+  'vndbids only [url=/v9]nothing[/url] [b] [spoiler]p5',
+
+  [ 'this [spoiler]spoiler will be[/spoiler] kept', keepspoil => 1 ],
+  'this spoiler will be kept',
+  'this spoiler will be kept',
 );
 
 
@@ -212,8 +220,8 @@ sub test {
     my @arg = ref $input ? @$input : ($input);
     (my $msg = $arg[0]) =~ s/\n/\\n/g;
     is identity($arg[0]), $arg[0], "id: $msg";
-    is bb2html(@arg),     $html,   "html: $msg";
-    is bb2text($arg[0]),  $plain,  "plain: $msg";
+    is bb_format(@arg),            $html,   "html: $msg";
+    is bb_format(@arg, text => 1), $plain,  "plain: $msg";
   }
 }
 
@@ -224,9 +232,9 @@ sub bench {
     my $short = "Nobody ev3r v10 uses v5 so s1 many [url=https://blicky.net/]x[raw]y[/raw][/url] tags. ";
     my $heavy = $short x100;
     timethese(0, {
-      short => sub { bb2html($short) },
-      plain => sub { bb2html($plain) },
-      heavy => sub { bb2html($heavy) },
+      short => sub { bb_format($short) },
+      plain => sub { bb_format($plain) },
+      heavy => sub { bb_format($heavy) },
     });
     # old:
     #   heavy:  3 wallclock secs ( 3.15 usr +  0.00 sys =  3.15 CPU) @ 357.46/s (n=1126)

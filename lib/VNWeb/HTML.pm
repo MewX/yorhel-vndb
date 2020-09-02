@@ -418,7 +418,7 @@ sub _hidden_msg_ {
                 txt_ ' if you believe that this entry should be restored.';
                 br_;
                 br_;
-                lit_ bb2html $msg;
+                lit_ bb_format $msg;
             }
         }
     };
@@ -614,7 +614,7 @@ sub _revision_cmp_ {
                     b_ "Edit summary for revision $new->{chrev}";
                     br_;
                     br_;
-                    lit_ bb2html $new->{rev_comments}||'-';
+                    lit_ bb_format $new->{rev_comments}||'-';
                 };
             };
         };
@@ -677,7 +677,7 @@ sub revision_ {
             br_;
             b_ 'Edit summary';
             br_; br_;
-            lit_ bb2html $new->{rev_comments}||'-';
+            lit_ bb_format $new->{rev_comments}||'-';
         } if !$old;
 
         _revision_cmp_ $type, $old, $new, @fields if $old;

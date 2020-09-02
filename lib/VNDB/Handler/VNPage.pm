@@ -149,7 +149,7 @@ my @rel_cols = (
     default       => 1,
     what          => 'extended',
     has_data      => sub { !!$_[0]{notes} },
-    draw          => sub { lit bb2html $_[0]{notes} },
+    draw          => sub { lit bb_format $_[0]{notes} },
   }
 );
 

@@ -49,7 +49,7 @@ sub enrich_item {
 sub og {
     my($v) = @_;
     +{
-        description => bb2text($v->{desc}),
+        description => bb_format($v->{desc}, text => 1),
         image => $v->{image} && !$v->{image}{sexual} && !$v->{image}{violence} ? tuwf->imgurl($v->{image}{id}) :
                  [map $_->{scr}{sexual}||$_->{scr}{violence}?():(tuwf->imgurl($_->{scr}{id})), $v->{screenshots}->@*]->[0]
     }
@@ -375,7 +375,7 @@ sub infobox_ {
                 tr_ class => 'nostripe', sub {
                     td_ class => 'vndesc', colspan => 2, sub {
                         h2_ 'Description';
-                        p_ sub { lit_ $v->{desc} ? bb2html $v->{desc} : '-' };
+                        p_ sub { lit_ $v->{desc} ? bb_format $v->{desc} : '-' };
                     }
                 }
             }

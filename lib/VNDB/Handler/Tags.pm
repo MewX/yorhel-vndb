@@ -83,7 +83,7 @@ sub tagpage {
 
    if($t->{description}) {
      p class => 'description';
-      lit bb2html $t->{description};
+      lit bb_format $t->{description};
      end;
    }
    if(!$t->{applicable} || !$t->{searchable}) {

@@ -171,7 +171,7 @@ TUWF::get qr{/$RE{srev}} => sub {
 
     framework_ title => $main->{name}, index => !tuwf->capture('rev'), type => 's', dbobj => $s, hiddenmsg => 1,
         og => {
-            description => bb2text $s->{desc}
+            description => bb_format $s->{desc}, text => 1
         },
     sub {
         _rev_ $s if tuwf->capture('rev');
@@ -180,7 +180,7 @@ TUWF::get qr{/$RE{srev}} => sub {
             h1_ sub { txt_ $main->{name}; debug_ $s };
             h2_ class => 'alttitle', lang => $s->{lang}, $main->{original} if $main->{original};
             _infotable_ $main, $s;
-            p_ class => 'description', sub { lit_ bb2html $s->{desc} };
+            p_ class => 'description', sub { lit_ bb_format $s->{desc} };
         };
 
         _roles_ $s;

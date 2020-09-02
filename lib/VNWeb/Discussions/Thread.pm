@@ -70,7 +70,7 @@ elm_api DiscussionsReply => $REPLY_OUT, $REPLY_IN, sub {
 sub metabox_ {
     my($t) = @_;
     div_ class => 'mainbox', sub {
-        h1_ sub { lit_ bb2html $t->{title} };
+        h1_ sub { lit_ bb_format $t->{title}, idonly => 1 };
         h2_ 'Hidden' if $t->{hidden};
         h2_ 'Private' if $t->{private};
         h2_ 'Locked' if $t->{locked};
@@ -125,7 +125,7 @@ sub posts_ {
                     if($_->{hidden}) {
                         i_ class => 'deleted', 'Post deleted.';
                     } else {
-                        lit_ bb2html $_->{msg};
+                        lit_ bb_format $_->{msg};
                         i_ class => 'lastmod', 'Last modified on '.fmtdate($_->{edited}, 'full') if $_->{edited};
                     }
                 };

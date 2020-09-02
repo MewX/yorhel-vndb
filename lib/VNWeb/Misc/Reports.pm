@@ -130,7 +130,7 @@ sub report_ {
         lit_ $r->{title} || '[deleted]';
         br_;
         txt_ $r->{reason};
-        div_ class => 'quote', sub { lit_ bb2html $r->{message} } if $r->{message};
+        div_ class => 'quote', sub { lit_ bb_format $r->{message} } if $r->{message};
     };
     td_ style => 'width: 300px', sub {
         form_ method => 'post', action => '/report/edit', sub {
@@ -145,7 +145,7 @@ sub report_ {
         };
     };
     td_ sub {
-        lit_ bb2html $r->{log};
+        lit_ bb_format $r->{log};
     };
 }
 

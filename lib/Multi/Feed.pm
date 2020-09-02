@@ -114,7 +114,7 @@ sub write_atom {
       $x->end;
     }
     $x->tag(link => rel => 'alternate', type => 'text/html', href => config->{url}.$_->{id}, undef);
-    $x->tag('summary', type => 'html', bb2html $_->{summary}) if $_->{summary};
+    $x->tag('summary', type => 'html', bb_format $_->{summary}) if $_->{summary};
     $x->end('entry');
   }
 

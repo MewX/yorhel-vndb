@@ -92,7 +92,7 @@ sub release_row_ {
         }
         icon_ $MEDIUM{ $r->{media}[0]{medium} }{icon}, join ', ', map fmtmedia($_->{medium}, $_->{qty}), $r->{media}->@* if $r->{media}->@*;
         icon_ 'uncensor', 'Uncensored' if $r->{uncensored};
-        icon_ 'notes', bb2text $r->{notes} if $r->{notes};
+        icon_ 'notes', bb_format $r->{notes}, text => 1 if $r->{notes};
     }
 
     tr_ sub {

@@ -213,7 +213,7 @@ sub chartable_ {
             tr_ class => 'nostripe', sub {
                 td_ colspan => 2, class => 'chardesc', sub {
                     h2_ 'Description';
-                    p_ sub { lit_ bb2html $c->{desc}, 0, $view->{spoilers} == 2 ? 3 : 2 };
+                    p_ sub { lit_ bb_format $c->{desc}, delspoil => $view->{spoilers} != 2, keepspoil => $view->{spoilers} == 2 };
                 };
             } if $c->{desc};
         };
@@ -251,7 +251,7 @@ TUWF::get qr{/$RE{crev}} => sub {
 
     framework_ title => $c->{name}, index => !tuwf->capture('rev'), type => 'c', dbobj => $c, hiddenmsg => 1,
         og => {
-            description => bb2text($c->{desc}),
+            description => bb_format($c->{desc}, text => 1),
             image => $c->{image} && $c->{image}{votecount} && !$c->{image}{sexual} && !$c->{image}{violence} ? tuwf->imgurl($c->{image}{id}) : undef,
         },
     sub {

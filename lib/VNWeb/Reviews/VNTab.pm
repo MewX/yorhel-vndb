@@ -40,7 +40,7 @@ sub reviews_ {
                         a_ href => "/report/$r->{id}", 'report';
                         txt_ '>';
                     };
-                    my $html = bb2html $r->{text}, $mini ? undef : 700;
+                    my $html = bb_format $r->{text}, maxlength => $mini ? undef : 700;
                     $html .= '...' if !$mini;
                     if($r->{spoiler}) {
                         label_ class => 'review_spoil', sub {

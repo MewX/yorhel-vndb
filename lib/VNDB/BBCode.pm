@@ -5,7 +5,7 @@ use warnings;
 use Exporter 'import';
 use TUWF::XML 'xml_escape';
 
-our @EXPORT = qw/bb2html bb2text bb_subst_links/;
+our @EXPORT = qw/bb_format bb_subst_links/;
 
 # Supported BBCode:
 #  [b] .. [/b]
@@ -173,117 +173,111 @@ FINAL:
 }
 
 
-# charspoil:
-#   0/undef/missing: Output <b class="spoiler">..
-#   1: Deprecated
-#   2: Just output 'hidden by spoiler setting' message
-#   3: Just output the spoilers, unmarked
-sub bb2html {
-  my($input, $maxlength, $charspoil, $nobreak) = @_;
+# Options:
+#   maxlength    => 0/$n - truncate after $n visible characters
+#   inline       => 0/1  - don't insert line breaks and don't format block elements
+#
+# One of:
+#   text         => 0/1  - format as plain text, no tags
+#   onlyids      => 0/1  - format as HTML, but only convert VNDBIDs, leave the rest alone (including [spoiler]s)
+#   default: format all to HTML.
+#
+# One of:
+#   delspoil     => 0/1  - delete [spoiler] tags and its contents
+#   replacespoil => 0/1  - replace [spoiler] tags with a "hidden by spoiler settings" message
+#   keepsoil     => 0/1  - keep the contents of spoiler tags without any special formatting
+#   default: format as <b class="spoiler">..
+sub bb_format {
+  my($input, %opt) = @_;
+  $opt{delspoil} = 1 if $opt{text} && !$opt{keepspoil};
 
   my $incode = 0;
+  my $inspoil = 0;
   my $rmnewline = 0;
   my $length = 0;
   my $ret = '';
 
   # escapes, returns string, and takes care of $length and $maxlength; also
   # takes care to remove newlines and double spaces when necessary
-  my $e = sub {
+  my sub e {
     local $_ = shift;
 
     s/^\n//         if $rmnewline && $rmnewline--;
     s/\n{5,}/\n\n/g if !$incode;
     s/  +/ /g       if !$incode;
     $length += length $_;
-    if($maxlength && $length > $maxlength) {
-      $_ = substr($_, 0, $maxlength-$length);
+    if($opt{maxlength} && $length > $opt{maxlength}) {
+      $_ = substr($_, 0, $opt{maxlength}-$length);
       s/\W+\w*$//; # cleanly cut off on word boundary
     }
-    s/&/&amp;/g;
-    s/>/&gt;/g;
-    s/</&lt;/g;
-    s/\n/<br>/g if !$nobreak;
-    s/\n/ /g    if $nobreak;
+    if(!$opt{text}) {
+      s/&/&amp;/g;
+      s/>/&gt;/g;
+      s/</&lt;/g;
+      s/\n/<br>/g if !$opt{inline};
+    }
+    s/\n/ /g    if $opt{inline};
     $_;
   };
 
   parse $input, sub {
     my($raw, $tag, @arg) = @_;
 
-    #$ret .= "$tag {$raw}\n";
-    #return 1;
+    return 1 if $inspoil && $tag ne 'spoiler_end' && ($opt{delspoil} || $opt{replacespoil});
 
     if($tag eq 'text') {
-      $ret .= $e->($raw);
-
-    } elsif($tag eq 'b_start') { $ret .= '<b>';
-    } elsif($tag eq 'b_end')   { $ret .= '</b>';
-    } elsif($tag eq 'i_start') { $ret .= '<em>';
-    } elsif($tag eq 'i_end')   { $ret .= '</em>';
-    } elsif($tag eq 'u_start') { $ret .= '<span class="underline">';
-    } elsif($tag eq 'u_end')   { $ret .= '</span>';
-    } elsif($tag eq 's_start') { $ret .= '<s>';
-    } elsif($tag eq 's_end')   { $ret .= '</s>';
-
-    } elsif($tag eq 'spoiler_start') {
-      $ret .= !$charspoil ? '<b class="spoiler">' :
-          $charspoil == 2 ? '<b class="grayedout">&lt;hidden by spoiler settings&gt;</b><!--' : '';
-    } elsif($tag eq 'spoiler_end') {
-      $ret .= !$charspoil ? '</b>' :
-          $charspoil == 2 ? '-->' : '';
-
-    } elsif($tag eq 'quote_start') {
-      $ret .= '<div class="quote">' if !$nobreak;
-      $rmnewline = 1;
-    } elsif($tag eq 'quote_end') {
-      $ret .= '</div>' if !$nobreak;
-      $rmnewline = 1;
-
-    } elsif($tag eq 'code_start') {
-      $ret .= '<pre>' if !$nobreak;
-      $rmnewline = 1;
-      $incode = 1;
-    } elsif($tag eq 'code_end') {
-      $ret .= '</pre>' if !$nobreak;
-      $rmnewline = 1;
-      $incode = 0;
-
-    } elsif($tag eq 'url_start') {
-      $ret .= sprintf '<a href="%s" rel="nofollow">', xml_escape($arg[0]);
-    } elsif($tag eq 'url_end') {
-      $ret .= '</a>';
-
-    } elsif($tag eq 'link') {
-      $ret .= sprintf '<a href="%s" rel="nofollow">%s</a>', xml_escape($raw), $e->('link');
+      $ret .= e $raw;
 
     } elsif($tag eq 'dblink') {
       (my $link = $raw) =~ s/^d(\d+)\.(\d+)\.(\d+)$/d$1#$2.$3/;
-      $ret .= sprintf '<a href="/%s">%s</a>', $link, $e->($raw);
-    }
+      $ret .= $opt{text} ? e $raw : sprintf '<a href="/%s">%s</a>', $link, e $raw;
 
-    !$maxlength || $length < $maxlength;
-  };
-  $ret;
-}
+    } elsif($opt{idonly}) {
+      $ret .= e $raw;
 
+    } elsif($tag eq 'b_start') { $ret .= $opt{text} ? e '*' : '<b>'
+    } elsif($tag eq 'b_end')   { $ret .= $opt{text} ? e '*' : '</b>'
+    } elsif($tag eq 'i_start') { $ret .= $opt{text} ? e '/' : '<em>'
+    } elsif($tag eq 'i_end')   { $ret .= $opt{text} ? e '/' : '</em>'
+    } elsif($tag eq 'u_start') { $ret .= $opt{text} ? e '_' : '<span class="underline">'
+    } elsif($tag eq 'u_end')   { $ret .= $opt{text} ? e '_' : '</span>'
+    } elsif($tag eq 's_start') { $ret .= $opt{text} ? e '-' : '<s>'
+    } elsif($tag eq 's_end')   { $ret .= $opt{text} ? e '-' : '</s>'
+    } elsif($tag eq 'quote_start') {
+      $ret .= $opt{text} || $opt{inline} ? e '"' : '<div class="quote">';
+      $rmnewline = 1;
+    } elsif($tag eq 'quote_end') {
+      $ret .= $opt{text} || $opt{inline} ? e '"' : '</div>';
+      $rmnewline = 1;
 
-# Convert bbcode into plain text, stripping all tags and spoilers. [url] tags
-# only display the title.
-sub bb2text {
-  my $input = shift;
+    } elsif($tag eq 'code_start') {
+      $ret .= $opt{text} || $opt{inline} ? e '`' : '<pre>';
+      $rmnewline = 1;
+      $incode = 1;
+    } elsif($tag eq 'code_end') {
+      $ret .= $opt{text} || $opt{inline} ? e '`' : '</pre>';
+      $rmnewline = 1;
+      $incode = 0;
 
-  my $inspoil = 0;
-  my $ret = '';
-  parse $input, sub {
-    my($raw, $tag, @arg) = @_;
-    if($tag eq 'spoiler_start') {
+    } elsif($tag eq 'spoiler_start') {
       $inspoil = 1;
+      $ret .= $opt{delspoil} || $opt{keepspoil} ? ''
+        : $opt{replacespoil} ? '<b class="grayedout">&lt;hidden by spoiler settings&gt;</b>'
+        : '<b class="spoiler">';
     } elsif($tag eq 'spoiler_end') {
       $inspoil = 0;
-    } else {
-      $ret .= $raw if !$inspoil && $tag !~ /_(start|end)$/;
+      $ret .= $opt{delspoil} || $opt{keepspoil} || $opt{replacespoil} ? '' : '</b>';
+
+    } elsif($tag eq 'url_start') {
+      $ret .= $opt{text} ? '' : sprintf '<a href="%s" rel="nofollow">', xml_escape($arg[0]);
+    } elsif($tag eq 'url_end') {
+      $ret .= $opt{text} ? '' : '</a>';
+
+    } elsif($tag eq 'link') {
+      $ret .= $opt{text} ? e $raw : sprintf '<a href="%s" rel="nofollow">%s</a>', xml_escape($raw), e 'link';
     }
-    1;
+
+    !$opt{maxlength} || $length < $opt{maxlength};
   };
   $ret;
 }

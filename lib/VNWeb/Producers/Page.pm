@@ -59,7 +59,7 @@ sub info_ {
         }, grep $rel{$_}, keys %PRODUCER_RELATION;
     } if $p->{relations}->@*;
 
-    p_ class => 'description', sub { lit_ bb2html $p->{desc} } if length $p->{desc};
+    p_ class => 'description', sub { lit_ bb_format $p->{desc} } if length $p->{desc};
 }
 
 
@@ -155,7 +155,7 @@ TUWF::get qr{/$RE{prev}(?:/(?<tab>vn|rel))?}, sub {
     framework_ title => $p->{name}, index => !tuwf->capture('rev'), type => 'p', dbobj => $p, hiddenmsg => 1,
     og => {
         title       => $p->{name},
-        description => bb2text($p->{desc}),
+        description => bb_format($p->{desc}, text => 1),
     },
     sub {
         rev_ $p if tuwf->capture('rev');

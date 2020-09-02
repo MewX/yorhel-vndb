@@ -60,7 +60,7 @@ sub review_ {
         } if $w->{spoiler};
         tr_ @spoil, sub {
             td_ 'Review';
-            td_ sub { lit_ bb2html $w->{text} }
+            td_ sub { lit_ bb_format $w->{text} }
         };
         tr_ sub {
             td_ '';
