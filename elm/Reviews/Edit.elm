@@ -145,7 +145,7 @@ view model =
         ]
       , tr [ class "newpart" ] [ td [ colspan 2 ] [ text "" ] ]
       , formField "text::Review"
-        [ TP.view "sum" model.text Text 700 ([rows (if model.isfull then 15 else 5), cols 50] ++ GRE.valText)
+        [ TP.view "sum" model.text Text 700 ([rows (if model.isfull then 30 else 10), cols 50] ++ GRE.valText)
           [ a [ href "/d9#3" ] [ text "BBCode formatting supported" ] ]
         , div [ style "width" "700px", style "text-align" "right" ] <|
           let num c s = if c then b [ class " standout" ] [ text s ] else text s
