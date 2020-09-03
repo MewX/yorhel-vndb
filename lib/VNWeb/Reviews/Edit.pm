@@ -60,7 +60,7 @@ elm_api ReviewsEdit => $FORM_OUT, $FORM_IN, sub {
     validate_dbid 'SELECT id FROM vn WHERE id IN', $data->{vid};
     validate_dbid 'SELECT id FROM releases WHERE id IN', $data->{rid} if defined $data->{rid};
 
-    die "Review too long" if !$data->{isfull} && length $data->{text} > 700;
+    die "Review too long" if !$data->{isfull} && length $data->{text} > 800;
     $data->{text} = bb_subst_links $data->{text};
 
     if($id) {

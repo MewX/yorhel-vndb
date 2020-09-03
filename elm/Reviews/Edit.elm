@@ -99,8 +99,8 @@ showrel r = "[" ++ (RDate.format (RDate.expand r.released)) ++ " " ++ (String.jo
 
 view : Model -> Html Msg
 view model =
-  let minChars = if model.isfull then    900 else 200
-      maxChars = if model.isfull then 100000 else 700
+  let minChars = if model.isfull then   1000 else 200
+      maxChars = if model.isfull then 100000 else 800
       len      = String.length model.text.data
   in
   form_ Submit (model.state == Api.Loading)
@@ -130,7 +130,7 @@ view model =
       , tr [ class "newpart" ] [ td [ colspan 2 ] [ text "" ] ]
       , formField "Review type"
         [ label [] [ inputRadio "type" (model.isfull == False) (\_ -> Full False), b [] [ text " Mini review" ]
-        , text <| " - Recommendation-style, maximum 700 characters." ]
+        , text <| " - Recommendation-style, maximum 800 characters." ]
         , br [] []
         , label [] [ inputRadio "type" (model.isfull == True ) (\_ -> Full True ), b [] [ text " Full review" ]
         , text " - Longer, more detailed." ]
