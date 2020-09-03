@@ -14,8 +14,6 @@ import Gen.ReviewsEdit as GRE
 import Gen.ReviewsDelete as GRD
 
 
-maxChars = 700
-
 main : Program GRE.Recv Model Msg
 main = Browser.element
   { init   = \e -> (init e, Cmd.none)
@@ -101,12 +99,18 @@ showrel r = "[" ++ (RDate.format (RDate.expand r.released)) ++ " " ++ (String.jo
 
 view : Model -> Html Msg
 view model =
+  let minChars = if model.isfull then    900 else 200
+      maxChars = if model.isfull then 100000 else 700
+      len      = String.length model.text.data
+  in
   form_ Submit (model.state == Api.Loading)
   [ div [ class "mainbox" ]
     [ h1 [] [ text <| if model.id == Nothing then "Submit a review" else "Edit review" ]
     , p [] [ b [] [ text "Rules" ] ]
     , ul []
       [ li [] [ text "Submit only reviews you have written yourself!" ]
+      , li [] [ text "Reviews must be in English." ]
+      , li [] [ text "Try to be as objective as possible." ]
       , li [] [ text "If you have published the review elsewhere (e.g. a personal blog), feel free to include a link at the end of the review. Formatting tip: ", em [] [ text "[Originally published at <link>]" ] ]
       , li [] [ text "Your vote (if any) will be displayed alongside the review, even if you have marked your list as private." ]
       ]
@@ -126,7 +130,7 @@ view model =
       , tr [ class "newpart" ] [ td [ colspan 2 ] [ text "" ] ]
       , formField "Review type"
         [ label [] [ inputRadio "type" (model.isfull == False) (\_ -> Full False), b [] [ text " Mini review" ]
-        , text <| " - Recommendation-style, maximum " ++ String.fromInt maxChars ++ " characters." ]
+        , text <| " - Recommendation-style, maximum 700 characters." ]
         , br [] []
         , label [] [ inputRadio "type" (model.isfull == True ) (\_ -> Full True ), b [] [ text " Full review" ]
         , text " - Longer, more detailed." ]
@@ -143,18 +147,21 @@ view model =
       , formField "text::Review"
         [ TP.view "sum" model.text Text 700 ([rows (if model.isfull then 15 else 5), cols 50] ++ GRE.valText)
           [ a [ href "/d9#3" ] [ text "BBCode formatting supported" ] ]
-        , if model.isfull then text "" else div [ style "width" "700px", style "text-align" "right" ]
-          [ let
-              len = String.length model.text.data
-              lbl = String.fromInt len ++ "/" ++ String.fromInt maxChars
-            in if len > maxChars then b [ class "standout" ] [ text lbl ] else text lbl
+        , div [ style "width" "700px", style "text-align" "right" ] <|
+          let num c s = if c then b [ class " standout" ] [ text s ] else text s
+          in
+          [ num (len < minChars) (String.fromInt minChars)
+          , text " / "
+          , b [] [ text (String.fromInt len) ]
+          , text " / "
+          , num (len > maxChars) (if model.isfull then "∞" else String.fromInt maxChars)
           ]
         ]
       ]
     ]
   , div [ class "mainbox" ]
     [ fieldset [ class "submit" ]
-      [ submitButton "Submit" model.state (model.isfull || String.length model.text.data <= maxChars)
+      [ submitButton "Submit" model.state (len <= maxChars && len >= minChars)
       ]
     ]
   , if model.id == Nothing then text "" else
