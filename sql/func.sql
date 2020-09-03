@@ -190,7 +190,7 @@ BEGIN
          , COALESCE(
             SUM((CASE WHEN rv.vote THEN 1 ELSE -1 END)*(CASE WHEN rv.overrule THEN 10000 ELSE 1 END))
             FILTER(WHERE NOT u.ign_votes AND (r2.id IS NULL OR rv.overrule)),
-           0) < -10
+           0) < -1000
       FROM reviews r
       LEFT JOIN reviews_votes rv ON rv.id = r.id
       LEFT JOIN users u ON u.id = rv.uid
