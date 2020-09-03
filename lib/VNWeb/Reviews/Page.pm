@@ -50,6 +50,11 @@ sub review_ {
                 my($date, $lastmod) = map $_&&fmtdate($_,'compact'), $w->@{'date', 'lastmod'};
                 txt_ " on $date";
                 b_ class => 'grayedout', " last updated on $lastmod" if $lastmod && $date ne $lastmod;
+                if($w->{c_flagged}) {
+                    br_;
+                    br_;
+                    b_ class => 'grayedout', 'Flagged: this review is below the voting threshold and not visible on the VN page.';
+                }
             }
         };
         tr_ class => 'reviewnotspoil', sub {
@@ -65,7 +70,7 @@ sub review_ {
         tr_ sub {
             td_ '';
             td_ style => 'text-align: right', sub {
-                elm_ 'Reviews.Vote' => $VNWeb::Reviews::Elm::VOTE_OUT, $w if auth && $w->{can};
+                elm_ 'Reviews.Vote' => $VNWeb::Reviews::Elm::VOTE_OUT, {%$w, mod => auth->permBoardmod} if auth && ($w->{can} || auth->permBoardmod);
             };
         };
     }
@@ -75,8 +80,8 @@ sub review_ {
 TUWF::get qr{/$RE{wid}(?:(?<sep>[\./])$RE{num})?}, sub {
     my($id, $sep, $num) = (tuwf->capture('id'), tuwf->capture('sep')||'', tuwf->capture('num'));
     my $w = tuwf->dbRowi(
-        'SELECT r.id, r.vid, r.rid, r.isfull, r.text, r.spoiler, COALESCE(c.count,0) AS count, uv.vote, rm.id IS NULL AS can
-              , v.title, rel.title AS rtitle, rel.original AS roriginal, rel.type AS rtype, rv.vote AS my
+        'SELECT r.id, r.vid, r.rid, r.isfull, r.text, r.spoiler, COALESCE(c.count,0) AS count, r.c_flagged, uv.vote, rm.id IS NULL AS can
+              , v.title, rel.title AS rtitle, rel.original AS roriginal, rel.type AS rtype, rv.vote AS my, COALESCE(rv.overrule,false) AS overrule
               , ', sql_user(), ',', sql_totime('r.date'), 'AS date,', sql_totime('r.lastmod'), 'AS lastmod
            FROM reviews r
            JOIN vn v ON v.id = r.vid

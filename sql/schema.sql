@@ -512,7 +512,8 @@ CREATE TABLE reviews (
   c_down  int NOT NULL DEFAULT 0,
   c_count smallint NOT NULL DEFAULT 0,
   c_lastnum smallint,
-  isfull  boolean NOT NULL
+  isfull  boolean NOT NULL,
+  c_flagged boolean NOT NULL DEFAULT false
 );
 
 -- reviews_posts
@@ -532,7 +533,8 @@ CREATE TABLE reviews_votes (
   id      vndbid NOT NULL,
   uid     int,
   date    timestamptz NOT NULL,
-  vote    boolean NOT NULL -- true = upvote, false = downvote
+  vote    boolean NOT NULL, -- true = upvote, false = downvote
+  overrule boolean NOT NULL DEFAULT false
 );
 
 -- rlists

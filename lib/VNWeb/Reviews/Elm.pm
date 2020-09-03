@@ -3,8 +3,10 @@ package VNWeb::Reviews::Elm;
 use VNWeb::Prelude;
 
 my $VOTE = {
-    id   => { vndbid => 'w' },
-    my   => { required => 0, jsonbool => 1 },
+    id       => { vndbid => 'w' },
+    my       => { required => 0, jsonbool => 1 },
+    overrule => { anybool => 1 },
+    mod      => { _when => 'out', anybool => 1 },
 };
 
 my  $VOTE_IN  = form_compile in  => $VOTE;
@@ -14,7 +16,7 @@ elm_api ReviewsVote => $VOTE_OUT, $VOTE_IN, sub {
     return elm_Unauth if !auth;
     my($data) = @_;
     my %id = (uid => auth->uid, id => $data->{id});
-    my %val = (vote => $data->{my}?1:0, date => sql 'NOW()');
+    my %val = (vote => $data->{my}?1:0, overrule => auth->permBoardmod ? $data->{overrule}?1:0 : 0, date => sql 'NOW()');
     tuwf->dbExeci(
         defined $data->{my}
         ? sql 'INSERT INTO reviews_votes', {%id,%val}, 'ON CONFLICT (id,uid) DO UPDATE SET', \%val

@@ -26,7 +26,7 @@ sub tablebox_ {
                 td_ class => 'tc2', sub { user_ $_ };
                 td_ class => 'tc3', fmtvote $_->{vote};
                 td_ class => 'tc4', $_->{isfull} ? 'Full' : 'Mini';
-                td_ class => 'tc5', sub { a_ href => "/$_->{id}", $_->{title} };
+                td_ class => 'tc5', sub { a_ href => "/$_->{id}", $_->{title}; b_ class => 'grayedout', ' (flagged)' if $_->{c_flagged} };
                 td_ class => 'tc6', sprintf '👍 %d 👎 %d', $_->{c_up}, $_->{c_down} if auth->isMod;
                 td_ class => 'tc7', $_->{c_count};
                 td_ class => 'tc8', $_->{c_lastnum} ? sub {
@@ -56,7 +56,7 @@ TUWF::get qr{/w}, sub {
     my $where = $u ? sql 'w.uid =', \$u->{id} : '1=1';
     my $count = tuwf->dbVali('SELECT COUNT(*) FROM reviews w WHERE', $where);
     my $lst = tuwf->dbPagei({results => 50, page => $opt->{p}}, '
-        SELECT w.id, w.vid, w.isfull, w.c_up, w.c_down, w.c_count, w.c_lastnum, v.title, uv.vote
+        SELECT w.id, w.vid, w.isfull, w.c_up, w.c_down, w.c_flagged, w.c_count, w.c_lastnum, v.title, uv.vote
              , ', sql_user(), ',', sql_totime('w.date'), 'as date
              , ', sql_user('wpu','lu_'), ',', sql_totime('wp.date'), 'as ldate
           FROM reviews w

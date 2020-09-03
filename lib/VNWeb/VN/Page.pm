@@ -390,7 +390,7 @@ sub infobox_ {
 sub tabs_ {
     my($v, $tab) = @_;
     my $chars = tuwf->dbVali('SELECT COUNT(DISTINCT c.id) FROM chars c JOIN chars_vns cv ON cv.id = c.id WHERE NOT c.hidden AND cv.vid =', \$v->{id});
-    my $reviews = tuwf->dbRowi('SELECT COUNT(*) FILTER(WHERE isfull) AS full, COUNT(*) FILTER(WHERE NOT isfull) AS mini FROM reviews WHERE vid =', \$v->{id});
+    my $reviews = tuwf->dbRowi('SELECT COUNT(*) FILTER(WHERE isfull) AS full, COUNT(*) FILTER(WHERE NOT isfull) AS mini FROM reviews WHERE NOT c_flagged AND vid =', \$v->{id});
 
     return if !$chars && !$reviews->{full} && !$reviews->{mini} && !auth->permEdit && !auth->permReview;
     $tab ||= '';

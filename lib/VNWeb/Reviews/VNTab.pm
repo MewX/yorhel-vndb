@@ -6,16 +6,16 @@ use VNWeb::Prelude;
 sub reviews_ {
     my($v, $mini) = @_;
 
-    # TODO: Better order, pagination
+    # TODO: Better order, pagination, option to show flagged reviews
     my $lst = tuwf->dbAlli(
-        'SELECT r.id, r.rid, r.text, r.spoiler, r.c_count, uv.vote, rv.vote AS my, NOT r.isfull AND rm.id IS NULL AS can
+        'SELECT r.id, r.rid, r.text, r.spoiler, r.c_count, uv.vote, rv.vote AS my, COALESCE(rv.overrule,false) AS overrule, NOT r.isfull AND rm.id IS NULL AS can
               , ', sql_totime('r.date'), 'AS date, ', sql_user(), '
            FROM reviews r
            LEFT JOIN users u ON r.uid = u.id
            LEFT JOIN ulist_vns uv ON uv.uid = r.uid AND uv.vid = r.vid
            LEFT JOIN reviews_votes rv ON rv.uid =', \auth->uid, ' AND rv.id = r.id
            LEFT JOIN reviews rm ON rm.vid = r.vid AND rm.uid =', \auth->uid, '
-          WhERE r.vid =', \$v->{id}, 'AND', ($mini ? 'NOT' : ''), 'r.isfull
+          WhERE NOT r.c_flagged AND r.vid =', \$v->{id}, 'AND', ($mini ? 'NOT' : ''), 'r.isfull
           ORDER BY r.c_up-r.c_down DESC'
     );
 
@@ -55,7 +55,7 @@ sub reviews_ {
                 div_ sub {
                     a_ href => "/$r->{id}#review", 'Full review »' if !$mini;
                     a_ href => "/$r->{id}#threadstart", $r->{c_count} == 1 ? '1 comment' : "$r->{c_count} comments";
-                    elm_ 'Reviews.Vote' => $VNWeb::Reviews::Elm::VOTE_OUT, $r if auth && $r->{can};
+                    elm_ 'Reviews.Vote' => $VNWeb::Reviews::Elm::VOTE_OUT, {%$r, mod => auth->permBoardmod} if auth && ($r->{can} || auth->permBoardmod);
                 };
             } for @$lst;
         }

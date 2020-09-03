@@ -23,6 +23,8 @@ type alias Model =
   { state    : Api.State
   , id       : String
   , my       : Maybe Bool
+  , overrule : Bool
+  , mod      : Bool
   }
 
 init : GRV.Recv -> Model
@@ -30,19 +32,23 @@ init d =
   { state    = Api.Normal
   , id       = d.id
   , my       = d.my
+  , overrule = d.overrule
+  , mod      = d.mod
   }
 
 type Msg
   = Vote Bool
+  | Overrule Bool
   | Saved GApi.Response
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
+  let save m = ({ m | state = Api.Loading }, GRV.send { id = m.id, my = m.my, overrule = m.overrule } Saved)
+  in
   case msg of
-    Vote b ->
-      let my = if model.my == Just b then Nothing else Just b
-      in ({ model | my = my, state = Api.Loading }, GRV.send { id = model.id, my = my } Saved)
+    Vote b     -> save { model | my = if model.my == Just b then Nothing else Just b }
+    Overrule b -> let nm = { model | overrule = b } in if isJust model.my then save nm else (nm, Cmd.none)
 
     Saved GApi.Success -> ({ model | state = Api.Normal }, Cmd.none)
     Saved e -> ({ model | state = Api.Error e }, Cmd.none)
@@ -60,4 +66,5 @@ view model =
   , but True "yes"
   , text " / "
   , but False "no"
+  , if not model.mod then text "" else label [] [ text " / ", inputCheck "" model.overrule Overrule, text " O" ]
   ]
