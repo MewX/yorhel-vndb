@@ -114,6 +114,11 @@ TUWF::get qr{/$RE{wid}(?:(?<sep>[\./])$RE{num})?}, sub {
     );
     return tuwf->resNotFound if $num && !grep $_->{num} == $num, @$posts;
 
+    # Mark a notification for this thread as read, if there is one.
+    tuwf->dbExeci(
+        'UPDATE notifications SET read = NOW() WHERE uid =', \auth->uid, 'AND iid =', \$id, 'AND read IS NULL'
+    ) if auth && $w->{count} <= $page*25;
+
     my $title = "Review of $w->{title}";
     framework_ title => $title, index => 1, type => 'w', dbobj => $w,
         $num||$page>1 ? (pagevars => {sethash=>$num?$num:'threadstart'}) : (),

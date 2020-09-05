@@ -8,6 +8,8 @@ my %ntypes = (
     listdel  => 'VN in your list has been deleted',
     dbedit   => 'Entry you contributed to has been edited',
     announce => 'Site announcement',
+    post     => 'Reply to a thread you\'ve posted in',
+    comment  => 'Comment on your review',
 );
 
 
@@ -21,6 +23,16 @@ sub settings_ {
             label_ sub {
                 input_ type => 'checkbox', name => 'dbedit', auth->pref('notify_dbedit') ? (checked => 'checked') : ();
                 txt_ ' Notify me about edits of database entries I contributed to.';
+            };
+            br_;
+            label_ sub {
+                input_ type => 'checkbox', name => 'post', auth->pref('notify_post') ? (checked => 'checked') : ();
+                txt_ ' Notify me about replies to threads I posted in.';
+            };
+            br_;
+            label_ sub {
+                input_ type => 'checkbox', name => 'comment', auth->pref('notify_comment') ? (checked => 'checked') : ();
+                txt_ ' Notify me about comments to my reviews.';
             };
             br_;
             label_ sub {
@@ -66,7 +78,8 @@ sub listing_ {
             td_ class => 'tc4', sub { a_ href => $url, $lid };
             td_ class => 'tc5', sub {
                 a_ href => $url, sub {
-                    txt_ $l->{iid} !~ /^t/ ? 'Edit of ' : $l->{num} == 1 ? 'New thread ' : 'Reply to ';
+                    txt_ $l->{iid} =~ /^w/ ? ($l->{num} ? 'Comment on ' : 'Review of ') :
+                         $l->{iid} =~ /^t/ ? ($l->{num} == 1 ? 'New thread ' : 'Reply to ') : 'Edit of ';
                     i_ $l->{c_title};
                     txt_ ' by ';
                     i_ user_displayname $l;
@@ -135,11 +148,15 @@ TUWF::post qr{/$RE{uid}/notify_options}, sub {
         csrf     => {},
         dbedit   => { anybool => 1 },
         announce => { anybool => 1 },
+        post     => { anybool => 1 },
+        comment  => { anybool => 1 },
     )->data;
     return tuwf->resNotFound if !auth->csrfcheck($frm->{csrf});
 
     auth->prefSet(notify_dbedit   => $frm->{dbedit});
     auth->prefSet(notify_announce => $frm->{announce});
+    auth->prefSet(notify_post     => $frm->{post});
+    auth->prefSet(notify_comment  => $frm->{comment});
     tuwf->resRedirect("/u$id/notifies", 'post');
 };
 

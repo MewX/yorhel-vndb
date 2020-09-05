@@ -243,7 +243,6 @@ BEGIN
          SELECT 1
            FROM notifications n
           WHERE n.uid = tb.iid
-            AND n.ntype = 'pm'
             AND n.iid = t.id
             AND n.read IS NULL
        );
@@ -274,6 +273,64 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER notify_announce AFTER INSERT ON threads_posts FOR EACH ROW WHEN (NEW.num = 1) EXECUTE PROCEDURE notify_announce();
+
+
+
+
+-- Add a notification on new posts
+
+CREATE OR REPLACE FUNCTION notify_post() RETURNS trigger AS $$
+BEGIN
+  INSERT INTO notifications (ntype, uid, iid, num, c_title, c_byuser)
+    SELECT DISTINCT 'post'::notification_ntype, u.id, t.id, NEW.num, t.title, NEW.uid
+      FROM threads t
+      JOIN threads_posts tp ON tp.tid = t.id
+      JOIN users u ON tp.uid = u.id
+     WHERE t.id = NEW.tid
+       AND u.notify_post
+       AND u.id <> NEW.uid
+       AND NOT t.hidden
+       AND NOT t.private -- don't leak posts in private threads, these are handled by notify_pm anyway
+       AND NOT EXISTS( -- don't notify when you haven't read an earlier post in the thread yet (also avoids double notification with notify_pm)
+         SELECT 1
+           FROM notifications n
+          WHERE n.uid = u.id
+            AND n.iid = t.id
+            AND n.read IS NULL
+       );
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER notify_post AFTER INSERT ON threads_posts FOR EACH ROW EXECUTE PROCEDURE notify_post();
+
+
+
+
+-- Add a notification on new comment to review
+
+CREATE OR REPLACE FUNCTION notify_comment() RETURNS trigger AS $$
+BEGIN
+  INSERT INTO notifications (ntype, uid, iid, num, c_title, c_byuser)
+    SELECT 'comment', u.id, w.id, NEW.num, v.title, NEW.uid
+      FROM reviews w
+      JOIN vn v ON v.id = w.vid
+      JOIN users u ON w.uid = u.id
+     WHERE w.id = NEW.id
+       AND u.notify_comment
+       AND u.id <> NEW.uid
+       AND NOT EXISTS( -- don't notify when you haven't read earlier comments yet
+         SELECT 1
+           FROM notifications n
+          WHERE n.uid = u.id
+            AND n.iid = w.id
+            AND n.read IS NULL
+       );
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER notify_comment AFTER INSERT ON reviews_posts FOR EACH ROW EXECUTE PROCEDURE notify_comment();
 
 
 
