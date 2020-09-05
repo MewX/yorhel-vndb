@@ -194,7 +194,7 @@ TUWF::get qr{/$RE{tid}(?:(?<sep>[\./])$RE{num})?}, sub {
 
     # Mark a notification for this thread as read, if there is one.
     tuwf->dbExeci(
-        'UPDATE notifications SET read = NOW() WHERE uid =', \auth->uid, 'AND ltype = \'t\' AND iid = vndbid_num(', \$id, ') AND read IS NULL'
+        'UPDATE notifications SET read = NOW() WHERE uid =', \auth->uid, 'AND iid =', \$id, 'AND read IS NULL'
     ) if auth && $t->{count} <= $page*25;
 
     framework_ title => $t->{title}, $num ? (js => 1, pagevars => {sethash=>$num}) : (), sub {

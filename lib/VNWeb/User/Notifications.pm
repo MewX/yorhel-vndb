@@ -5,7 +5,7 @@ use VNWeb::Prelude;
 my %ntypes = (
     pm       => 'Private Message',
     dbdel    => 'Entry you contributed to has been deleted',
-    listdel  => 'VN in your (wish)list has been deleted',
+    listdel  => 'VN in your list has been deleted',
     dbedit   => 'Entry you contributed to has been edited',
     announce => 'Site announcement',
 );
@@ -58,7 +58,7 @@ sub listing_ {
         }};
         tr_ $_->{read} ? () : (class => 'unread'), sub {
             my $l = $_;
-            my $lid = $l->{ltype}.$l->{iid}.($l->{subid}?'.'.$l->{subid}:'');
+            my $lid = $l->{iid}.($l->{num}?'.'.$l->{num}:'');
             my $url = "/u$id/notify/$l->{id}/$lid";
             td_ class => 'tc1', sub { input_ type => 'checkbox', name => 'notifysel', value => $l->{id}; };
             td_ class => 'tc2', $ntypes{$l->{ntype}};
@@ -66,7 +66,7 @@ sub listing_ {
             td_ class => 'tc4', sub { a_ href => $url, $lid };
             td_ class => 'tc5', sub {
                 a_ href => $url, sub {
-                    txt_ $l->{ltype} ne 't' ? 'Edit of ' : $l->{subid} == 1 ? 'New thread ' : 'Reply to ';
+                    txt_ $l->{iid} !~ /^t/ ? 'Edit of ' : $l->{num} == 1 ? 'New thread ' : 'Reply to ';
                     i_ $l->{c_title};
                     txt_ ' by ';
                     i_ user_displayname $l;
@@ -101,7 +101,7 @@ TUWF::get qr{/$RE{uid}/notifies}, sub {
     );
     my $count = tuwf->dbVali('SELECT count(*) FROM notifications WHERE', $where);
     my $list = tuwf->dbPagei({ results => 25, page => $opt->{p} },
-       'SELECT n.id, n.ntype, n.ltype, n.iid, n.subid, n.c_title
+       'SELECT n.id, n.ntype, n.iid, n.num, n.c_title
              , ', sql_totime('n.date'), ' as date
              , ', sql_totime('n.read'), ' as read
              , ', sql_user(),

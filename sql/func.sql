@@ -518,8 +518,8 @@ $$ LANGUAGE plpgsql;
 
 -- called when an entry has been deleted
 CREATE OR REPLACE FUNCTION notify_dbdel(xtype dbentry_type, xedit edit_rettype) RETURNS void AS $$
-  INSERT INTO notifications (ntype, ltype, uid, iid, subid, c_title, c_byuser)
-    SELECT DISTINCT 'dbdel'::notification_ntype, xtype::text::notification_ltype, h.requester, xedit.itemid, xedit.rev, x.title, h2.requester
+  INSERT INTO notifications (ntype, uid, iid, num, c_title, c_byuser)
+    SELECT DISTINCT 'dbdel'::notification_ntype, h.requester, vndbid(xtype::text, xedit.itemid), xedit.rev, x.title, h2.requester
       FROM changes h
       -- join info about the deletion itself
       JOIN changes h2 ON h2.id = xedit.chid
@@ -541,8 +541,8 @@ $$ LANGUAGE sql;
 
 -- Called when a non-deleted item has been edited.
 CREATE OR REPLACE FUNCTION notify_dbedit(xtype dbentry_type, xedit edit_rettype) RETURNS void AS $$
-  INSERT INTO notifications (ntype, ltype, uid, iid, subid, c_title, c_byuser)
-    SELECT DISTINCT 'dbedit'::notification_ntype, xtype::text::notification_ltype, h.requester, xedit.itemid, xedit.rev, x.title, h2.requester
+  INSERT INTO notifications (ntype, uid, iid, num, c_title, c_byuser)
+    SELECT DISTINCT 'dbedit'::notification_ntype, h.requester, vndbid(xtype::text, xedit.itemid), xedit.rev, x.title, h2.requester
       FROM changes h
       -- join info about the edit itself
       JOIN changes h2 ON h2.id = xedit.chid
@@ -565,8 +565,8 @@ $$ LANGUAGE sql;
 
 -- called when a VN/release entry has been deleted
 CREATE OR REPLACE FUNCTION notify_listdel(xtype dbentry_type, xedit edit_rettype) RETURNS void AS $$
-  INSERT INTO notifications (ntype, ltype, uid, iid, subid, c_title, c_byuser)
-    SELECT DISTINCT 'listdel'::notification_ntype, xtype::text::notification_ltype, u.uid, xedit.itemid, xedit.rev, x.title, c.requester
+  INSERT INTO notifications (ntype, uid, iid, num, c_title, c_byuser)
+    SELECT DISTINCT 'listdel'::notification_ntype, u.uid, vndbid(xtype::text, xedit.itemid), xedit.rev, x.title, c.requester
       -- look for users who should get this notify
       FROM (
               SELECT uid FROM ulist_vns WHERE xtype = 'v' AND vid = xedit.itemid

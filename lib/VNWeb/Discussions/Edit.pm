@@ -50,7 +50,7 @@ elm_api DiscussionsEdit => $FORM_OUT, $FORM_IN, sub {
     if($tid && $data->{delete} && auth->permBoardmod) {
         auth->audit($t->{user_id}, 'post delete', "deleted $tid.1");
         tuwf->dbExeci('DELETE FROM threads WHERE id =', \$tid);
-        tuwf->dbExeci(q{DELETE FROM notifications WHERE ltype = 't' AND iid = vndbid_num(}, \$tid, ')');
+        tuwf->dbExeci(q{DELETE FROM notifications WHERE iid =}, \$tid);
         return elm_Redirect '/t';
     }
     auth->audit($t->{user_id}, 'post edit', "edited $tid.1") if $tid && $t->{user_id} != auth->uid;

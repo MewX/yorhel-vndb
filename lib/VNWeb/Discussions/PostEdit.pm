@@ -48,7 +48,7 @@ elm_api DiscussionsPostEdit => $FORM_OUT, $FORM_IN, sub {
         auth->audit($t->{user_id}, 'post delete', "deleted $id.$num");
         tuwf->dbExeci('DELETE FROM threads_posts WHERE tid =', \$id, 'AND num =', \$num);
         tuwf->dbExeci('DELETE FROM reviews_posts WHERE  id =', \$id, 'AND num =', \$num);
-        tuwf->dbExeci(q{DELETE FROM notifications WHERE ltype = 't' AND iid = vndbid_num(}, \$id, ') AND subid =', \$num);
+        tuwf->dbExeci(q{DELETE FROM notifications WHERE iid =}, \$id, 'AND num =', \$num);
         return elm_Redirect "/$id";
     }
     auth->audit($t->{user_id}, 'post edit', "edited $id.$num") if $t->{user_id} != auth->uid;
