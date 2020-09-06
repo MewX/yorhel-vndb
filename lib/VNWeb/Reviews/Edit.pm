@@ -20,6 +20,9 @@ my $FORM_IN  = form_compile in  => $FORM;
 my $FORM_OUT = form_compile out => $FORM;
 
 
+sub throttled { tuwf->dbVali('SELECT COUNT(*) FROM reviews WHERE uid =', \auth->uid, 'AND date > NOW()-interval \'1 day\'') > 0 }
+
+
 TUWF::get qr{/$RE{vid}/addreview}, sub {
     my $v = tuwf->dbRowi('SELECT id, title FROM vn WHERE NOT hidden AND id =', \tuwf->capture('id'));
     return tuwf->resNotFound if !$v->{id};
@@ -29,7 +32,14 @@ TUWF::get qr{/$RE{vid}/addreview}, sub {
     return tuwf->resDenied if !can_edit w => {};
 
     framework_ title => "Write review for $v->{title}", sub {
-        elm_ 'Reviews.Edit' => $FORM_OUT, { elm_empty($FORM_OUT)->%*, vid => $v->{id}, vntitle => $v->{title}, releases => releases_by_vn $v->{id} };
+        if(throttled) {
+            div_ class => 'mainbox', sub {
+                h1_ 'Throttled';
+                p_ 'You can only submit 1 review per day. Check back later!';
+            };
+        } else {
+            elm_ 'Reviews.Edit' => $FORM_OUT, { elm_empty($FORM_OUT)->%*, vid => $v->{id}, vntitle => $v->{title}, releases => releases_by_vn $v->{id} };
+        }
     };
 };
 
@@ -70,9 +80,9 @@ elm_api ReviewsEdit => $FORM_OUT, $FORM_IN, sub {
 
     } else {
         return elm_Unauth if tuwf->dbVali('SELECT 1 FROM reviews WHERE vid =', \$data->{vid}, 'AND uid =', \auth->uid);
+        return elm_Unauth if throttled;
         $data->{uid} = auth->uid;
         $id = tuwf->dbVali('INSERT INTO reviews', $data, 'RETURNING id');
-        tuwf->dbExeci('UPDATE users SET perm_review = false WHERE id =', \auth->uid) if !auth->isMod; # XXX: While in beta, 1 review per user.
     }
 
     elm_Redirect "/$id"
