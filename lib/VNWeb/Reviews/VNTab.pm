@@ -1,6 +1,7 @@
 package VNWeb::Reviews::VNTab;
 
 use VNWeb::Prelude;
+use VNWeb::Reviews::Lib;
 
 
 sub reviews_ {
@@ -8,7 +9,7 @@ sub reviews_ {
 
     # TODO: Better order, pagination, option to show flagged reviews
     my $lst = tuwf->dbAlli(
-        'SELECT r.id, r.rid, r.text, r.spoiler, r.c_count, uv.vote, rv.vote AS my, COALESCE(rv.overrule,false) AS overrule, NOT r.isfull AND rm.id IS NULL AS can
+        'SELECT r.id, r.rid, r.text, r.spoiler, r.c_count, r.c_up, r.c_down, uv.vote, rv.vote AS my, COALESCE(rv.overrule,false) AS overrule, NOT r.isfull AND rm.id IS NULL AS can
               , ', sql_totime('r.date'), 'AS date, ', sql_user(), '
            FROM reviews r
            LEFT JOIN users u ON r.uid = u.id
@@ -40,7 +41,7 @@ sub reviews_ {
                         a_ href => "/report/$r->{id}", 'report';
                         txt_ '>';
                     };
-                    my $html = bb_format $r->{text}, maxlength => $mini ? undef : 700;
+                    my $html = reviews_format $r, maxlength => $mini ? undef : 700;
                     $html .= '...' if !$mini;
                     if($r->{spoiler}) {
                         label_ class => 'review_spoil', sub {
@@ -55,7 +56,7 @@ sub reviews_ {
                 div_ sub {
                     a_ href => "/$r->{id}#review", 'Full review »' if !$mini;
                     a_ href => "/$r->{id}#threadstart", $r->{c_count} == 1 ? '1 comment' : "$r->{c_count} comments";
-                    elm_ 'Reviews.Vote' => $VNWeb::Reviews::Elm::VOTE_OUT, {%$r, mod => auth->permBoardmod} if auth && ($r->{can} || auth->permBoardmod);
+                    reviews_vote_ $r;
                 };
             } for @$lst;
         }
